@@ -1,0 +1,238 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/constants/app_colors.dart';
+import '../../../../data/models/song.dart';
+import '../../../../data/models/verse.dart';
+import '../../../../data/models/lyric_line.dart';
+import '../../../../data/models/chord_position.dart';
+import '../../../providers/providers.dart';
+import '../../../providers/settings_provider.dart';
+
+/// Widget for displaying song lyrics with chords
+class ChordView extends ConsumerWidget {
+  final Song song;
+  final int transpose;
+
+  const ChordView({
+    required this.song,
+    required this.transpose,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fontSize = ref.watch(fontSizeProvider);
+    final showChords = ref.watch(showChordsProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return InteractiveViewer(
+      minScale: 0.5,
+      maxScale: 3.0,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Song metadata
+            if (song.reference != null) ...[
+              Text(
+                song.reference!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Verses
+            for (int i = 0; i < song.verses.length; i++) ...[
+              _buildVerse(
+                context,
+                ref,
+                song.verses[i],
+                fontSize,
+                showChords,
+                isDark,
+              ),
+              if (i < song.verses.length - 1) const SizedBox(height: 24),
+            ],
+
+            // Origin info at bottom
+            if (song.origin?.displayString != null ||
+                song.tune?.name != null) ...[
+              const SizedBox(height: 32),
+              const Divider(),
+              const SizedBox(height: 8),
+              if (song.tune?.name != null)
+                Text(
+                  'Tune: ${song.tune!.name}${song.tune!.origin?.displayString != null ? ' (${song.tune!.origin!.displayString})' : ''}',
+                  style: theme.textTheme.bodySmall,
+                ),
+              if (song.origin?.displayString != null)
+                Text(
+                  'Origin: ${song.origin!.displayString}',
+                  style: theme.textTheme.bodySmall,
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerse(
+    BuildContext context,
+    WidgetRef ref,
+    Verse verse,
+    double fontSize,
+    bool showChords,
+    bool isDark,
+  ) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Verse number
+        Text(
+          '${verse.number}.',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Verse content
+        if (verse.hasNotation && verse.lines.isNotEmpty)
+          ...verse.lines.map((line) => _buildLine(
+                context,
+                ref,
+                line,
+                fontSize,
+                showChords,
+                isDark,
+              ))
+        else if (verse.plainText != null)
+          Text(
+            verse.plainText!,
+            style: TextStyle(fontSize: fontSize, height: 1.6),
+          )
+        else
+          ...verse.lines.map((line) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  line.text,
+                  style: TextStyle(fontSize: fontSize, height: 1.6),
+                ),
+              )),
+      ],
+    );
+  }
+
+  Widget _buildLine(
+    BuildContext context,
+    WidgetRef ref,
+    LyricLine line,
+    double fontSize,
+    bool showChords,
+    bool isDark,
+  ) {
+    if (!showChords || line.chords.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(
+          line.text,
+          style: TextStyle(fontSize: fontSize, height: 1.6),
+        ),
+      );
+    }
+
+    // Transpose chords if needed
+    final transpositionService = ref.read(transpositionServiceProvider);
+    final targetKey = transpositionService.calculateTargetKey(
+      song.originalKey,
+      transpose,
+    );
+    final transposedChords = line.chords.map((cp) {
+      return ChordPosition(
+        chord: transpositionService.transposeChord(
+          cp.chord,
+          transpose,
+          targetKey: targetKey,
+        ),
+        position: cp.position,
+      );
+    }).toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Chord line
+          _buildChordLine(context, line.text, transposedChords, fontSize, isDark),
+          // Lyric line
+          Text(
+            line.text,
+            style: TextStyle(fontSize: fontSize, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChordLine(
+    BuildContext context,
+    String text,
+    List<ChordPosition> chords,
+    double fontSize,
+    bool isDark,
+  ) {
+    // Build a text widget that positions chords above the correct characters
+    final chordFontSize = fontSize * 0.75;
+    final charWidth = fontSize * 0.55; // Approximate character width
+
+    // Sort chords by position
+    final sortedChords = List<ChordPosition>.from(chords)
+      ..sort((a, b) => a.position.compareTo(b.position));
+
+    // Build chord display with proper spacing
+    final chordWidgets = <Widget>[];
+    int currentPos = 0;
+
+    for (final cp in sortedChords) {
+      // Add spacing before chord if needed
+      if (cp.position > currentPos) {
+        final spacerWidth = (cp.position - currentPos) * charWidth;
+        chordWidgets.add(SizedBox(width: spacerWidth));
+      }
+
+      // Add chord
+      chordWidgets.add(
+        Text(
+          cp.chord,
+          style: TextStyle(
+            fontSize: chordFontSize,
+            fontWeight: FontWeight.bold,
+            color: isDark ? AppColors.chordDark : AppColors.chordLight,
+          ),
+        ),
+      );
+
+      // Update position (chord takes up space)
+      currentPos = cp.position + cp.chord.length;
+    }
+
+    return SizedBox(
+      height: chordFontSize + 4,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: chordWidgets,
+      ),
+    );
+  }
+}

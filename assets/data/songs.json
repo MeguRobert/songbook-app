@@ -1,0 +1,512 @@
+[
+  {
+    "number": 1,
+    "title": "Szent Isten, kit a seregek",
+    "reference": "Zsolt 89",
+    "origin": { "place": "Geneva", "year": 1562 },
+    "tune": {
+      "name": "Genfi zsolt\u00e1rdallam",
+      "origin": { "place": "Geneva", "year": 1551 }
+    },
+    "originalKey": "G",
+    "timeSignature": "4/4",
+    "verses": [
+      {
+        "number": 1,
+        "hasNotation": true,
+        "lines": [
+          {
+            "text": "Szent Isten, kit a seregek",
+            "chords": [
+              { "chord": "G", "position": 0 },
+              { "chord": "D", "position": 14 },
+              { "chord": "G", "position": 22 }
+            ]
+          },
+          {
+            "text": "tisztelnek, dicsőítenek,",
+            "chords": [
+              { "chord": "C", "position": 0 },
+              { "chord": "G", "position": 11 },
+              { "chord": "D", "position": 22 }
+            ]
+          },
+          {
+            "text": "Ki vagy, ki voltál, ki leszel,",
+            "chords": [
+              { "chord": "G", "position": 0 },
+              { "chord": "Em", "position": 9 },
+              { "chord": "C", "position": 18 }
+            ]
+          },
+          {
+            "text": "örökkön élő szent felség.",
+            "chords": [
+              { "chord": "G", "position": 0 },
+              { "chord": "D", "position": 10 },
+              { "chord": "G", "position": 18 }
+            ]
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "hasNotation": false,
+        "plainText": "Téged dicsér a föld s az ég, Mert te vagy az erős vitéz, Hatalmadnak nincs vége, Uradnak és felségednek."
+      },
+      {
+        "number": 3,
+        "hasNotation": false,
+        "plainText": "Add, hogy mi is téged dicsérjünk, És szent nevednek énekeljünk, Míg élünk itt e földön, S majd ott fenn az örök mennyben."
+      }
+    ],
+    "tags": ["zsoltár", "dicsőítés", "imádás"]
+  },
+  {
+    "number": 42,
+    "title": "Mint a szép híves patakra",
+    "reference": "Zsolt 42",
+    "origin": { "place": "Geneva", "year": 1551 },
+    "tune": {
+      "name": "Genfi zsoltárdallam",
+      "origin": { "place": "Geneva", "year": 1551 }
+    },
+    "originalKey": "D",
+    "timeSignature": "4/4",
+    "verses": [
+      {
+        "number": 1,
+        "hasNotation": true,
+        "lines": [
+          {
+            "text": "Mint a szép híves patakra",
+            "chords": [
+              { "chord": "D", "position": 0 },
+              { "chord": "A", "position": 9 },
+              { "chord": "D", "position": 18 }
+            ]
+          },
+          {
+            "text": "a szarvas kívánkozik,",
+            "chords": [
+              { "chord": "G", "position": 0 },
+              { "chord": "D", "position": 9 },
+              { "chord": "A", "position": 16 }
+            ]
+          },
+          {
+            "text": "Lelkem úgy óhajt Uramra,",
+            "chords": [
+              { "chord": "D", "position": 0 },
+              { "chord": "Bm", "position": 7 },
+              { "chord": "A", "position": 17 }
+            ]
+          },
+          {
+            "text": "és hozzá fohászkodik.",
+            "chords": [
+              { "chord": "G", "position": 0 },
+              { "chord": "D", "position": 8 },
+              { "chord": "A", "position": 14 },
+              { "chord": "D", "position": 18 }
+            ]
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "hasNotation": false,
+        "plainText": "Tehozzád, élő Istenhez, szomjúhozik én lelkem, Vajon mikor jutok szemedbe, s előtted megjelenhetek?"
+      }
+    ],
+    "tags": ["zsoltár", "vágyakozás", "ima"]
+  },
+  {
+    "number": 90,
+    "title": "Te benned bíztunk eleitől fogva",
+    "reference": "Zsolt 90",
+    "origin": { "place": "Geneva", "year": 1562 },
+    "tune": {
+      "name": "Genfi zsoltárdallam",
+      "origin": { "place": "Geneva", "year": 1551 }
+    },
+    "originalKey": "F",
+    "timeSignature": "4/4",
+    "verses": [
+      {
+        "number": 1,
+        "hasNotation": true,
+        "lines": [
+          {
+            "text": "Te benned bíztunk eleitől fogva,",
+            "chords": [
+              { "chord": "F", "position": 0 },
+              { "chord": "Bb", "position": 10 },
+              { "chord": "C", "position": 20 },
+              { "chord": "F", "position": 28 }
+            ]
+          },
+          {
+            "text": "Uram, téged vallunk hajlékunknak.",
+            "chords": [
+              { "chord": "Dm", "position": 0 },
+              { "chord": "Bb", "position": 8 },
+              { "chord": "F", "position": 18 },
+              { "chord": "C", "position": 28 }
+            ]
+          },
+          {
+            "text": "Mikor még semmi hegyek nem voltanak,",
+            "chords": [
+              { "chord": "F", "position": 0 },
+              { "chord": "Am", "position": 12 },
+              { "chord": "Dm", "position": 22 }
+            ]
+          },
+          {
+            "text": "Föld s világ még nem volt formálva,",
+            "chords": [
+              { "chord": "Bb", "position": 0 },
+              { "chord": "F", "position": 10 },
+              { "chord": "C", "position": 18 },
+              { "chord": "F", "position": 26 }
+            ]
+          },
+          {
+            "text": "Te voltál és te vagy, s te leszel örökké.",
+            "chords": [
+              { "chord": "Dm", "position": 0 },
+              { "chord": "Gm", "position": 15 },
+              { "chord": "C", "position": 28 },
+              { "chord": "F", "position": 36 }
+            ]
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "hasNotation": false,
+        "plainText": "Ezer esztendő előtted csak annyi, mint a tegnapi nap mely elmúlt már régen, Vagy az éjnek rövid őrállása, mely nem tart soká semmiben."
+      },
+      {
+        "number": 3,
+        "hasNotation": false,
+        "plainText": "Azért Uram, taníts meg minket, hogy napjainkat számláljuk, És szívünkben bölcsességre, általad juthassunk el."
+      }
+    ],
+    "tags": ["zsoltár", "örökkévalóság", "bizalom"]
+  },
+  {
+    "number": 151,
+    "title": "Hatalmas Isten, nagy haragodban",
+    "reference": "Zsolt 6",
+    "origin": { "place": "Debrecen", "year": 1560 },
+    "tune": {
+      "name": "Ne hagyj elesnem",
+      "origin": { "place": "Kolozsvár", "year": 1744 }
+    },
+    "originalKey": "Bb",
+    "timeSignature": "4/4",
+    "verses": [
+      {
+        "number": 1,
+        "hasNotation": true,
+        "lines": [
+          {
+            "text": "Hatalmas Isten, nagy haragodban",
+            "chords": [
+              { "chord": "Bb", "position": 0 },
+              { "chord": "F", "position": 17 },
+              { "chord": "Bb", "position": 27 }
+            ]
+          },
+          {
+            "text": "ne feddj meg engemet,",
+            "chords": [
+              { "chord": "Eb", "position": 0 },
+              { "chord": "Bb", "position": 8 },
+              { "chord": "F", "position": 15 }
+            ]
+          },
+          {
+            "text": "És búsulásodban",
+            "chords": [
+              { "chord": "Bb", "position": 0 },
+              { "chord": "Gm", "position": 7 }
+            ]
+          },
+          {
+            "text": "ne büntess meg engemet.",
+            "chords": [
+              { "chord": "Eb", "position": 0 },
+              { "chord": "F", "position": 10 },
+              { "chord": "Bb", "position": 18 }
+            ]
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "hasNotation": false,
+        "plainText": "Mégis, Úr Isten, könyörülj rajtam, mert én gyenge vagyok, Tudod, Úr Isten, beteg voltomat, mert bűneim nagyok, Gyógyíts meg engem e fájdalomból, mert gyógyulást várok."
+      },
+      {
+        "number": 3,
+        "hasNotation": false,
+        "plainText": "Az én lelkem is igen megrettenve, Uram, meddig késel? Térj hozzám, Uram, mentsd meg lelkemet, És kegyelmeddel segélj!"
+      }
+    ],
+    "tags": ["zsoltár", "bűnbánat", "könyörgés"]
+  },
+  {
+    "number": 200,
+    "title": "Jöjj, mondjunk hálaszót",
+    "reference": null,
+    "origin": { "place": "Magyarország", "year": 1806 },
+    "tune": {
+      "name": "Nun danket alle Gott",
+      "origin": { "place": "Németország", "year": 1647 }
+    },
+    "originalKey": "Eb",
+    "timeSignature": "4/4",
+    "verses": [
+      {
+        "number": 1,
+        "hasNotation": true,
+        "lines": [
+          {
+            "text": "Jöjj, mondjunk hálaszót,",
+            "chords": [
+              { "chord": "Eb", "position": 0 },
+              { "chord": "Ab", "position": 8 },
+              { "chord": "Eb", "position": 16 }
+            ]
+          },
+          {
+            "text": "áldjuk az Istent,",
+            "chords": [
+              { "chord": "Bb", "position": 0 },
+              { "chord": "Eb", "position": 8 }
+            ]
+          },
+          {
+            "text": "Ki velünk ennyi jót",
+            "chords": [
+              { "chord": "Ab", "position": 0 },
+              { "chord": "Eb", "position": 7 },
+              { "chord": "Bb", "position": 13 }
+            ]
+          },
+          {
+            "text": "tett szünetlenül.",
+            "chords": [
+              { "chord": "Eb", "position": 0 },
+              { "chord": "Bb", "position": 7 },
+              { "chord": "Eb", "position": 13 }
+            ]
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "hasNotation": false,
+        "plainText": "Ki anyánk méhétől fogva Megőriz szüntelen, S életünket minden bajban Oltalmazza kegyesen."
+      },
+      {
+        "number": 3,
+        "hasNotation": false,
+        "plainText": "Dicsőség az Atyának, S egyszülött Fiának, A Szentlélekkel együtt, Most és mindörökké. Ámen."
+      }
+    ],
+    "tags": ["hálaadás", "dicséret"]
+  },
+  {
+    "number": 256,
+    "title": "Erős vár a mi Istenünk",
+    "reference": "Zsolt 46",
+    "origin": { "place": "Németország", "year": 1529 },
+    "tune": {
+      "name": "Ein feste Burg",
+      "origin": { "place": "Németország", "year": 1529 }
+    },
+    "originalKey": "C",
+    "timeSignature": "4/4",
+    "verses": [
+      {
+        "number": 1,
+        "hasNotation": true,
+        "lines": [
+          {
+            "text": "Erős vár a mi Istenünk,",
+            "chords": [
+              { "chord": "C", "position": 0 },
+              { "chord": "G", "position": 10 },
+              { "chord": "Am", "position": 16 },
+              { "chord": "C", "position": 22 }
+            ]
+          },
+          {
+            "text": "Jó fegyverünk és pajzsunk.",
+            "chords": [
+              { "chord": "F", "position": 0 },
+              { "chord": "C", "position": 8 },
+              { "chord": "G", "position": 16 },
+              { "chord": "C", "position": 22 }
+            ]
+          },
+          {
+            "text": "Ha ő velünk, ki ellenünk?",
+            "chords": [
+              { "chord": "Am", "position": 0 },
+              { "chord": "Em", "position": 10 },
+              { "chord": "F", "position": 16 },
+              { "chord": "C", "position": 22 }
+            ]
+          },
+          {
+            "text": "Az Úr a mi oltalmunk!",
+            "chords": [
+              { "chord": "G", "position": 0 },
+              { "chord": "Am", "position": 6 },
+              { "chord": "F", "position": 12 },
+              { "chord": "G", "position": 16 },
+              { "chord": "C", "position": 20 }
+            ]
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "hasNotation": false,
+        "plainText": "Ha e világ mind ördög volna, Elnyelni kész, de ne félj! A Krisztus harcol mellettünk, S győz a hittel, ki felveszi."
+      },
+      {
+        "number": 3,
+        "hasNotation": false,
+        "plainText": "Az ige áll az erős Isten, Nincs más segítség nekünk. Hadd vesszen el kincs, test és vér, Országunk megmarad."
+      }
+    ],
+    "tags": ["reformáció", "bizalom", "Luther"]
+  },
+  {
+    "number": 300,
+    "title": "Ó, jöjjetek, hívek",
+    "reference": null,
+    "origin": { "place": "Portugália", "year": 1743 },
+    "tune": {
+      "name": "Adeste fideles",
+      "origin": { "place": "Portugália", "year": 1743 }
+    },
+    "originalKey": "G",
+    "timeSignature": "4/4",
+    "verses": [
+      {
+        "number": 1,
+        "hasNotation": true,
+        "lines": [
+          {
+            "text": "Ó, jöjjetek, hívek,",
+            "chords": [
+              { "chord": "G", "position": 0 },
+              { "chord": "D", "position": 8 },
+              { "chord": "G", "position": 14 }
+            ]
+          },
+          {
+            "text": "jöjjetek vidáman,",
+            "chords": [
+              { "chord": "C", "position": 0 },
+              { "chord": "G", "position": 8 }
+            ]
+          },
+          {
+            "text": "Ó, jöjjetek, jöjjetek",
+            "chords": [
+              { "chord": "D", "position": 0 },
+              { "chord": "G", "position": 9 },
+              { "chord": "A", "position": 14 },
+              { "chord": "D", "position": 18 }
+            ]
+          },
+          {
+            "text": "Betlehembe!",
+            "chords": [
+              { "chord": "G", "position": 0 },
+              { "chord": "D", "position": 6 },
+              { "chord": "G", "position": 10 }
+            ]
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "hasNotation": false,
+        "plainText": "Lássátok a Messiást, Ki most született, Jöjjetek, imádjuk, jöjjetek, imádjuk, Jöjjetek, imádjuk a Királyt!"
+      },
+      {
+        "number": 3,
+        "hasNotation": false,
+        "plainText": "Angyalok éneklik a magas mennyekben: Dicsőség, dicsőség Istennek! Jöjjetek, imádjuk, jöjjetek, imádjuk, Jöjjetek, imádjuk a Királyt!"
+      }
+    ],
+    "tags": ["karácsony", "advent", "imádás"]
+  },
+  {
+    "number": 350,
+    "title": "Uram, te hozzád kiáltok",
+    "reference": "Zsolt 141",
+    "origin": { "place": "Geneva", "year": 1562 },
+    "tune": {
+      "name": "Genfi zsoltárdallam",
+      "origin": { "place": "Geneva", "year": 1562 }
+    },
+    "originalKey": "Am",
+    "timeSignature": "4/4",
+    "verses": [
+      {
+        "number": 1,
+        "hasNotation": true,
+        "lines": [
+          {
+            "text": "Uram, te hozzád kiáltok,",
+            "chords": [
+              { "chord": "Am", "position": 0 },
+              { "chord": "E", "position": 10 },
+              { "chord": "Am", "position": 18 }
+            ]
+          },
+          {
+            "text": "Siess, hallgass meg engemet!",
+            "chords": [
+              { "chord": "Dm", "position": 0 },
+              { "chord": "Am", "position": 8 },
+              { "chord": "E", "position": 17 }
+            ]
+          },
+          {
+            "text": "Fogadd el az én imádságom,",
+            "chords": [
+              { "chord": "Am", "position": 0 },
+              { "chord": "G", "position": 12 },
+              { "chord": "C", "position": 22 }
+            ]
+          },
+          {
+            "text": "Mint füstölő áldozatot.",
+            "chords": [
+              { "chord": "F", "position": 0 },
+              { "chord": "E", "position": 10 },
+              { "chord": "Am", "position": 18 }
+            ]
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "hasNotation": false,
+        "plainText": "Tégy, Uram, őrizetet számra, És őrizd meg ajkam kapuját, Hogy gonoszra ne hajoljon szívem, És rossz útra ne térjen el."
+      }
+    ],
+    "tags": ["zsoltár", "ima", "könyörgés"]
+  }
+]
