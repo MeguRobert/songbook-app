@@ -207,6 +207,10 @@
     },
     "originalKey": "Bb",
     "timeSignature": "4/4",
+    "sheetMusic": {
+      "type": "svg",
+      "basePath": "assets/sheet_music/151"
+    },
     "verses": [
       {
         "number": 1,

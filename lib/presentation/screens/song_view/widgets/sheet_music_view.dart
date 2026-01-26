@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -256,9 +257,8 @@ class SheetMusicView extends ConsumerWidget {
 
   Future<String?> _tryLoadSvg(String path) async {
     try {
-      // In a real app, this would load from assets or network
-      // For now, return null to show the fallback
-      return null;
+      final svgString = await rootBundle.loadString(path);
+      return svgString;
     } catch (_) {
       return null;
     }
