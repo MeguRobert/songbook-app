@@ -81,12 +81,13 @@ class SheetMusicPainter extends CustomPainter {
 
       _drawStaffLines(canvas, system);
 
-      if (isFirstSystem) {
-        _drawClef(canvas, system);
-        _drawKeySignature(canvas, system, layout.key);
-        if (layout.showTimeSignature) {
-          _drawTimeSignature(canvas, system, layout.timeSignature);
-        }
+      // Draw clef and key signature on every system
+      _drawClef(canvas, system);
+      _drawKeySignature(canvas, system, layout.key);
+
+      // Time signature only on first system
+      if (isFirstSystem && layout.showTimeSignature) {
+        _drawTimeSignature(canvas, system, layout.timeSignature);
       }
 
       _drawBarLines(canvas, system);
@@ -528,6 +529,9 @@ class SheetMusicPainter extends CustomPainter {
   }
 
   void _drawNoteHead(Canvas canvas, PositionedNote note) {
+    // Draw accidental if present
+    _drawNoteAccidental(canvas, note);
+
     final isHollow = note.beat.duration == NoteDuration.whole ||
         note.beat.duration == NoteDuration.half;
 
@@ -567,6 +571,95 @@ class SheetMusicPainter extends CustomPainter {
         dotPaint,
       );
     }
+  }
+
+  void _drawNoteAccidental(Canvas canvas, PositionedNote note) {
+    final pitch = note.beat.pitch;
+    if (pitch == 'R') return; // Rest has no accidental
+
+    // Determine what accidental to show based on key signature
+    final accidentalType = _getAccidentalToShow(pitch, layout.key);
+    if (accidentalType == null) return;
+
+    final accidentalY = note.y + EngravingConstants.noteHeadHeight / 2;
+    final accidentalWidth = accidentalType == 'sharp'
+        ? EngravingConstants.sharpWidth
+        : EngravingConstants.flatWidth;
+    final accidentalX = note.x - EngravingConstants.accidentalSpace - accidentalWidth;
+
+    switch (accidentalType) {
+      case 'sharp':
+        _drawSharp(canvas, accidentalX, accidentalY);
+        break;
+      case 'flat':
+        _drawFlat(canvas, accidentalX, accidentalY);
+        break;
+      case 'natural':
+        _drawNatural(canvas, accidentalX, accidentalY);
+        break;
+    }
+  }
+
+  /// Determine if an accidental should be shown for this note in the given key
+  /// Returns 'sharp', 'flat', 'natural', or null if no accidental needed
+  String? _getAccidentalToShow(String pitch, String key) {
+    if (pitch.length < 2) return null;
+
+    final noteLetter = pitch[0].toUpperCase();
+    final hasSharpInPitch = pitch.contains('#');
+    final hasFlatInPitch = pitch.length >= 2 && pitch[1] == 'b';
+
+    // Get sharps/flats in the key signature
+    final keyAccidentals = EngravingConstants.keySignatures[key] ?? 0;
+
+    // Notes that are sharp in sharp keys (order: F C G D A E B)
+    const sharpOrder = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
+    // Notes that are flat in flat keys (order: B E A D G C F)
+    const flatOrder = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
+
+    bool noteIsFlatInKey = false;
+    bool noteIsSharpInKey = false;
+
+    if (keyAccidentals < 0) {
+      // Flat key - check if this note is flat in the key
+      final numFlats = keyAccidentals.abs();
+      noteIsFlatInKey = flatOrder.take(numFlats).contains(noteLetter);
+    } else if (keyAccidentals > 0) {
+      // Sharp key - check if this note is sharp in the key
+      noteIsSharpInKey = sharpOrder.take(keyAccidentals).contains(noteLetter);
+    }
+
+    // Determine what to show
+    if (hasSharpInPitch) {
+      // Note has sharp - show it unless already sharp in key
+      if (!noteIsSharpInKey) return 'sharp';
+    } else if (hasFlatInPitch) {
+      // Note has flat - show it unless already flat in key
+      if (!noteIsFlatInKey) return 'flat';
+    } else {
+      // Natural note - show natural sign if key says it should be sharp/flat
+      if (noteIsFlatInKey || noteIsSharpInKey) return 'natural';
+    }
+
+    return null;
+  }
+
+  void _drawNatural(Canvas canvas, double x, double y) {
+    // SMuFL natural: U+E261
+    const naturalSymbol = '\uE261';
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: naturalSymbol,
+        style: TextStyle(
+          fontFamily: 'Bravura',
+          fontSize: EngravingConstants.staffLineSpacing * 2.5,
+          color: noteColor,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(x, y - textPainter.height / 2));
   }
 
   void _drawStem(Canvas canvas, PositionedNote note) {

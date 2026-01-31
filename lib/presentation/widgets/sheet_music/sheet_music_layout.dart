@@ -245,7 +245,7 @@ class SheetMusicLayoutEngine {
         measureIndex,
         endIndex - 1,
         transposeSemitones,
-        measureIndex == 0, // Show clef and key on first system
+        true, // Show clef and key on every system
         endIndex >= measures.length, // Is last system
         key,
       );
