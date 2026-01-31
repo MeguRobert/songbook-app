@@ -1,0 +1,400 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 720" width="800" height="720">
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="#333333">151. Hatalmas Isten, nagy</text>
+  <text x="400" y="55" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="#333333">haragodban</text>
+
+  <!-- Staff 1 - "1. Ha-tal-mas Is-ten, nagy ha-ra-god-ban" -->
+  <g transform="translate(50, 100)">
+    <!-- Staff lines -->
+    <line x1="0" y1="0" x2="700" y2="0" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="10" x2="700" y2="10" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="20" x2="700" y2="20" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="30" x2="700" y2="30" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="40" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Treble clef -->
+    <text x="5" y="32" font-family="Bravura, Finale Maestro, Times New Roman" font-size="55" fill="#333333">𝄞</text>
+
+    <!-- Key signature - 2 flats (Bb and Eb) -->
+    <text x="40" y="12" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+    <text x="52" y="22" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+
+    <!-- Notes for "1. Ha-tal-mas Is-ten, nagy ha-ra-god-ban" -->
+    <!-- Pickup: Two beamed eighth notes (Ha-tal) - D5, D5 -->
+    <ellipse cx="90" cy="5" rx="6" ry="4" fill="#333333"/>
+    <line x1="96" y1="5" x2="96" y2="-25" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="110" cy="5" rx="6" ry="4" fill="#333333"/>
+    <line x1="116" y1="5" x2="116" y2="-25" stroke="#333333" stroke-width="1.5"/>
+    <!-- Beam -->
+    <rect x="96" y="-27" width="20" height="3" fill="#333333"/>
+
+    <!-- Quarter note (mas) - C5 -->
+    <ellipse cx="145" cy="10" rx="6" ry="4" fill="#333333"/>
+    <line x1="151" y1="10" x2="151" y2="-20" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Quarter note (Is) - Bb4 -->
+    <ellipse cx="180" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="186" y1="15" x2="186" y2="-15" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Quarter note (ten) - A4 -->
+    <ellipse cx="220" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="226" y1="20" x2="226" y2="-10" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Bar line -->
+    <line x1="260" y1="0" x2="260" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Quarter rest -->
+    <text x="280" y="28" font-family="Bravura, Times New Roman" font-size="30" fill="#333333">𝄽</text>
+
+    <!-- Quarter note (nagy) - Bb4 -->
+    <ellipse cx="330" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="336" y1="15" x2="336" y2="-15" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Two beamed eighth notes (ha-ra) - C5, C5 -->
+    <ellipse cx="380" cy="10" rx="6" ry="4" fill="#333333"/>
+    <line x1="386" y1="10" x2="386" y2="-20" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="410" cy="10" rx="6" ry="4" fill="#333333"/>
+    <line x1="416" y1="10" x2="416" y2="-20" stroke="#333333" stroke-width="1.5"/>
+    <rect x="386" y="-22" width="30" height="3" fill="#333333"/>
+
+    <!-- Bar line -->
+    <line x1="450" y1="0" x2="450" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Two beamed eighth notes (god-ban) - Bb4, A4 -->
+    <ellipse cx="490" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="496" y1="15" x2="496" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="520" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="526" y1="20" x2="526" y2="-10" stroke="#333333" stroke-width="1.5"/>
+    <rect x="496" y="-17" width="30" height="3" fill="#333333"/>
+
+    <!-- Half note (ban continued/held) - G4 -->
+    <ellipse cx="580" cy="25" rx="6" ry="4" fill="none" stroke="#333333" stroke-width="1.5"/>
+    <line x1="586" y1="25" x2="586" y2="-5" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Tie from previous to this note -->
+    <path d="M526,23 Q553,35 574,23" stroke="#333333" stroke-width="1" fill="none"/>
+
+    <!-- Bar line -->
+    <line x1="700" y1="0" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Lyrics -->
+    <text x="85" y="60" font-family="Georgia, serif" font-size="14" fill="#333333">1. Ha-tal-mas Is - ten,</text>
+    <text x="320" y="60" font-family="Georgia, serif" font-size="14" fill="#333333">nagy ha - ra - god - ban</text>
+  </g>
+
+  <!-- Staff 2 - "ne feddj meg en-ge-met," -->
+  <g transform="translate(50, 210)">
+    <!-- Staff lines -->
+    <line x1="0" y1="0" x2="700" y2="0" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="10" x2="700" y2="10" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="20" x2="700" y2="20" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="30" x2="700" y2="30" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="40" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Treble clef -->
+    <text x="5" y="32" font-family="Bravura, Finale Maestro, Times New Roman" font-size="55" fill="#333333">𝄞</text>
+
+    <!-- Key signature -->
+    <text x="40" y="12" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+    <text x="52" y="22" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+
+    <!-- Two beamed eighth notes (ne feddj) - Bb4, Bb4 -->
+    <ellipse cx="90" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="96" y1="15" x2="96" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="120" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="126" y1="15" x2="126" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <rect x="96" y="-17" width="30" height="3" fill="#333333"/>
+
+    <!-- Quarter note (meg) - A4 -->
+    <ellipse cx="165" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="171" y1="20" x2="171" y2="-10" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Bar line -->
+    <line x1="210" y1="0" x2="210" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Quarter rest -->
+    <text x="230" y="28" font-family="Bravura, Times New Roman" font-size="30" fill="#333333">𝄽</text>
+
+    <!-- Two beamed eighth notes (en-ge) - G4, A4 -->
+    <ellipse cx="290" cy="25" rx="6" ry="4" fill="#333333"/>
+    <line x1="296" y1="25" x2="296" y2="-5" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="320" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="326" y1="20" x2="326" y2="-10" stroke="#333333" stroke-width="1.5"/>
+    <rect x="296" y="-12" width="30" height="3" fill="#333333"/>
+
+    <!-- Bar line -->
+    <line x1="370" y1="0" x2="370" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Dotted half note (met) - Bb4 -->
+    <ellipse cx="430" cy="15" rx="6" ry="4" fill="none" stroke="#333333" stroke-width="1.5"/>
+    <line x1="436" y1="15" x2="436" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <!-- Dot -->
+    <circle cx="445" cy="15" r="2" fill="#333333"/>
+
+    <!-- Tie -->
+    <path d="M326,23 Q378,35 424,18" stroke="#333333" stroke-width="1" fill="none"/>
+
+    <!-- Bar line -->
+    <line x1="700" y1="0" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Lyrics -->
+    <text x="85" y="60" font-family="Georgia, serif" font-size="14" fill="#333333">ne feddj meg en - ge - met,</text>
+  </g>
+
+  <!-- Staff 3 - "Te ha-ra-god-nak nagy-sá-ga mi-att" -->
+  <g transform="translate(50, 320)">
+    <!-- Staff lines -->
+    <line x1="0" y1="0" x2="700" y2="0" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="10" x2="700" y2="10" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="20" x2="700" y2="20" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="30" x2="700" y2="30" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="40" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Treble clef -->
+    <text x="5" y="32" font-family="Bravura, Finale Maestro, Times New Roman" font-size="55" fill="#333333">𝄞</text>
+
+    <!-- Key signature -->
+    <text x="40" y="12" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+    <text x="52" y="22" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+
+    <!-- Two beamed eighth notes (Te ha) - D5, D5 -->
+    <ellipse cx="90" cy="5" rx="6" ry="4" fill="#333333"/>
+    <line x1="96" y1="5" x2="96" y2="-25" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="120" cy="5" rx="6" ry="4" fill="#333333"/>
+    <line x1="126" y1="5" x2="126" y2="-25" stroke="#333333" stroke-width="1.5"/>
+    <rect x="96" y="-27" width="30" height="3" fill="#333333"/>
+
+    <!-- Quarter note (ra) - C5 -->
+    <ellipse cx="165" cy="10" rx="6" ry="4" fill="#333333"/>
+    <line x1="171" y1="10" x2="171" y2="-20" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Quarter note (god) - Bb4 -->
+    <ellipse cx="210" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="216" y1="15" x2="216" y2="-15" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Quarter note (nak) - A4 -->
+    <ellipse cx="255" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="261" y1="20" x2="261" y2="-10" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Bar line -->
+    <line x1="300" y1="0" x2="300" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Two beamed eighth notes (nagy-sá) - Bb4, C5 -->
+    <ellipse cx="340" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="346" y1="15" x2="346" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="370" cy="10" rx="6" ry="4" fill="#333333"/>
+    <line x1="376" y1="10" x2="376" y2="-20" stroke="#333333" stroke-width="1.5"/>
+    <rect x="346" y="-22" width="30" height="3" fill="#333333"/>
+
+    <!-- Quarter note (ga) - Bb4 -->
+    <ellipse cx="420" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="426" y1="15" x2="426" y2="-15" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Bar line -->
+    <line x1="470" y1="0" x2="470" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Two beamed eighth notes (mi-att) - A4, G4 -->
+    <ellipse cx="510" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="516" y1="20" x2="516" y2="-10" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="550" cy="25" rx="6" ry="4" fill="#333333"/>
+    <line x1="556" y1="25" x2="556" y2="-5" stroke="#333333" stroke-width="1.5"/>
+    <rect x="516" y="-12" width="40" height="3" fill="#333333"/>
+
+    <!-- Half note - G4 -->
+    <ellipse cx="620" cy="25" rx="6" ry="4" fill="none" stroke="#333333" stroke-width="1.5"/>
+    <line x1="626" y1="25" x2="626" y2="-5" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Tie -->
+    <path d="M556,28 Q588,40 614,28" stroke="#333333" stroke-width="1" fill="none"/>
+
+    <!-- Bar line -->
+    <line x1="700" y1="0" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Lyrics -->
+    <text x="75" y="60" font-family="Georgia, serif" font-size="14" fill="#333333">Te ha - ra - god - nak</text>
+    <text x="330" y="60" font-family="Georgia, serif" font-size="14" fill="#333333">nagy-sá - ga mi - att</text>
+  </g>
+
+  <!-- Staff 4 - "ne os-to-rozz en-gem," -->
+  <g transform="translate(50, 430)">
+    <!-- Staff lines -->
+    <line x1="0" y1="0" x2="700" y2="0" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="10" x2="700" y2="10" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="20" x2="700" y2="20" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="30" x2="700" y2="30" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="40" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Treble clef -->
+    <text x="5" y="32" font-family="Bravura, Finale Maestro, Times New Roman" font-size="55" fill="#333333">𝄞</text>
+
+    <!-- Key signature -->
+    <text x="40" y="12" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+    <text x="52" y="22" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+
+    <!-- Two beamed eighth notes (ne os) - Bb4, Bb4 -->
+    <ellipse cx="90" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="96" y1="15" x2="96" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="120" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="126" y1="15" x2="126" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <rect x="96" y="-17" width="30" height="3" fill="#333333"/>
+
+    <!-- Quarter note (to) - A4 -->
+    <ellipse cx="165" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="171" y1="20" x2="171" y2="-10" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Quarter note (rozz) - G4 -->
+    <ellipse cx="210" cy="25" rx="6" ry="4" fill="#333333"/>
+    <line x1="216" y1="25" x2="216" y2="-5" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Bar line -->
+    <line x1="260" y1="0" x2="260" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Quarter note (en) - F4 -->
+    <ellipse cx="300" cy="30" rx="6" ry="4" fill="#333333"/>
+    <line x1="306" y1="30" x2="306" y2="0" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Dotted half note (gem) - G4 -->
+    <ellipse cx="380" cy="25" rx="6" ry="4" fill="none" stroke="#333333" stroke-width="1.5"/>
+    <line x1="386" y1="25" x2="386" y2="-5" stroke="#333333" stroke-width="1.5"/>
+    <!-- Dot -->
+    <circle cx="395" cy="25" r="2" fill="#333333"/>
+
+    <!-- Tie -->
+    <path d="M306,33 Q343,45 374,28" stroke="#333333" stroke-width="1" fill="none"/>
+
+    <!-- Bar line -->
+    <line x1="700" y1="0" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Lyrics -->
+    <text x="85" y="60" font-family="Georgia, serif" font-size="14" fill="#333333">ne os - to - rozz en - gem,</text>
+  </g>
+
+  <!-- Staff 5 - "Mert ha-ra-god-nak nagy vol-ta mi-att" -->
+  <g transform="translate(50, 540)">
+    <!-- Staff lines -->
+    <line x1="0" y1="0" x2="700" y2="0" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="10" x2="700" y2="10" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="20" x2="700" y2="20" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="30" x2="700" y2="30" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="40" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Treble clef -->
+    <text x="5" y="32" font-family="Bravura, Finale Maestro, Times New Roman" font-size="55" fill="#333333">𝄞</text>
+
+    <!-- Key signature -->
+    <text x="40" y="12" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+    <text x="52" y="22" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+
+    <!-- Two beamed eighth notes (Mert ha) - D5, D5 -->
+    <ellipse cx="90" cy="5" rx="6" ry="4" fill="#333333"/>
+    <line x1="96" y1="5" x2="96" y2="-25" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="120" cy="5" rx="6" ry="4" fill="#333333"/>
+    <line x1="126" y1="5" x2="126" y2="-25" stroke="#333333" stroke-width="1.5"/>
+    <rect x="96" y="-27" width="30" height="3" fill="#333333"/>
+
+    <!-- Quarter note (ra) - C5 -->
+    <ellipse cx="165" cy="10" rx="6" ry="4" fill="#333333"/>
+    <line x1="171" y1="10" x2="171" y2="-20" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Quarter note (god) - Bb4 -->
+    <ellipse cx="210" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="216" y1="15" x2="216" y2="-15" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Quarter note (nak) - A4 -->
+    <ellipse cx="255" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="261" y1="20" x2="261" y2="-10" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Bar line -->
+    <line x1="300" y1="0" x2="300" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Two beamed eighth notes (nagy vol) - Bb4, C5 -->
+    <ellipse cx="340" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="346" y1="15" x2="346" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="370" cy="10" rx="6" ry="4" fill="#333333"/>
+    <line x1="376" y1="10" x2="376" y2="-20" stroke="#333333" stroke-width="1.5"/>
+    <rect x="346" y="-22" width="30" height="3" fill="#333333"/>
+
+    <!-- Quarter note (ta) - Bb4 -->
+    <ellipse cx="420" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="426" y1="15" x2="426" y2="-15" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Bar line -->
+    <line x1="470" y1="0" x2="470" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Two beamed eighth notes (mi-att) - A4, G4 -->
+    <ellipse cx="510" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="516" y1="20" x2="516" y2="-10" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="550" cy="25" rx="6" ry="4" fill="#333333"/>
+    <line x1="556" y1="25" x2="556" y2="-5" stroke="#333333" stroke-width="1.5"/>
+    <rect x="516" y="-12" width="40" height="3" fill="#333333"/>
+
+    <!-- Half note - G4 -->
+    <ellipse cx="620" cy="25" rx="6" ry="4" fill="none" stroke="#333333" stroke-width="1.5"/>
+    <line x1="626" y1="25" x2="626" y2="-5" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Tie -->
+    <path d="M556,28 Q588,40 614,28" stroke="#333333" stroke-width="1" fill="none"/>
+
+    <!-- Bar line -->
+    <line x1="700" y1="0" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Lyrics -->
+    <text x="75" y="60" font-family="Georgia, serif" font-size="14" fill="#333333">Mert ha - ra - god - nak</text>
+    <text x="330" y="60" font-family="Georgia, serif" font-size="14" fill="#333333">nagy vol - ta mi - att</text>
+  </g>
+
+  <!-- Staff 6 - "el kel-le-ne vesz-nem." -->
+  <g transform="translate(50, 650)">
+    <!-- Staff lines -->
+    <line x1="0" y1="0" x2="700" y2="0" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="10" x2="700" y2="10" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="20" x2="700" y2="20" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="30" x2="700" y2="30" stroke="#333333" stroke-width="1"/>
+    <line x1="0" y1="40" x2="700" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Treble clef -->
+    <text x="5" y="32" font-family="Bravura, Finale Maestro, Times New Roman" font-size="55" fill="#333333">𝄞</text>
+
+    <!-- Key signature -->
+    <text x="40" y="12" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+    <text x="52" y="22" font-family="Bravura, Times New Roman" font-size="28" fill="#333333">♭</text>
+
+    <!-- Two beamed eighth notes (el kel) - Bb4, Bb4 -->
+    <ellipse cx="90" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="96" y1="15" x2="96" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <ellipse cx="120" cy="15" rx="6" ry="4" fill="#333333"/>
+    <line x1="126" y1="15" x2="126" y2="-15" stroke="#333333" stroke-width="1.5"/>
+    <rect x="96" y="-17" width="30" height="3" fill="#333333"/>
+
+    <!-- Quarter note (le) - A4 -->
+    <ellipse cx="165" cy="20" rx="6" ry="4" fill="#333333"/>
+    <line x1="171" y1="20" x2="171" y2="-10" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Quarter note (ne) - G4 -->
+    <ellipse cx="210" cy="25" rx="6" ry="4" fill="#333333"/>
+    <line x1="216" y1="25" x2="216" y2="-5" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Bar line -->
+    <line x1="260" y1="0" x2="260" y2="40" stroke="#333333" stroke-width="1"/>
+
+    <!-- Quarter note (vesz) - F4 -->
+    <ellipse cx="300" cy="30" rx="6" ry="4" fill="#333333"/>
+    <line x1="306" y1="30" x2="306" y2="0" stroke="#333333" stroke-width="1.5"/>
+
+    <!-- Dotted half note (nem) - F4 -->
+    <ellipse cx="380" cy="30" rx="6" ry="4" fill="none" stroke="#333333" stroke-width="1.5"/>
+    <line x1="386" y1="30" x2="386" y2="0" stroke="#333333" stroke-width="1.5"/>
+    <!-- Dot -->
+    <circle cx="395" cy="30" r="2" fill="#333333"/>
+
+    <!-- Tie -->
+    <path d="M306,33 Q343,45 374,33" stroke="#333333" stroke-width="1" fill="none"/>
+
+    <!-- Double bar line (end) -->
+    <line x1="450" y1="0" x2="450" y2="40" stroke="#333333" stroke-width="1"/>
+    <line x1="456" y1="0" x2="456" y2="40" stroke="#333333" stroke-width="3"/>
+
+    <!-- Lyrics -->
+    <text x="85" y="60" font-family="Georgia, serif" font-size="14" fill="#333333">el kel - le - ne vesz - nem.</text>
+  </g>
+</svg>

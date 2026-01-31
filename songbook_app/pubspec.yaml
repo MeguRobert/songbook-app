@@ -49,3 +49,8 @@ flutter:
     - assets/sheet_music/
     - assets/data/
     - assets/icons/
+
+  fonts:
+    - family: Bravura
+      fonts:
+        - asset: assets/fonts/Bravura.otf

@@ -1,0 +1,313 @@
+{
+  "originalKey": "Bb",
+  "timeSignature": "4/4",
+  "showTimeSignature": false,
+  "verses": [
+    {
+      "number": 1,
+      "measures": [
+        {
+          "beats": [
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "C5",
+              "duration": "half"
+            },
+            {
+              "pitch": "Bb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "G4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "Bb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "Bb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "A4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "G4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "F#4",
+              "duration": "half"
+            },
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "R",
+              "duration": "half"
+            }
+          ],
+          "lineBreakAfter": true
+        },
+        {
+          "beats": [
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "Eb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "C4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "Bb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "A4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "G4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "C5",
+              "duration": "half"
+            },
+            {
+              "pitch": "B4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "C5",
+              "duration": "half"
+            },
+            {
+              "pitch": "R",
+              "duration": "half"
+            }
+          ],
+          "lineBreakAfter": true
+        },
+        {
+          "beats": [
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "Ab4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "F4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "Eb4",
+              "duration": "half"
+            },
+            {
+              "pitch": "F4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "G4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "C4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "Eb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "D4",
+              "duration": "half"
+            },
+            {
+              "pitch": "C4",
+              "duration": "half"
+            },
+            {
+              "pitch": "R",
+              "duration": "half"
+            }
+          ],
+          "lineBreakAfter": true
+        },
+        {
+          "beats": [
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "A4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "Bb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "C5",
+              "duration": "half"
+            },
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "C5",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "C5",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "Bb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "Bb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "A4",
+              "duration": "half"
+            },
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "R",
+              "duration": "half"
+            }
+          ],
+          "lineBreakAfter": true
+        },
+        {
+          "beats": [
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "F4",
+              "duration": "half"
+            },
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "Eb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "C4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "G4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "Ab4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "F4",
+              "duration": "half"
+            },
+            {
+              "pitch": "Eb4",
+              "duration": "half"
+            },
+            {
+              "pitch": "R",
+              "duration": "half"
+            }
+          ],
+          "lineBreakAfter": true
+        },
+        {
+          "beats": [
+            {
+              "pitch": "G4",
+              "duration": "half"
+            },
+            {
+              "pitch": "C5",
+              "duration": "half"
+            },
+            {
+              "pitch": "Bb4",
+              "duration": "half"
+            },
+            {
+              "pitch": "G4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "Eb4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "F4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "C4",
+              "duration": "quarter"
+            },
+            {
+              "pitch": "Eb4",
+              "duration": "half"
+            },
+            {
+              "pitch": "D4",
+              "duration": "half"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

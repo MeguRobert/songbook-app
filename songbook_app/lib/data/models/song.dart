@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'notation.dart';
 import 'verse.dart';
 
 part 'song.g.dart';
@@ -115,8 +116,11 @@ class Song {
   /// Time signature (e.g., "4/4", "3/4")
   final String? timeSignature;
 
-  /// Sheet music configuration
+  /// Sheet music configuration (legacy SVG-based)
   final SheetMusic? sheetMusic;
+
+  /// Structured notation data for custom rendering
+  final SongNotation? notation;
 
   /// Song verses
   final List<Verse> verses;
@@ -134,6 +138,7 @@ class Song {
     required this.originalKey,
     this.timeSignature,
     this.sheetMusic,
+    this.notation,
     required this.verses,
     this.tags = const [],
   });
@@ -149,8 +154,11 @@ class Song {
   List<Verse> get additionalVerses =>
       verses.where((v) => !v.hasNotation).toList();
 
-  /// Returns true if this song has sheet music
+  /// Returns true if this song has sheet music (legacy SVG)
   bool get hasSheetMusic => sheetMusic != null;
+
+  /// Returns true if this song has structured notation data
+  bool get hasNotation => notation != null;
 
   /// Returns true if this song has chord data
   bool get hasChords =>
@@ -168,6 +176,7 @@ class Song {
     String? originalKey,
     String? timeSignature,
     SheetMusic? sheetMusic,
+    SongNotation? notation,
     List<Verse>? verses,
     List<String>? tags,
   }) {
@@ -180,6 +189,7 @@ class Song {
       originalKey: originalKey ?? this.originalKey,
       timeSignature: timeSignature ?? this.timeSignature,
       sheetMusic: sheetMusic ?? this.sheetMusic,
+      notation: notation ?? this.notation,
       verses: verses ?? this.verses,
       tags: tags ?? this.tags,
     );

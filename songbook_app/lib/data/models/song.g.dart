@@ -51,6 +51,9 @@ Song _$SongFromJson(Map<String, dynamic> json) => Song(
   sheetMusic: json['sheetMusic'] == null
       ? null
       : SheetMusic.fromJson(json['sheetMusic'] as Map<String, dynamic>),
+  notation: json['notation'] == null
+      ? null
+      : SongNotation.fromJson(json['notation'] as Map<String, dynamic>),
   verses: (json['verses'] as List<dynamic>)
       .map((e) => Verse.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -67,6 +70,7 @@ Map<String, dynamic> _$SongToJson(Song instance) => <String, dynamic>{
   'originalKey': instance.originalKey,
   'timeSignature': instance.timeSignature,
   'sheetMusic': instance.sheetMusic,
+  'notation': instance.notation,
   'verses': instance.verses,
   'tags': instance.tags,
 };
