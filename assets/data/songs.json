@@ -210,6 +210,7 @@
     "notation": {
       "originalKey": "Bb",
       "timeSignature": "4/4",
+      "showTimeSignature": false,
       "verses": [
         {
           "number": 1,

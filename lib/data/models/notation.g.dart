@@ -66,6 +66,7 @@ Map<String, dynamic> _$NotatedVerseToJson(NotatedVerse instance) =>
 SongNotation _$SongNotationFromJson(Map<String, dynamic> json) => SongNotation(
   originalKey: json['originalKey'] as String,
   timeSignature: json['timeSignature'] as String,
+  showTimeSignature: json['showTimeSignature'] as bool? ?? true,
   verses: (json['verses'] as List<dynamic>)
       .map((e) => NotatedVerse.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -78,6 +79,7 @@ Map<String, dynamic> _$SongNotationToJson(SongNotation instance) =>
     <String, dynamic>{
       'originalKey': instance.originalKey,
       'timeSignature': instance.timeSignature,
+      'showTimeSignature': instance.showTimeSignature,
       'verses': instance.verses,
       'pickup': instance.pickup,
     };

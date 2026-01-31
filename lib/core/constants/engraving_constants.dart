@@ -285,25 +285,28 @@ class EngravingConstants {
     'F': -1, 'Bb': -2, 'Eb': -3, 'Ab': -4, 'Db': -5, 'Gb': -6, 'Cb': -7,
   };
 
-  /// Y positions for flats on treble clef (relative to bottom line)
+  /// Y positions for flats on treble clef (relative to middle line)
+  /// Positive = up from middle, negative = down from middle
+  /// Each unit = half a staff line spacing
   static const List<double> flatPositions = [
-    -4.0, // Bb on middle line
-    -1.0, // Eb
-    -5.0, // Ab
-    -2.0, // Db
-    -6.0, // Gb
-    -3.0, // Cb
-    -7.0, // Fb
+    0.0,  // Bb on middle line (line 3, B4)
+    3.0,  // Eb in 4th space (E5)
+    -1.0, // Ab in 2nd space (A4)
+    2.0,  // Db on 4th line (D5)
+    -2.0, // Gb on 2nd line (G4)
+    1.0,  // Cb in 3rd space (C5)
+    -3.0, // Fb in 1st space (F4)
   ];
 
-  /// Y positions for sharps on treble clef (relative to bottom line)
+  /// Y positions for sharps on treble clef (relative to middle line)
+  /// Positive = up from middle, negative = down from middle
   static const List<double> sharpPositions = [
-    -5.0, // F#
-    -2.0, // C#
-    -6.0, // G#
-    -3.0, // D#
-    -7.0, // A#
-    -4.0, // E#
-    -1.0, // B#
+    4.0,  // F# on top line (F5)
+    1.0,  // C# in 3rd space (C5)
+    5.0,  // G# above staff (G5)
+    2.0,  // D# on 4th line (D5)
+    -1.0, // A# in 2nd space (A4)
+    3.0,  // E# in 4th space (E5)
+    0.0,  // B# on middle line (B4)
   ];
 }

@@ -133,6 +133,7 @@ class SheetMusicLayout {
   final List<StaffSystem> systems;
   final String key;
   final String timeSignature;
+  final bool showTimeSignature;
 
   const SheetMusicLayout({
     required this.totalWidth,
@@ -140,6 +141,7 @@ class SheetMusicLayout {
     required this.systems,
     required this.key,
     required this.timeSignature,
+    this.showTimeSignature = true,
   });
 }
 
@@ -198,6 +200,7 @@ class SheetMusicLayoutEngine {
       systems: systems,
       key: targetKey,
       timeSignature: notation.timeSignature,
+      showTimeSignature: notation.showTimeSignature,
     );
   }
 

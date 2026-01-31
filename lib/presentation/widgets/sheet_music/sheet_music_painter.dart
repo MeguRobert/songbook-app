@@ -84,7 +84,9 @@ class SheetMusicPainter extends CustomPainter {
       if (isFirstSystem) {
         _drawClef(canvas, system);
         _drawKeySignature(canvas, system, layout.key);
-        _drawTimeSignature(canvas, system, layout.timeSignature);
+        if (layout.showTimeSignature) {
+          _drawTimeSignature(canvas, system, layout.timeSignature);
+        }
       }
 
       _drawBarLines(canvas, system);
@@ -144,7 +146,8 @@ class SheetMusicPainter extends CustomPainter {
 
     textPainter.layout();
     // Position so the curl wraps around the G line
-    final clefY = gLineY - textPainter.height * 0.68;
+    // The G clef's curl should center on the G line (2nd line from bottom)
+    final clefY = gLineY - textPainter.height * 0.58;
     textPainter.paint(canvas, Offset(x, clefY));
   }
 

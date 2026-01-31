@@ -197,6 +197,10 @@ class SongNotation {
   /// Time signature (e.g., "4/4", "3/4")
   final String timeSignature;
 
+  /// Whether to display the time signature on the staff
+  @JsonKey(defaultValue: true)
+  final bool showTimeSignature;
+
   /// Notated verses (usually just verse 1 with full notation)
   final List<NotatedVerse> verses;
 
@@ -206,6 +210,7 @@ class SongNotation {
   const SongNotation({
     required this.originalKey,
     required this.timeSignature,
+    this.showTimeSignature = true,
     required this.verses,
     this.pickup,
   });
