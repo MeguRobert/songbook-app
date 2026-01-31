@@ -309,4 +309,13 @@ class EngravingConstants {
     3.0,  // E# in 4th space (E5)
     0.0,  // B# on middle line (B4)
   ];
+
+  /// Calculate the width needed for a key signature
+  static double getKeySignatureWidth(String key) {
+    final numAccidentals = (keySignatures[key] ?? 0).abs();
+    if (numAccidentals == 0) return 0;
+
+    // Use flat width as it's slightly smaller - sharps will fit too
+    return numAccidentals * flatWidth + staffSpace * 0.5; // Extra padding
+  }
 }

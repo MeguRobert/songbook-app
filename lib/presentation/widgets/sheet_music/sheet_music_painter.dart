@@ -221,9 +221,11 @@ class SheetMusicPainter extends CustomPainter {
     final parts = timeSig.split('/');
     if (parts.length != 2) return;
 
+    final keySignatureWidth = EngravingConstants.getKeySignatureWidth(layout.key);
     final x = system.x + EngravingConstants.clefWidth +
         EngravingConstants.clefToKeySpace +
-        EngravingConstants.keyToTimeSpace + 20;
+        keySignatureWidth +
+        EngravingConstants.keyToTimeSpace;
 
     _drawTimeSigNumber(canvas, parts[0], x, system.y + 8);
     _drawTimeSigNumber(

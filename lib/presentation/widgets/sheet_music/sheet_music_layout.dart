@@ -177,6 +177,7 @@ class SheetMusicLayoutEngine {
         currentY,
         transposeSemitones,
         notation.timeSignature,
+        targetKey,
       );
       systems.addAll(verseSystems);
 
@@ -209,6 +210,7 @@ class SheetMusicLayoutEngine {
     double startY,
     int transposeSemitones,
     String timeSignature,
+    String key,
   ) {
     final systems = <StaffSystem>[];
     final measures = verse.measures;
@@ -245,6 +247,7 @@ class SheetMusicLayoutEngine {
         transposeSemitones,
         measureIndex == 0, // Show clef and key on first system
         endIndex >= measures.length, // Is last system
+        key,
       );
 
       systems.add(system);
@@ -348,6 +351,7 @@ class SheetMusicLayoutEngine {
     int transposeSemitones,
     bool showClefAndKey,
     bool isLastSystem,
+    String key,
   ) {
     final notes = <PositionedNote>[];
     final syllables = <PositionedSyllable>[];
@@ -360,8 +364,10 @@ class SheetMusicLayoutEngine {
 
     // Reserve space for clef, key signature, time signature
     if (showClefAndKey) {
+      final keySignatureWidth = EngravingConstants.getKeySignatureWidth(key);
       x += EngravingConstants.clefWidth +
            EngravingConstants.clefToKeySpace +
+           keySignatureWidth +
            EngravingConstants.keyToTimeSpace +
            EngravingConstants.timeToNoteSpace;
     }
