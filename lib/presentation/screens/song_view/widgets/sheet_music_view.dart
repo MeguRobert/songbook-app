@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,13 +7,16 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../data/models/song.dart';
 import '../../../providers/providers.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../widgets/sheet_music/sheet_music_renderer.dart';
 
 /// Widget for displaying sheet music
-class SheetMusicView extends ConsumerWidget {
+/// Uses the new custom renderer when notation data is available,
+/// falls back to legacy SVG rendering otherwise.
+class SheetMusicViewWidget extends ConsumerWidget {
   final Song song;
   final int transpose;
 
-  const SheetMusicView({
+  const SheetMusicViewWidget({
     required this.song,
     required this.transpose,
     super.key,
@@ -20,14 +24,73 @@ class SheetMusicView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final fontSize = ref.watch(fontSizeProvider);
+
+    // Use the new custom renderer if notation data is available
+    if (song.hasNotation) {
+      if (kDebugMode) {
+        debugPrint('[SheetMusicView] Song ${song.number}: Using CUSTOM Canvas renderer (notation available)');
+      }
+      return _buildCustomRenderer(context, ref);
+    }
+
+    // Fall back to legacy SVG rendering
+    if (kDebugMode) {
+      debugPrint('[SheetMusicView] Song ${song.number}: Using LEGACY SVG renderer (no notation data)');
+    }
+    return _buildLegacyView(context, ref, fontSize);
+  }
+
+  Widget _buildCustomRenderer(BuildContext context, WidgetRef ref) {
+    final renderer = SheetMusicRenderer(
+      song: song,
+      notation: song.notation!,
+      transpose: transpose,
+    );
+
+    // Add debug badge in debug mode
+    if (kDebugMode) {
+      return Stack(
+        children: [
+          renderer,
+          Positioned(
+            top: 4,
+            right: 4,
+            child: _buildRendererBadge(context, isCanvas: true),
+          ),
+        ],
+      );
+    }
+
+    return renderer;
+  }
+
+  Widget _buildRendererBadge(BuildContext context, {required bool isCanvas}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: isCanvas ? Colors.green.withValues(alpha: 0.8) : Colors.orange.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        isCanvas ? 'Canvas' : 'SVG',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegacyView(BuildContext context, WidgetRef ref, double fontSize) {
     final transpositionService = ref.read(transpositionServiceProvider);
     final targetKey = transpositionService.calculateTargetKey(
       song.originalKey,
       transpose,
     );
-    final fontSize = ref.watch(fontSizeProvider);
 
-    return InteractiveViewer(
+    final legacyView = InteractiveViewer(
       minScale: 0.5,
       maxScale: 3.0,
       child: SingleChildScrollView(
@@ -60,6 +123,22 @@ class SheetMusicView extends ConsumerWidget {
         ),
       ),
     );
+
+    // Add debug badge in debug mode
+    if (kDebugMode) {
+      return Stack(
+        children: [
+          legacyView,
+          Positioned(
+            top: 4,
+            right: 4,
+            child: _buildRendererBadge(context, isCanvas: false),
+          ),
+        ],
+      );
+    }
+
+    return legacyView;
   }
 
   Widget _buildHeader(BuildContext context, String targetKey) {
@@ -264,3 +343,6 @@ class SheetMusicView extends ConsumerWidget {
     }
   }
 }
+
+// Keep the old name for backwards compatibility
+typedef SheetMusicView = SheetMusicViewWidget;

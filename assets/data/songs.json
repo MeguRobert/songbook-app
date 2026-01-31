@@ -207,9 +207,105 @@
     },
     "originalKey": "Bb",
     "timeSignature": "4/4",
-    "sheetMusic": {
-      "type": "svg",
-      "basePath": "assets/sheet_music/151"
+    "notation": {
+      "originalKey": "Bb",
+      "timeSignature": "4/4",
+      "verses": [
+        {
+          "number": 1,
+          "measures": [
+            {
+              "beats": [
+                {"pitch": "G4", "duration": "eighth", "syllable": "Ha-", "chord": "Bb"},
+                {"pitch": "A4", "duration": "eighth", "syllable": "tal-"},
+                {"pitch": "F4", "duration": "eighth", "syllable": "mas"},
+                {"pitch": "G4", "duration": "eighth", "syllable": "Is-"},
+                {"pitch": "A4", "duration": "quarter", "syllable": "ten,"}
+              ]
+            },
+            {
+              "beats": [
+                {"pitch": "C5", "duration": "eighth", "syllable": "nagy"},
+                {"pitch": "Bb4", "duration": "eighth", "syllable": "ha-"},
+                {"pitch": "A4", "duration": "eighth", "syllable": "ra-"},
+                {"pitch": "G4", "duration": "eighth", "syllable": "god-"},
+                {"pitch": "F4", "duration": "quarter", "syllable": "ban"}
+              ],
+              "lineBreakAfter": true
+            },
+            {
+              "beats": [
+                {"pitch": "A4", "duration": "eighth", "syllable": "ne"},
+                {"pitch": "G4", "duration": "eighth", "syllable": "feddj"},
+                {"pitch": "C5", "duration": "eighth", "syllable": "meg"},
+                {"pitch": "Bb4", "duration": "eighth", "syllable": "en-"},
+                {"pitch": "A4", "duration": "quarter", "syllable": "ge-"},
+                {"pitch": "G4", "duration": "quarter", "syllable": "met,", "dotted": true}
+              ],
+              "lineBreakAfter": true
+            },
+            {
+              "beats": [
+                {"pitch": "G4", "duration": "eighth", "syllable": "Te", "chord": "Bb"},
+                {"pitch": "Bb4", "duration": "eighth", "syllable": "ha-"},
+                {"pitch": "G4", "duration": "eighth", "syllable": "ra-"},
+                {"pitch": "C5", "duration": "eighth", "syllable": "god-"},
+                {"pitch": "Bb4", "duration": "quarter", "syllable": "nak"}
+              ]
+            },
+            {
+              "beats": [
+                {"pitch": "G4", "duration": "eighth", "syllable": "nagy-"},
+                {"pitch": "F4", "duration": "eighth", "syllable": "sá-"},
+                {"pitch": "Eb4", "duration": "eighth", "syllable": "ga"},
+                {"pitch": "F4", "duration": "eighth", "syllable": "mi-"},
+                {"pitch": "G4", "duration": "quarter", "syllable": "att"}
+              ],
+              "lineBreakAfter": true
+            },
+            {
+              "beats": [
+                {"pitch": "C5", "duration": "eighth", "syllable": "ne", "chord": "Bb"},
+                {"pitch": "C5", "duration": "eighth", "syllable": "os-"},
+                {"pitch": "C5", "duration": "eighth", "syllable": "to-"},
+                {"pitch": "Bb4", "duration": "eighth", "syllable": "rozz"},
+                {"pitch": "A4", "duration": "quarter", "syllable": "en-"},
+                {"pitch": "G4", "duration": "quarter", "syllable": "gem,", "dotted": true}
+              ],
+              "lineBreakAfter": true
+            },
+            {
+              "beats": [
+                {"pitch": "Eb4", "duration": "eighth", "syllable": "Mert", "chord": "Bb"},
+                {"pitch": "G4", "duration": "eighth", "syllable": "ha-"},
+                {"pitch": "F4", "duration": "eighth", "syllable": "ra-"},
+                {"pitch": "Eb4", "duration": "eighth", "syllable": "god-"},
+                {"pitch": "C4", "duration": "quarter", "syllable": "nak"}
+              ]
+            },
+            {
+              "beats": [
+                {"pitch": "Bb4", "duration": "eighth", "syllable": "nagy"},
+                {"pitch": "Bb4", "duration": "eighth", "syllable": "vol-"},
+                {"pitch": "A4", "duration": "eighth", "syllable": "ta"},
+                {"pitch": "Bb4", "duration": "eighth", "syllable": "mi-"},
+                {"pitch": "G4", "duration": "quarter", "syllable": "att"}
+              ],
+              "lineBreakAfter": true
+            },
+            {
+              "beats": [
+                {"pitch": "Eb4", "duration": "eighth", "syllable": "el", "chord": "Bb"},
+                {"pitch": "G4", "duration": "eighth", "syllable": "kel-"},
+                {"pitch": "F4", "duration": "eighth", "syllable": "le-"},
+                {"pitch": "Eb4", "duration": "eighth", "syllable": "ne"},
+                {"pitch": "D4", "duration": "quarter", "syllable": "vesz-"},
+                {"pitch": "C4", "duration": "quarter", "syllable": "nem.", "dotted": true}
+              ]
+            }
+          ]
+        }
+      ]
     },
     "verses": [
       {
@@ -219,32 +315,37 @@
           {
             "text": "Hatalmas Isten, nagy haragodban",
             "chords": [
-              { "chord": "Bb", "position": 0 },
-              { "chord": "F", "position": 17 },
-              { "chord": "Bb", "position": 27 }
+              { "chord": "Bb", "position": 0 }
             ]
           },
           {
             "text": "ne feddj meg engemet,",
             "chords": [
-              { "chord": "Eb", "position": 0 },
-              { "chord": "Bb", "position": 8 },
-              { "chord": "F", "position": 15 }
+              { "chord": "Bb", "position": 0 }
             ]
           },
           {
-            "text": "És búsulásodban",
+            "text": "Te haragodnak nagysága miatt",
             "chords": [
-              { "chord": "Bb", "position": 0 },
-              { "chord": "Gm", "position": 7 }
+              { "chord": "Bb", "position": 0 }
             ]
           },
           {
-            "text": "ne büntess meg engemet.",
+            "text": "ne ostorozz engem,",
             "chords": [
-              { "chord": "Eb", "position": 0 },
-              { "chord": "F", "position": 10 },
-              { "chord": "Bb", "position": 18 }
+              { "chord": "Bb", "position": 0 }
+            ]
+          },
+          {
+            "text": "Mert haragodnak nagy volta miatt",
+            "chords": [
+              { "chord": "Bb", "position": 0 }
+            ]
+          },
+          {
+            "text": "el kellene vesznem.",
+            "chords": [
+              { "chord": "Bb", "position": 0 }
             ]
           }
         ]
