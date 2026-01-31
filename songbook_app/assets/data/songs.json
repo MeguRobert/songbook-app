@@ -245,47 +245,58 @@
               "beats": [
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "Te"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "ben"
                 },
                 {
                   "pitch": "C5",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "ned"
                 },
                 {
                   "pitch": "Bb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "bíz-"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "tunk"
                 },
                 {
                   "pitch": "Bb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "e"
                 },
                 {
                   "pitch": "Bb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "le"
                 },
                 {
                   "pitch": "A4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "i"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "tól"
                 },
                 {
                   "pitch": "F#4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "fog"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "va,"
                 },
                 {
                   "pitch": "R",
@@ -298,47 +309,58 @@
               "beats": [
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "U"
                 },
                 {
                   "pitch": "Eb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "ram,"
                 },
                 {
                   "pitch": "C4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "té-"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "ged"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "tar"
                 },
                 {
                   "pitch": "Bb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "tot-"
                 },
                 {
                   "pitch": "A4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "tunk"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "haj-"
                 },
                 {
                   "pitch": "C5",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "lé-"
                 },
                 {
                   "pitch": "B4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "kunk-"
                 },
                 {
                   "pitch": "C5",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "nak!"
                 },
                 {
                   "pitch": "R",
@@ -351,47 +373,58 @@
               "beats": [
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "Mi"
                 },
                 {
                   "pitch": "Ab4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "kor"
                 },
                 {
                   "pitch": "F4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "még"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "sem"
                 },
                 {
                   "pitch": "Eb4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "mi"
                 },
                 {
                   "pitch": "F4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "he-"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "gyek"
                 },
                 {
                   "pitch": "C4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "nem"
                 },
                 {
                   "pitch": "Eb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "vol-"
                 },
                 {
                   "pitch": "D4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "ta"
                 },
                 {
                   "pitch": "C4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "nak,"
                 },
                 {
                   "pitch": "R",
@@ -404,47 +437,58 @@
               "beats": [
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "Hogy"
                 },
                 {
                   "pitch": "A4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "még"
                 },
                 {
                   "pitch": "Bb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "sem"
                 },
                 {
                   "pitch": "C5",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "ég,"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "sem"
                 },
                 {
                   "pitch": "C5",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "föld"
                 },
                 {
                   "pitch": "C5",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "nem"
                 },
                 {
                   "pitch": "Bb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "volt"
                 },
                 {
                   "pitch": "Bb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "for-"
                 },
                 {
                   "pitch": "A4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "mál"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "va,"
                 },
                 {
                   "pitch": "R",
@@ -457,43 +501,53 @@
               "beats": [
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "Te"
                 },
                 {
                   "pitch": "F4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "vol"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "tál,"
                 },
                 {
                   "pitch": "Eb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "és"
                 },
                 {
                   "pitch": "C4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "te"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "vagy;"
                 },
                 {
                   "pitch": "Ab4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "e-"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "rós"
                 },
                 {
                   "pitch": "F4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "Is"
                 },
                 {
                   "pitch": "Eb4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "ten,"
                 },
                 {
                   "pitch": "R",
@@ -506,43 +560,53 @@
               "beats": [
                 {
                   "pitch": "G4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "És"
                 },
                 {
                   "pitch": "C5",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "te"
                 },
                 {
                   "pitch": "Bb4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "meg"
                 },
                 {
                   "pitch": "G4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "ma-"
                 },
                 {
                   "pitch": "Eb4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "radsz"
                 },
                 {
                   "pitch": "F4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "min-"
                 },
                 {
                   "pitch": "C4",
-                  "duration": "quarter"
+                  "duration": "quarter",
+                  "syllable": "den"
                 },
                 {
                   "pitch": "Eb4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "i-"
                 },
                 {
                   "pitch": "D4",
-                  "duration": "half"
+                  "duration": "half",
+                  "syllable": "dő-"
                 },
                 {
                   "pitch": "C4",
-                  "duration": "whole"
+                  "duration": "whole",
+                  "syllable": "ben."
                 }
               ]
             }

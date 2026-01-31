@@ -116,70 +116,179 @@ def ocr_lyrics_from_image(image_path: str, num_systems: int = 6) -> list:
     """
     Extract lyrics from sheet music image using OCR.
     Returns a list of lyric lines (one per system).
+    Uses EasyOCR which has built-in Hungarian support.
+
+    Strategy: Scan the whole image, detect all text, cluster by Y position
+    using gap detection, then sort each cluster left-to-right.
     """
     try:
-        import pytesseract
-        from PIL import Image
+        import easyocr
+        from PIL import Image, ImageOps, ImageFilter
         import numpy as np
     except ImportError:
-        print("Warning: pytesseract or PIL not installed. Install with:")
-        print("  pip install pytesseract Pillow numpy")
-        print("Also install Tesseract OCR: https://github.com/tesseract-ocr/tesseract")
+        print("Warning: easyocr or PIL not installed. Install with:")
+        print("  pip install easyocr Pillow numpy")
         return []
 
     print(f"Running OCR on image to extract lyrics...")
+    print("  (First run downloads language models, may take a moment)")
+
+    # Initialize EasyOCR reader with Hungarian and English
+    reader = easyocr.Reader(['hu', 'en'], verbose=False)
 
     img = Image.open(image_path)
     width, height = img.size
 
-    # Convert to grayscale if needed
-    if img.mode != 'L':
-        img = img.convert('L')
+    # Convert to RGB if needed (EasyOCR prefers RGB)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
 
-    # Convert to numpy for processing
-    img_array = np.array(img)
+    # Use original image - EasyOCR handles preprocessing internally
+    img_processed = np.array(img)
 
-    # Estimate system height (divide image into roughly equal parts)
-    system_height = height // num_systems
+    # Run OCR on the entire image - let EasyOCR find all text
+    print("  Scanning full image for text...")
 
+    # Don't use allowlist - let EasyOCR use its full character set
+    results = reader.readtext(img_processed, paragraph=False)
+
+    # Debug: show all detected text with confidence
+    print(f"  Raw OCR found {len(results)} text regions")
+
+    if not results:
+        print("  No text detected")
+        return [""] * num_systems
+
+    # Filter results: keep only text that looks like lyrics (alphabetic, hyphens)
+    # and filter out things that look like music notation
+    filtered_results = []
+    for bbox, text, confidence in results:
+        # Skip very short single chars (except verse numbers and single letters like "e")
+        if len(text) < 1:
+            continue
+        # Keep single letters if they're alphabetic (might be syllables like "e-", "i-")
+        if len(text) == 1 and not (text.isalpha() or text.isdigit()):
+            continue
+        # Lower confidence threshold to catch edge text
+        if confidence < 0.1:
+            continue
+        # Skip if it looks like music notation (mostly numbers, special chars)
+        # But allow verse numbers like "1."
+        if not (len(text) <= 2 and text[0].isdigit()):
+            alpha_ratio = sum(1 for c in text if c.isalpha() or c in '-,;:.!? ') / len(text)
+            if alpha_ratio < 0.5:
+                continue
+
+        # Get the Y position - use bottom of bbox since lyrics hang below baseline
+        y_bottom = bbox[2][1]
+        x_left = bbox[0][0]
+        x_right = bbox[2][0]
+        filtered_results.append({
+            'y': y_bottom,
+            'x_left': x_left,
+            'x_right': x_right,
+            'text': text,
+            'confidence': confidence,
+            'bbox': bbox
+        })
+
+    if not filtered_results:
+        print("  No lyrics text detected")
+        return [""] * num_systems
+
+    # Sort by Y position (bottom of text)
+    filtered_results.sort(key=lambda x: x['y'])
+
+    # Cluster by Y position using gap detection
+    # If gap between consecutive items > threshold, start new cluster
+    min_gap = height / (num_systems * 2)  # Minimum gap to split clusters
+
+    clusters = []
+    current_cluster = [filtered_results[0]]
+
+    for i in range(1, len(filtered_results)):
+        prev_y = filtered_results[i-1]['y']
+        curr_y = filtered_results[i]['y']
+
+        if curr_y - prev_y > min_gap:
+            # Large gap - start new cluster
+            clusters.append(current_cluster)
+            current_cluster = [filtered_results[i]]
+        else:
+            # Same cluster
+            current_cluster.append(filtered_results[i])
+
+    # Don't forget the last cluster
+    if current_cluster:
+        clusters.append(current_cluster)
+
+    print(f"  Found {len(clusters)} text lines")
+
+    # If we have more clusters than systems, merge closest ones
+    while len(clusters) > num_systems:
+        # Find the two closest clusters (by Y gap)
+        min_gap_idx = 0
+        min_gap_val = float('inf')
+        for i in range(len(clusters) - 1):
+            # Gap between cluster i's max Y and cluster i+1's min Y
+            c1_max_y = max(item['y'] for item in clusters[i])
+            c2_min_y = min(item['y'] for item in clusters[i+1])
+            gap = c2_min_y - c1_max_y
+            if gap < min_gap_val:
+                min_gap_val = gap
+                min_gap_idx = i
+        # Merge clusters[min_gap_idx] and clusters[min_gap_idx + 1]
+        clusters[min_gap_idx].extend(clusters[min_gap_idx + 1])
+        del clusters[min_gap_idx + 1]
+
+    # If we have fewer clusters than systems, pad with empty
+    while len(clusters) < num_systems:
+        clusters.append([])
+
+    # Sort each cluster left-to-right and join text
     lyrics_by_system = []
+    for system_idx, cluster in enumerate(clusters):
+        if cluster:
+            # Sort by X position (left edge)
+            cluster.sort(key=lambda x: x['x_left'])
+            text = ' '.join(item['text'] for item in cluster)
+            # Clean up
+            text = re.sub(r'\s+', ' ', text).strip()
 
-    for system_idx in range(num_systems):
-        # Calculate the region for lyrics (below the staff lines of each system)
-        # Lyrics are typically in the bottom 30% of each system
-        system_top = system_idx * system_height
-        system_bottom = (system_idx + 1) * system_height
+            # Post-processing: fix common OCR confusions
+            # 1. Replace "1" with "i" when surrounded by letters (not at start of line)
+            #    e.g., "le 1 től" -> "le i től", but keep "1." at start
+            text = re.sub(r'(?<=[a-záéíóöőúüű\s])1(?=[\s-])', 'i', text, flags=re.IGNORECASE)
 
-        # Lyrics region: bottom portion of each system
-        lyric_top = system_top + int(system_height * 0.65)
-        lyric_bottom = min(system_bottom, height)
+            # 2. Fix common Hungarian word patterns that OCR often misses
+            # "dő ben" or similar -> "i-dő-ben" (időben - common word meaning "in time")
+            words = text.split()
+            if len(words) >= 2:
+                last_word = words[-1].rstrip('_.,')  # Remove trailing punctuation
+                prev_word = words[-2]
+                if last_word == 'ben' and prev_word and prev_word[0].lower() == 'd' and len(prev_word) <= 3:
+                    # This is likely "dő ben" -> "i-dő-ben"
+                    words = words[:-2]
+                    words.append('i-dő-ben.')
+                    text = ' '.join(words)
 
-        # Crop to lyrics region
-        lyric_region = img.crop((0, lyric_top, width, lyric_bottom))
+            # 3. Fix "Es" or "es" at start of line -> "És" (common conjunction)
+            text = re.sub(r'^Es\s', 'És ', text)
+            text = re.sub(r'^es\s', 'és ', text)
 
-        # OCR the region with Hungarian language support
-        try:
-            # Try Hungarian first, fall back to English
-            text = pytesseract.image_to_string(
-                lyric_region,
-                lang='hun+eng',
-                config='--psm 7'  # Single line mode
-            ).strip()
-        except:
-            text = pytesseract.image_to_string(
-                lyric_region,
-                config='--psm 7'
-            ).strip()
+            # 4. Clean up trailing underscores and fix spacing around hyphens
+            text = text.rstrip('_')
+            text = re.sub(r'\s*-\s*', '-', text)  # Remove spaces around hyphens
 
-        # Clean up the text
-        text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
-        text = text.strip()
-
-        if text:
             lyrics_by_system.append(text)
-            print(f"  System {system_idx + 1}: {text}")
+            # Use ASCII-safe printing for Windows console compatibility
+            try:
+                print(f"  System {system_idx + 1}: {text}")
+            except UnicodeEncodeError:
+                print(f"  System {system_idx + 1}: {text.encode('ascii', 'replace').decode()}")
         else:
             lyrics_by_system.append("")
+            print(f"  System {system_idx + 1}: (no text detected)")
 
     return lyrics_by_system
 
@@ -201,6 +310,10 @@ def distribute_lyrics_to_notes(notation: dict, lyrics_by_system: list) -> dict:
         if not lyrics_text:
             continue
 
+        # Remove verse numbers like "1.", "2." etc. from the start of first system
+        if system_idx == 0:
+            lyrics_text = re.sub(r'^\d+\.\s*', '', lyrics_text)
+
         # Split lyrics into syllables (by space and hyphen)
         # Keep track of hyphens for word continuation
         syllables = []
@@ -220,10 +333,13 @@ def distribute_lyrics_to_notes(notation: dict, lyrics_by_system: list) -> dict:
             else:
                 syllables.append(word)
 
-        # Get non-rest notes in this measure (system)
+        # Debug: show syllable count vs note count
         measure = measures[system_idx]
         beats = measure.get('beats', [])
+        non_rest_notes = [b for b in beats if b.get('pitch', 'R') != 'R']
+        print(f"    System {system_idx + 1}: {len(syllables)} syllables, {len(non_rest_notes)} notes")
 
+        # Assign syllables to non-rest notes
         note_idx = 0
         for beat in beats:
             if beat.get('pitch', 'R') != 'R' and note_idx < len(syllables):
@@ -547,10 +663,12 @@ def main():
         else:
             print("Warning: songs.json not found. Use --songs-json to specify path.")
             print("Notation JSON:")
-            print(json.dumps(app_notation, ensure_ascii=False, indent=2))
+            # Use ensure_ascii=True for Windows console compatibility
+            print(json.dumps(app_notation, ensure_ascii=True, indent=2))
     else:
         print("Notation JSON:")
-        print(json.dumps(app_notation, ensure_ascii=False, indent=2))
+        # Use ensure_ascii=True for Windows console compatibility
+        print(json.dumps(app_notation, ensure_ascii=True, indent=2))
 
     print("\nConversion complete!")
     print(f"Key: {app_notation['originalKey']}")
