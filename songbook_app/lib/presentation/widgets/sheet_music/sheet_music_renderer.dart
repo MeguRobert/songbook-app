@@ -133,12 +133,15 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
         );
 
         return InteractiveViewer(
+          constrained: false,
           minScale: 0.5,
           maxScale: 3.0,
           boundaryMargin: const EdgeInsets.all(100),
-          child: SingleChildScrollView(
+          child: SizedBox(
+            width: constraints.maxWidth,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // Song header
                 _buildHeader(context),

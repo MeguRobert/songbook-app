@@ -10,6 +10,9 @@ NotatedBeat _$NotatedBeatFromJson(Map<String, dynamic> json) => NotatedBeat(
   pitch: json['pitch'] as String,
   duration: $enumDecode(_$NoteDurationEnumMap, json['duration']),
   syllable: json['syllable'] as String?,
+  syllables: (json['syllables'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
   chord: json['chord'] as String?,
   tieStart: json['tieStart'] as bool? ?? false,
   tieEnd: json['tieEnd'] as bool? ?? false,
@@ -21,6 +24,7 @@ Map<String, dynamic> _$NotatedBeatToJson(NotatedBeat instance) =>
       'pitch': instance.pitch,
       'duration': _$NoteDurationEnumMap[instance.duration]!,
       'syllable': instance.syllable,
+      'syllables': instance.syllables,
       'chord': instance.chord,
       'tieStart': instance.tieStart,
       'tieEnd': instance.tieEnd,

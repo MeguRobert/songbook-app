@@ -91,12 +91,15 @@ class SheetMusicViewWidget extends ConsumerWidget {
     );
 
     final legacyView = InteractiveViewer(
+      constrained: false,
       minScale: 0.5,
       maxScale: 3.0,
-      child: SingleChildScrollView(
+      boundaryMargin: const EdgeInsets.all(100),
+      child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Song header
             _buildHeader(context, targetKey),

@@ -251,8 +251,38 @@ class SheetMusicPainter extends CustomPainter {
 
   void _drawBarLines(Canvas canvas, StaffSystem system) {
     for (final barLine in system.barLines) {
-      if (barLine.isFinal) {
-        // Thin line first
+      if (barLine.repeatEnd) {
+        // Repeat end bar: thin line, thick line, two dots
+        final dotPaint = Paint()
+          ..color = noteColor
+          ..style = PaintingStyle.fill;
+
+        // Thin line
+        canvas.drawLine(
+          Offset(barLine.x - EngravingConstants.barLineSeparation -
+              EngravingConstants.thickBarLineThickness / 2 - 8, barLine.topY),
+          Offset(barLine.x - EngravingConstants.barLineSeparation -
+              EngravingConstants.thickBarLineThickness / 2 - 8, barLine.bottomY),
+          _barLinePaint,
+        );
+        // Thick line
+        canvas.drawLine(
+          Offset(barLine.x, barLine.topY),
+          Offset(barLine.x, barLine.bottomY),
+          _thickBarLinePaint,
+        );
+        // Two dots (between 2nd and 3rd, and 3rd and 4th staff lines)
+        final dotRadius = 2.5;
+        final dotX = barLine.x - EngravingConstants.barLineSeparation -
+            EngravingConstants.thickBarLineThickness / 2 - 16;
+        // Dot between lines 2 and 3 (from top)
+        final dot1Y = barLine.topY + EngravingConstants.staffLineSpacing * 1.5;
+        // Dot between lines 3 and 4 (from top)
+        final dot2Y = barLine.topY + EngravingConstants.staffLineSpacing * 2.5;
+        canvas.drawCircle(Offset(dotX, dot1Y), dotRadius, dotPaint);
+        canvas.drawCircle(Offset(dotX, dot2Y), dotRadius, dotPaint);
+      } else if (barLine.isFinal) {
+        // Final bar: thin line, thick line
         canvas.drawLine(
           Offset(barLine.x - EngravingConstants.barLineSeparation -
               EngravingConstants.thickBarLineThickness / 2, barLine.topY),
@@ -260,7 +290,6 @@ class SheetMusicPainter extends CustomPainter {
               EngravingConstants.thickBarLineThickness / 2, barLine.bottomY),
           _barLinePaint,
         );
-        // Thick line
         canvas.drawLine(
           Offset(barLine.x, barLine.topY),
           Offset(barLine.x, barLine.bottomY),
@@ -883,22 +912,33 @@ class SheetMusicPainter extends CustomPainter {
       textPainter.paint(canvas, Offset(syllable.x, syllable.y));
 
       // Draw hyphen between syllables if word continues
-      if (syllable.continuesWord && i < system.syllables.length - 1) {
-        final nextSyllable = system.syllables[i + 1];
-        final hyphenX = syllable.x +
-            syllable.width +
-            (nextSyllable.x - syllable.x - syllable.width) / 2 -
-            3;
+      // Only draw hyphen to next syllable on same line index
+      if (syllable.continuesWord) {
+        // Find next syllable with same line index
+        PositionedSyllable? nextSyllable;
+        for (int j = i + 1; j < system.syllables.length; j++) {
+          if (system.syllables[j].lineIndex == syllable.lineIndex) {
+            nextSyllable = system.syllables[j];
+            break;
+          }
+        }
 
-        final hyphenPainter = TextPainter(
-          text: TextSpan(
-            text: '-',
-            style: EngravingConstants.lyricStyle,
-          ),
-          textDirection: TextDirection.ltr,
-        );
-        hyphenPainter.layout();
-        hyphenPainter.paint(canvas, Offset(hyphenX, syllable.y));
+        if (nextSyllable != null) {
+          final hyphenX = syllable.x +
+              syllable.width +
+              (nextSyllable.x - syllable.x - syllable.width) / 2 -
+              3;
+
+          final hyphenPainter = TextPainter(
+            text: TextSpan(
+              text: '-',
+              style: EngravingConstants.lyricStyle,
+            ),
+            textDirection: TextDirection.ltr,
+          );
+          hyphenPainter.layout();
+          hyphenPainter.paint(canvas, Offset(hyphenX, syllable.y));
+        }
       }
     }
   }

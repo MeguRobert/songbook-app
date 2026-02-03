@@ -55,6 +55,7 @@ class PositionedSyllable {
   final double width;
   final bool isWordContinuation; // Has hyphen before
   final bool continuesWord; // Has hyphen after
+  final int lineIndex; // Which lyric line (0 = first, 1 = second for stacked)
 
   const PositionedSyllable({
     required this.text,
@@ -63,6 +64,7 @@ class PositionedSyllable {
     required this.width,
     required this.isWordContinuation,
     required this.continuesWord,
+    this.lineIndex = 0,
   });
 }
 
@@ -86,6 +88,8 @@ class PositionedBarLine {
   final double bottomY;
   final bool isDouble;
   final bool isFinal;
+  final bool repeatStart;
+  final bool repeatEnd;
 
   const PositionedBarLine({
     required this.x,
@@ -93,6 +97,8 @@ class PositionedBarLine {
     required this.bottomY,
     this.isDouble = false,
     this.isFinal = false,
+    this.repeatStart = false,
+    this.repeatEnd = false,
   });
 }
 
@@ -435,9 +441,13 @@ class SheetMusicLayoutEngine {
           ));
         }
 
-        // Add syllable if present (centered under note)
-        if (beat.syllable != null && beat.syllable!.isNotEmpty) {
-          final syllableText = beat.syllable!;
+        // Add syllables if present (centered under note)
+        // Support both single syllable and stacked syllables
+        final allSyllables = beat.allSyllables;
+        for (int lineIdx = 0; lineIdx < allSyllables.length; lineIdx++) {
+          final syllableText = allSyllables[lineIdx];
+          if (syllableText.isEmpty) continue;
+
           final continuesWord = syllableText.endsWith('-');
           final displayText = continuesWord
               ? syllableText.substring(0, syllableText.length - 1)
@@ -449,13 +459,19 @@ class SheetMusicLayoutEngine {
             EngravingConstants.lyricStyle,
           );
 
+          // Stack lyrics vertically (18px apart for each line)
+          final lyricLineSpacing = 18.0;
+          final lyricY = staffBottom + EngravingConstants.lyricBelowStaff +
+                        (lineIdx * lyricLineSpacing);
+
           syllables.add(PositionedSyllable(
             text: displayText,
             x: x + EngravingConstants.noteHeadWidth / 2 - textWidth / 2,
-            y: staffBottom + EngravingConstants.lyricBelowStaff,
+            y: lyricY,
             width: textWidth,
             isWordContinuation: false,
             continuesWord: continuesWord,
+            lineIndex: lineIdx,
           ));
         }
 
@@ -463,13 +479,15 @@ class SheetMusicLayoutEngine {
         final spacingFactor = _getOpticalSpacingFactor(beat.duration);
         double noteSpacing = EngravingConstants.minNoteSpacing * spacingFactor;
 
-        // Adjust spacing based on syllable width if present
-        if (beat.syllable != null && beat.syllable!.isNotEmpty) {
-          final syllableWidth = _measureTextWidth(
-            beat.syllable!.replaceAll('-', ''),
-            EngravingConstants.lyricStyle,
-          );
-          noteSpacing = math.max(noteSpacing, syllableWidth + 16);
+        // Adjust spacing based on widest syllable if present
+        for (final syllableText in beat.allSyllables) {
+          if (syllableText.isNotEmpty) {
+            final syllableWidth = _measureTextWidth(
+              syllableText.replaceAll('-', ''),
+              EngravingConstants.lyricStyle,
+            );
+            noteSpacing = math.max(noteSpacing, syllableWidth + 16);
+          }
         }
 
         x += noteSpacing;
@@ -488,7 +506,8 @@ class SheetMusicLayoutEngine {
         topY: y,
         bottomY: staffBottom,
         isFinal: isLastMeasure,
-        isDouble: isLastMeasure,
+        isDouble: isLastMeasure || measure.repeatEnd,
+        repeatEnd: measure.repeatEnd,
       ));
       x += EngravingConstants.measureSpacing / 2;
     }

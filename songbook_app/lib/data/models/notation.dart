@@ -60,8 +60,11 @@ class NotatedBeat {
   /// Duration of the note
   final NoteDuration duration;
 
-  /// Lyric syllable to display under this note
+  /// Lyric syllable to display under this note (single line)
   final String? syllable;
+
+  /// Multiple lyric syllables for stacked display (e.g., verse 1 and verse 2)
+  final List<String>? syllables;
 
   /// Chord symbol to display above this note
   final String? chord;
@@ -82,11 +85,23 @@ class NotatedBeat {
     required this.pitch,
     required this.duration,
     this.syllable,
+    this.syllables,
     this.chord,
     this.tieStart = false,
     this.tieEnd = false,
     this.dotted = false,
   });
+
+  /// Returns all syllables (from syllables array or single syllable)
+  List<String> get allSyllables {
+    if (syllables != null && syllables!.isNotEmpty) {
+      return syllables!;
+    }
+    if (syllable != null) {
+      return [syllable!];
+    }
+    return [];
+  }
 
   factory NotatedBeat.fromJson(Map<String, dynamic> json) =>
       _$NotatedBeatFromJson(json);
@@ -113,6 +128,7 @@ class NotatedBeat {
     String? pitch,
     NoteDuration? duration,
     String? syllable,
+    List<String>? syllables,
     String? chord,
     bool? tieStart,
     bool? tieEnd,
@@ -122,6 +138,7 @@ class NotatedBeat {
       pitch: pitch ?? this.pitch,
       duration: duration ?? this.duration,
       syllable: syllable ?? this.syllable,
+      syllables: syllables ?? this.syllables,
       chord: chord ?? this.chord,
       tieStart: tieStart ?? this.tieStart,
       tieEnd: tieEnd ?? this.tieEnd,
