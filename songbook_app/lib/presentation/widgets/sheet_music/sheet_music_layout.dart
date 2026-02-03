@@ -201,10 +201,53 @@ class SheetMusicLayoutEngine {
             EngravingConstants.lyricBelowStaff +
             50;
 
+    // Calculate actual content width from widest system
+    final maxSystemWidth = systems.isEmpty
+        ? availableWidth
+        : systems.map((s) => s.width).reduce((a, b) => a > b ? a : b);
+
+    // Normalize all systems to the same width (the widest one)
+    // Also move the final bar line to the right edge
+    final normalizedSystems = systems.map((s) {
+      // Calculate the right edge position
+      final rightEdge = s.x + maxSystemWidth - EngravingConstants.rightMargin;
+
+      // Adjust the last bar line to be at the right edge
+      final adjustedBarLines = s.barLines.isNotEmpty
+          ? [
+              ...s.barLines.take(s.barLines.length - 1),
+              PositionedBarLine(
+                x: rightEdge,
+                topY: s.barLines.last.topY,
+                bottomY: s.barLines.last.bottomY,
+                isDouble: s.barLines.last.isDouble,
+                isFinal: s.barLines.last.isFinal,
+                repeatStart: s.barLines.last.repeatStart,
+                repeatEnd: s.barLines.last.repeatEnd,
+              ),
+            ]
+          : s.barLines;
+
+      return StaffSystem(
+        x: s.x,
+        y: s.y,
+        width: maxSystemWidth,
+        notes: s.notes,
+        syllables: s.syllables,
+        chords: s.chords,
+        barLines: adjustedBarLines,
+        startMeasure: s.startMeasure,
+        endMeasure: s.endMeasure,
+      );
+    }).toList();
+
+    // Add some padding on the right
+    final contentWidth = EngravingConstants.leftMargin + maxSystemWidth + EngravingConstants.rightMargin;
+
     return SheetMusicLayout(
-      totalWidth: availableWidth,
+      totalWidth: contentWidth,
       totalHeight: totalHeight,
-      systems: systems,
+      systems: normalizedSystems,
       key: targetKey,
       timeSignature: notation.timeSignature,
       showTimeSignature: notation.showTimeSignature,

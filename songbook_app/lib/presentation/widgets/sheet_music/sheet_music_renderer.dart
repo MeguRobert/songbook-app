@@ -132,49 +132,53 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
           widget.transpose,
         );
 
-        return InteractiveViewer(
-          constrained: false,
-          minScale: 0.5,
-          maxScale: 3.0,
-          boundaryMargin: const EdgeInsets.all(100),
-          child: SizedBox(
-            width: constraints.maxWidth,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Song header
-                _buildHeader(context),
+        // Use Scrollbar with SingleChildScrollView for normal scrolling
+        return Scrollbar(
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: layout.totalWidth,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Song header
+                    _buildHeader(context),
 
-                const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                // Sheet music canvas with RepaintBoundary for performance
-                RepaintBoundary(
-                  child: SizedBox(
-                    width: layout.totalWidth,
-                    height: layout.totalHeight,
-                    child: CustomPaint(
-                      painter: SheetMusicPainter(
-                        layout: layout,
-                        noteColor: theme.brightness == Brightness.dark
-                            ? Colors.white
-                            : const Color(0xFF333333),
-                        staffColor: theme.brightness == Brightness.dark
-                            ? Colors.white70
-                            : const Color(0xFF333333),
+                    // Sheet music canvas with RepaintBoundary for performance
+                    RepaintBoundary(
+                      child: SizedBox(
+                        width: layout.totalWidth,
+                        height: layout.totalHeight,
+                        child: CustomPaint(
+                          painter: SheetMusicPainter(
+                            layout: layout,
+                            noteColor: theme.brightness == Brightness.dark
+                                ? Colors.white
+                                : const Color(0xFF333333),
+                            staffColor: theme.brightness == Brightness.dark
+                                ? Colors.white70
+                                : const Color(0xFF333333),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+
+                    const SizedBox(height: 24),
+
+                    // Additional verses without notation
+                    ..._buildAdditionalVerses(context),
+
+                    // Metadata footer
+                    _buildFooter(context),
+                  ],
                 ),
-
-                const SizedBox(height: 24),
-
-                // Additional verses without notation
-                ..._buildAdditionalVerses(context),
-
-                // Metadata footer
-                _buildFooter(context),
-              ],
+              ),
             ),
           ),
         );
