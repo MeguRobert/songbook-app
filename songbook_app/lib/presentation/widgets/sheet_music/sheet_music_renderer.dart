@@ -34,11 +34,18 @@ class SheetMusicRenderer extends StatefulWidget {
 
 class _SheetMusicRendererState extends State<SheetMusicRenderer> {
   final TranspositionService _transpositionService = const TranspositionService();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _calculateLayout();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -134,8 +141,10 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
 
         // Use Scrollbar with SingleChildScrollView for normal scrolling
         return Scrollbar(
+          controller: _scrollController,
           thumbVisibility: true,
           child: SingleChildScrollView(
+            controller: _scrollController,
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
