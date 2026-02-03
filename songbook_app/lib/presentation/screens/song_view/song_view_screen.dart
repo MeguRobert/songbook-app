@@ -57,6 +57,23 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
           appBar: AppBar(
             title: Text('${song.number}. ${song.title}'),
             actions: [
+              // Transpose controls in app bar
+              // Change style here: bottomSheet, popupMenu, keyBadge, dropdown, compact
+              TransposeControls(
+                currentTranspose: transpose,
+                originalKey: song.originalKey,
+                onTransposeUp: () {
+                  ref.read(songViewProvider.notifier).transposeUp();
+                },
+                onTransposeDown: () {
+                  ref.read(songViewProvider.notifier).transposeDown();
+                },
+                onReset: () {
+                  ref.read(songViewProvider.notifier).resetTranspose();
+                },
+                compact: true,
+                style: TransposeStyle.popupMenu, // Try: bottomSheet, popupMenu, keyBadge, dropdown, compact
+              ),
               // Toggle view mode
               IconButton(
                 icon: Icon(
@@ -86,30 +103,9 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
               ),
             ],
           ),
-          body: Column(
-            children: [
-              // Transpose controls
-              TransposeControls(
-                currentTranspose: transpose,
-                originalKey: song.originalKey,
-                onTransposeUp: () {
-                  ref.read(songViewProvider.notifier).transposeUp();
-                },
-                onTransposeDown: () {
-                  ref.read(songViewProvider.notifier).transposeDown();
-                },
-                onReset: () {
-                  ref.read(songViewProvider.notifier).resetTranspose();
-                },
-              ),
-              // Song content
-              Expanded(
-                child: viewMode == SongViewMode.chords
-                    ? ChordView(song: song, transpose: transpose)
-                    : SheetMusicView(song: song, transpose: transpose),
-              ),
-            ],
-          ),
+          body: viewMode == SongViewMode.chords
+              ? ChordView(song: song, transpose: transpose)
+              : SheetMusicView(song: song, transpose: transpose),
         );
       },
       loading: () => Scaffold(
