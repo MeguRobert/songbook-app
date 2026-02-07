@@ -44,11 +44,11 @@ Ship a polished, store-ready songbook app by building on the existing functional
   3. Text size can be increased/decreased while viewing a song
   4. Transpose state resets correctly when navigating between songs
   5. SVG fallback shows clear message distinguishing "transposed key missing" from "no sheet music"
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 01-01: Fix transpose wrapping and state management bugs
-- [ ] 01-02: Center chord view layout and add text size controls
+- [ ] 01-01-PLAN.md — Fix transpose wrapping (-6 to +5), state reset on navigation, SVG fallback messages
+- [ ] 01-02-PLAN.md — Center chord view layout, verify text size controls wiring
 
 ### Phase 2: Configurable Song View
 **Goal**: Replace separate chord/sheet views with a unified configurable view where users toggle notation, chords, and lyrics independently
