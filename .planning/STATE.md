@@ -5,32 +5,32 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 1 — Bug Fixes & Core Polish
+**Current focus:** Phase 2 — Configurable Song View
 
 ## Current Position
 
-Phase: 1 of 11 (Bug Fixes & Core Polish)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-10 — Completed 01-01-PLAN.md
+Phase: 2 of 11 (Configurable Song View)
+Plan: 0 of 2 in current phase
+Status: Not started
+Last activity: 2026-02-10 — Completed Phase 1 (Bug Fixes & Core Polish)
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [█░░░░░░░░░] 9% (1/11 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 3 min
-- Total execution time: 0.05 hours
+- Total plans completed: 2
+- Average duration: 9 min
+- Total execution time: 0.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01    | 1     | 3min  | 3min     |
+| 01    | 2     | 18min | 9min     |
 
 **Recent Trend:**
-- Last 5 plans: 3min
+- Last 5 plans: 3min, 15min
 - Trend: Starting fresh
 
 *Updated after each plan completion*
@@ -47,6 +47,8 @@ Recent decisions affecting current work:
 - [Init]: Configurable overlay view preferred over separate view modes
 - [01-01]: Symmetric transpose range -6 to +5 (12 semitones total, no duplicate pitch at +6/-6)
 - [01-01]: Dart record types for structured SVG fallback state
+- [01-02]: Center + ConstrainedBox(maxWidth: 600) pattern for responsive centered layout
+- [01-02]: Never modify provider state in dispose(); rely on fresh state creation in openSong()
 
 ### Pending Todos
 
@@ -59,5 +61,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 01-01-PLAN.md (Core Transpose & Sheet Music Fixes)
+Stopped at: Completed Phase 1 (Bug Fixes & Core Polish) — all 5 success criteria verified
 Resume file: None

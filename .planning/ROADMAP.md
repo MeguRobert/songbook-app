@@ -14,7 +14,7 @@ Ship a polished, store-ready songbook app by building on the existing functional
 
 ### 🚧 v1.0 MVP Store Release
 
-- [ ] **Phase 1: Bug Fixes & Core Polish** - Fix known bugs and polish existing UI for reliability
+- [x] **Phase 1: Bug Fixes & Core Polish** - Fix known bugs and polish existing UI for reliability
 - [ ] **Phase 2: Configurable Song View** - Merged notation+chords+lyrics with toggle controls
 - [ ] **Phase 3: Presentation Mode** - Full-screen lyrics display for projection and personal use
 - [ ] **Phase 4: Song Books** - Organize songs by hymnal/book with book browser
@@ -47,8 +47,8 @@ Ship a polished, store-ready songbook app by building on the existing functional
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 01-01-PLAN.md — Fix transpose wrapping (-6 to +5), state reset on navigation, SVG fallback messages
-- [ ] 01-02-PLAN.md — Center chord view layout, verify text size controls wiring
+- [x] 01-01-PLAN.md — Fix transpose wrapping (-6 to +5), state reset on navigation, SVG fallback messages
+- [x] 01-02-PLAN.md — Center chord view layout, verify text size controls wiring
 
 ### Phase 2: Configurable Song View
 **Goal**: Replace separate chord/sheet views with a unified configurable view where users toggle notation, chords, and lyrics independently
@@ -187,7 +187,7 @@ Phases 1 → 2 → 3 in sequence. Phase 4 can run parallel to 2/3. Phase 5 after
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Bug Fixes & Core Polish | v1.0 | 0/2 | Not started | - |
+| 1. Bug Fixes & Core Polish | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 2. Configurable Song View | v1.0 | 0/2 | Not started | - |
 | 3. Presentation Mode | v1.0 | 0/2 | Not started | - |
 | 4. Song Books | v1.0 | 0/2 | Not started | - |
