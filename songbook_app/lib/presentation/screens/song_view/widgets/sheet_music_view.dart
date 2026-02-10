@@ -200,13 +200,8 @@ class SheetMusicViewWidget extends ConsumerWidget {
     final svgPath = song.sheetMusic!.getPathForKey(targetKey);
     final originalPath = song.sheetMusic!.getPathForKey(song.originalKey);
 
-    return FutureBuilder<String>(
-      // Try to load the transposed version first
-      future: _tryLoadSvg(svgPath).then((svg) {
-        if (svg != null) return svg;
-        // Fall back to original key
-        return _tryLoadSvg(originalPath).then((svg) => svg ?? '');
-      }),
+    return FutureBuilder<({String? svg, bool isOriginalFallback})>(
+      future: _loadSheetMusicWithFallback(svgPath, originalPath, targetKey, song.originalKey),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
@@ -217,13 +212,15 @@ class SheetMusicViewWidget extends ConsumerWidget {
           );
         }
 
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.svg == null) {
           return _buildNoSheetMusic(context);
         }
 
+        final result = snapshot.data!;
+
         return Column(
           children: [
-            if (transpose != 0 && !svgPath.contains(targetKey))
+            if (result.isOriginalFallback)
               Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(8),
@@ -237,8 +234,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Showing original key (${song.originalKey}). '
-                        'Transpose to $targetKey manually.',
+                        'Sheet music for $targetKey not available. Showing original key (${song.originalKey}).',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -246,7 +242,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
                 ),
               ),
             SvgPicture.string(
-              snapshot.data!,
+              result.svg!,
               fit: BoxFit.contain,
             ),
           ],
@@ -272,7 +268,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Sheet music not available',
+            'No sheet music available for this song',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -335,6 +331,31 @@ class SheetMusicViewWidget extends ConsumerWidget {
           ),
       ],
     );
+  }
+
+  Future<({String? svg, bool isOriginalFallback})> _loadSheetMusicWithFallback(
+    String transposedPath,
+    String originalPath,
+    String targetKey,
+    String originalKey,
+  ) async {
+    // If not transposed, just try loading the original
+    if (targetKey == originalKey) {
+      final svg = await _tryLoadSvg(originalPath);
+      return (svg: svg, isOriginalFallback: false);
+    }
+    // Try transposed first
+    final transposedSvg = await _tryLoadSvg(transposedPath);
+    if (transposedSvg != null) {
+      return (svg: transposedSvg, isOriginalFallback: false);
+    }
+    // Fall back to original
+    final originalSvg = await _tryLoadSvg(originalPath);
+    if (originalSvg != null) {
+      return (svg: originalSvg, isOriginalFallback: true);
+    }
+    // Nothing available — null means "not found at all"
+    return (svg: null, isOriginalFallback: false);
   }
 
   Future<String?> _tryLoadSvg(String path) async {
