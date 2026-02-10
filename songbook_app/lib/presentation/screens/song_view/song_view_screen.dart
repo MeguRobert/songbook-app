@@ -23,23 +23,15 @@ class SongViewScreen extends ConsumerStatefulWidget {
 }
 
 class _SongViewScreenState extends ConsumerState<SongViewScreen> {
-  // Cache notifier reference for use in dispose (ref is unavailable after deactivation)
-  SongViewNotifier? _songViewNotifier;
-
   @override
   void initState() {
     super.initState();
-    // Open the song in the provider
+    // Open the song in the provider — openSong() resets transpose and textScale
+    // No closeSong() in dispose needed: openSong() always creates fresh state,
+    // and modifying provider state in dispose is forbidden by Riverpod.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _songViewNotifier = ref.read(songViewProvider.notifier);
-      _songViewNotifier!.openSong(widget.songNumber);
+      ref.read(songViewProvider.notifier).openSong(widget.songNumber);
     });
-  }
-
-  @override
-  void dispose() {
-    _songViewNotifier?.closeSong();
-    super.dispose();
   }
 
   @override
