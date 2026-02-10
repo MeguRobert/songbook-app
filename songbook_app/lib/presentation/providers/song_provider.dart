@@ -67,8 +67,8 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
   void transposeUp() {
     if (state != null) {
       int newAmount = state!.transposeAmount + 1;
-      // Wrap from +12 to -11 (circular two-octave range)
-      if (newAmount > 12) newAmount = -11;
+      // Wrap from +5 to -6 (symmetric 12-semitone range)
+      if (newAmount > 5) newAmount = -6;
       state = state!.copyWith(transposeAmount: newAmount);
     }
   }
@@ -76,8 +76,8 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
   void transposeDown() {
     if (state != null) {
       int newAmount = state!.transposeAmount - 1;
-      // Wrap from -11 to +12 (circular two-octave range)
-      if (newAmount < -11) newAmount = 12;
+      // Wrap from -6 to +5 (symmetric 12-semitone range)
+      if (newAmount < -6) newAmount = 5;
       state = state!.copyWith(transposeAmount: newAmount);
     }
   }

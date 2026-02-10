@@ -34,6 +34,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
 
   @override
   void dispose() {
+    ref.read(songViewProvider.notifier).closeSong();
     super.dispose();
   }
 
