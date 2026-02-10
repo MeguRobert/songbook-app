@@ -68,8 +68,6 @@ class _FloatingControlsMenuState extends ConsumerState<FloatingControlsMenu>
     final hasTranspose = transpose != 0;
 
     // Fixed height for the expanded menu (doesn't change based on reset button)
-    const menuItemHeight = 40.0;
-    const keyDisplayHeight = 44.0;
     const spacing = 4.0;
     const sectionSpacing = 8.0;
 

@@ -457,7 +457,6 @@ class TransposeControls extends ConsumerWidget {
       underline: const SizedBox(),
       icon: const Icon(Icons.arrow_drop_down),
       items: keys.map((key) {
-        final semitones = _getSemitonesForKey(key);
         return DropdownMenuItem(
           value: key,
           child: Text(key),
