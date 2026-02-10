@@ -35,9 +35,12 @@ class ChordView extends ConsumerWidget {
       maxScale: 3.0,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             // Song metadata
             if (song.reference != null) ...[
               Text(
@@ -81,6 +84,8 @@ class ChordView extends ConsumerWidget {
                 ),
             ],
           ],
+        ),
+          ),
         ),
       ),
     );
