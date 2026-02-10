@@ -316,17 +316,36 @@ class TransposeControls extends ConsumerWidget {
   }
 
   void _showTransposePopup(BuildContext context) {
-    final theme = Theme.of(context);
-
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (dialogContext) => _TransposePopupDialog(
-        originalKey: originalKey,
-        currentTranspose: currentTranspose,
-        onTransposeUp: onTransposeUp,
-        onTransposeDown: onTransposeDown,
-        onReset: onReset,
-      ),
+      barrierDismissible: true,
+      barrierLabel: 'Transpose',
+      barrierColor: Colors.black26,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.centerRight,
+          child: _TransposeSidePanel(
+            originalKey: originalKey,
+            currentTranspose: currentTranspose,
+            onTransposeUp: onTransposeUp,
+            onTransposeDown: onTransposeDown,
+            onReset: onReset,
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          )),
+          child: child,
+        );
+      },
     );
   }
 
@@ -483,16 +502,16 @@ class TransposeControls extends ConsumerWidget {
   }
 }
 
-/// Persistent popup dialog for transpose controls that stays open
+/// Right sidebar panel for transpose controls that stays open
 /// and updates the key display in real-time
-class _TransposePopupDialog extends ConsumerWidget {
+class _TransposeSidePanel extends ConsumerWidget {
   final String originalKey;
   final int currentTranspose;
   final VoidCallback onTransposeUp;
   final VoidCallback onTransposeDown;
   final VoidCallback onReset;
 
-  const _TransposePopupDialog({
+  const _TransposeSidePanel({
     required this.originalKey,
     required this.currentTranspose,
     required this.onTransposeUp,
@@ -509,73 +528,130 @@ class _TransposePopupDialog extends ConsumerWidget {
     final targetKey = transpositionService.calculateTargetKey(originalKey, transpose);
     final hasTranspose = transpose != 0;
 
-    return AlertDialog(
-      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Key display header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Key: $targetKey',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (hasTranspose) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      transpose > 0 ? '+$transpose' : '$transpose',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
+    return Material(
+      elevation: 16,
+      child: Container(
+        width: 280,
+        height: double.infinity,
+        color: theme.colorScheme.surface,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header with close button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Transpose',
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                      tooltip: 'Close',
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+
+              // Key display - large and prominent
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Text(
+                      targetKey,
+                      style: theme.textTheme.displayMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    if (hasTranspose)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          '${transpose > 0 ? '+' : ''}$transpose from $originalKey',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Transpose buttons - large and easy to tap
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.tonalIcon(
+                        onPressed: onTransposeDown,
+                        icon: const Icon(Icons.remove),
+                        label: const Text('Down'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.tonalIcon(
+                        onPressed: onTransposeUp,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Up'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Reset button (only shown if transposed)
+              if (hasTranspose)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                  child: OutlinedButton.icon(
+                    onPressed: onReset,
+                    icon: const Icon(Icons.replay),
+                    label: Text('Reset to $originalKey'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
-                ],
-              ],
-            ),
+                ),
+
+              const Spacer(),
+
+              // Footer hint
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Tap outside or press X to close',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
           ),
-          const Divider(),
-          // Transpose up
-          ListTile(
-            leading: const Icon(Icons.add),
-            title: const Text('Transpose up'),
-            onTap: onTransposeUp,
-          ),
-          // Transpose down
-          ListTile(
-            leading: const Icon(Icons.remove),
-            title: const Text('Transpose down'),
-            onTap: onTransposeDown,
-          ),
-          // Reset option (only shown if transposed)
-          if (hasTranspose) ...[
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.replay),
-              title: Text('Reset to $originalKey'),
-              onTap: onReset,
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Done'),
         ),
-      ],
+      ),
     );
   }
 }

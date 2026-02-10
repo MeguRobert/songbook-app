@@ -25,19 +25,23 @@ final songCountProvider = FutureProvider<int>((ref) async {
 class SongViewState {
   final int songNumber;
   final int transposeAmount;
+  final double textScale;
 
   const SongViewState({
     required this.songNumber,
     this.transposeAmount = 0,
+    this.textScale = 1.0,
   });
 
   SongViewState copyWith({
     int? songNumber,
     int? transposeAmount,
+    double? textScale,
   }) {
     return SongViewState(
       songNumber: songNumber ?? this.songNumber,
       transposeAmount: transposeAmount ?? this.transposeAmount,
+      textScale: textScale ?? this.textScale,
     );
   }
 }
@@ -83,6 +87,26 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
       state = state!.copyWith(transposeAmount: 0);
     }
   }
+
+  void increaseTextScale() {
+    if (state != null) {
+      final newScale = (state!.textScale + 0.1).clamp(0.5, 2.0);
+      state = state!.copyWith(textScale: newScale);
+    }
+  }
+
+  void decreaseTextScale() {
+    if (state != null) {
+      final newScale = (state!.textScale - 0.1).clamp(0.5, 2.0);
+      state = state!.copyWith(textScale: newScale);
+    }
+  }
+
+  void resetTextScale() {
+    if (state != null) {
+      state = state!.copyWith(textScale: 1.0);
+    }
+  }
 }
 
 /// Provider for the current song view state
@@ -95,4 +119,10 @@ final songViewProvider =
 final transposeProvider = Provider<int>((ref) {
   final viewState = ref.watch(songViewProvider);
   return viewState?.transposeAmount ?? 0;
+});
+
+/// Provider for the text scale of the current song view
+final textScaleProvider = Provider<double>((ref) {
+  final viewState = ref.watch(songViewProvider);
+  return viewState?.textScale ?? 1.0;
 });

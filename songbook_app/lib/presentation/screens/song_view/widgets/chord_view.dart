@@ -13,16 +13,19 @@ import '../../../providers/settings_provider.dart';
 class ChordView extends ConsumerWidget {
   final Song song;
   final int transpose;
+  final double textScale;
 
   const ChordView({
     required this.song,
     required this.transpose,
+    this.textScale = 1.0,
     super.key,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fontSize = ref.watch(fontSizeProvider);
+    final baseFontSize = ref.watch(fontSizeProvider);
+    final fontSize = baseFontSize * textScale;
     final showChords = ref.watch(showChordsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;

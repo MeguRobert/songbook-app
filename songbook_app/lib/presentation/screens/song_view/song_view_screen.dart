@@ -6,8 +6,8 @@ import '../../providers/favorites_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/song_provider.dart';
 import 'widgets/chord_view.dart';
+import 'widgets/floating_controls_menu.dart';
 import 'widgets/sheet_music_view.dart';
-import 'widgets/transpose_controls.dart';
 
 /// Screen for viewing a single song
 class SongViewScreen extends ConsumerStatefulWidget {
@@ -43,6 +43,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
     final isFavorite = ref.watch(isFavoriteProvider(widget.songNumber));
     final viewMode = ref.watch(viewModeProvider);
     final transpose = ref.watch(transposeProvider);
+    final textScale = ref.watch(textScaleProvider);
 
     return songAsync.when(
       data: (song) {
@@ -57,23 +58,6 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
           appBar: AppBar(
             title: Text('${song.number}. ${song.title}'),
             actions: [
-              // Transpose controls in app bar
-              // Change style here: bottomSheet, popupMenu, keyBadge, dropdown, compact
-              TransposeControls(
-                currentTranspose: transpose,
-                originalKey: song.originalKey,
-                onTransposeUp: () {
-                  ref.read(songViewProvider.notifier).transposeUp();
-                },
-                onTransposeDown: () {
-                  ref.read(songViewProvider.notifier).transposeDown();
-                },
-                onReset: () {
-                  ref.read(songViewProvider.notifier).resetTranspose();
-                },
-                compact: true,
-                style: TransposeStyle.popupMenu, // Try: bottomSheet, popupMenu, keyBadge, dropdown, compact
-              ),
               // Toggle view mode
               IconButton(
                 icon: Icon(
@@ -103,9 +87,16 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
               ),
             ],
           ),
-          body: viewMode == SongViewMode.chords
-              ? ChordView(song: song, transpose: transpose)
-              : SheetMusicView(song: song, transpose: transpose),
+          body: Stack(
+            children: [
+              // Main content
+              viewMode == SongViewMode.chords
+                  ? ChordView(song: song, transpose: transpose, textScale: textScale)
+                  : SheetMusicView(song: song, transpose: transpose),
+              // Floating controls menu
+              FloatingControlsMenu(originalKey: song.originalKey),
+            ],
+          ),
         );
       },
       loading: () => Scaffold(
