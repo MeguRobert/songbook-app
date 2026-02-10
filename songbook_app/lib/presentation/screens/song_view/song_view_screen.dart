@@ -23,18 +23,22 @@ class SongViewScreen extends ConsumerStatefulWidget {
 }
 
 class _SongViewScreenState extends ConsumerState<SongViewScreen> {
+  // Cache notifier reference for use in dispose (ref is unavailable after deactivation)
+  SongViewNotifier? _songViewNotifier;
+
   @override
   void initState() {
     super.initState();
     // Open the song in the provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(songViewProvider.notifier).openSong(widget.songNumber);
+      _songViewNotifier = ref.read(songViewProvider.notifier);
+      _songViewNotifier!.openSong(widget.songNumber);
     });
   }
 
   @override
   void dispose() {
-    ref.read(songViewProvider.notifier).closeSong();
+    _songViewNotifier?.closeSong();
     super.dispose();
   }
 
