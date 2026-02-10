@@ -31,7 +31,7 @@ key-decisions:
   - "Dart record types for structured SVG fallback state"
 
 patterns-established:
-  - "State cleanup pattern: call closeSong() in dispose() to prevent state leakage"
+  - "State reset pattern: openSong() creates fresh state, no explicit cleanup needed in dispose()"
   - "Async result patterns: Use record types to return multiple values with semantic names"
 
 # Metrics
