@@ -13,6 +13,7 @@ class SheetMusicPainter extends CustomPainter {
   final SheetMusicLayout layout;
   final Color noteColor;
   final Color staffColor;
+  final bool showChords;
 
   // Cached Paint objects for performance
   late final Paint _staffLinePaint;
@@ -27,6 +28,7 @@ class SheetMusicPainter extends CustomPainter {
     required this.layout,
     this.noteColor = const Color(0xFF333333),
     this.staffColor = const Color(0xFF333333),
+    this.showChords = true,
   }) {
     _initializePaints();
   }
@@ -93,7 +95,7 @@ class SheetMusicPainter extends CustomPainter {
       _drawBarLines(canvas, system);
       _drawNotesWithBeams(canvas, system);
       _drawTies(canvas, system);
-      _drawChords(canvas, system);
+      if (showChords) _drawChords(canvas, system);
       _drawLyrics(canvas, system);
     }
   }
@@ -947,6 +949,7 @@ class SheetMusicPainter extends CustomPainter {
   bool shouldRepaint(covariant SheetMusicPainter oldDelegate) {
     return oldDelegate.layout != layout ||
         oldDelegate.noteColor != noteColor ||
-        oldDelegate.staffColor != staffColor;
+        oldDelegate.staffColor != staffColor ||
+        oldDelegate.showChords != showChords;
   }
 }

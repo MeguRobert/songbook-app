@@ -157,6 +157,7 @@ class SheetMusicLayoutEngine {
   final double availableWidth;
   final String Function(String pitch, int semitones) transposePitch;
   final String Function(String chord, int semitones) transposeChord;
+  final bool showChords;
 
   // Cached text painters for accurate width measurement
   final Map<String, double> _textWidthCache = {};
@@ -165,6 +166,7 @@ class SheetMusicLayoutEngine {
     required this.availableWidth,
     required this.transposePitch,
     required this.transposeChord,
+    this.showChords = true,
   });
 
   /// Calculate the complete layout for a song's notation
@@ -175,7 +177,8 @@ class SheetMusicLayoutEngine {
     final systems = <StaffSystem>[];
     final targetKey = transposeChord(notation.originalKey, transposeSemitones);
 
-    double currentY = EngravingConstants.chordAboveStaff + 20;
+    // Reduce top padding when chords are hidden
+    double currentY = showChords ? EngravingConstants.chordAboveStaff + 20 : 20;
 
     for (final verse in notation.verses) {
       final verseSystems = _layoutVerse(

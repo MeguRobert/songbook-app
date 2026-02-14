@@ -17,6 +17,9 @@ class SheetMusicRenderer extends StatefulWidget {
   /// Number of semitones to transpose
   final int transpose;
 
+  /// Whether to show chord symbols above the staff
+  final bool showChords;
+
   /// Called when notation is not available
   final Widget? fallback;
 
@@ -25,6 +28,7 @@ class SheetMusicRenderer extends StatefulWidget {
     required this.song,
     required this.notation,
     this.transpose = 0,
+    this.showChords = true,
     this.fallback,
   });
 
@@ -52,7 +56,8 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
   void didUpdateWidget(SheetMusicRenderer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.notation != widget.notation ||
-        oldWidget.transpose != widget.transpose) {
+        oldWidget.transpose != widget.transpose ||
+        oldWidget.showChords != widget.showChords) {
       _calculateLayout();
     }
   }
@@ -132,6 +137,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
           availableWidth: constraints.maxWidth,
           transposePitch: _transposePitch,
           transposeChord: _transposeChord,
+          showChords: widget.showChords,
         );
 
         final layout = layoutEngine.calculateLayout(
@@ -173,6 +179,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
                             staffColor: theme.brightness == Brightness.dark
                                 ? Colors.white70
                                 : const Color(0xFF333333),
+                            showChords: widget.showChords,
                           ),
                         ),
                       ),

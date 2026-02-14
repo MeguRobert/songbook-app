@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/repositories/settings_repository.dart';
+import '../../../data/models/view_config.dart';
 import '../../providers/favorites_provider.dart';
-import '../../providers/settings_provider.dart';
 import '../../providers/song_provider.dart';
 import 'widgets/chord_view.dart';
 import 'widgets/floating_controls_menu.dart';
@@ -38,7 +37,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
   Widget build(BuildContext context) {
     final songAsync = ref.watch(songByNumberProvider(widget.songNumber));
     final isFavorite = ref.watch(isFavoriteProvider(widget.songNumber));
-    final viewMode = ref.watch(viewModeProvider);
+    final viewConfig = ref.watch(effectiveViewConfigProvider);
     final transpose = ref.watch(transposeProvider);
     final textScale = ref.watch(textScaleProvider);
 
@@ -55,20 +54,6 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
           appBar: AppBar(
             title: Text('${song.number}. ${song.title}'),
             actions: [
-              // Toggle view mode
-              IconButton(
-                icon: Icon(
-                  viewMode == SongViewMode.chords
-                      ? Icons.music_note
-                      : Icons.text_fields,
-                ),
-                onPressed: () {
-                  ref.read(settingsProvider.notifier).toggleViewMode();
-                },
-                tooltip: viewMode == SongViewMode.chords
-                    ? 'Show sheet music'
-                    : 'Show chords',
-              ),
               // Favorite button
               IconButton(
                 icon: Icon(
@@ -86,10 +71,27 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
           ),
           body: Stack(
             children: [
-              // Main content
-              viewMode == SongViewMode.chords
-                  ? ChordView(song: song, transpose: transpose, textScale: textScale)
-                  : SheetMusicView(song: song, transpose: transpose),
+              // Main content - render based on ViewConfig
+              if (viewConfig.showNotation)
+                SheetMusicView(
+                  song: song,
+                  transpose: transpose,
+                  showChords: viewConfig.showChords,
+                )
+              else if (viewConfig.showChords)
+                ChordView(
+                  song: song,
+                  transpose: transpose,
+                  textScale: textScale,
+                  showChords: true,
+                )
+              else
+                ChordView(
+                  song: song,
+                  transpose: transpose,
+                  textScale: textScale,
+                  showChords: false,
+                ),
               // Floating controls menu
               FloatingControlsMenu(originalKey: song.originalKey),
             ],

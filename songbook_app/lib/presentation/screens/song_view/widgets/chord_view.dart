@@ -14,11 +14,13 @@ class ChordView extends ConsumerWidget {
   final Song song;
   final int transpose;
   final double textScale;
+  final bool showChords;
 
   const ChordView({
     required this.song,
     required this.transpose,
     this.textScale = 1.0,
+    this.showChords = true,
     super.key,
   });
 
@@ -26,7 +28,6 @@ class ChordView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final baseFontSize = ref.watch(fontSizeProvider);
     final fontSize = baseFontSize * textScale;
-    final showChords = ref.watch(showChordsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

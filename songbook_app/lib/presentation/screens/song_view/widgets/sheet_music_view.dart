@@ -15,10 +15,12 @@ import '../../../widgets/sheet_music/sheet_music_renderer.dart';
 class SheetMusicViewWidget extends ConsumerWidget {
   final Song song;
   final int transpose;
+  final bool showChords;
 
   const SheetMusicViewWidget({
     required this.song,
     required this.transpose,
+    this.showChords = true,
     super.key,
   });
 
@@ -46,6 +48,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
       song: song,
       notation: song.notation!,
       transpose: transpose,
+      showChords: showChords,
     );
 
     // Add debug badge in debug mode
