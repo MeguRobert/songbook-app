@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../providers/favorites_provider.dart';
 import '../../providers/song_provider.dart';
+import '../../../router/app_router.dart';
 import 'widgets/chord_view.dart';
 import 'widgets/song_controls_sheet.dart';
 import 'widgets/sheet_music_view.dart';
@@ -63,6 +65,14 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
           appBar: AppBar(
             title: Text('${song.number}. ${song.title}'),
             actions: [
+              // Presentation mode button
+              IconButton(
+                icon: const Icon(Icons.fullscreen),
+                onPressed: () {
+                  context.push(AppRoutes.presentationPath(widget.songNumber));
+                },
+                tooltip: 'Presentation mode',
+              ),
               // Favorite button
               IconButton(
                 icon: Icon(

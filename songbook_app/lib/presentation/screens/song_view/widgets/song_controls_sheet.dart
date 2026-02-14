@@ -127,8 +127,11 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                   label: const Text('Custom'),
                   selected: isCustomSelected,
                   onSelected: (_) {
-                    // Just selecting Custom doesn't change anything; it's selected
-                    // when the user manually toggles below
+                    // If not already custom, toggle notation to enter custom mode
+                    // This makes the toggles visible for user adjustment
+                    if (!isCustomSelected) {
+                      songViewNotifier.toggleNotation();
+                    }
                   },
                 ),
 
