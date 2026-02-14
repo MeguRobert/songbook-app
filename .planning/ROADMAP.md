@@ -16,7 +16,7 @@ Ship a polished, store-ready songbook app by building on the existing functional
 
 - [x] **Phase 1: Bug Fixes & Core Polish** - Fix known bugs and polish existing UI for reliability
 - [x] **Phase 2: Configurable Song View** - Merged notation+chords+lyrics with toggle controls
-- [ ] **Phase 3: Presentation Mode** - Full-screen lyrics display for projection and personal use
+- [x] **Phase 3: Presentation Mode** - Full-screen lyrics display for projection and personal use
 - [ ] **Phase 4: Song Books** - Organize songs by hymnal/book with book browser
 - [ ] **Phase 5: Store Release Prep** - Branding, metadata, platform polish, submission
 
@@ -79,8 +79,8 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 03-01-PLAN.md — Full-screen presentation screen with verse-by-verse navigation, auto-scaling text, projection theme, route + entry point
-- [ ] 03-02-PLAN.md — Persistent projection preference, responsive layout polish for phone/tablet/desktop, landscape support
+- [x] 03-01-PLAN.md — Full-screen presentation screen with verse-by-verse navigation, auto-scaling text, projection theme, route + entry point
+- [x] 03-02-PLAN.md — Persistent projection preference, responsive layout polish for phone/tablet/desktop, landscape support
 
 ### Phase 4: Song Books
 **Goal**: Organize songs by hymnal/book (Hallelujah, Reformed, Youth Worship, etc.) with a book browser for navigating large collections
@@ -189,7 +189,7 @@ Phases 1 → 2 → 3 in sequence. Phase 4 can run parallel to 2/3. Phase 5 after
 |-------|-----------|----------------|--------|-----------|
 | 1. Bug Fixes & Core Polish | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 2. Configurable Song View | v1.0 | 2/2 | Complete | 2026-02-14 |
-| 3. Presentation Mode | v1.0 | 0/2 | Not started | - |
+| 3. Presentation Mode | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 4. Song Books | v1.0 | 0/2 | Not started | - |
 | 5. Store Release Prep | v1.0 | 0/2 | Not started | - |
 | 6. Import Pipeline | v1.1 | 0/? | Not started | - |
