@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 
 ## Current Position
 
-Phase: 3 of 12 (Presentation Mode) — COMPLETE
-Plan: 2 of 2 in current phase
-Status: Complete
-Last activity: 2026-02-14 — Completed Phase 3 (Presentation Mode)
+Phase: 4 of 12 (Controls UI Redesign)
+Plan: 1 of 2 in current phase — COMPLETE
+Status: In progress
+Last activity: 2026-02-14 — Completed 04-01-PLAN.md
 
-Progress: [███░░░░░░░] 25% (3/12 phases)
+Progress: [███░░░░░░░] 29% (7/24 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 6 min
-- Total execution time: 0.6 hours
+- Total plans completed: 7
+- Average duration: 5.7 min
+- Total execution time: 0.67 hours
 
 **By Phase:**
 
@@ -30,10 +30,11 @@ Progress: [███░░░░░░░] 25% (3/12 phases)
 | 01    | 2     | 18min | 9min     |
 | 02    | 2     | 18min | 9min     |
 | 03    | 2     | 5min  | 2.5min   |
+| 04    | 1     | 2min  | 2min     |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 14min, 3min, 2min
-- Trend: Velocity increasing (last plan: 2min, very efficient)
+- Last 5 plans: 14min, 3min, 2min, 2min
+- Trend: Excellent velocity (last 3 plans: 2min average)
 
 *Updated after each plan completion*
 
@@ -67,6 +68,10 @@ Recent decisions affecting current work:
 - [03-02]: Landscape orientation centers text in middle 60% of width for projection screens
 - [03-02]: Song title/number displayed at top of verses, fades with controls
 - [03-02]: Single-verse songs hide verse indicator; long verses enable scrolling
+- [04-01]: Material bottom sheet pattern for controls (showModalBottomSheet)
+- [04-01]: Single FAB entry point with tune icon replaces 12-button floating column
+- [04-01]: Pinch-to-zoom gesture for text scaling (GestureDetector onScaleUpdate)
+- [04-01]: AnimatedSize for Custom toggles expand/collapse
 
 ### Pending Todos
 
@@ -80,5 +85,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed Phase 3 (Presentation Mode) — all 5 success criteria verified
+Stopped at: Completed 04-01-PLAN.md (Bottom Sheet Controls)
 Resume file: None
