@@ -56,7 +56,7 @@ Plans:
 **Requirements**: [REQ-04]
 **Success Criteria** (what must be TRUE):
   1. User can toggle chord symbols on/off above the staff in sheet music view
-  2. User can toggle lyrics on/off below the staff
+  2. Lyrics are always visible in all view modes (base layer, not toggled)
   3. User can view chords+lyrics without notation (current chord view behavior preserved)
   4. Toggle controls are accessible and discoverable in the floating menu
   5. View configuration persists across song navigation and app restart
@@ -188,7 +188,7 @@ Phases 1 → 2 → 3 in sequence. Phase 4 can run parallel to 2/3. Phase 5 after
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Bug Fixes & Core Polish | v1.0 | 2/2 | Complete | 2026-02-10 |
-| 2. Configurable Song View | v1.0 | 0/2 | Not started | - |
+| 2. Configurable Song View | v1.0 | 0/2 | Planned | - |
 | 3. Presentation Mode | v1.0 | 0/2 | Not started | - |
 | 4. Song Books | v1.0 | 0/2 | Not started | - |
 | 5. Store Release Prep | v1.0 | 0/2 | Not started | - |
