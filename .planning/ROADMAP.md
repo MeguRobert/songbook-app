@@ -76,11 +76,11 @@ Plans:
   3. Dark background option for projection (white text on black)
   4. Swipe or tap to advance between verses
   5. Works well on both phone (personal reading) and tablet/desktop (projection)
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 03-01: Design presentation mode UI and navigation
-- [ ] 03-02: Implement full-screen lyrics renderer with projection styling
+- [ ] 03-01-PLAN.md — Full-screen presentation screen with verse-by-verse navigation, auto-scaling text, projection theme, route + entry point
+- [ ] 03-02-PLAN.md — Persistent projection preference, responsive layout polish for phone/tablet/desktop, landscape support
 
 ### Phase 4: Song Books
 **Goal**: Organize songs by hymnal/book (Hallelujah, Reformed, Youth Worship, etc.) with a book browser for navigating large collections
