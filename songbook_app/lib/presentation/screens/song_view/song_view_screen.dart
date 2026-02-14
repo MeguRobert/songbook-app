@@ -39,7 +39,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
   void _showControlsSheet(BuildContext context, String originalKey) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: false,
+      isScrollControlled: true,
       builder: (context) => SongControlsSheet(originalKey: originalKey),
     );
   }
