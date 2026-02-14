@@ -84,14 +84,16 @@ class _FloatingControlsMenuState extends ConsumerState<FloatingControlsMenu>
             mainAxisSize: MainAxisSize.min,
             children: [
               // Expanded menu items with fixed layout
-              SizeTransition(
-                sizeFactor: _expandAnimation,
-                axisAlignment: -1,
-                child: SizedBox(
-                  // Fixed width for the menu
-                  width: 48,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+              Flexible(
+                child: SizeTransition(
+                  sizeFactor: _expandAnimation,
+                  axisAlignment: -1,
+                  child: SingleChildScrollView(
+                    child: SizedBox(
+                      // Fixed width for the menu
+                      width: 48,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                     children: [
                       // Text size increase
                       _MenuButton(
@@ -194,7 +196,9 @@ class _FloatingControlsMenuState extends ConsumerState<FloatingControlsMenu>
                       ),
 
                       const SizedBox(height: 12),
-                    ],
+                      ],
+                    ),
+                  ),
                   ),
                 ),
               ),
