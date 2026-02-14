@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/song_provider.dart';
 import 'widgets/chord_view.dart';
-import 'widgets/floating_controls_menu.dart';
+import 'widgets/song_controls_sheet.dart';
 import 'widgets/sheet_music_view.dart';
 
 /// Screen for viewing a single song
@@ -21,6 +21,8 @@ class SongViewScreen extends ConsumerStatefulWidget {
 }
 
 class _SongViewScreenState extends ConsumerState<SongViewScreen> {
+  double _baseScale = 1.0;
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +32,14 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(songViewProvider.notifier).openSong(widget.songNumber);
     });
+  }
+
+  void _showControlsSheet(BuildContext context, String originalKey) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (context) => SongControlsSheet(originalKey: originalKey),
+    );
   }
 
   @override
@@ -68,32 +78,50 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
               ),
             ],
           ),
-          body: Stack(
-            children: [
-              // Main content - render based on ViewConfig
-              if (viewConfig.showNotation)
-                SheetMusicView(
-                  song: song,
-                  transpose: transpose,
-                  showChords: viewConfig.showChords,
-                )
-              else if (viewConfig.showChords)
-                ChordView(
-                  song: song,
-                  transpose: transpose,
-                  textScale: textScale,
-                  showChords: true,
-                )
-              else
-                ChordView(
-                  song: song,
-                  transpose: transpose,
-                  textScale: textScale,
-                  showChords: false,
-                ),
-              // Floating controls menu
-              FloatingControlsMenu(originalKey: song.originalKey),
-            ],
+          body: GestureDetector(
+            onScaleStart: (details) {
+              _baseScale = textScale;
+            },
+            onScaleUpdate: (details) {
+              // Only apply when it's a pinch gesture (not single-finger drag)
+              if ((details.scale - 1.0).abs() > 0.01) {
+                final newScale = _baseScale * details.scale;
+                ref.read(songViewProvider.notifier).setTextScale(newScale);
+              }
+            },
+            onScaleEnd: (details) {
+              // Scale gesture complete
+            },
+            child: Stack(
+              children: [
+                // Main content - render based on ViewConfig
+                if (viewConfig.showNotation)
+                  SheetMusicView(
+                    song: song,
+                    transpose: transpose,
+                    showChords: viewConfig.showChords,
+                  )
+                else if (viewConfig.showChords)
+                  ChordView(
+                    song: song,
+                    transpose: transpose,
+                    textScale: textScale,
+                    showChords: true,
+                  )
+                else
+                  ChordView(
+                    song: song,
+                    transpose: transpose,
+                    textScale: textScale,
+                    showChords: false,
+                  ),
+              ],
+            ),
+          ),
+          floatingActionButton: FloatingActionButton.small(
+            onPressed: () => _showControlsSheet(context, song.originalKey),
+            tooltip: 'Song controls',
+            child: const Icon(Icons.tune),
           ),
         );
       },

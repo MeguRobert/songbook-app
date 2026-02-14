@@ -123,6 +123,12 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
     }
   }
 
+  void setTextScale(double scale) {
+    if (state != null) {
+      state = state!.copyWith(textScale: scale.clamp(0.5, 2.0));
+    }
+  }
+
   // --- View Config Management ---
 
   /// Gets the effective view config (per-song override or global default)
