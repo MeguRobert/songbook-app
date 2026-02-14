@@ -2,13 +2,13 @@
 
 ## Milestones
 
-- 🚧 **v1.0 MVP Store Release** - Phases 1-5 (in progress)
-- 📋 **v1.1 Content & Organization** - Phases 6-8 (planned)
-- 📋 **v2.0 Platform & Sharing** - Phases 9-11 (planned)
+- 🚧 **v1.0 MVP Store Release** - Phases 1-6 (in progress)
+- 📋 **v1.1 Content & Organization** - Phases 7-9 (planned)
+- 📋 **v2.0 Platform & Sharing** - Phases 10-12 (planned)
 
 ## Overview
 
-Ship a polished, store-ready songbook app by building on the existing functional core. Phase 1 fixes known bugs and polishes the existing UI. Phase 2 introduces the configurable merged view (the core UX differentiator). Phase 3 adds text controls and presentation mode for church projection use. Phase 4 adds song books organization. Phase 5 prepares for app store submission. Post-MVP milestones add content scaling, cloud backend, and sharing.
+Ship a polished, store-ready songbook app by building on the existing functional core. Phase 1 fixes known bugs and polishes the existing UI. Phase 2 introduces the configurable merged view (the core UX differentiator). Phase 3 adds text controls and presentation mode for church projection use. Phase 4 redesigns the controls UI (bottom sheet, pinch-to-zoom, decluttered). Phase 5 adds song books organization. Phase 6 prepares for app store submission. Post-MVP milestones add content scaling, cloud backend, and sharing.
 
 ## Phases
 
@@ -17,20 +17,21 @@ Ship a polished, store-ready songbook app by building on the existing functional
 - [x] **Phase 1: Bug Fixes & Core Polish** - Fix known bugs and polish existing UI for reliability
 - [x] **Phase 2: Configurable Song View** - Merged notation+chords+lyrics with toggle controls
 - [x] **Phase 3: Presentation Mode** - Full-screen lyrics display for projection and personal use
-- [ ] **Phase 4: Song Books** - Organize songs by hymnal/book with book browser
-- [ ] **Phase 5: Store Release Prep** - Branding, metadata, platform polish, submission
+- [ ] **Phase 4: Controls UI Redesign** - Bottom sheet controls, pinch-to-zoom, decluttered UX
+- [ ] **Phase 5: Song Books** - Organize songs by hymnal/book with book browser
+- [ ] **Phase 6: Store Release Prep** - Branding, metadata, platform polish, submission
 
 ### 📋 v1.1 Content & Organization
 
-- [ ] **Phase 6: Import Pipeline** - Improved OCR workflow with less manual correction
-- [ ] **Phase 7: Setlists & Playlists** - Ordered song lists for services and events
-- [ ] **Phase 8: Tags & Search** - Thematic tags, advanced filtering, search improvements
+- [ ] **Phase 7: Import Pipeline** - Improved OCR workflow with less manual correction
+- [ ] **Phase 8: Setlists & Playlists** - Ordered song lists for services and events
+- [ ] **Phase 9: Tags & Search** - Thematic tags, advanced filtering, search improvements
 
 ### 📋 v2.0 Platform & Sharing
 
-- [ ] **Phase 9: Cloud Backend** - User accounts, cloud storage architecture
-- [ ] **Phase 10: Custom Songbooks & Sharing** - User-created collections, export/import/share
-- [ ] **Phase 11: Scale & Quality** - Performance for 1000+ songs, test coverage, Riverpod migration
+- [ ] **Phase 10: Cloud Backend** - User accounts, cloud storage architecture
+- [ ] **Phase 11: Custom Songbooks & Sharing** - User-created collections, export/import/share
+- [ ] **Phase 12: Scale & Quality** - Performance for 1000+ songs, test coverage, Riverpod migration
 
 ## Phase Details
 
@@ -82,9 +83,25 @@ Plans:
 - [x] 03-01-PLAN.md — Full-screen presentation screen with verse-by-verse navigation, auto-scaling text, projection theme, route + entry point
 - [x] 03-02-PLAN.md — Persistent projection preference, responsive layout polish for phone/tablet/desktop, landscape support
 
-### Phase 4: Song Books
+### Phase 4: Controls UI Redesign
+**Goal**: Replace the overloaded floating controls column with a clean bottom sheet pattern, add pinch-to-zoom, and move presentation mode to the app bar — reducing visual clutter while preserving all functionality
+**Depends on**: Phase 3 (redesigns controls built in Phases 1-3)
+**Requirements**: [REQ-04] (UX improvement to existing controls)
+**Success Criteria** (what must be TRUE):
+  1. Floating column replaced by FAB that opens a Material bottom sheet with labeled sections
+  2. Pinch-to-zoom gesture works for text scaling (A+/A- buttons also available inside sheet)
+  3. Three view presets (Sheet Music, Chords, Lyrics) are primary; individual toggles accessible via "Custom" option
+  4. Presentation mode button is in the app bar (not buried in controls)
+  5. Transpose controls are clearly labeled with key display in the bottom sheet
+**Plans**: TBD
+
+Plans:
+- [ ] 04-01: Bottom sheet widget, migrate controls from floating column, pinch-to-zoom gesture
+- [ ] 04-02: App bar presentation button, Custom view option, polish and cleanup
+
+### Phase 5: Song Books
 **Goal**: Organize songs by hymnal/book (Hallelujah, Reformed, Youth Worship, etc.) with a book browser for navigating large collections
-**Depends on**: Phase 1 (does not depend on Phase 2/3 — can be parallelized)
+**Depends on**: Phase 1 (does not depend on Phase 2/3/4 — can be parallelized)
 **Requirements**: [REQ-06]
 **Success Criteria** (what must be TRUE):
   1. Songs are grouped by book/hymnal in the data model
@@ -95,12 +112,12 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 04-01: Design book data model and extend song JSON schema
-- [ ] 04-02: Build book browser UI and integrate with song list
+- [ ] 05-01: Design book data model and extend song JSON schema
+- [ ] 05-02: Build book browser UI and integrate with song list
 
-### Phase 5: Store Release Prep
+### Phase 6: Store Release Prep
 **Goal**: Prepare the app for public release on Google Play and Apple App Store with proper branding, metadata, and platform-specific polish
-**Depends on**: Phase 1, Phase 2, Phase 4
+**Depends on**: Phase 1, Phase 2, Phase 4, Phase 5
 **Requirements**: [REQ-07]
 **Success Criteria** (what must be TRUE):
   1. App icon and splash screen are professional and on-brand
@@ -111,12 +128,12 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 05-01: Create branding assets and configure platform manifests
-- [ ] 05-02: Platform testing and store submission
+- [ ] 06-01: Create branding assets and configure platform manifests
+- [ ] 06-02: Platform testing and store submission
 
-### Phase 6: Import Pipeline
+### Phase 7: Import Pipeline
 **Goal**: Improve the Audiveris + OCR + AI import workflow for faster, more accurate song importing with less manual correction
-**Depends on**: Phase 5 (post-MVP)
+**Depends on**: Phase 6 (post-MVP)
 **Requirements**: [FUT-01]
 **Success Criteria** (what must be TRUE):
   1. Import accuracy improved (fewer manual corrections needed per song)
@@ -125,9 +142,9 @@ Plans:
   4. Clear documentation of import workflow for repeatability
 **Plans**: TBD
 
-### Phase 7: Setlists & Playlists
+### Phase 8: Setlists & Playlists
 **Goal**: Allow users to create ordered song lists for specific services or events
-**Depends on**: Phase 4 (books must exist first)
+**Depends on**: Phase 5 (books must exist first)
 **Requirements**: [FUT-02]
 **Success Criteria** (what must be TRUE):
   1. User can create a named setlist and add songs to it
@@ -136,9 +153,9 @@ Plans:
   4. Setlists persist across app restarts
 **Plans**: TBD
 
-### Phase 8: Tags & Search
+### Phase 9: Tags & Search
 **Goal**: Add thematic tagging and advanced filtering to help users find songs by theme, season, or occasion
-**Depends on**: Phase 4
+**Depends on**: Phase 5
 **Requirements**: [FUT-07]
 **Success Criteria** (what must be TRUE):
   1. Songs can have multiple tags (praise, communion, Christmas, etc.)
@@ -147,9 +164,9 @@ Plans:
   4. Tags are editable (add/remove from songs)
 **Plans**: TBD
 
-### Phase 9: Cloud Backend
+### Phase 10: Cloud Backend
 **Goal**: Add user accounts and cloud storage to enable data sync and future sharing features
-**Depends on**: Phase 5 (needs shipped app)
+**Depends on**: Phase 6 (needs shipped app)
 **Requirements**: [FUT-04]
 **Success Criteria** (what must be TRUE):
   1. User can create account and sign in
@@ -158,9 +175,9 @@ Plans:
   4. Data migration from local-only to cloud is seamless
 **Plans**: TBD
 
-### Phase 10: Custom Songbooks & Sharing
+### Phase 11: Custom Songbooks & Sharing
 **Goal**: Allow users to create custom songbook collections and share them with others
-**Depends on**: Phase 9 (needs cloud backend)
+**Depends on**: Phase 10 (needs cloud backend)
 **Requirements**: [FUT-03]
 **Success Criteria** (what must be TRUE):
   1. User can create a custom songbook with selected songs
@@ -169,9 +186,9 @@ Plans:
   4. Shared songbooks appear in book browser alongside hymnals
 **Plans**: TBD
 
-### Phase 11: Scale & Quality
+### Phase 12: Scale & Quality
 **Goal**: Optimize for 1000+ songs, add comprehensive test coverage, and migrate to modern Riverpod patterns
-**Depends on**: Phase 9
+**Depends on**: Phase 10
 **Requirements**: [FUT-05, FUT-06]
 **Success Criteria** (what must be TRUE):
   1. App loads and searches 1000+ songs without perceptible delay
@@ -183,18 +200,19 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases 1 → 2 → 3 in sequence. Phase 4 can run parallel to 2/3. Phase 5 after 1+2+4.
+Phases 1 → 2 → 3 → 4 in sequence. Phase 5 can run parallel to 2/3/4. Phase 6 after 1+2+4+5.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Bug Fixes & Core Polish | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 2. Configurable Song View | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 3. Presentation Mode | v1.0 | 2/2 | Complete | 2026-02-14 |
-| 4. Song Books | v1.0 | 0/2 | Not started | - |
-| 5. Store Release Prep | v1.0 | 0/2 | Not started | - |
-| 6. Import Pipeline | v1.1 | 0/? | Not started | - |
-| 7. Setlists & Playlists | v1.1 | 0/? | Not started | - |
-| 8. Tags & Search | v1.1 | 0/? | Not started | - |
-| 9. Cloud Backend | v2.0 | 0/? | Not started | - |
-| 10. Custom Songbooks & Sharing | v2.0 | 0/? | Not started | - |
-| 11. Scale & Quality | v2.0 | 0/? | Not started | - |
+| 4. Controls UI Redesign | v1.0 | 0/2 | Not started | - |
+| 5. Song Books | v1.0 | 0/2 | Not started | - |
+| 6. Store Release Prep | v1.0 | 0/2 | Not started | - |
+| 7. Import Pipeline | v1.1 | 0/? | Not started | - |
+| 8. Setlists & Playlists | v1.1 | 0/? | Not started | - |
+| 9. Tags & Search | v1.1 | 0/? | Not started | - |
+| 10. Cloud Backend | v2.0 | 0/? | Not started | - |
+| 11. Custom Songbooks & Sharing | v2.0 | 0/? | Not started | - |
+| 12. Scale & Quality | v2.0 | 0/? | Not started | - |

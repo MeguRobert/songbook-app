@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 3 complete — next: Phase 4 (Song Books)
+**Current focus:** Phase 3 complete — next: Phase 4 (Controls UI Redesign)
 
 ## Current Position
 
-Phase: 3 of 11 (Presentation Mode) — COMPLETE
+Phase: 3 of 12 (Presentation Mode) — COMPLETE
 Plan: 2 of 2 in current phase
 Status: Complete
 Last activity: 2026-02-14 — Completed Phase 3 (Presentation Mode)
 
-Progress: [███░░░░░░░] 27% (3/11 phases)
+Progress: [███░░░░░░░] 25% (3/12 phases)
 
 ## Performance Metrics
 
@@ -70,7 +70,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+1. Redesign song controls UI (area: ui) — `.planning/todos/pending/2026-02-14-redesign-song-controls-ui.md`
 
 ### Blockers/Concerns
 
