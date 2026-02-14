@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 3 complete — next: Phase 4 (Controls UI Redesign)
+**Current focus:** Phase 4 complete — next: Phase 5 (Song Books)
 
 ## Current Position
 
-Phase: 4 of 12 (Controls UI Redesign)
-Plan: 1 of 2 in current phase — COMPLETE
-Status: In progress
-Last activity: 2026-02-14 — Completed 04-01-PLAN.md
+Phase: 4 of 12 (Controls UI Redesign) — COMPLETE
+Plan: 2 of 2 in current phase
+Status: Complete
+Last activity: 2026-02-14 — Completed Phase 4 (Controls UI Redesign)
 
-Progress: [███░░░░░░░] 29% (7/24 plans)
+Progress: [████░░░░░░] 33% (4/12 phases, 8/24 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 5.7 min
-- Total execution time: 0.67 hours
+- Total plans completed: 8
+- Average duration: 5.4 min
+- Total execution time: 0.72 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [███░░░░░░░] 29% (7/24 plans)
 | 01    | 2     | 18min | 9min     |
 | 02    | 2     | 18min | 9min     |
 | 03    | 2     | 5min  | 2.5min   |
-| 04    | 1     | 2min  | 2min     |
+| 04    | 2     | 6min  | 3min     |
 
 **Recent Trend:**
-- Last 5 plans: 14min, 3min, 2min, 2min
-- Trend: Excellent velocity (last 3 plans: 2min average)
+- Last 5 plans: 3min, 2min, 2min, 4min
+- Trend: Excellent velocity (Phase 4: 3min average)
 
 *Updated after each plan completion*
 
@@ -72,10 +72,12 @@ Recent decisions affecting current work:
 - [04-01]: Single FAB entry point with tune icon replaces 12-button floating column
 - [04-01]: Pinch-to-zoom gesture for text scaling (GestureDetector onScaleUpdate)
 - [04-01]: AnimatedSize for Custom toggles expand/collapse
+- [04-02]: Presentation mode button in app bar (fullscreen icon, before favorite)
+- [04-02]: isScrollControlled: true for bottom sheet to prevent overflow
 
 ### Pending Todos
 
-1. Redesign song controls UI (area: ui) — `.planning/todos/pending/2026-02-14-redesign-song-controls-ui.md`
+None (redesign-song-controls-ui todo completed by Phase 4)
 
 ### Blockers/Concerns
 
@@ -85,5 +87,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 04-01-PLAN.md (Bottom Sheet Controls)
+Stopped at: Completed Phase 4 (Controls UI Redesign) — all 5 success criteria verified
 Resume file: None
