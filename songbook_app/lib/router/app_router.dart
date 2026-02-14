@@ -7,17 +7,20 @@ import '../presentation/screens/song_view/song_view_screen.dart';
 import '../presentation/screens/favorites/favorites_screen.dart';
 import '../presentation/screens/search/search_screen.dart';
 import '../presentation/screens/settings/settings_screen.dart';
+import '../presentation/screens/presentation/presentation_screen.dart';
 import '../presentation/widgets/scaffold_with_nav_bar.dart';
 
 /// Route paths
 class AppRoutes {
   static const home = '/';
   static const song = '/song/:id';
+  static const presentation = '/presentation/:id';
   static const favorites = '/favorites';
   static const search = '/search';
   static const settings = '/settings';
 
   static String songPath(int id) => '/song/$id';
+  static String presentationPath(int id) => '/presentation/$id';
 }
 
 /// Router provider
@@ -61,6 +64,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           final idParam = state.pathParameters['id'];
           final id = int.tryParse(idParam ?? '') ?? 1;
           return SongViewScreen(songNumber: id);
+        },
+      ),
+      // Presentation mode route (outside shell for full-screen)
+      GoRoute(
+        path: AppRoutes.presentation,
+        name: 'presentation',
+        builder: (context, state) {
+          final idParam = state.pathParameters['id'];
+          final id = int.tryParse(idParam ?? '') ?? 1;
+          return PresentationScreen(songNumber: id);
         },
       ),
       // Search route (outside shell for full-screen)

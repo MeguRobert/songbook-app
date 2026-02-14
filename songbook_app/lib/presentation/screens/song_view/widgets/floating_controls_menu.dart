@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../data/models/view_config.dart';
+import '../../../../router/app_router.dart';
 import '../../../providers/providers.dart';
 import '../../../providers/song_provider.dart';
 
@@ -61,6 +63,7 @@ class _FloatingControlsMenuState extends ConsumerState<FloatingControlsMenu>
     final transpose = ref.watch(transposeProvider);
     final transpositionService = ref.read(transpositionServiceProvider);
     final songViewNotifier = ref.read(songViewProvider.notifier);
+    final songViewState = ref.watch(songViewProvider);
     final viewConfig = ref.watch(effectiveViewConfigProvider);
 
     final targetKey = transpositionService.calculateTargetKey(
@@ -95,6 +98,19 @@ class _FloatingControlsMenuState extends ConsumerState<FloatingControlsMenu>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Presentation mode button
+                      _MenuButton(
+                        icon: Icons.fullscreen,
+                        onTap: () {
+                          if (songViewState != null) {
+                            context.push(AppRoutes.presentationPath(songViewState.songNumber));
+                          }
+                        },
+                        theme: theme,
+                        tooltip: 'Presentation mode',
+                      ),
+                      const SizedBox(height: sectionSpacing),
+
                       // Text size increase
                       _MenuButton(
                         label: 'A+',
@@ -220,21 +236,25 @@ class _FloatingControlsMenuState extends ConsumerState<FloatingControlsMenu>
 
 /// Individual menu button
 class _MenuButton extends StatelessWidget {
-  final String label;
+  final String? label;
+  final IconData? icon;
   final VoidCallback onTap;
   final ThemeData theme;
   final bool isReset;
+  final String? tooltip;
 
   const _MenuButton({
-    required this.label,
+    this.label,
+    this.icon,
     required this.onTap,
     required this.theme,
     this.isReset = false,
+    this.tooltip,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final button = Material(
       color: isReset
           ? theme.colorScheme.errorContainer
           : theme.colorScheme.surfaceContainerHighest,
@@ -247,18 +267,28 @@ class _MenuButton extends StatelessWidget {
           width: 48,
           height: 40,
           alignment: Alignment.center,
-          child: Text(
-            label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: isReset
-                  ? theme.colorScheme.onErrorContainer
-                  : theme.colorScheme.primary,
-            ),
-          ),
+          child: icon != null
+              ? Icon(
+                  icon,
+                  color: isReset
+                      ? theme.colorScheme.onErrorContainer
+                      : theme.colorScheme.primary,
+                  size: 20,
+                )
+              : Text(
+                  label!,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isReset
+                        ? theme.colorScheme.onErrorContainer
+                        : theme.colorScheme.primary,
+                  ),
+                ),
         ),
       ),
     );
+
+    return tooltip != null ? Tooltip(message: tooltip!, child: button) : button;
   }
 }
 
