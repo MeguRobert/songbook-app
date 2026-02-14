@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 3 of 11 (Presentation Mode)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-14 — Completed 03-01-PLAN.md
+Last activity: 2026-02-14 — Completed 03-02-PLAN.md
 
-Progress: [██░░░░░░░░] 18% (2/11 phases complete, 1/3 plans in phase 3)
+Progress: [██░░░░░░░░] 18% (2/11 phases complete, 2/3 plans in phase 3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 7 min
+- Total plans completed: 6
+- Average duration: 6 min
 - Total execution time: 0.6 hours
 
 **By Phase:**
@@ -29,11 +29,11 @@ Progress: [██░░░░░░░░] 18% (2/11 phases complete, 1/3 plans 
 |-------|-------|-------|----------|
 | 01    | 2     | 18min | 9min     |
 | 02    | 2     | 18min | 9min     |
-| 03    | 1     | 3min  | 3min     |
+| 03    | 2     | 5min  | 2.5min   |
 
 **Recent Trend:**
-- Last 5 plans: 15min, 4min, 14min, 3min
-- Trend: Velocity increasing (last plan: 3min, very efficient)
+- Last 5 plans: 4min, 14min, 3min, 2min
+- Trend: Velocity increasing (last plan: 2min, very efficient)
 
 *Updated after each plan completion*
 
@@ -62,6 +62,11 @@ Recent decisions affecting current work:
 - [03-01]: Auto-scaling text heuristic: availableWidth / (longestLine * 0.55) clamped 24-120px
 - [03-01]: Local state projection mode toggle (black/white) vs app theme
 - [03-01]: Auto-hide controls after 3s with center tap to toggle
+- [03-02]: Projection mode persists in SharedPreferences (user preference across sessions)
+- [03-02]: Responsive breakpoints: phone (<600), tablet (600-1024), desktop (>=1024)
+- [03-02]: Landscape orientation centers text in middle 60% of width for projection screens
+- [03-02]: Song title/number displayed at top of verses, fades with controls
+- [03-02]: Single-verse songs hide verse indicator; long verses enable scrolling
 
 ### Pending Todos
 
@@ -74,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14 19:52 UTC
-Stopped at: Completed 03-01-PLAN.md (Presentation Mode Core)
+Last session: 2026-02-14 17:58 UTC
+Stopped at: Completed 03-02-PLAN.md (Responsive Layout and Persistence)
 Resume file: None
