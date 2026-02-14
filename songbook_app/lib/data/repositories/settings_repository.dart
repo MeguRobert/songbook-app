@@ -9,6 +9,7 @@ class SettingsKeys {
   static const showChords = 'show_chords';
   static const fontSize = 'font_size';
   static const viewConfig = 'view_config';
+  static const projectionMode = 'projection_mode';
 }
 
 /// Repository for app settings
@@ -99,5 +100,15 @@ class SettingsRepository {
   Future<bool> clearSongViewConfig(int songNumber) {
     final key = 'song_view_config_$songNumber';
     return _localDataSource.removeStringSetting(key);
+  }
+
+  // --- Projection Mode ---
+
+  bool getProjectionMode() {
+    return _localDataSource.getBoolSetting(SettingsKeys.projectionMode) ?? false;
+  }
+
+  Future<bool> setProjectionMode(bool enabled) {
+    return _localDataSource.setBoolSetting(SettingsKeys.projectionMode, enabled);
   }
 }

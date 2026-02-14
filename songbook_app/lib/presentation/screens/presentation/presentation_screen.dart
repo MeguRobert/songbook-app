@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/models/song.dart';
 import '../../../data/models/verse.dart';
+import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 
 /// Full-screen immersive presentation mode for displaying song lyrics verse-by-verse
@@ -30,6 +32,8 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    // Load projection mode preference
+    _projectionMode = ref.read(settingsRepositoryProvider).getProjectionMode();
     // Enter immersive mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     // Start timer to hide controls after 3 seconds
@@ -78,6 +82,8 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
     setState(() {
       _projectionMode = !_projectionMode;
     });
+    // Persist preference
+    ref.read(settingsRepositoryProvider).setProjectionMode(_projectionMode);
     _showControls();
   }
 
@@ -114,11 +120,12 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
         }
 
         // Build page content: title card + verses
+        final totalVerses = song.verses.length;
         final pages = <Widget>[
           // Title card (first page)
           _buildTitleCard(song.title, song.number),
           // Verse pages
-          ...song.verses.map((verse) => _buildVersePage(verse)),
+          ...song.verses.map((verse) => _buildVersePage(verse, song, totalVerses)),
         ];
 
         final totalPages = pages.length;
@@ -170,72 +177,98 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
                   duration: const Duration(milliseconds: 300),
                   child: IgnorePointer(
                     ignoring: !_controlsVisible,
-                    child: Stack(
-                      children: [
-                        // Exit button (top-left)
-                        Positioned(
-                          top: 16,
-                          left: 16,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white),
-                              onPressed: () => Navigator.of(context).pop(),
-                              tooltip: 'Exit',
-                            ),
-                          ),
-                        ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final orientation = MediaQuery.of(context).orientation;
+                        final isLandscape = orientation == Orientation.landscape;
 
-                        // Projection mode toggle (top-right)
-                        Positioned(
-                          top: 16,
-                          right: 16,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                _projectionMode ? Icons.wb_sunny : Icons.nightlight_round,
-                                color: Colors.white,
-                              ),
-                              onPressed: _toggleProjectionMode,
-                              tooltip: _projectionMode ? 'Normal mode' : 'Projection mode',
-                            ),
-                          ),
-                        ),
-
-                        // Page indicator (bottom center)
-                        Positioned(
-                          bottom: 16,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                '${_currentPage + 1} / $totalPages',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                        return Stack(
+                          children: [
+                            // Exit button (top-left)
+                            Positioned(
+                              top: 16,
+                              left: 16,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.close, color: Colors.white),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  tooltip: 'Exit',
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
+
+                            // Projection mode toggle (top-right)
+                            Positioned(
+                              top: 16,
+                              right: 16,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: IconButton(
+                                  icon: Icon(
+                                    _projectionMode ? Icons.wb_sunny : Icons.nightlight_round,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: _toggleProjectionMode,
+                                  tooltip: _projectionMode ? 'Normal mode' : 'Projection mode',
+                                ),
+                              ),
+                            ),
+
+                            // Page indicator (bottom center in portrait, bottom-right in landscape)
+                            Positioned(
+                              bottom: 16,
+                              left: isLandscape ? null : 0,
+                              right: isLandscape ? 16 : 0,
+                              child: isLandscape
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Text(
+                                        '${_currentPage + 1} / $totalPages',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    )
+                                  : Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.5),
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        child: Text(
+                                          '${_currentPage + 1} / $totalPages',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -295,12 +328,45 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
     );
   }
 
-  Widget _buildVersePage(Verse verse) {
+  Widget _buildVersePage(Verse verse, Song song, int totalVerses) {
     final textColor = _projectionMode ? Colors.white : null;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final displayText = verse.displayText;
+        final screenWidth = constraints.maxWidth;
+        final screenHeight = constraints.maxHeight;
+        final orientation = MediaQuery.of(context).orientation;
+        final isLandscape = orientation == Orientation.landscape;
+
+        // Determine screen category for responsive layout
+        final isPhone = screenWidth < 600;
+        final isTablet = screenWidth >= 600 && screenWidth < 1024;
+        // Desktop/Projection: >= 1024
+
+        // Responsive padding
+        final horizontalPadding = isPhone ? 16.0 : (isTablet ? 32.0 : 64.0);
+        final verticalPadding = isPhone ? 24.0 : (isTablet ? 48.0 : 64.0);
+
+        // Landscape: center text in middle ~60% of width
+        final effectivePadding = isLandscape
+            ? EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.2,
+                vertical: verticalPadding,
+              )
+            : EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: verticalPadding,
+              );
+
+        // Calculate available text area
+        final availableWidthFactor = isPhone ? 0.9 : (isTablet ? 0.85 : 0.8);
+        final availableWidth = (isLandscape ? screenWidth * 0.6 : screenWidth) * availableWidthFactor;
+
+        // Responsive font size clamping
+        final minFontSize = isPhone ? 20.0 : (isTablet ? 28.0 : 36.0);
+        final maxFontSize = isPhone ? 72.0 : (isTablet ? 96.0 : 120.0);
+
+        final displayText = verse.displayText.isNotEmpty ? verse.displayText : '...';
         final lines = displayText.split('\n');
 
         // Calculate longest line for auto-scaling
@@ -312,23 +378,43 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
         }
 
         // Auto-scale font based on available width and longest line
-        // Heuristic: fontSize = availableWidth / (longestLineCharCount * 0.55)
-        // Clamped between 24 and 120
-        final availableWidth = constraints.maxWidth * 0.9; // Leave some margin
         double calculatedFontSize = maxLineLength > 0
             ? availableWidth / (maxLineLength * 0.55)
             : 48.0;
-        calculatedFontSize = calculatedFontSize.clamp(24.0, 120.0);
+        calculatedFontSize = calculatedFontSize.clamp(minFontSize, maxFontSize);
 
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Verse number indicator (subtle)
-                Text(
+        // Check if text is too tall and needs scrolling
+        final estimatedTextHeight = lines.length * calculatedFontSize * 1.4;
+        final needsScrolling = estimatedTextHeight > (screenHeight - verticalPadding * 2 - 80);
+
+        final verseContent = Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Song title context (subtle, fades with controls)
+            AnimatedOpacity(
+              opacity: _controlsVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Text(
+                '${song.number}. ${song.title}',
+                style: TextStyle(
+                  fontSize: verse.number == 1 ? 16.0 : 14.0,
+                  fontWeight: verse.number == 1 ? FontWeight.w500 : FontWeight.w400,
+                  color: textColor?.withValues(alpha: verse.number == 1 ? 0.7 : 0.5) ??
+                         Colors.grey.withValues(alpha: verse.number == 1 ? 0.7 : 0.5),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            SizedBox(height: verse.number == 1 ? 24 : 16),
+
+            // Verse number indicator (subtle) - hide if only 1 verse
+            if (totalVerses > 1)
+              Padding(
+                padding: EdgeInsets.only(
+                  bottom: isLandscape ? 8.0 : 16.0,
+                ),
+                child: Text(
                   '${verse.number}',
                   style: TextStyle(
                     fontSize: calculatedFontSize * 0.4,
@@ -337,30 +423,44 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
                            Colors.grey.withValues(alpha: 0.6),
                   ),
                 ),
-                const SizedBox(height: 16),
+              ),
 
-                // Verse text with auto-scaling
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: constraints.maxWidth * 0.9,
-                    ),
-                    child: Text(
-                      displayText,
-                      style: TextStyle(
-                        fontSize: calculatedFontSize,
-                        height: 1.4,
-                        color: textColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+            // Verse text with auto-scaling
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: availableWidth,
+                ),
+                child: Text(
+                  displayText,
+                  style: TextStyle(
+                    fontSize: calculatedFontSize,
+                    height: 1.4,
+                    color: textColor,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
+        );
+
+        return needsScrolling
+            ? SingleChildScrollView(
+                child: Padding(
+                  padding: effectivePadding,
+                  child: Center(
+                    child: verseContent,
                   ),
                 ),
-              ],
-            ),
-          ),
-        );
+              )
+            : Center(
+                child: Padding(
+                  padding: effectivePadding,
+                  child: verseContent,
+                ),
+              );
       },
     );
   }
