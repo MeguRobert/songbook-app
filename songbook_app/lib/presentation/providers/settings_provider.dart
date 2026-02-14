@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/models/view_config.dart';
 import '../../data/repositories/settings_repository.dart';
 import 'providers.dart';
 
@@ -7,26 +8,26 @@ import 'providers.dart';
 class SettingsState {
   final bool showChords;
   final double fontSize;
-  final SongViewMode viewMode;
+  final ViewConfig viewConfig;
   final int defaultTranspose;
 
   const SettingsState({
     this.showChords = true,
     this.fontSize = 18.0,
-    this.viewMode = SongViewMode.chords,
+    this.viewConfig = const ViewConfig(),
     this.defaultTranspose = 0,
   });
 
   SettingsState copyWith({
     bool? showChords,
     double? fontSize,
-    SongViewMode? viewMode,
+    ViewConfig? viewConfig,
     int? defaultTranspose,
   }) {
     return SettingsState(
       showChords: showChords ?? this.showChords,
       fontSize: fontSize ?? this.fontSize,
-      viewMode: viewMode ?? this.viewMode,
+      viewConfig: viewConfig ?? this.viewConfig,
       defaultTranspose: defaultTranspose ?? this.defaultTranspose,
     );
   }
@@ -45,7 +46,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     state = SettingsState(
       showChords: repository.getShowChords(),
       fontSize: repository.getFontSize(),
-      viewMode: repository.getViewMode(),
+      viewConfig: repository.getViewConfig(),
       defaultTranspose: repository.getDefaultTranspose(),
     );
   }
@@ -62,23 +63,34 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     state = state.copyWith(fontSize: size);
   }
 
-  Future<void> setViewMode(SongViewMode mode) async {
+  Future<void> setViewConfig(ViewConfig config) async {
     final repository = _ref.read(settingsRepositoryProvider);
-    await repository.setViewMode(mode);
-    state = state.copyWith(viewMode: mode);
+    await repository.setViewConfig(config);
+    state = state.copyWith(viewConfig: config);
+  }
+
+  Future<void> toggleNotation() async {
+    final newConfig = state.viewConfig.copyWith(
+      showNotation: !state.viewConfig.showNotation,
+    );
+    await setViewConfig(newConfig);
+  }
+
+  Future<void> toggleChords() async {
+    final newConfig = state.viewConfig.copyWith(
+      showChords: !state.viewConfig.showChords,
+    );
+    await setViewConfig(newConfig);
+  }
+
+  Future<void> setPreset(ViewConfig preset) async {
+    await setViewConfig(preset);
   }
 
   Future<void> setDefaultTranspose(int semitones) async {
     final repository = _ref.read(settingsRepositoryProvider);
     await repository.setDefaultTranspose(semitones);
     state = state.copyWith(defaultTranspose: semitones);
-  }
-
-  Future<void> toggleViewMode() async {
-    final newMode = state.viewMode == SongViewMode.chords
-        ? SongViewMode.sheet
-        : SongViewMode.chords;
-    await setViewMode(newMode);
   }
 
   void increaseFontSize() {
@@ -110,7 +122,7 @@ final fontSizeProvider = Provider<double>((ref) {
   return ref.watch(settingsProvider).fontSize;
 });
 
-/// Provider for view mode setting
-final viewModeProvider = Provider<SongViewMode>((ref) {
-  return ref.watch(settingsProvider).viewMode;
+/// Provider for view config setting
+final viewConfigProvider = Provider<ViewConfig>((ref) {
+  return ref.watch(settingsProvider).viewConfig;
 });

@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/song.dart';
+import '../../data/models/view_config.dart';
 import 'providers.dart';
+import 'settings_provider.dart';
 
 /// Provider for all songs
 final songsProvider = FutureProvider<List<Song>>((ref) async {
@@ -26,32 +28,45 @@ class SongViewState {
   final int songNumber;
   final int transposeAmount;
   final double textScale;
+  final ViewConfig? activeViewConfig;
 
   const SongViewState({
     required this.songNumber,
     this.transposeAmount = 0,
     this.textScale = 1.0,
+    this.activeViewConfig,
   });
 
   SongViewState copyWith({
     int? songNumber,
     int? transposeAmount,
     double? textScale,
+    ViewConfig? activeViewConfig,
   }) {
     return SongViewState(
       songNumber: songNumber ?? this.songNumber,
       transposeAmount: transposeAmount ?? this.transposeAmount,
       textScale: textScale ?? this.textScale,
+      activeViewConfig: activeViewConfig ?? this.activeViewConfig,
     );
   }
 }
 
 /// Notifier for the current song view state
 class SongViewNotifier extends StateNotifier<SongViewState?> {
-  SongViewNotifier() : super(null);
+  final Ref _ref;
+
+  SongViewNotifier(this._ref) : super(null);
 
   void openSong(int songNumber) {
-    state = SongViewState(songNumber: songNumber);
+    // Check for per-song view config override
+    final repository = _ref.read(settingsRepositoryProvider);
+    final songViewConfig = repository.getSongViewConfig(songNumber);
+
+    state = SongViewState(
+      songNumber: songNumber,
+      activeViewConfig: songViewConfig,
+    );
   }
 
   void closeSong() {
@@ -107,12 +122,74 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
       state = state!.copyWith(textScale: 1.0);
     }
   }
+
+  // --- View Config Management ---
+
+  /// Gets the effective view config (per-song override or global default)
+  ViewConfig getEffectiveConfig() {
+    if (state?.activeViewConfig != null) {
+      return state!.activeViewConfig!;
+    }
+    return _ref.read(viewConfigProvider);
+  }
+
+  /// Sets a temporary active view config (does not persist)
+  void setActiveViewConfig(ViewConfig config) {
+    if (state != null) {
+      state = state!.copyWith(activeViewConfig: config);
+    }
+  }
+
+  /// Toggles notation visibility (creates temporary override)
+  void toggleNotation() {
+    if (state != null) {
+      final current = getEffectiveConfig();
+      final newConfig = current.copyWith(showNotation: !current.showNotation);
+      setActiveViewConfig(newConfig);
+    }
+  }
+
+  /// Toggles chord visibility (creates temporary override)
+  void toggleChords() {
+    if (state != null) {
+      final current = getEffectiveConfig();
+      final newConfig = current.copyWith(showChords: !current.showChords);
+      setActiveViewConfig(newConfig);
+    }
+  }
+
+  /// Sets a preset (creates temporary override)
+  void setPreset(ViewConfig preset) {
+    if (state != null) {
+      setActiveViewConfig(preset);
+    }
+  }
+
+  /// Saves the current active view config as a per-song override
+  Future<void> saveViewConfigForSong() async {
+    if (state?.activeViewConfig != null) {
+      final repository = _ref.read(settingsRepositoryProvider);
+      await repository.setSongViewConfig(
+        state!.songNumber,
+        state!.activeViewConfig!,
+      );
+    }
+  }
+
+  /// Clears the per-song override and reverts to global default
+  Future<void> clearViewConfigForSong() async {
+    if (state != null) {
+      final repository = _ref.read(settingsRepositoryProvider);
+      await repository.clearSongViewConfig(state!.songNumber);
+      state = state!.copyWith(activeViewConfig: null);
+    }
+  }
 }
 
 /// Provider for the current song view state
 final songViewProvider =
     StateNotifierProvider<SongViewNotifier, SongViewState?>((ref) {
-  return SongViewNotifier();
+  return SongViewNotifier(ref);
 });
 
 /// Provider for the transpose amount of the current song
@@ -125,4 +202,13 @@ final transposeProvider = Provider<int>((ref) {
 final textScaleProvider = Provider<double>((ref) {
   final viewState = ref.watch(songViewProvider);
   return viewState?.textScale ?? 1.0;
+});
+
+/// Provider for the effective view config (per-song override or global default)
+final effectiveViewConfigProvider = Provider<ViewConfig>((ref) {
+  final songState = ref.watch(songViewProvider);
+  if (songState?.activeViewConfig != null) {
+    return songState!.activeViewConfig!;
+  }
+  return ref.watch(viewConfigProvider);
 });
