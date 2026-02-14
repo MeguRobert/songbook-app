@@ -111,6 +111,11 @@ class LocalDataSource {
     return _prefs.setString('$_settingsPrefix$key', value);
   }
 
+  /// Removes a string setting
+  Future<bool> removeStringSetting(String key) {
+    return _prefs.remove('$_settingsPrefix$key');
+  }
+
   /// Gets an int setting
   int? getIntSetting(String key) {
     return _prefs.getInt('$_settingsPrefix$key');

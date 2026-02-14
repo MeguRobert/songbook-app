@@ -1,5 +1,6 @@
 import '../../core/theme/app_theme.dart';
 import '../datasources/local/local_datasource.dart';
+import '../models/view_config.dart';
 
 /// Keys for settings storage
 class SettingsKeys {
@@ -7,13 +8,7 @@ class SettingsKeys {
   static const defaultTranspose = 'default_transpose';
   static const showChords = 'show_chords';
   static const fontSize = 'font_size';
-  static const viewMode = 'view_mode'; // 'chords' or 'sheet'
-}
-
-/// View mode for song display
-enum SongViewMode {
-  chords,
-  sheet,
+  static const viewConfig = 'view_config';
 }
 
 /// Repository for app settings
@@ -70,17 +65,39 @@ class SettingsRepository {
     return _localDataSource.setIntSetting(SettingsKeys.fontSize, size.round());
   }
 
-  // --- View Mode ---
+  // --- View Config ---
 
-  SongViewMode getViewMode() {
-    final value = _localDataSource.getStringSetting(SettingsKeys.viewMode);
-    return SongViewMode.values.firstWhere(
-      (mode) => mode.name == value,
-      orElse: () => SongViewMode.chords,
+  ViewConfig getViewConfig() {
+    final value = _localDataSource.getStringSetting(SettingsKeys.viewConfig);
+    if (value == null) {
+      return const ViewConfig(); // Default: all on
+    }
+    return ViewConfig.fromStorageString(value);
+  }
+
+  Future<bool> setViewConfig(ViewConfig config) {
+    return _localDataSource.setStringSetting(
+      SettingsKeys.viewConfig,
+      config.toStorageString(),
     );
   }
 
-  Future<bool> setViewMode(SongViewMode mode) {
-    return _localDataSource.setStringSetting(SettingsKeys.viewMode, mode.name);
+  // --- Per-Song View Config ---
+
+  ViewConfig? getSongViewConfig(int songNumber) {
+    final key = 'song_view_config_$songNumber';
+    final value = _localDataSource.getStringSetting(key);
+    if (value == null) return null;
+    return ViewConfig.fromStorageString(value);
+  }
+
+  Future<bool> setSongViewConfig(int songNumber, ViewConfig config) {
+    final key = 'song_view_config_$songNumber';
+    return _localDataSource.setStringSetting(key, config.toStorageString());
+  }
+
+  Future<bool> clearSongViewConfig(int songNumber) {
+    final key = 'song_view_config_$songNumber';
+    return _localDataSource.removeStringSetting(key);
   }
 }
