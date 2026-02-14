@@ -10,28 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 2 of 11 (Configurable Song View)
-Plan: 0 of 2 in current phase
-Status: Not started
-Last activity: 2026-02-10 — Completed Phase 1 (Bug Fixes & Core Polish)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-14 — Completed 02-01-PLAN.md (ViewConfig State Model)
 
-Progress: [█░░░░░░░░░] 9% (1/11 phases)
+Progress: [█░░░░░░░░░] 9% (1/11 phases complete, 1/2 plans in current phase)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 9 min
-- Total execution time: 0.3 hours
+- Total plans completed: 3
+- Average duration: 7 min
+- Total execution time: 0.4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01    | 2     | 18min | 9min     |
+| 02    | 1     | 4min  | 4min     |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 15min
-- Trend: Starting fresh
+- Last 5 plans: 3min, 15min, 4min
+- Trend: Consistent velocity
 
 *Updated after each plan completion*
 
@@ -49,6 +50,9 @@ Recent decisions affecting current work:
 - [01-01]: Dart record types for structured SVG fallback state
 - [01-02]: Center + ConstrainedBox(maxWidth: 600) pattern for responsive centered layout
 - [01-02]: Never modify provider state in dispose(); rely on fresh state creation in openSong()
+- [02-01]: ViewConfig two-toggle model (showNotation + showChords) with lyrics always visible
+- [02-01]: Per-song overrides stored as nullable activeViewConfig (null = use global default)
+- [02-01]: Storage format uses colon-delimited string "notation:chords" for SharedPreferences
 
 ### Pending Todos
 
@@ -60,6 +64,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-10
-Stopped at: Completed Phase 1 (Bug Fixes & Core Polish) — all 5 success criteria verified
+Last session: 2026-02-14
+Stopped at: Completed 02-01-PLAN.md — ViewConfig state model and provider layer migration complete
 Resume file: None
