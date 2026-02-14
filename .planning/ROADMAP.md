@@ -93,11 +93,11 @@ Plans:
   3. Three view presets (Sheet Music, Chords, Lyrics) are primary; individual toggles accessible via "Custom" option
   4. Presentation mode button is in the app bar (not buried in controls)
   5. Transpose controls are clearly labeled with key display in the bottom sheet
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 04-01: Bottom sheet widget, migrate controls from floating column, pinch-to-zoom gesture
-- [ ] 04-02: App bar presentation button, Custom view option, polish and cleanup
+- [ ] 04-01-PLAN.md — Bottom sheet controls widget, FAB trigger, pinch-to-zoom gesture
+- [ ] 04-02-PLAN.md — App bar presentation button, Custom view option, cleanup old floating menu
 
 ### Phase 5: Song Books
 **Goal**: Organize songs by hymnal/book (Hallelujah, Reformed, Youth Worship, etc.) with a book browser for navigating large collections
