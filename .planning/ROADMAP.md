@@ -60,11 +60,11 @@ Plans:
   3. User can view chords+lyrics without notation (current chord view behavior preserved)
   4. Toggle controls are accessible and discoverable in the floating menu
   5. View configuration persists across song navigation and app restart
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 02-01: Design and implement configurable view architecture
-- [ ] 02-02: Build toggle controls UI and integrate with settings persistence
+- [ ] 02-01-PLAN.md — ViewConfig state model, persistence layer (global + per-song), provider migration from SongViewMode
+- [ ] 02-02-PLAN.md — Unified song view rendering, floating menu toggle/preset controls, settings screen update
 
 ### Phase 3: Presentation Mode
 **Goal**: Add a projection-friendly lyrics display mode for church services, supporting large screens, second displays, and personal large-text reading
