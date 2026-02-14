@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../data/repositories/settings_repository.dart';
+import '../../../data/models/view_config.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -56,20 +56,11 @@ class SettingsScreen extends ConsumerWidget {
 
           // Display section
           _buildSectionHeader(context, 'Display'),
-          SwitchListTile(
-            secondary: const Icon(Icons.music_note),
-            title: const Text('Show Chords'),
-            subtitle: const Text('Display chord symbols above lyrics'),
-            value: settings.showChords,
-            onChanged: (value) {
-              ref.read(settingsProvider.notifier).setShowChords(value);
-            },
-          ),
           ListTile(
             leading: const Icon(Icons.view_agenda),
             title: const Text('Default View'),
-            subtitle: Text(_getViewModeLabel(settings.viewMode)),
-            onTap: () => _showViewModeDialog(context, ref, settings.viewMode),
+            subtitle: Text(_getViewConfigLabel(settings.viewConfig)),
+            onTap: () => _showViewConfigDialog(context, ref, settings.viewConfig),
           ),
 
           const Divider(),
@@ -113,11 +104,12 @@ class SettingsScreen extends ConsumerWidget {
     };
   }
 
-  String _getViewModeLabel(SongViewMode mode) {
-    return switch (mode) {
-      SongViewMode.chords => 'Lyrics with chords',
-      SongViewMode.sheet => 'Sheet music',
-    };
+  String _getViewConfigLabel(ViewConfig config) {
+    if (config.isSheetMusicPreset) return 'Sheet Music';
+    if (config.isChordsPreset) return 'Chords';
+    if (config.isLyricsOnlyPreset) return 'Lyrics Only';
+    if (config.isNotationWithoutChords) return 'Notation without chords';
+    return 'Custom';
   }
 
   void _showThemeDialog(BuildContext context, WidgetRef ref, AppThemeMode current) {
@@ -142,25 +134,51 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _showViewModeDialog(BuildContext context, WidgetRef ref, SongViewMode current) {
+  void _showViewConfigDialog(BuildContext context, WidgetRef ref, ViewConfig current) {
     showDialog(
       context: context,
       builder: (context) => SimpleDialog(
         title: const Text('Default View'),
-        children: SongViewMode.values.map((mode) {
-          return RadioListTile<SongViewMode>(
-            title: Text(_getViewModeLabel(mode)),
-            value: mode,
-            groupValue: current,
+        children: [
+          RadioListTile<String>(
+            title: const Text('Sheet Music'),
+            subtitle: const Text('Notation with chords and lyrics'),
+            value: 'sheet',
+            groupValue: _getPresetKey(current),
             onChanged: (value) {
-              if (value != null) {
-                ref.read(settingsProvider.notifier).setViewMode(value);
-              }
+              ref.read(settingsProvider.notifier).setPreset(const ViewConfig.sheetMusic());
               Navigator.pop(context);
             },
-          );
-        }).toList(),
+          ),
+          RadioListTile<String>(
+            title: const Text('Chords'),
+            subtitle: const Text('Chords and lyrics only'),
+            value: 'chords',
+            groupValue: _getPresetKey(current),
+            onChanged: (value) {
+              ref.read(settingsProvider.notifier).setPreset(const ViewConfig.chords());
+              Navigator.pop(context);
+            },
+          ),
+          RadioListTile<String>(
+            title: const Text('Lyrics Only'),
+            subtitle: const Text('Clean text without notation or chords'),
+            value: 'lyrics',
+            groupValue: _getPresetKey(current),
+            onChanged: (value) {
+              ref.read(settingsProvider.notifier).setPreset(const ViewConfig.lyricsOnly());
+              Navigator.pop(context);
+            },
+          ),
+        ],
       ),
     );
+  }
+
+  String _getPresetKey(ViewConfig config) {
+    if (config.isSheetMusicPreset) return 'sheet';
+    if (config.isChordsPreset) return 'chords';
+    if (config.isLyricsOnlyPreset) return 'lyrics';
+    return 'custom';
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../data/models/view_config.dart';
 import '../../../providers/providers.dart';
 import '../../../providers/song_provider.dart';
 
@@ -60,6 +61,7 @@ class _FloatingControlsMenuState extends ConsumerState<FloatingControlsMenu>
     final transpose = ref.watch(transposeProvider);
     final transpositionService = ref.read(transpositionServiceProvider);
     final songViewNotifier = ref.read(songViewProvider.notifier);
+    final viewConfig = ref.watch(effectiveViewConfigProvider);
 
     final targetKey = transpositionService.calculateTargetKey(
       widget.originalKey,
@@ -104,6 +106,50 @@ class _FloatingControlsMenuState extends ConsumerState<FloatingControlsMenu>
                         label: 'A-',
                         onTap: songViewNotifier.decreaseTextScale,
                         theme: theme,
+                      ),
+                      const SizedBox(height: sectionSpacing),
+
+                      // View controls section
+                      _ViewToggleButton(
+                        icon: Icons.music_note,
+                        isActive: viewConfig.showNotation,
+                        onTap: songViewNotifier.toggleNotation,
+                        theme: theme,
+                        tooltip: 'Toggle notation',
+                      ),
+                      const SizedBox(height: spacing),
+                      _ViewToggleButton(
+                        label: 'C7',
+                        isActive: viewConfig.showChords,
+                        onTap: songViewNotifier.toggleChords,
+                        theme: theme,
+                        tooltip: 'Toggle chords',
+                      ),
+                      const SizedBox(height: spacing),
+
+                      // Preset buttons
+                      _PresetButton(
+                        icon: Icons.piano,
+                        isActive: viewConfig.isSheetMusicPreset,
+                        onTap: () => songViewNotifier.setPreset(const ViewConfig.sheetMusic()),
+                        theme: theme,
+                        tooltip: 'Sheet Music',
+                      ),
+                      const SizedBox(height: spacing),
+                      _PresetButton(
+                        label: 'C',
+                        isActive: viewConfig.isChordsPreset,
+                        onTap: () => songViewNotifier.setPreset(const ViewConfig.chords()),
+                        theme: theme,
+                        tooltip: 'Chords',
+                      ),
+                      const SizedBox(height: spacing),
+                      _PresetButton(
+                        label: 'T',
+                        isActive: viewConfig.isLyricsOnlyPreset,
+                        onTap: () => songViewNotifier.setPreset(const ViewConfig.lyricsOnly()),
+                        theme: theme,
+                        tooltip: 'Lyrics',
                       ),
                       const SizedBox(height: sectionSpacing),
 
@@ -306,6 +352,124 @@ class _ToggleButton extends StatelessWidget {
                   ? theme.colorScheme.onPrimary
                   : theme.colorScheme.onSurface,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// View toggle button (notation/chords toggle)
+class _ViewToggleButton extends StatelessWidget {
+  final IconData? icon;
+  final String? label;
+  final bool isActive;
+  final VoidCallback onTap;
+  final ThemeData theme;
+  final String tooltip;
+
+  const _ViewToggleButton({
+    this.icon,
+    this.label,
+    required this.isActive,
+    required this.onTap,
+    required this.theme,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: isActive
+            ? theme.colorScheme.primaryContainer
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: const BorderRadius.horizontal(left: Radius.circular(24)),
+        elevation: 2,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: const BorderRadius.horizontal(left: Radius.circular(24)),
+          child: Container(
+            width: 48,
+            height: 40,
+            alignment: Alignment.center,
+            child: icon != null
+                ? Icon(
+                    icon,
+                    size: 20,
+                    color: isActive
+                        ? theme.colorScheme.onPrimaryContainer
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  )
+                : Text(
+                    label!,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isActive
+                          ? theme.colorScheme.onPrimaryContainer
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Preset button (Sheet Music, Chords, Lyrics)
+class _PresetButton extends StatelessWidget {
+  final IconData? icon;
+  final String? label;
+  final bool isActive;
+  final VoidCallback onTap;
+  final ThemeData theme;
+  final String tooltip;
+
+  const _PresetButton({
+    this.icon,
+    this.label,
+    required this.isActive,
+    required this.onTap,
+    required this.theme,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: isActive
+            ? theme.colorScheme.primary
+            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: const BorderRadius.horizontal(left: Radius.circular(24)),
+        elevation: isActive ? 3 : 1,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: const BorderRadius.horizontal(left: Radius.circular(24)),
+          child: Container(
+            width: 48,
+            height: 36,
+            alignment: Alignment.center,
+            child: icon != null
+                ? Icon(
+                    icon,
+                    size: 18,
+                    color: isActive
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  )
+                : Text(
+                    label!,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                      color: isActive
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
           ),
         ),
       ),

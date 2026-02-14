@@ -1,31 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/view_config.dart';
-import '../../data/repositories/settings_repository.dart';
 import 'providers.dart';
 
 /// State for app settings
 class SettingsState {
-  final bool showChords;
   final double fontSize;
   final ViewConfig viewConfig;
   final int defaultTranspose;
 
   const SettingsState({
-    this.showChords = true,
     this.fontSize = 18.0,
     this.viewConfig = const ViewConfig(),
     this.defaultTranspose = 0,
   });
 
   SettingsState copyWith({
-    bool? showChords,
     double? fontSize,
     ViewConfig? viewConfig,
     int? defaultTranspose,
   }) {
     return SettingsState(
-      showChords: showChords ?? this.showChords,
       fontSize: fontSize ?? this.fontSize,
       viewConfig: viewConfig ?? this.viewConfig,
       defaultTranspose: defaultTranspose ?? this.defaultTranspose,
@@ -44,17 +39,10 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   void _loadSettings() {
     final repository = _ref.read(settingsRepositoryProvider);
     state = SettingsState(
-      showChords: repository.getShowChords(),
       fontSize: repository.getFontSize(),
       viewConfig: repository.getViewConfig(),
       defaultTranspose: repository.getDefaultTranspose(),
     );
-  }
-
-  Future<void> setShowChords(bool show) async {
-    final repository = _ref.read(settingsRepositoryProvider);
-    await repository.setShowChords(show);
-    state = state.copyWith(showChords: show);
   }
 
   Future<void> setFontSize(double size) async {
@@ -110,11 +98,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, SettingsState>((ref) {
   return SettingsNotifier(ref);
-});
-
-/// Provider for show chords setting
-final showChordsProvider = Provider<bool>((ref) {
-  return ref.watch(settingsProvider).showChords;
 });
 
 /// Provider for font size setting

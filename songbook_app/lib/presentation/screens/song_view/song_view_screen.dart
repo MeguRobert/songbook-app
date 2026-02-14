@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/models/view_config.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/song_provider.dart';
 import 'widgets/chord_view.dart';
