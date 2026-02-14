@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show sqrt, min;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +24,7 @@ class PresentationScreen extends ConsumerStatefulWidget {
 
 class _PresentationScreenState extends ConsumerState<PresentationScreen> {
   late PageController _pageController;
+  final FocusNode _focusNode = FocusNode();
   int _currentPage = 0;
   bool _controlsVisible = true;
   bool _projectionMode = false;
@@ -32,19 +34,16 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
-    // Load projection mode preference
     _projectionMode = ref.read(settingsRepositoryProvider).getProjectionMode();
-    // Enter immersive mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    // Start timer to hide controls after 3 seconds
     _startHideTimer();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _focusNode.dispose();
     _hideTimer?.cancel();
-    // Restore normal system UI
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
@@ -82,8 +81,18 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
     setState(() {
       _projectionMode = !_projectionMode;
     });
-    // Persist preference
     ref.read(settingsRepositoryProvider).setProjectionMode(_projectionMode);
+    _showControls();
+  }
+
+  void _goToPage(int page) {
+    final total = _totalPages;
+    if (total == null || page < 0 || page >= total) return;
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
     _showControls();
   }
 
@@ -107,187 +116,228 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
     _showControls();
   }
 
+  // Map digit keys to LogicalKeyboardKey
+  static final _digitKeys = {
+    LogicalKeyboardKey.digit1: 1,
+    LogicalKeyboardKey.digit2: 2,
+    LogicalKeyboardKey.digit3: 3,
+    LogicalKeyboardKey.digit4: 4,
+    LogicalKeyboardKey.digit5: 5,
+    LogicalKeyboardKey.digit6: 6,
+    LogicalKeyboardKey.digit7: 7,
+    LogicalKeyboardKey.digit8: 8,
+    LogicalKeyboardKey.digit9: 9,
+    LogicalKeyboardKey.numpad1: 1,
+    LogicalKeyboardKey.numpad2: 2,
+    LogicalKeyboardKey.numpad3: 3,
+    LogicalKeyboardKey.numpad4: 4,
+    LogicalKeyboardKey.numpad5: 5,
+    LogicalKeyboardKey.numpad6: 6,
+    LogicalKeyboardKey.numpad7: 7,
+    LogicalKeyboardKey.numpad8: 8,
+    LogicalKeyboardKey.numpad9: 9,
+  };
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    final totalPages = _totalPages;
+    if (totalPages == null) return KeyEventResult.ignored;
+
+    // Number keys: jump to slide (1 = title/first page, 2 = verse 1, etc.)
+    final digit = _digitKeys[event.logicalKey];
+    if (digit != null) {
+      _goToPage(digit - 1); // 1-indexed for user, 0-indexed internally
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
+        event.logicalKey == LogicalKeyboardKey.space ||
+        event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.pageDown) {
+      _nextPage(totalPages);
+      return KeyEventResult.handled;
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+               event.logicalKey == LogicalKeyboardKey.pageUp) {
+      _previousPage();
+      return KeyEventResult.handled;
+    } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+      Navigator.of(context).pop();
+      return KeyEventResult.handled;
+    } else if (event.logicalKey == LogicalKeyboardKey.home) {
+      _goToPage(0);
+      return KeyEventResult.handled;
+    } else if (event.logicalKey == LogicalKeyboardKey.end) {
+      _goToPage(totalPages - 1);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  int? _totalPages;
+
+  /// Compute a consistent font size across all verses that maximizes text size.
+  ///
+  /// For multi-line verses (with \n breaks): constrained by longest line width + total height.
+  /// For single-paragraph verses (no breaks): uses area formula accounting for text wrapping.
+  /// Returns the minimum across all verses so every verse fits at the same size.
+  double _computeConsistentFontSize(
+    List<Verse> verses,
+    double availableWidth,
+    double availableHeight,
+    double minFont,
+    double maxFont,
+    int totalVerses,
+  ) {
+    const charWidthFactor = 0.48;
+    const lineHeightFactor = 1.3;
+    double result = maxFont;
+
+    for (final verse in verses) {
+      final text = verse.displayText.isNotEmpty ? verse.displayText : '...';
+      final lines = text.split('\n');
+      final prefixChars = totalVerses > 1 ? '${verse.number}. '.length : 0;
+
+      double verseFontSize;
+
+      if (lines.length > 1) {
+        // Multi-line verse with explicit breaks: width + height constraints
+        int maxLineLen = 0;
+        for (int i = 0; i < lines.length; i++) {
+          int len = lines[i].length;
+          if (i == 0) len += prefixChars;
+          if (len > maxLineLen) maxLineLen = len;
+        }
+        if (maxLineLen == 0) continue;
+
+        final fWidth = availableWidth / (maxLineLen * charWidthFactor);
+        final fHeight = availableHeight / (lines.length * lineHeightFactor);
+        verseFontSize = min(fWidth, fHeight);
+      } else {
+        // Single paragraph (no line breaks): area formula for wrapping text
+        // At font f, chars per visual line = availableWidth / (f * charWidth)
+        // Visual lines = totalChars / charsPerLine = totalChars * f * charWidth / availableWidth
+        // Total height = visualLines * f * lineHeight
+        // Solving: totalChars * f^2 * charWidth * lineHeight / availableWidth <= availableHeight
+        // f <= sqrt(availableWidth * availableHeight / (totalChars * charWidth * lineHeight))
+        final totalChars = text.length + prefixChars;
+        if (totalChars == 0) continue;
+        verseFontSize = sqrt(
+          availableWidth * availableHeight / (totalChars * charWidthFactor * lineHeightFactor),
+        );
+      }
+
+      if (verseFontSize < result) result = verseFontSize;
+    }
+
+    return result.clamp(minFont, maxFont);
+  }
+
   @override
   Widget build(BuildContext context) {
     final songAsync = ref.watch(songByNumberProvider(widget.songNumber));
+    final theme = Theme.of(context);
+    final isDarkTheme = theme.brightness == Brightness.dark;
+
+    final Color bgColor;
+    final Color textColor;
+    if (_projectionMode) {
+      bgColor = Colors.black;
+      textColor = Colors.white;
+    } else {
+      bgColor = theme.scaffoldBackgroundColor;
+      textColor = theme.textTheme.bodyLarge?.color ?? (isDarkTheme ? Colors.white : Colors.black);
+    }
 
     return songAsync.when(
       data: (song) {
         if (song == null) {
-          return const Scaffold(
-            body: Center(child: Text('Song not found')),
+          return Scaffold(
+            backgroundColor: bgColor,
+            body: Center(child: Text('Song not found', style: TextStyle(color: textColor))),
           );
         }
 
-        // Build page content: title card + verses
         final totalVerses = song.verses.length;
         final pages = <Widget>[
-          // Title card (first page)
-          _buildTitleCard(song.title, song.number),
-          // Verse pages
-          ...song.verses.map((verse) => _buildVersePage(verse, song, totalVerses)),
+          _buildTitleCard(song.title, song.number, textColor),
+          ...song.verses.map((verse) => _buildVersePage(
+            verse, song, totalVerses, textColor,
+          )),
         ];
 
         final totalPages = pages.length;
+        _totalPages = totalPages;
 
-        return Scaffold(
-          backgroundColor: _projectionMode ? Colors.black : null,
-          body: SafeArea(
-            child: Stack(
-              children: [
-                // PageView for verse-by-verse display
-                PageView.builder(
-                  controller: _pageController,
-                  itemCount: totalPages,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
-                    _showControls();
-                  },
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTapUp: (details) {
-                        final screenWidth = MediaQuery.of(context).size.width;
-                        final tapX = details.globalPosition.dx;
+        return Focus(
+          focusNode: _focusNode,
+          autofocus: true,
+          onKeyEvent: _handleKeyEvent,
+          child: Scaffold(
+            backgroundColor: bgColor,
+            body: SafeArea(
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    controller: _pageController,
+                    itemCount: totalPages,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
+                      _showControls();
+                    },
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTapUp: (details) {
+                          final screenWidth = MediaQuery.of(context).size.width;
+                          final tapX = details.globalPosition.dx;
 
-                        // Divide screen into thirds
-                        if (tapX < screenWidth / 3) {
-                          // Left third - previous
-                          _previousPage();
-                        } else if (tapX > 2 * screenWidth / 3) {
-                          // Right third - next
-                          _nextPage(totalPages);
-                        } else {
-                          // Center third - toggle controls
-                          _toggleControls();
-                        }
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                        child: pages[index],
-                      ),
-                    );
-                  },
-                ),
+                          if (tapX < screenWidth / 3) {
+                            _previousPage();
+                          } else if (tapX > 2 * screenWidth / 3) {
+                            _nextPage(totalPages);
+                          } else {
+                            _toggleControls();
+                          }
+                        },
+                        child: Container(
+                          color: Colors.transparent,
+                          child: pages[index],
+                        ),
+                      );
+                    },
+                  ),
 
-                // Controls overlay
-                AnimatedOpacity(
-                  opacity: _controlsVisible ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 300),
-                  child: IgnorePointer(
-                    ignoring: !_controlsVisible,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final orientation = MediaQuery.of(context).orientation;
-                        final isLandscape = orientation == Orientation.landscape;
-
-                        return Stack(
-                          children: [
-                            // Exit button (top-left)
-                            Positioned(
-                              top: 16,
-                              left: 16,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.close, color: Colors.white),
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  tooltip: 'Exit',
-                                ),
-                              ),
-                            ),
-
-                            // Projection mode toggle (top-right)
-                            Positioned(
-                              top: 16,
-                              right: 16,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                child: IconButton(
-                                  icon: Icon(
-                                    _projectionMode ? Icons.wb_sunny : Icons.nightlight_round,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: _toggleProjectionMode,
-                                  tooltip: _projectionMode ? 'Normal mode' : 'Projection mode',
-                                ),
-                              ),
-                            ),
-
-                            // Page indicator (bottom center in portrait, bottom-right in landscape)
-                            Positioned(
-                              bottom: 16,
-                              left: isLandscape ? null : 0,
-                              right: isLandscape ? 16 : 0,
-                              child: isLandscape
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.5),
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Text(
-                                        '${_currentPage + 1} / $totalPages',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    )
-                                  : Center(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withValues(alpha: 0.5),
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        child: Text(
-                                          '${_currentPage + 1} / $totalPages',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        );
-                      },
+                  // Controls overlay
+                  AnimatedOpacity(
+                    opacity: _controlsVisible ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: IgnorePointer(
+                      ignoring: !_controlsVisible,
+                      child: _buildControlsOverlay(song, totalPages),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      loading: () => Scaffold(
+        backgroundColor: bgColor,
+        body: const Center(child: CircularProgressIndicator()),
       ),
       error: (error, stack) => Scaffold(
+        backgroundColor: bgColor,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error: $error'),
+              Text('Error: $error', style: TextStyle(color: textColor)),
             ],
           ),
         ),
@@ -295,9 +345,92 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
     );
   }
 
-  Widget _buildTitleCard(String title, int number) {
-    final textColor = _projectionMode ? Colors.white : null;
+  Widget _buildControlsOverlay(Song song, int totalPages) {
+    final orientation = MediaQuery.of(context).orientation;
+    final isLandscape = orientation == Orientation.landscape;
 
+    return Stack(
+      children: [
+        // Top bar: Exit + Title + Projection toggle
+        Positioned(
+          top: 8,
+          left: 8,
+          right: 8,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                  tooltip: 'Exit (Esc)',
+                ),
+                Expanded(
+                  child: Text(
+                    '${song.number}. ${song.title}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _projectionMode ? Icons.wb_sunny : Icons.nightlight_round,
+                    color: Colors.white,
+                  ),
+                  onPressed: _toggleProjectionMode,
+                  tooltip: _projectionMode ? 'Normal mode' : 'Projection mode',
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Page indicator (bottom)
+        if (totalPages > 1)
+          Positioned(
+            bottom: 16,
+            left: isLandscape ? null : 0,
+            right: isLandscape ? 16 : 0,
+            child: isLandscape
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      '${_currentPage + 1} / $totalPages',
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                  )
+                : Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${_currentPage + 1} / $totalPages',
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTitleCard(String title, int number, Color textColor) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -306,20 +439,12 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
           children: [
             Text(
               '$number.',
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.w300,
-                color: textColor,
-              ),
+              style: TextStyle(fontSize: 48, fontWeight: FontWeight.w300, color: textColor),
             ),
             const SizedBox(height: 24),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 56,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
+              style: TextStyle(fontSize: 56, fontWeight: FontWeight.bold, color: textColor),
               textAlign: TextAlign.center,
             ),
           ],
@@ -328,9 +453,7 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
     );
   }
 
-  Widget _buildVersePage(Verse verse, Song song, int totalVerses) {
-    final textColor = _projectionMode ? Colors.white : null;
-
+  Widget _buildVersePage(Verse verse, Song song, int totalVerses, Color textColor) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = constraints.maxWidth;
@@ -338,129 +461,58 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
         final orientation = MediaQuery.of(context).orientation;
         final isLandscape = orientation == Orientation.landscape;
 
-        // Determine screen category for responsive layout
-        final isPhone = screenWidth < 600;
-        final isTablet = screenWidth >= 600 && screenWidth < 1024;
-        // Desktop/Projection: >= 1024
+        // Minimal padding to maximize text area
+        final horizontalPadding = isLandscape ? screenWidth * 0.08 : 12.0;
 
-        // Responsive padding
-        final horizontalPadding = isPhone ? 16.0 : (isTablet ? 32.0 : 64.0);
-        final verticalPadding = isPhone ? 24.0 : (isTablet ? 48.0 : 64.0);
+        // Use nearly all available width
+        final availableWidth = screenWidth - (horizontalPadding * 2);
+        // Reserve space for top controls bar (~60px) + bottom indicator (~50px) + margins
+        final availableHeight = screenHeight - 130;
 
-        // Landscape: center text in middle ~60% of width
-        final effectivePadding = isLandscape
-            ? EdgeInsets.symmetric(
-                horizontal: screenWidth * 0.2,
-                vertical: verticalPadding,
-              )
-            : EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: verticalPadding,
-              );
+        final minFontSize = screenWidth < 600 ? 24.0 : 36.0;
+        final maxFontSize = screenWidth < 600 ? 96.0 : 160.0;
 
-        // Calculate available text area
-        final availableWidthFactor = isPhone ? 0.9 : (isTablet ? 0.85 : 0.8);
-        final availableWidth = (isLandscape ? screenWidth * 0.6 : screenWidth) * availableWidthFactor;
-
-        // Responsive font size clamping
-        final minFontSize = isPhone ? 20.0 : (isTablet ? 28.0 : 36.0);
-        final maxFontSize = isPhone ? 72.0 : (isTablet ? 96.0 : 120.0);
+        // Consistent font size across all verses
+        final fontSize = _computeConsistentFontSize(
+          song.verses, availableWidth, availableHeight, minFontSize, maxFontSize, totalVerses,
+        );
 
         final displayText = verse.displayText.isNotEmpty ? verse.displayText : '...';
         final lines = displayText.split('\n');
 
-        // Calculate longest line for auto-scaling
-        int maxLineLength = 0;
-        for (final line in lines) {
-          if (line.length > maxLineLength) {
-            maxLineLength = line.length;
+        // Prepend verse number to first line
+        final formattedLines = <String>[];
+        for (int i = 0; i < lines.length; i++) {
+          if (i == 0 && totalVerses > 1) {
+            formattedLines.add('${verse.number}. ${lines[i]}');
+          } else {
+            formattedLines.add(lines[i]);
           }
         }
+        final formattedText = formattedLines.join('\n');
 
-        // Auto-scale font based on available width and longest line
-        double calculatedFontSize = maxLineLength > 0
-            ? availableWidth / (maxLineLength * 0.55)
-            : 48.0;
-        calculatedFontSize = calculatedFontSize.clamp(minFontSize, maxFontSize);
-
-        // Check if text is too tall and needs scrolling
-        final estimatedTextHeight = lines.length * calculatedFontSize * 1.4;
-        final needsScrolling = estimatedTextHeight > (screenHeight - verticalPadding * 2 - 80);
-
-        final verseContent = Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Song title context (subtle, fades with controls)
-            AnimatedOpacity(
-              opacity: _controlsVisible ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: Text(
-                '${song.number}. ${song.title}',
-                style: TextStyle(
-                  fontSize: verse.number == 1 ? 16.0 : 14.0,
-                  fontWeight: verse.number == 1 ? FontWeight.w500 : FontWeight.w400,
-                  color: textColor?.withValues(alpha: verse.number == 1 ? 0.7 : 0.5) ??
-                         Colors.grey.withValues(alpha: verse.number == 1 ? 0.7 : 0.5),
-                ),
-                textAlign: TextAlign.center,
-              ),
+        final verseContent = FittedBox(
+          fit: BoxFit.scaleDown,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: availableWidth),
+            child: Text(
+              formattedText,
+              style: TextStyle(fontSize: fontSize, height: 1.3, color: textColor),
+              textAlign: TextAlign.center,
             ),
-            SizedBox(height: verse.number == 1 ? 24 : 16),
-
-            // Verse number indicator (subtle) - hide if only 1 verse
-            if (totalVerses > 1)
-              Padding(
-                padding: EdgeInsets.only(
-                  bottom: isLandscape ? 8.0 : 16.0,
-                ),
-                child: Text(
-                  '${verse.number}',
-                  style: TextStyle(
-                    fontSize: calculatedFontSize * 0.4,
-                    fontWeight: FontWeight.w300,
-                    color: textColor?.withValues(alpha: 0.6) ??
-                           Colors.grey.withValues(alpha: 0.6),
-                  ),
-                ),
-              ),
-
-            // Verse text with auto-scaling
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: availableWidth,
-                ),
-                child: Text(
-                  displayText,
-                  style: TextStyle(
-                    fontSize: calculatedFontSize,
-                    height: 1.4,
-                    color: textColor,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ],
+          ),
         );
 
-        return needsScrolling
-            ? SingleChildScrollView(
-                child: Padding(
-                  padding: effectivePadding,
-                  child: Center(
-                    child: verseContent,
-                  ),
-                ),
-              )
-            : Center(
-                child: Padding(
-                  padding: effectivePadding,
-                  child: verseContent,
-                ),
-              );
+        // Top padding avoids overlap with controls bar
+        return Padding(
+          padding: EdgeInsets.only(
+            left: horizontalPadding,
+            right: horizontalPadding,
+            top: 60,
+            bottom: 50,
+          ),
+          child: Center(child: verseContent),
+        );
       },
     );
   }
