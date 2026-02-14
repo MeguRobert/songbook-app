@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 
 ## Current Position
 
-Phase: 2 of 11 (Configurable Song View) — COMPLETE
-Plan: 2 of 2 in current phase
-Status: Complete
-Last activity: 2026-02-14 — Completed Phase 2 (Configurable Song View)
+Phase: 3 of 11 (Presentation Mode)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-14 — Completed 03-01-PLAN.md
 
-Progress: [██░░░░░░░░] 18% (2/11 phases)
+Progress: [██░░░░░░░░] 18% (2/11 phases complete, 1/3 plans in phase 3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 8 min
-- Total execution time: 0.5 hours
+- Total plans completed: 5
+- Average duration: 7 min
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: [██░░░░░░░░] 18% (2/11 phases)
 |-------|-------|-------|----------|
 | 01    | 2     | 18min | 9min     |
 | 02    | 2     | 18min | 9min     |
+| 03    | 1     | 3min  | 3min     |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 15min, 4min, 14min
-- Trend: Consistent velocity (~9min avg)
+- Last 5 plans: 15min, 4min, 14min, 3min
+- Trend: Velocity increasing (last plan: 3min, very efficient)
 
 *Updated after each plan completion*
 
@@ -56,6 +57,11 @@ Recent decisions affecting current work:
 - [02-02]: ChordView accepts showChords as direct parameter (parent controls, not provider)
 - [02-02]: Reuse ChordView with showChords=false for lyrics-only view
 - [02-02]: Flexible + SingleChildScrollView for dynamic-height floating menus
+- [03-01]: SystemUiMode.immersiveSticky for full-screen presentation mode
+- [03-01]: PageView + tap zones (left/right/center thirds) for verse navigation
+- [03-01]: Auto-scaling text heuristic: availableWidth / (longestLine * 0.55) clamped 24-120px
+- [03-01]: Local state projection mode toggle (black/white) vs app theme
+- [03-01]: Auto-hide controls after 3s with center tap to toggle
 
 ### Pending Todos
 
@@ -68,6 +74,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14
-Stopped at: Completed Phase 2 (Configurable Song View) — all 5 success criteria verified
+Last session: 2026-02-14 19:52 UTC
+Stopped at: Completed 03-01-PLAN.md (Presentation Mode Core)
 Resume file: None
