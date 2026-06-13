@@ -10,6 +10,7 @@ import 'widgets/chord_view.dart';
 import 'widgets/song_controls_sheet.dart';
 import 'widgets/sheet_music_view.dart';
 import 'widgets/setlist_nav_bar.dart';
+import 'widgets/tag_editor_sheet.dart';
 
 /// Screen for viewing a single song
 class SongViewScreen extends ConsumerStatefulWidget {
@@ -59,6 +60,17 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
     );
   }
 
+  void _showTagEditor(BuildContext context, List<String> currentTags) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => TagEditorSheet(
+        songNumber: widget.songNumber,
+        currentTags: currentTags,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final songAsync = ref.watch(songByNumberProvider(widget.songNumber));
@@ -80,6 +92,12 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
           appBar: AppBar(
             title: Text('${song.number}. ${song.title}'),
             actions: [
+              // Edit tags button
+              IconButton(
+                icon: const Icon(Icons.label_outline),
+                onPressed: () => _showTagEditor(context, song.tags),
+                tooltip: 'Edit tags',
+              ),
               // Presentation mode button
               IconButton(
                 icon: const Icon(Icons.fullscreen),
