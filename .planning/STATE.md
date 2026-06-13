@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 5 complete (code) — next: Phase 6 (Store Release Prep). Phase 5 visual UAT pending Robert's morning review.
+**Current focus:** Phase 6 complete (codeable slice) — next: Phase 7 (Import Pipeline). On-device/store-submission and Phase 5 visual UAT pending Robert's morning review.
 
 ## Current Position
 
-Phase: 5 of 12 (Song Books) — COMPLETE (code; visual UAT pending)
+Phase: 6 of 12 (Store Release Prep) — COMPLETE (codeable slice; on-device + store submission pending)
 Plan: 2 of 2 in current phase
-Status: Complete — implemented overnight 2026-06-13 on branch claude/phase-5-song-books
-Last activity: 2026-06-13 — Completed Phase 5 (Song Books)
+Status: Complete (code) — implemented overnight 2026-06-13 on branch claude/phase-6-store-prep
+Last activity: 2026-06-13 — Completed Phase 6 codeable slice (accessibility + platform config + branding scaffold + store metadata)
 
-Progress: [█████░░░░░] 42% (5/12 phases, 10/24 plans)
+Progress: [██████░░░░] 50% (6/12 phases, 12/24 plans)
 
 ## Performance Metrics
 
@@ -81,6 +81,11 @@ Recent decisions affecting current work:
 - [05-02]: Book browser is a /books screen opened from a song-list app-bar icon (NOT a 4th nav tab)
 - [05-02]: Selected book persists across restart via SettingsRepository (key selected_book)
 - [05-02]: Search + favorites span all books regardless of the active book filter
+- [06-01]: Use Flutter meetsGuideline() matchers (tap-target size + labeled tap targets) as the automated a11y gate
+- [06-01]: Relabel icon/letter-only controls via Semantics(label:, excludeSemantics:) + tooltips, preserving compact visuals
+- [06-02]: App display name "Songbook"; ids stay com.songbook.songbook_app; version 1.0.0+1
+- [06-02]: Zero Android runtime permissions (offline/local-first), documented in manifest
+- [06-02]: Icon/splash via standalone generator config files, NOT pubspec deps (offline-safe); deps added later via `flutter pub add`
 
 ### Pending Todos
 
@@ -99,5 +104,9 @@ None (redesign-song-controls-ui todo completed by Phase 4)
 ## Session Continuity
 
 Last session: 2026-06-13 (overnight, unattended)
-Stopped at: Completed Phase 5 (Song Books) on branch claude/phase-5-song-books — all 5 success criteria met at code level; visual UAT pending morning review
-Resume file: .planning/phases/05-song-books/OVERNIGHT-REPORT-2026-06-13.md (has Morning resume prompt)
+Stopped at: Completed Phase 6 codeable slice on branch claude/phase-6-store-prep — accessibility
+(tested), platform config, branding scaffold (placeholder), store metadata. Human/online steps
+(final art, signing, on-device testing, screenshots, submission) recorded as blockers.
+Resume file: .planning/phases/06-store-prep/OVERNIGHT-REPORT-2026-06-13.md (has Morning resume prompt)
+Note: the report's canonical path C:\Users\rober\.claude\overnight\ is unwritable from the sandbox;
+report kept in-repo (see its banner).
