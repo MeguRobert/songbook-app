@@ -5,6 +5,7 @@ import '../../data/datasources/local/local_datasource.dart';
 import '../../data/repositories/song_repository.dart';
 import '../../data/repositories/favorites_repository.dart';
 import '../../data/repositories/settings_repository.dart';
+import '../../data/repositories/setlist_repository.dart';
 import '../../domain/services/transposition_service.dart';
 import '../../domain/services/search_service.dart';
 
@@ -35,6 +36,11 @@ final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
 /// Settings repository provider
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository(ref.watch(localDataSourceProvider));
+});
+
+/// Setlist repository provider
+final setlistRepositoryProvider = Provider<SetlistRepository>((ref) {
+  return SetlistRepository(ref.watch(localDataSourceProvider));
 });
 
 // --- Service Providers ---
