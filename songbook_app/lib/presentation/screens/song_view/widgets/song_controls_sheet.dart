@@ -174,11 +174,15 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                   children: [
                     TextButton(
                       onPressed: songViewNotifier.decreaseTextScale,
-                      child: const Text(
-                        'A-',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      child: Semantics(
+                        label: 'Decrease text size',
+                        excludeSemantics: true,
+                        child: const Text(
+                          'A-',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -192,11 +196,15 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                     ),
                     TextButton(
                       onPressed: songViewNotifier.increaseTextScale,
-                      child: const Text(
-                        'A+',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      child: Semantics(
+                        label: 'Increase text size',
+                        excludeSemantics: true,
+                        child: const Text(
+                          'A+',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -226,12 +234,15 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: theme.textTheme.labelSmall?.copyWith(
-        color: theme.colorScheme.primary,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 1.2,
+    return Semantics(
+      header: true,
+      child: Text(
+        text,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }

@@ -38,12 +38,14 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.remove),
+                  tooltip: 'Decrease font size',
                   onPressed: settings.fontSize > 12
                       ? () => ref.read(settingsProvider.notifier).decreaseFontSize()
                       : null,
                 ),
                 IconButton(
                   icon: const Icon(Icons.add),
+                  tooltip: 'Increase font size',
                   onPressed: settings.fontSize < 32
                       ? () => ref.read(settingsProvider.notifier).increaseFontSize()
                       : null,
@@ -85,13 +87,16 @@ class SettingsScreen extends ConsumerWidget {
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+      child: Semantics(
+        header: true,
+        child: Text(
+          title.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+        ),
       ),
     );
   }

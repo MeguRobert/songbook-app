@@ -165,21 +165,27 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
 
                     const SizedBox(height: 16),
 
-                    // Sheet music canvas with RepaintBoundary for performance
-                    RepaintBoundary(
-                      child: SizedBox(
-                        width: layout.totalWidth,
-                        height: layout.totalHeight,
-                        child: CustomPaint(
-                          painter: SheetMusicPainter(
-                            layout: layout,
-                            noteColor: theme.brightness == Brightness.dark
-                                ? Colors.white
-                                : const Color(0xFF333333),
-                            staffColor: theme.brightness == Brightness.dark
-                                ? Colors.white70
-                                : const Color(0xFF333333),
-                            showChords: widget.showChords,
+                    // Sheet music canvas with RepaintBoundary for performance.
+                    // The canvas is invisible to the accessibility tree, so a
+                    // Semantics label describes it for screen-reader users.
+                    Semantics(
+                      label: 'Sheet music notation for ${widget.song.title}',
+                      image: true,
+                      child: RepaintBoundary(
+                        child: SizedBox(
+                          width: layout.totalWidth,
+                          height: layout.totalHeight,
+                          child: CustomPaint(
+                            painter: SheetMusicPainter(
+                              layout: layout,
+                              noteColor: theme.brightness == Brightness.dark
+                                  ? Colors.white
+                                  : const Color(0xFF333333),
+                              staffColor: theme.brightness == Brightness.dark
+                                  ? Colors.white70
+                                  : const Color(0xFF333333),
+                              showChords: widget.showChords,
+                            ),
                           ),
                         ),
                       ),
