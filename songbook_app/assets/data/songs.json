@@ -2,6 +2,7 @@
   {
     "number": 1,
     "title": "Szent Isten, kit a seregek",
+    "book": "Zsoltárok",
     "reference": "Zsolt 89",
     "origin": {
       "place": "Geneva",
@@ -111,6 +112,7 @@
   {
     "number": 42,
     "title": "Mint a szép híves patakra",
+    "book": "Zsoltárok",
     "reference": "Zsolt 42",
     "origin": {
       "place": "Geneva",
@@ -506,6 +508,7 @@
   {
     "number": 90,
     "title": "Te benned bíztunk eleitől fogva",
+    "book": "Zsoltárok",
     "reference": "Zsolt 90",
     "origin": {
       "place": "Geneva",
@@ -982,6 +985,7 @@
   {
     "number": 151,
     "title": "Hatalmas Isten, nagy haragodban",
+    "book": "Dicséretek",
     "reference": "Zsolt 6",
     "origin": {
       "place": "Debrecen",
@@ -1378,6 +1382,7 @@
   {
     "number": 200,
     "title": "Jöjj, mondjunk hálaszót",
+    "book": "Dicséretek",
     "reference": null,
     "origin": {
       "place": "Magyarország",
@@ -1482,6 +1487,7 @@
   {
     "number": 256,
     "title": "Erős vár a mi Istenünk",
+    "book": "Dicséretek",
     "reference": "Zsolt 46",
     "origin": {
       "place": "Németország",
@@ -1879,6 +1885,7 @@
   {
     "number": 300,
     "title": "Ó, jöjjetek, hívek",
+    "book": "Dicséretek",
     "reference": null,
     "origin": {
       "place": "Portugália",
@@ -1988,6 +1995,7 @@
   {
     "number": 350,
     "title": "Uram, te hozzád kiáltok",
+    "book": "Dicséretek",
     "reference": "Zsolt 141",
     "origin": {
       "place": "Geneva",
