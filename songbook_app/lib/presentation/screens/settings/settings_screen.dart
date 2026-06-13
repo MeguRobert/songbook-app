@@ -108,8 +108,7 @@ class SettingsScreen extends ConsumerWidget {
     if (config.isSheetMusicPreset) return 'Sheet Music';
     if (config.isChordsPreset) return 'Chords';
     if (config.isLyricsOnlyPreset) return 'Lyrics Only';
-    if (config.isNotationWithoutChords) return 'Notation without chords';
-    return 'Custom';
+    return 'Sheet Music';
   }
 
   void _showThemeDialog(BuildContext context, WidgetRef ref, AppThemeMode current) {

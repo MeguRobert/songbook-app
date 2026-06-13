@@ -57,20 +57,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     state = state.copyWith(viewConfig: config);
   }
 
-  Future<void> toggleNotation() async {
-    final newConfig = state.viewConfig.copyWith(
-      showNotation: !state.viewConfig.showNotation,
-    );
-    await setViewConfig(newConfig);
-  }
-
-  Future<void> toggleChords() async {
-    final newConfig = state.viewConfig.copyWith(
-      showChords: !state.viewConfig.showChords,
-    );
-    await setViewConfig(newConfig);
-  }
-
   Future<void> setPreset(ViewConfig preset) async {
     await setViewConfig(preset);
   }

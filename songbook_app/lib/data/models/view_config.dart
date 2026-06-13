@@ -39,9 +39,6 @@ class ViewConfig {
   /// Returns true if this config matches the lyrics-only preset
   bool get isLyricsOnlyPreset => !showNotation && !showChords;
 
-  /// Returns true if notation is shown without chords (4th valid state)
-  bool get isNotationWithoutChords => showNotation && !showChords;
-
   // --- Copy ---
 
   ViewConfig copyWith({

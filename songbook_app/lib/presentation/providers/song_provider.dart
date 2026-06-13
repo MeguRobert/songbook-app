@@ -146,24 +146,6 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
     }
   }
 
-  /// Toggles notation visibility (creates temporary override)
-  void toggleNotation() {
-    if (state != null) {
-      final current = getEffectiveConfig();
-      final newConfig = current.copyWith(showNotation: !current.showNotation);
-      setActiveViewConfig(newConfig);
-    }
-  }
-
-  /// Toggles chord visibility (creates temporary override)
-  void toggleChords() {
-    if (state != null) {
-      final current = getEffectiveConfig();
-      final newConfig = current.copyWith(showChords: !current.showChords);
-      setActiveViewConfig(newConfig);
-    }
-  }
-
   /// Sets a preset (creates temporary override)
   void setPreset(ViewConfig preset) {
     if (state != null) {
