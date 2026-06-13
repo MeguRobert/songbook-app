@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Unique application id for the store listing. Stable — do not change after first publish.
         applicationId = "com.songbook.songbook_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -32,8 +32,9 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // PLACEHOLDER: signed with debug keys so `flutter run --release` works.
+            // Before store submission, create a release keystore and a proper signingConfig.
+            // See .planning/phases/06-store-prep/RELEASE-CHECKLIST.md (human/online step).
             signingConfig = signingConfigs.getByName("debug")
         }
     }

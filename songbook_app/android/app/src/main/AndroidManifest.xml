@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Songbook is an offline, local-first app: songs are bundled assets and all
+         state lives in SharedPreferences. It declares NO runtime permissions
+         (deliberately not even INTERNET). Do not add <uses-permission> without a
+         real need — see .planning/phases/06-store-prep/RELEASE-CHECKLIST.md. -->
     <application
-        android:label="songbook_app"
+        android:label="Songbook"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
