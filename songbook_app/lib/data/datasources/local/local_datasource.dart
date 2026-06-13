@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/song.dart';
 import '../../models/favorite.dart';
+import '../../models/setlist.dart';
 
 /// Local data source for songs and favorites
 class LocalDataSource {
   static const _favoritesKey = 'favorites';
+  static const _setlistsKey = 'setlists';
   static const _settingsPrefix = 'settings_';
 
   final SharedPreferences _prefs;
@@ -97,6 +99,27 @@ class LocalDataSource {
   /// Checks if a song is a favorite
   bool isFavorite(int songNumber) {
     return getFavorites().any((f) => f.songNumber == songNumber);
+  }
+
+  // --- Setlists ---
+
+  /// Gets all setlists (empty list if none stored or on decode error)
+  List<Setlist> getSetlists() {
+    final jsonString = _prefs.getString(_setlistsKey);
+    if (jsonString == null) return [];
+
+    try {
+      final List<dynamic> jsonList = json.decode(jsonString);
+      return jsonList.map((json) => Setlist.fromJson(json)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Saves all setlists
+  Future<bool> saveSetlists(List<Setlist> setlists) async {
+    final jsonString = json.encode(setlists.map((s) => s.toJson()).toList());
+    return _prefs.setString(_setlistsKey, jsonString);
   }
 
   // --- Settings ---
