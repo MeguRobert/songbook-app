@@ -11,11 +11,15 @@ class SearchState {
   final bool isSearching;
   final List<String> recentSearches;
 
+  /// Active tag filters (AND semantics). Transient — not persisted.
+  final Set<String> activeTags;
+
   const SearchState({
     this.query = '',
     this.results = const [],
     this.isSearching = false,
     this.recentSearches = const [],
+    this.activeTags = const {},
   });
 
   SearchState copyWith({
@@ -23,17 +27,23 @@ class SearchState {
     List<Song>? results,
     bool? isSearching,
     List<String>? recentSearches,
+    Set<String>? activeTags,
   }) {
     return SearchState(
       query: query ?? this.query,
       results: results ?? this.results,
       isSearching: isSearching ?? this.isSearching,
       recentSearches: recentSearches ?? this.recentSearches,
+      activeTags: activeTags ?? this.activeTags,
     );
   }
 
   bool get hasQuery => query.isNotEmpty;
   bool get hasResults => results.isNotEmpty;
+  bool get hasTags => activeTags.isNotEmpty;
+
+  /// Whether the results area should be shown (vs. the recent-searches hint).
+  bool get isFiltering => hasQuery || hasTags;
 }
 
 /// Notifier for search functionality
@@ -43,24 +53,67 @@ class SearchNotifier extends StateNotifier<SearchState> {
   SearchNotifier(this._ref) : super(const SearchState());
 
   Future<void> search(String query) async {
-    if (query == state.query) return;
-
     state = state.copyWith(query: query, isSearching: true);
+    await _recompute();
+  }
 
-    if (query.isEmpty) {
+  /// Toggles a tag filter (case-insensitive) and recomputes results.
+  Future<void> toggleTag(String tag) async {
+    final next = <String>{...state.activeTags};
+    final lower = tag.toLowerCase();
+    final existing = next.where((t) => t.toLowerCase() == lower).toList();
+    if (existing.isEmpty) {
+      next.add(tag);
+    } else {
+      next.removeWhere((t) => t.toLowerCase() == lower);
+    }
+    state = state.copyWith(activeTags: next);
+    await _recompute();
+  }
+
+  /// Replaces the active tag filters.
+  Future<void> setTags(Set<String> tags) async {
+    state = state.copyWith(activeTags: {...tags});
+    await _recompute();
+  }
+
+  /// Clears all active tag filters.
+  Future<void> clearTags() async {
+    state = state.copyWith(activeTags: {});
+    await _recompute();
+  }
+
+  /// Recomputes results from the current query AND active tags.
+  ///
+  /// Tags filter first (AND); the query then narrows within the tagged set. An
+  /// empty query with active tags shows all songs carrying those tags.
+  Future<void> _recompute() async {
+    if (!state.isFiltering) {
       state = state.copyWith(results: [], isSearching: false);
       return;
     }
 
-    final songs = await _ref.read(songsProvider.future);
+    final allSongs = await _ref.read(songsProvider.future);
     final searchService = _ref.read(searchServiceProvider);
-    final results = searchService.search(songs, query);
+
+    var songs = allSongs;
+    if (state.hasTags) {
+      songs = searchService.filterByTags(songs, state.activeTags);
+    }
+
+    final results =
+        state.hasQuery ? searchService.search(songs, state.query) : songs;
 
     state = state.copyWith(results: results, isSearching: false);
   }
 
   void clear() {
-    state = state.copyWith(query: '', results: [], isSearching: false);
+    state = state.copyWith(
+      query: '',
+      results: [],
+      isSearching: false,
+      activeTags: {},
+    );
   }
 
   void addToRecentSearches(String query) {

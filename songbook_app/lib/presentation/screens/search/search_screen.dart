@@ -8,7 +8,10 @@ import '../song_list/widgets/song_list_tile.dart';
 
 /// Search screen for finding songs
 class SearchScreen extends ConsumerStatefulWidget {
-  const SearchScreen({super.key});
+  /// Optional tag to pre-seed the tag filter (from the tag browser / deep link).
+  final String? initialTag;
+
+  const SearchScreen({this.initialTag, super.key});
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
@@ -21,9 +24,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-focus the search field
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
+      final tag = widget.initialTag;
+      if (tag != null && tag.isNotEmpty) {
+        // Seed the tag filter; keep focus off the field so results show.
+        ref.read(searchProvider.notifier).setTags({tag});
+      } else {
+        _focusNode.requestFocus();
+      }
     });
   }
 
@@ -68,7 +76,48 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           textInputAction: TextInputAction.search,
         ),
       ),
-      body: _buildBody(context, searchState, theme),
+      body: Column(
+        children: [
+          if (searchState.hasTags) _buildTagChips(context, searchState, theme),
+          Expanded(child: _buildBody(context, searchState, theme)),
+        ],
+      ),
+    );
+  }
+
+  /// Active tag filters shown as removable chips above the results.
+  Widget _buildTagChips(
+    BuildContext context,
+    SearchState searchState,
+    ThemeData theme,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(right: 4),
+            child: Icon(Icons.sell, size: 18),
+          ),
+          ...searchState.activeTags.map(
+            (tag) => InputChip(
+              label: Text(tag),
+              onDeleted: () =>
+                  ref.read(searchProvider.notifier).toggleTag(tag),
+              deleteIconBoxConstraints: const BoxConstraints(),
+            ),
+          ),
+          TextButton(
+            onPressed: () => ref.read(searchProvider.notifier).clearTags(),
+            child: const Text('Clear tags'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -82,8 +131,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Show results if there's a query
-    if (searchState.hasQuery) {
+    // Show results if there's a query or an active tag filter
+    if (searchState.isFiltering) {
       if (searchState.results.isEmpty) {
         return Center(
           child: Column(
@@ -99,7 +148,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Try searching by number, title, or reference',
+                searchState.hasTags
+                    ? 'No songs match the selected tags and query'
+                    : 'Try searching by number, title, or reference',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: Colors.grey[500],
                 ),
