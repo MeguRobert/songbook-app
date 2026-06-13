@@ -8,6 +8,8 @@ import '../presentation/screens/favorites/favorites_screen.dart';
 import '../presentation/screens/search/search_screen.dart';
 import '../presentation/screens/settings/settings_screen.dart';
 import '../presentation/screens/books/book_browser_screen.dart';
+import '../presentation/screens/setlists/setlists_screen.dart';
+import '../presentation/screens/setlists/setlist_detail_screen.dart';
 import '../presentation/screens/presentation/presentation_screen.dart';
 import '../presentation/widgets/scaffold_with_nav_bar.dart';
 
@@ -20,9 +22,11 @@ class AppRoutes {
   static const search = '/search';
   static const settings = '/settings';
   static const books = '/books';
+  static const setlists = '/setlists';
 
   static String songPath(int id) => '/song/$id';
   static String presentationPath(int id) => '/presentation/$id';
+  static String setlistDetailPath(String id) => '/setlists/$id';
 }
 
 /// Router provider
@@ -89,6 +93,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.books,
         name: 'books',
         builder: (context, state) => const BookBrowserScreen(),
+      ),
+      // Setlists routes (outside shell for full-screen)
+      GoRoute(
+        path: AppRoutes.setlists,
+        name: 'setlists',
+        builder: (context, state) => const SetlistsScreen(),
+      ),
+      GoRoute(
+        path: '/setlists/:id',
+        name: 'setlistDetail',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return SetlistDetailScreen(setlistId: id);
+        },
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

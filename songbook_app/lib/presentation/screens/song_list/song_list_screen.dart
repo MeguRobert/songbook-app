@@ -21,6 +21,11 @@ class SongListScreen extends ConsumerWidget {
         title: Text(selectedBook ?? 'Songbook'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.queue_music),
+            onPressed: () => context.push(AppRoutes.setlists),
+            tooltip: 'Setlists',
+          ),
+          IconButton(
             icon: Icon(
               selectedBook != null
                   ? Icons.menu_book
