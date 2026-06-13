@@ -7,6 +7,7 @@ import '../presentation/screens/song_view/song_view_screen.dart';
 import '../presentation/screens/favorites/favorites_screen.dart';
 import '../presentation/screens/search/search_screen.dart';
 import '../presentation/screens/settings/settings_screen.dart';
+import '../presentation/screens/books/book_browser_screen.dart';
 import '../presentation/screens/presentation/presentation_screen.dart';
 import '../presentation/widgets/scaffold_with_nav_bar.dart';
 
@@ -18,6 +19,7 @@ class AppRoutes {
   static const favorites = '/favorites';
   static const search = '/search';
   static const settings = '/settings';
+  static const books = '/books';
 
   static String songPath(int id) => '/song/$id';
   static String presentationPath(int id) => '/presentation/$id';
@@ -81,6 +83,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.search,
         name: 'search',
         builder: (context, state) => const SearchScreen(),
+      ),
+      // Book browser route (outside shell for full-screen)
+      GoRoute(
+        path: AppRoutes.books,
+        name: 'books',
+        builder: (context, state) => const BookBrowserScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
