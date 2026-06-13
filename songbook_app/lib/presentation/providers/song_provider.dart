@@ -4,11 +4,19 @@ import '../../data/models/song.dart';
 import '../../data/models/view_config.dart';
 import 'providers.dart';
 import 'settings_provider.dart';
+import 'tag_provider.dart';
 
-/// Provider for all songs
+/// Provider for all songs, with user tag overrides applied.
+///
+/// Single source of truth: by merging persisted tag overrides here, the song
+/// list, search, favorites, and the tag browser all observe edited tags.
+/// With no overrides the merge returns the bundled list unchanged.
 final songsProvider = FutureProvider<List<Song>>((ref) async {
   final repository = ref.watch(songRepositoryProvider);
-  return repository.getAllSongs();
+  final songs = await repository.getAllSongs();
+  final overrides = ref.watch(tagOverridesProvider);
+  final searchService = ref.watch(searchServiceProvider);
+  return searchService.applyTagOverrides(songs, overrides);
 });
 
 /// Provider for a single song by number
