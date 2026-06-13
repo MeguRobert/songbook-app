@@ -35,6 +35,11 @@ class SongListScreen extends ConsumerWidget {
             tooltip: 'Books',
           ),
           IconButton(
+            icon: const Icon(Icons.sell_outlined),
+            onPressed: () => context.push(AppRoutes.tags),
+            tooltip: 'Tags',
+          ),
+          IconButton(
             icon: const Icon(Icons.search),
             onPressed: () => context.push(AppRoutes.search),
             tooltip: 'Search',
