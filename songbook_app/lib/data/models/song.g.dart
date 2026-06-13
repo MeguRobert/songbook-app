@@ -59,6 +59,7 @@ Song _$SongFromJson(Map<String, dynamic> json) => Song(
       .toList(),
   tags:
       (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+  book: json['book'] as String?,
 );
 
 Map<String, dynamic> _$SongToJson(Song instance) => <String, dynamic>{
@@ -73,4 +74,5 @@ Map<String, dynamic> _$SongToJson(Song instance) => <String, dynamic>{
   'notation': instance.notation,
   'verses': instance.verses,
   'tags': instance.tags,
+  'book': instance.book,
 };

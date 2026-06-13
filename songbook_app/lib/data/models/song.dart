@@ -129,6 +129,10 @@ class Song {
   @JsonKey(defaultValue: [])
   final List<String> tags;
 
+  /// Book/hymnal this song belongs to (e.g., "Zsoltárok", "Dicséretek").
+  /// Null when the song has not been assigned to a book.
+  final String? book;
+
   const Song({
     required this.number,
     required this.title,
@@ -141,6 +145,7 @@ class Song {
     this.notation,
     required this.verses,
     this.tags = const [],
+    this.book,
   });
 
   factory Song.fromJson(Map<String, dynamic> json) => _$SongFromJson(json);
@@ -164,6 +169,9 @@ class Song {
   bool get hasChords =>
       verses.any((v) => v.lines.any((l) => l.chords.isNotEmpty));
 
+  /// Returns true if this song has been assigned to a book
+  bool get hasBook => book != null && book!.isNotEmpty;
+
   /// Formatted display number (e.g., "151")
   String get displayNumber => number.toString();
 
@@ -179,6 +187,7 @@ class Song {
     SongNotation? notation,
     List<Verse>? verses,
     List<String>? tags,
+    String? book,
   }) {
     return Song(
       number: number ?? this.number,
@@ -192,6 +201,7 @@ class Song {
       notation: notation ?? this.notation,
       verses: verses ?? this.verses,
       tags: tags ?? this.tags,
+      book: book ?? this.book,
     );
   }
 
