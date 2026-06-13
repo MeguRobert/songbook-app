@@ -521,8 +521,11 @@ def convert_to_app_format(notation: dict, verse_number: int = 1) -> dict:
     }
 
 
-def update_songs_json(songs_json_path: str, song_number: int, notation: dict):
-    """Update the songs.json file with the new notation."""
+def update_songs_json(songs_json_path: str, song_number: int, notation: dict, book: str = None):
+    """Update the songs.json file with the new notation.
+
+    If ``book`` is provided, the song is also assigned to that book/hymnal.
+    """
     print(f"Updating songs.json for song {song_number}...")
 
     with open(songs_json_path, 'r', encoding='utf-8') as f:
@@ -534,9 +537,13 @@ def update_songs_json(songs_json_path: str, song_number: int, notation: dict):
         if song.get('number') == song_number:
             song['notation'] = notation
             song['originalKey'] = notation['originalKey']
+            if book:
+                song['book'] = book
             song_found = True
             title = song.get('title', 'Unknown')
             print(f"Updated song {song_number}: {title.encode('ascii', 'replace').decode()}")
+            if book:
+                print(f"  Book: {book.encode('ascii', 'replace').decode()}")
             break
 
     if not song_found:
@@ -571,6 +578,8 @@ def main():
                         help='Use OCR to extract lyrics from the image')
     parser.add_argument('--num-systems', type=int, default=6,
                         help='Number of systems/lines in the image for OCR (default: 6)')
+    parser.add_argument('--book', '-b', default=None,
+                        help='Book/hymnal name to assign to the song (e.g. "Zsoltárok", "Dicséretek")')
 
     args = parser.parse_args()
 
@@ -659,7 +668,7 @@ def main():
                     break
 
         if songs_json_path and os.path.exists(songs_json_path):
-            update_songs_json(songs_json_path, args.song, app_notation)
+            update_songs_json(songs_json_path, args.song, app_notation, book=args.book)
         else:
             print("Warning: songs.json not found. Use --songs-json to specify path.")
             print("Notation JSON:")
