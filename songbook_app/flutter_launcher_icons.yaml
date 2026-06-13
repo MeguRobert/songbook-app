@@ -1,0 +1,29 @@
+# ============================================================================
+#  ⚠️  NEEDS FINAL ART — placeholder configuration.
+#  assets/icons/ currently has no source artwork. Drop the real icon files
+#  (see assets/icons/README.md for required names/sizes), install the dev
+#  dependency, then run:  dart run flutter_launcher_icons
+#  This config is intentionally NOT auto-run overnight (no art, no network).
+# ============================================================================
+flutter_launcher_icons:
+  # Master icon (1024x1024 PNG, no transparency for iOS).
+  image_path: "assets/icons/app_icon.png"
+
+  android: true
+  ios: true
+
+  # Adaptive icon (Android 8+): foreground art on a solid background.
+  adaptive_icon_background: "#1A237E"          # «confirm brand color»
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+
+  min_sdk_android: 21
+
+  # Web/desktop can be enabled later if those targets ship to a store.
+  web:
+    generate: false
+  windows:
+    generate: false
+  macos:
+    generate: false
+
+  remove_alpha_ios: true
