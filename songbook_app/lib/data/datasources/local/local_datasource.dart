@@ -4,12 +4,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/song.dart';
 import '../../models/favorite.dart';
 import '../../models/setlist.dart';
+import '../../models/recent_song.dart';
 
 /// Local data source for songs and favorites
 class LocalDataSource {
   static const _favoritesKey = 'favorites';
   static const _setlistsKey = 'setlists';
+  static const _recentsKey = 'recent_songs';
   static const _settingsPrefix = 'settings_';
+
+  /// Maximum number of recently-viewed songs retained.
+  static const recentsLimit = 20;
 
   final SharedPreferences _prefs;
   List<Song>? _cachedSongs;
@@ -121,6 +126,41 @@ class LocalDataSource {
     final jsonString = json.encode(setlists.map((s) => s.toJson()).toList());
     return _prefs.setString(_setlistsKey, jsonString);
   }
+
+  // --- Recently viewed ---
+
+  /// Gets recently-viewed songs, most-recent first (empty on decode error).
+  List<RecentSong> getRecentSongs() {
+    final jsonString = _prefs.getString(_recentsKey);
+    if (jsonString == null) return [];
+
+    try {
+      final List<dynamic> jsonList = json.decode(jsonString);
+      return jsonList
+          .map((json) => RecentSong.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Records [songNumber] as the most recently viewed.
+  ///
+  /// De-duplicates (an existing entry is moved to the front with a refreshed
+  /// timestamp) and caps the list at [recentsLimit]. [now] is injectable for
+  /// deterministic tests.
+  Future<bool> recordRecentSong(int songNumber, {DateTime? now}) async {
+    final timestamp = now ?? DateTime.now();
+    final recents = getRecentSongs()
+      ..removeWhere((r) => r.songNumber == songNumber);
+    recents.insert(0, RecentSong(songNumber: songNumber, viewedAt: timestamp));
+    final capped = recents.take(recentsLimit).toList();
+    final jsonString = json.encode(capped.map((r) => r.toJson()).toList());
+    return _prefs.setString(_recentsKey, jsonString);
+  }
+
+  /// Clears the recently-viewed list.
+  Future<bool> clearRecentSongs() => _prefs.remove(_recentsKey);
 
   // --- Settings ---
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/favorites_provider.dart';
+import '../../providers/recents_provider.dart';
 import '../../providers/song_provider.dart';
 import '../../providers/setlist_provider.dart';
 import '../../../router/app_router.dart';
@@ -35,6 +36,8 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
     // and modifying provider state in dispose is forbidden by Riverpod.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(songViewProvider.notifier).openSong(widget.songNumber);
+      // Record this song as recently viewed (powers the Home "Recent" rail).
+      ref.read(recentsProvider.notifier).record(widget.songNumber);
       _syncSetlistPosition();
     });
   }
