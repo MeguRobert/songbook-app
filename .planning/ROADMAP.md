@@ -3,7 +3,7 @@
 ## Milestones
 
 - 🚧 **v1.0 MVP Store Release** - Phases 1-6 (in progress)
-- 📋 **v1.1 Content & Organization** - Phases 7-9 (planned)
+- ✅ **v1.1 Content & Organization** - Phases 7-9 (code complete; visual UAT pending)
 - 📋 **v2.0 Platform & Sharing** - Phases 10-12 (planned)
 
 ## Overview
@@ -21,11 +21,11 @@ Ship a polished, store-ready songbook app by building on the existing functional
 - [x] **Phase 5: Song Books** - Organize songs by hymnal/book with book browser
 - [x] **Phase 6: Store Release Prep** - Branding, metadata, platform polish, submission *(codeable slice; on-device + submission pending)*
 
-### 📋 v1.1 Content & Organization
+### ✅ v1.1 Content & Organization
 
 - [x] **Phase 7: Import Pipeline** - Improved OCR workflow with less manual correction *(codeable slice: validation + batch + docs; OMR/OCR accuracy pending)*
 - [x] **Phase 8: Setlists & Playlists** - Ordered song lists for services and events *(code complete; visual UAT pending)*
-- [ ] **Phase 9: Tags & Search** - Thematic tags, advanced filtering, search improvements
+- [x] **Phase 9: Tags & Search** - Thematic tags, advanced filtering, search improvements *(code complete; visual UAT pending)*
 
 ### 📋 v2.0 Platform & Sharing
 
@@ -177,7 +177,13 @@ Plans:
   2. Search supports filtering by tag
   3. Tag browser shows all available tags with song counts
   4. Tags are editable (add/remove from songs)
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+
+Plans:
+- [x] 09-01-PLAN.md — Tag model + SearchService tag logic (counts/multi-filter/override merge) + per-song override persistence + reactive providers (override-aware songsProvider)
+- [x] 09-02-PLAN.md — Tag filtering in search (chips/AND), tag browser (/tags) + song-list entry, in-song tag editor sheet
+
+*All 4 criteria met (code + automated tests). Visual/on-device UAT pending (no device overnight). See 09-VERIFICATION.md.*
 
 ### Phase 10: Cloud Backend
 **Goal**: Add user accounts and cloud storage to enable data sync and future sharing features
@@ -227,7 +233,7 @@ Phases 1 → 2 → 3 → 4 in sequence. Phase 5 can run parallel to 2/3/4. Phase
 | 6. Store Release Prep | v1.0 | 2/2 | Complete (code; submission pending) | 2026-06-13 |
 | 7. Import Pipeline | v1.1 | 2/2 | Complete (code; OMR/OCR accuracy pending) | 2026-06-13 |
 | 8. Setlists & Playlists | v1.1 | 2/2 | Complete (code; visual UAT pending) | 2026-06-13 |
-| 9. Tags & Search | v1.1 | 0/? | Not started | - |
+| 9. Tags & Search | v1.1 | 2/2 | Complete (code; visual UAT pending) | 2026-06-13 |
 | 10. Cloud Backend | v2.0 | 0/? | Not started | - |
 | 11. Custom Songbooks & Sharing | v2.0 | 0/? | Not started | - |
 | 12. Scale & Quality | v2.0 | 0/? | Not started | - |

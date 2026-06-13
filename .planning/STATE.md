@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 8 (Setlists & Playlists) complete (code) overnight 2026-06-13. Next: Phase 9 (Tags & Search) or close out v1.0 store submission. On-device/store-submission, OMR/OCR accuracy, and Phase 5/8 visual UAT pending Robert.
+**Current focus:** Phase 9 (Tags & Search) complete (code) overnight 2026-06-13 — v1.1 milestone code-complete. Next: visual UAT across Phases 5/8/9 + v1.1 audit/close, or v1.0 store submission. On-device/store-submission and OMR/OCR accuracy pending Robert.
 
 ## Current Position
 
-Phase: 8 of 12 (Setlists & Playlists) — COMPLETE (codeable slice; visual/on-device UAT pending)
+Phase: 9 of 12 (Tags & Search) — COMPLETE (codeable slice; visual/on-device UAT pending) — last v1.1 phase
 Plan: 2 of 2 in current phase
-Status: Complete (code) — implemented overnight 2026-06-13 on branch claude/phase-8-setlists
-Last activity: 2026-06-13 — Completed Phase 8 (setlists data model + UI + in-service playback)
+Status: Complete (code) — implemented overnight 2026-06-13 on branch claude/phase-9-tags-search
+Last activity: 2026-06-13 — Completed Phase 9 (tag model/logic/persistence + tag browser + tag-filtered search + in-song tag editor)
 
-Progress: [███████░░░] 67% (8/12 phases, 16/24 plans)
+Progress: [████████░░] 75% (9/12 phases, 18/24 plans)
 
 ## Performance Metrics
 
@@ -96,6 +96,13 @@ Recent decisions affecting current work:
 - [08-02]: Next/Previous use pushReplacement(songPath) + initState jumpTo() to resync the cursor; reuses /song/:id unchanged
 - [08-02]: SetlistNavBar self-hides (SizedBox.shrink) and is always set as bottomNavigationBar — no conditional Scaffold logic
 - [08-02]: Setlists entry is a song-list app-bar action (queue_music), not a 4th nav tab (parity with Books in Phase 5)
+- [09-01]: Tag logic extends SearchService (tagsWithCounts/filterByTags/applyTagOverrides), not a new parallel service (per brief: extend search)
+- [09-01]: Tag edits = full-set override per song stored as `song_tag_overrides` blob (bundled tags read-only); empty set clears the override
+- [09-01]: songsProvider applies tag overrides — single source of truth so list/search/favorites/browser all see edits; empty overrides = same list (no behavior change)
+- [09-01]: Tag grouping/matching case-insensitive; display preserves first-seen casing ("Luther" not "luther")
+- [09-02]: Multiple tag filters use AND semantics; filterByTags supports OR but no in-UI toggle
+- [09-02]: Tag browser → search via /search?tag= query param (deep-linkable), folded into the one search surface
+- [09-02]: Tags entry is a song-list app-bar action (sell_outlined), not a nav tab (parity with Books/Setlists); in-song editing via a bottom sheet (parity with controls sheet)
 
 ### Pending Todos
 
@@ -103,14 +110,18 @@ None (redesign-song-controls-ui todo completed by Phase 4)
 
 ### Blockers/Concerns
 
+- Phase 9 visual UAT pending — implemented overnight without a device/browser; see
+  `.planning/phases/09-tags-search/PHASE9-REPORT-2026-06-13.md` for a 5-minute UAT script + morning
+  decisions. Tag browser, tag-filtered search (chips/AND), and the in-song tag editor have automated
+  logic + widget coverage but have not been seen rendered.
 - Phase 8 visual UAT pending — implemented overnight without a device/browser; see
   `.planning/phases/08-setlists/PHASE8-REPORT-2026-06-13.md` for a 5-minute UAT script + morning decisions.
   Drag-to-reorder and the in-service Next/Previous flow have automated logic coverage but have not been
   seen rendered.
 - Phase 5 visual UAT pending — implemented overnight without a device/browser; see
   `.planning/phases/05-song-books/OVERNIGHT-REPORT-2026-06-13.md` for 5-minute UAT steps + morning decisions.
-- Test coverage growing: book logic (17 tests) + setlist model/repository/providers/playback/widget
-  (30 tests, Phase 8). 53 tests total. Broader screen/widget coverage still partial.
+- Test coverage growing: book logic (17) + setlist (30, Phase 8) + tag logic/persistence/providers/
+  search-filter/browser-widget (15, Phase 9). 81 tests total. Broader screen/widget coverage still partial.
 - RadioListTile API deprecation warnings in settings_screen.dart (Flutter 3.32+ info-level) — 8 pre-existing analyze infos, unchanged.
 - Pre-existing WIP (5 modified .dart files) preserved as commit 8969dd5 at the base of the Phase 5 branch.
 - `.claude/skills/add-song.md` edit (import --book docs) is on disk but untracked (`.claude` is gitignored).
@@ -118,9 +129,10 @@ None (redesign-song-controls-ui todo completed by Phase 4)
 ## Session Continuity
 
 Last session: 2026-06-13 (overnight, unattended)
-Stopped at: Completed Phase 8 (Setlists & Playlists) codeable slice on branch claude/phase-8-setlists,
-branched off claude/phase-7-import-pipeline. Local only (never pushed). Visual UAT is the only
-remaining item (no device overnight).
-Resume file: .planning/phases/08-setlists/PHASE8-REPORT-2026-06-13.md (UAT script + morning decisions)
+Stopped at: Completed Phase 9 (Tags & Search) codeable slice on branch claude/phase-9-tags-search,
+branched off claude/phase-8-setlists. v1.1 milestone (Phases 7-9) now code-complete. Local only
+(never pushed). Visual UAT across Phases 5/8/9 is the remaining work (no device overnight).
+Resume file: .planning/phases/09-tags-search/PHASE9-REPORT-2026-06-13.md (UAT script + morning decisions)
+Next move after UAT: /gsd:audit-milestone + /gsd:complete-milestone for v1.1 (do NOT start Phase 10).
 Note: the report's canonical path C:\Users\rober\.claude\overnight\ may be unwritable from the sandbox;
-report kept in-repo (see its banner). Branches: phase-5 → phase-6 → phase-7 → phase-8 (stacked).
+report kept in-repo (see its banner). Branches: phase-5 → … → phase-8 → phase-9 (stacked).
