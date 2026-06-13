@@ -18,7 +18,7 @@ Ship a polished, store-ready songbook app by building on the existing functional
 - [x] **Phase 2: Configurable Song View** - Merged notation+chords+lyrics with toggle controls
 - [x] **Phase 3: Presentation Mode** - Full-screen lyrics display for projection and personal use
 - [x] **Phase 4: Controls UI Redesign** - Bottom sheet controls, pinch-to-zoom, decluttered UX
-- [ ] **Phase 5: Song Books** - Organize songs by hymnal/book with book browser
+- [x] **Phase 5: Song Books** - Organize songs by hymnal/book with book browser
 - [ ] **Phase 6: Store Release Prep** - Branding, metadata, platform polish, submission
 
 ### 📋 v1.1 Content & Organization
@@ -109,11 +109,11 @@ Plans:
   3. Song list filters to show songs from selected book
   4. "All songs" view still available across all books
   5. New songs can be assigned to a book during import
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 05-01: Design book data model and extend song JSON schema
-- [ ] 05-02: Build book browser UI and integrate with song list
+- [x] 05-01-PLAN.md — Book data model + BookService, selected-book persistence, songs.json + import `--book`
+- [x] 05-02-PLAN.md — Book browser UI, `/books` route, book-filtered song list
 
 ### Phase 6: Store Release Prep
 **Goal**: Prepare the app for public release on Google Play and Apple App Store with proper branding, metadata, and platform-specific polish
@@ -208,7 +208,7 @@ Phases 1 → 2 → 3 → 4 in sequence. Phase 5 can run parallel to 2/3/4. Phase
 | 2. Configurable Song View | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 3. Presentation Mode | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 4. Controls UI Redesign | v1.0 | 2/2 | Complete | 2026-02-14 |
-| 5. Song Books | v1.0 | 0/2 | Not started | - |
+| 5. Song Books | v1.0 | 2/2 | Complete | 2026-06-13 |
 | 6. Store Release Prep | v1.0 | 0/2 | Not started | - |
 | 7. Import Pipeline | v1.1 | 0/? | Not started | - |
 | 8. Setlists & Playlists | v1.1 | 0/? | Not started | - |

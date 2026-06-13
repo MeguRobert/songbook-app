@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 4 complete — next: Phase 5 (Song Books)
+**Current focus:** Phase 5 complete (code) — next: Phase 6 (Store Release Prep). Phase 5 visual UAT pending Robert's morning review.
 
 ## Current Position
 
-Phase: 4 of 12 (Controls UI Redesign) — COMPLETE
+Phase: 5 of 12 (Song Books) — COMPLETE (code; visual UAT pending)
 Plan: 2 of 2 in current phase
-Status: Complete
-Last activity: 2026-02-14 — Completed Phase 4 (Controls UI Redesign)
+Status: Complete — implemented overnight 2026-06-13 on branch claude/phase-5-song-books
+Last activity: 2026-06-13 — Completed Phase 5 (Song Books)
 
-Progress: [████░░░░░░] 33% (4/12 phases, 8/24 plans)
+Progress: [█████░░░░░] 42% (5/12 phases, 10/24 plans)
 
 ## Performance Metrics
 
@@ -74,6 +74,13 @@ Recent decisions affecting current work:
 - [04-01]: AnimatedSize for Custom toggles expand/collapse
 - [04-02]: Presentation mode button in app bar (fullscreen icon, before favorite)
 - [04-02]: isScrollControlled: true for bottom sheet to prevent overflow
+- [05-01]: `book` is a flat optional String on Song; books derived dynamically (like tags), no registry
+- [05-01]: Bundled songs split Zsoltárok (≤150) / Dicséretek (>150) — real Hungarian Reformed hymnal sections
+- [05-01]: Unbooked songs grouped under "Other", sorted last, always present in All Songs
+- [05-01]: convert_hymn.py gains --book; assigns book during import (criterion #5)
+- [05-02]: Book browser is a /books screen opened from a song-list app-bar icon (NOT a 4th nav tab)
+- [05-02]: Selected book persists across restart via SettingsRepository (key selected_book)
+- [05-02]: Search + favorites span all books regardless of the active book filter
 
 ### Pending Todos
 
@@ -81,11 +88,16 @@ None (redesign-song-controls-ui todo completed by Phase 4)
 
 ### Blockers/Concerns
 
-- No test coverage — changes carry regression risk (unchanged from init, still applies)
-- RadioListTile API deprecation warnings in settings_screen.dart (Flutter 3.32+ info-level)
+- Phase 5 visual UAT pending — implemented overnight without a device/browser; see
+  `.planning/phases/05-song-books/OVERNIGHT-REPORT-2026-06-13.md` for 5-minute UAT steps + morning decisions.
+- Test coverage now started: book logic covered (BookService + book providers, 17 new tests). Broader
+  screen/widget coverage still absent.
+- RadioListTile API deprecation warnings in settings_screen.dart (Flutter 3.32+ info-level) — 8 pre-existing analyze infos, unchanged.
+- Pre-existing WIP (5 modified .dart files) preserved as commit 8969dd5 at the base of the Phase 5 branch.
+- `.claude/skills/add-song.md` edit (import --book docs) is on disk but untracked (`.claude` is gitignored).
 
 ## Session Continuity
 
-Last session: 2026-02-14
-Stopped at: Completed Phase 4 (Controls UI Redesign) — all 5 success criteria verified
-Resume file: None
+Last session: 2026-06-13 (overnight, unattended)
+Stopped at: Completed Phase 5 (Song Books) on branch claude/phase-5-song-books — all 5 success criteria met at code level; visual UAT pending morning review
+Resume file: .planning/phases/05-song-books/OVERNIGHT-REPORT-2026-06-13.md (has Morning resume prompt)
