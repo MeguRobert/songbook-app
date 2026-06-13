@@ -10,7 +10,9 @@
 
 **Run:** Unattended continuation. Branch base: `claude/phase-5-song-books` (Phase 5 complete).
 **Phase 6 branch:** `claude/phase-6-store-prep` (off Phase 5).
-**Status:** Phase 6 COMPLETE (codeable slice). Phase 7 in progress.
+**Status:** Phase 6 COMPLETE (codeable slice). Phase 7 COMPLETE (codeable slice).
+**Branches (local only, never pushed):** `claude/phase-5-song-books` → `claude/phase-6-store-prep` →
+`claude/phase-7-import-pipeline` (stacked; Phase 7 branched off Phase 6 as instructed).
 
 **Baseline** (branch `claude/phase-6-store-prep`, before any Phase 6 edits):
 - `flutter analyze`: 8 issues — all pre-existing info-level RadioListTile deprecations in
@@ -54,7 +56,29 @@ Real, testable slice of success criterion #4 (text scaling + screen-reader label
 
 ## Phase 7 — Import Pipeline
 
-_In progress — see Phase 7 plans under `.planning/phases/07-import-pipeline/`._
+Codeable slice complete on `claude/phase-7-import-pipeline` (branched off Phase 6). Plans + verification
+under `.planning/phases/07-import-pipeline/`.
+
+### 07-01 Song validation module — DONE
+- `tools/song_validator.py` (pure stdlib): required-field/type checks, key pattern (incl. minor like
+  Am, accidentals like Bb/F#), nested verse/line/chord-position checks, duplicate song-number
+  detection; error vs warning severities; CLI exits non-zero on errors.
+- `tools/test_song_validator.py` — 24 unittest cases. Bundled songs.json validates clean.
+- Commit: `feat(07-01)`.
+
+### 07-02 Import integration, batch import, docs — DONE
+- `convert_hymn.py` now validates the song before writing songs.json — **errors abort the write**,
+  warnings print; `--no-validate` override.
+- `tools/batch_import.py` — JSON/CSV manifest → per-song convert_hymn runs; `--dry-run`,
+  `--continue-on-error`, `--validate-only`; injectable runner. `tools/test_batch_import.py` (13 cases);
+  `tools/sample_import_manifest.json`.
+- `IMPORT-PIPELINE.md` — full workflow incl. external-dep flags + "what is NOT automated".
+- Commits: `feat(07-02)` (validation hook), `feat(07-02)` (batch importer).
+- Gates: Python 24+13 tests OK; `flutter analyze` 8 pre-existing infos; `flutter test` 23/23.
+- Criterion #1 (raw OMR/OCR accuracy) is an external-tool/AI-key goal → blocker (below); the
+  validation gate partially serves it by auto-catching schema errors.
+- `add-song.md` doc update was **blocked** (sandbox denies `.claude` writes; gitignored anyway) —
+  workflow fully documented in IMPORT-PIPELINE.md instead.
 
 ## Human-only blockers
 
@@ -68,11 +92,51 @@ _In progress — see Phase 7 plans under `.planning/phases/07-import-pipeline/`.
 - **Phase 6 #4 a11y UAT** — TalkBack/VoiceOver + system font-slider on device.
 - **Phase 6 #5 submission** — release signing (keystore/provisioning), store-console submission.
 - All Phase 6 human steps are itemized in `.planning/phases/06-store-prep/RELEASE-CHECKLIST.md`.
+- **Phase 7 #1 import accuracy** — improving raw OMR/OCR accuracy needs Audiveris/EasyOCR + real
+  source scans + possibly AI keys; none available in the sandbox. Validation gate ships; accuracy
+  tuning is external.
+- **Phase 7 add-song.md** — couldn't update the gitignored `.claude` skill (sandbox); see IMPORT-PIPELINE.md.
 
 ## Decisions for the morning
 
-_(filled in at end)_
+These are genuine judgment calls left for Robert. (The Morning resume prompt below is written to walk
+through them one at a time.)
+
+- **D1 — Branch integration.** Three stacked local branches exist: `claude/phase-5-song-books` →
+  `claude/phase-6-store-prep` → `claude/phase-7-import-pipeline` (never pushed). How to integrate?
+  Options: (a) review+merge 5→6→7 into `master` in order; (b) keep stacked and PR each; (c) squash.
+  Recommend (a) after a quick review, since each builds on the last.
+- **D2 — Bundle id is permanent.** `com.songbook.songbook_app` cannot change after first store publish.
+  Keep it, or switch to a real reverse-domain you own (e.g. `com.binhatch.songbook`)? Decide before submit.
+- **D3 — App display name.** I set the user-facing name to **"Songbook"** (was `songbook_app`).
+  Confirm, or prefer a fuller name (e.g. "Worship Songbook")?
+- **D4 — Branding art.** No source art exists; icon/splash generators are wired to placeholders.
+  Do you have/commission final art, and what brand colors? (Generators run with two commands once art lands.)
+- **D5 — Store listing.** `STORE-LISTING.md` has «…» placeholders (developer name, support email,
+  privacy-policy URL, screenshots). Want me to draft the privacy policy page text next session?
+- **D6 — Hungarian localized listing?** UI is English, content is Hungarian. Add a `hu` store listing?
+- **D7 — Phase 7 accuracy investment.** Accept the validation gate for now, or prioritize OCR/AI
+  accuracy work (needs tooling/keys) as a dedicated phase?
+- **D8 — Next phase.** With v1.0 store steps now human-blocked, do the next coding phase (Phase 8
+  Setlists, or Phase 9 Tags & Search) while you handle submission, or pause coding until v1.0 ships?
 
 ---
 
-**Morning resume prompt** — _(added when work is complete)_
+**Morning resume prompt** — paste this into a fresh Claude Code session in the repo:
+
+> Good morning. Overnight you completed the codeable slices of **Phase 6 (Store Release Prep)** and
+> **Phase 7 (Import Pipeline)** on stacked local branches
+> (`claude/phase-5-song-books` → `claude/phase-6-store-prep` → `claude/phase-7-import-pipeline`,
+> never pushed). Full details:
+> `.planning/phases/06-store-prep/OVERNIGHT-REPORT-2026-06-13.md` and the `06-VERIFICATION.md` /
+> `07-VERIFICATION.md`. Gates are green (flutter analyze: 8 pre-existing infos; flutter test: 23/23;
+> python validator+batch tests: 24+13 OK).
+>
+> Read the "## Decisions for the morning" section of that report. Then **facilitate those decisions
+> with me one at a time**: ask me the FIRST decision only, wait for my answer, act or note it, then
+> move to the next. **Do not list the decisions up front, do not tell me how many there are or how
+> many remain.** Start now with the first decision. When every decision is resolved, give me a short
+> recap and a recommended next action.
+>
+> Note: the report's intended path `C:\Users\rober\.claude\overnight\` was unwritable from the
+> sandbox, so the report lives in-repo (see its banner).

@@ -23,7 +23,7 @@ Ship a polished, store-ready songbook app by building on the existing functional
 
 ### 📋 v1.1 Content & Organization
 
-- [ ] **Phase 7: Import Pipeline** - Improved OCR workflow with less manual correction
+- [x] **Phase 7: Import Pipeline** - Improved OCR workflow with less manual correction *(codeable slice: validation + batch + docs; OMR/OCR accuracy pending)*
 - [ ] **Phase 8: Setlists & Playlists** - Ordered song lists for services and events
 - [ ] **Phase 9: Tags & Search** - Thematic tags, advanced filtering, search improvements
 
@@ -142,7 +142,14 @@ Plans:
   2. Batch import support for processing multiple songs
   3. Validation step catches common OCR errors before they enter songs.json
   4. Clear documentation of import workflow for repeatability
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+
+Plans:
+- [x] 07-01-PLAN.md — song_validator.py (schema/type/duplicate checks) + 24 unit tests
+- [x] 07-02-PLAN.md — import-time validation gate in convert_hymn.py, batch_import.py + 13 tests, IMPORT-PIPELINE.md
+
+*Criteria #2/#3/#4 met (code+tests). Criterion #1 (raw OMR/OCR accuracy) is an external-tool/AI-key
+quality goal — recorded as a blocker; the validation gate partially serves it. See 07-VERIFICATION.md.*
 
 ### Phase 8: Setlists & Playlists
 **Goal**: Allow users to create ordered song lists for specific services or events
@@ -212,7 +219,7 @@ Phases 1 → 2 → 3 → 4 in sequence. Phase 5 can run parallel to 2/3/4. Phase
 | 4. Controls UI Redesign | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 5. Song Books | v1.0 | 2/2 | Complete | 2026-06-13 |
 | 6. Store Release Prep | v1.0 | 2/2 | Complete (code; submission pending) | 2026-06-13 |
-| 7. Import Pipeline | v1.1 | 0/? | Not started | - |
+| 7. Import Pipeline | v1.1 | 2/2 | Complete (code; OMR/OCR accuracy pending) | 2026-06-13 |
 | 8. Setlists & Playlists | v1.1 | 0/? | Not started | - |
 | 9. Tags & Search | v1.1 | 0/? | Not started | - |
 | 10. Cloud Backend | v2.0 | 0/? | Not started | - |
