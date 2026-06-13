@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/models/view_config.dart';
+import '../../../providers/autoscroll_provider.dart';
 import '../../../providers/providers.dart';
 import '../../../providers/song_provider.dart';
 
@@ -30,8 +31,10 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
     final viewConfig = ref.watch(effectiveViewConfigProvider);
     final transpose = ref.watch(transposeProvider);
     final textScale = ref.watch(textScaleProvider);
+    final autoScroll = ref.watch(autoScrollProvider);
     final transpositionService = ref.read(transpositionServiceProvider);
     final songViewNotifier = ref.read(songViewProvider.notifier);
+    final autoScrollNotifier = ref.read(autoScrollProvider.notifier);
 
     final targetKey = transpositionService.calculateTargetKey(
       widget.originalKey,
@@ -209,6 +212,46 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                       ),
                     ),
                   ],
+                ),
+
+                const Divider(height: 32),
+
+                // Auto-scroll Section
+                _SectionHeader(text: 'AUTO-SCROLL', theme: theme),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    IconButton.filledTonal(
+                      icon: Icon(
+                        autoScroll.isPlaying ? Icons.pause : Icons.play_arrow,
+                      ),
+                      onPressed: autoScrollNotifier.toggle,
+                      tooltip: autoScroll.isPlaying
+                          ? 'Stop auto-scroll'
+                          : 'Start auto-scroll',
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.directions_walk, size: 18),
+                    Expanded(
+                      child: Slider(
+                        value: autoScroll.speed,
+                        min: AutoScrollState.minSpeed,
+                        max: AutoScrollState.maxSpeed,
+                        divisions: 18,
+                        label: '${autoScroll.speed.round()} px/s',
+                        onChanged: autoScrollNotifier.setSpeed,
+                      ),
+                    ),
+                    const Icon(Icons.directions_run, size: 18),
+                  ],
+                ),
+                Center(
+                  child: Text(
+                    'Speed remembered per song',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
 
                 // Bottom padding for safe area

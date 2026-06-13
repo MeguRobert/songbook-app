@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../providers/autoscroll_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/song_provider.dart';
 import '../../providers/setlist_provider.dart';
@@ -24,19 +26,61 @@ class SongViewScreen extends ConsumerStatefulWidget {
   ConsumerState<SongViewScreen> createState() => _SongViewScreenState();
 }
 
-class _SongViewScreenState extends ConsumerState<SongViewScreen> {
+class _SongViewScreenState extends ConsumerState<SongViewScreen>
+    with SingleTickerProviderStateMixin {
   double _baseScale = 1.0;
+
+  // --- Auto-scroll (POC) ---
+  final ScrollController _scrollController = ScrollController();
+  late final Ticker _ticker;
+  Duration _lastTick = Duration.zero;
 
   @override
   void initState() {
     super.initState();
+    _ticker = createTicker(_onAutoScrollTick);
     // Open the song in the provider — openSong() resets transpose and textScale
     // No closeSong() in dispose needed: openSong() always creates fresh state,
     // and modifying provider state in dispose is forbidden by Riverpod.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(songViewProvider.notifier).openSong(widget.songNumber);
+      ref.read(autoScrollProvider.notifier).init(widget.songNumber);
       _syncSetlistPosition();
     });
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Advances the scroll position by `speed * dt` each frame while playing.
+  /// Stops automatically when the bottom of the song is reached.
+  void _onAutoScrollTick(Duration elapsed) {
+    final dt = (elapsed - _lastTick).inMicroseconds / Duration.microsecondsPerSecond;
+    _lastTick = elapsed;
+    if (!_scrollController.hasClients) return;
+
+    final speed = ref.read(autoScrollProvider).speed;
+    final position = _scrollController.position;
+    final next = _scrollController.offset + speed * dt;
+    if (next >= position.maxScrollExtent) {
+      _scrollController.jumpTo(position.maxScrollExtent);
+      ref.read(autoScrollProvider.notifier).pause(); // reached the end
+    } else {
+      _scrollController.jumpTo(next);
+    }
+  }
+
+  void _setAutoScrollRunning(bool running) {
+    if (running && !_ticker.isActive) {
+      _lastTick = Duration.zero;
+      _ticker.start();
+    } else if (!running && _ticker.isActive) {
+      _ticker.stop();
+    }
   }
 
   /// Keeps the setlist playback cursor aligned with the song being shown, so
@@ -66,6 +110,17 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
     final viewConfig = ref.watch(effectiveViewConfigProvider);
     final transpose = ref.watch(transposeProvider);
     final textScale = ref.watch(textScaleProvider);
+    final autoScroll = ref.watch(autoScrollProvider);
+
+    // Start/stop the ticker as the play state changes.
+    ref.listen<bool>(
+      autoScrollProvider.select((s) => s.isPlaying),
+      (_, playing) => _setAutoScrollRunning(playing),
+    );
+
+    // Auto-scroll only drives the chord/lyrics view (sheet music is a separate
+    // widget); the play control is hidden in sheet-music mode.
+    final canAutoScroll = !viewConfig.showNotation;
 
     return songAsync.when(
       data: (song) {
@@ -80,6 +135,20 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
           appBar: AppBar(
             title: Text('${song.number}. ${song.title}'),
             actions: [
+              // Auto-scroll play/pause (chord/lyrics view only)
+              if (canAutoScroll)
+                IconButton(
+                  icon: Icon(
+                    autoScroll.isPlaying
+                        ? Icons.pause_circle_outline
+                        : Icons.play_circle_outline,
+                  ),
+                  onPressed: () =>
+                      ref.read(autoScrollProvider.notifier).toggle(),
+                  tooltip: autoScroll.isPlaying
+                      ? 'Stop auto-scroll'
+                      : 'Start auto-scroll',
+                ),
               // Presentation mode button
               IconButton(
                 icon: const Icon(Icons.fullscreen),
@@ -132,6 +201,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
                     transpose: transpose,
                     textScale: textScale,
                     showChords: true,
+                    scrollController: _scrollController,
                   )
                 else
                   ChordView(
@@ -139,6 +209,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
                     transpose: transpose,
                     textScale: textScale,
                     showChords: false,
+                    scrollController: _scrollController,
                   ),
               ],
             ),
