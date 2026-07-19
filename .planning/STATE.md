@@ -74,6 +74,9 @@ Recent decisions affecting current work:
 - [04-01]: AnimatedSize for Custom toggles expand/collapse
 - [04-02]: Presentation mode button in app bar (fullscreen icon, before favorite)
 - [04-02]: isScrollControlled: true for bottom sheet to prevent overflow
+- [04-03]: Custom view chip/toggles removed entirely (dead-end state per UAT) — bottom sheet View section is now exactly 3 presets
+- [04-03]: ViewConfig.fromStorageString normalizes legacy "true:false" persisted data to sheetMusic() preset
+- [04-03]: Visibility(maintainSize: true) pattern for fixed-position transpose Reset button/offset label in bottom-anchored sheet
 - [04-04]: Scale entire sheet-music engraving via canvas.scale(textScale) rather than making EngravingConstants scale-aware
 - [04-04]: Lay out SheetMusicLayoutEngine at availableWidth/textScale so line wrapping matches true visible width at any scale
 - [04-04]: Center header text against unscaled layout.totalWidth (not scaled CustomPaint size) to avoid double-scaling the offset
