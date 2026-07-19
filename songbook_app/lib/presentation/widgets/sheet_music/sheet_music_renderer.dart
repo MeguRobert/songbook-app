@@ -23,6 +23,9 @@ class SheetMusicRenderer extends StatefulWidget {
   /// Called when notation is not available
   final Widget? fallback;
 
+  /// Scale factor applied to the rendered notation (A+/A-, pinch, etc.)
+  final double textScale;
+
   const SheetMusicRenderer({
     super.key,
     required this.song,
@@ -30,6 +33,7 @@ class SheetMusicRenderer extends StatefulWidget {
     this.transpose = 0,
     this.showChords = true,
     this.fallback,
+    this.textScale = 1.0,
   });
 
   @override
@@ -57,7 +61,8 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.notation != widget.notation ||
         oldWidget.transpose != widget.transpose ||
-        oldWidget.showChords != widget.showChords) {
+        oldWidget.showChords != widget.showChords ||
+        oldWidget.textScale != widget.textScale) {
       _calculateLayout();
     }
   }
@@ -134,7 +139,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final layoutEngine = SheetMusicLayoutEngine(
-          availableWidth: constraints.maxWidth,
+          availableWidth: constraints.maxWidth / widget.textScale,
           transposePitch: _transposePitch,
           transposeChord: _transposeChord,
           showChords: widget.showChords,
@@ -154,7 +159,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: layout.totalWidth,
+                  maxWidth: layout.totalWidth * widget.textScale,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -168,8 +173,8 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
                     // Sheet music canvas with RepaintBoundary for performance
                     RepaintBoundary(
                       child: SizedBox(
-                        width: layout.totalWidth,
-                        height: layout.totalHeight,
+                        width: layout.totalWidth * widget.textScale,
+                        height: layout.totalHeight * widget.textScale,
                         child: CustomPaint(
                           painter: SheetMusicPainter(
                             layout: layout,
@@ -180,6 +185,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
                                 ? Colors.white70
                                 : const Color(0xFF333333),
                             showChords: widget.showChords,
+                            textScale: widget.textScale,
                           ),
                         ),
                       ),

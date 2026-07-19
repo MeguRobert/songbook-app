@@ -14,6 +14,7 @@ class SheetMusicPainter extends CustomPainter {
   final Color noteColor;
   final Color staffColor;
   final bool showChords;
+  final double textScale;
 
   // Cached Paint objects for performance
   late final Paint _staffLinePaint;
@@ -29,6 +30,7 @@ class SheetMusicPainter extends CustomPainter {
     this.noteColor = const Color(0xFF333333),
     this.staffColor = const Color(0xFF333333),
     this.showChords = true,
+    this.textScale = 1.0,
   }) {
     _initializePaints();
   }
@@ -75,6 +77,9 @@ class SheetMusicPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(textScale);
+
     _drawHeader(canvas, size);
 
     for (int i = 0; i < layout.systems.length; i++) {
@@ -98,6 +103,8 @@ class SheetMusicPainter extends CustomPainter {
       if (showChords) _drawChords(canvas, system);
       _drawLyrics(canvas, system);
     }
+
+    canvas.restore();
   }
 
   void _drawHeader(Canvas canvas, Size size) {
@@ -113,7 +120,11 @@ class SheetMusicPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
     textPainter.layout();
-    textPainter.paint(canvas, Offset((size.width - textPainter.width) / 2, 5));
+    // Center using the unscaled layout width (not the scaled canvas `size`),
+    // since drawing happens inside canvas.scale(textScale) — centering off the
+    // scaled size here would double-scale the offset.
+    textPainter.paint(
+        canvas, Offset((layout.totalWidth - textPainter.width) / 2, 5));
   }
 
   void _drawStaffLines(Canvas canvas, StaffSystem system) {
@@ -950,6 +961,7 @@ class SheetMusicPainter extends CustomPainter {
     return oldDelegate.layout != layout ||
         oldDelegate.noteColor != noteColor ||
         oldDelegate.staffColor != staffColor ||
-        oldDelegate.showChords != showChords;
+        oldDelegate.showChords != showChords ||
+        oldDelegate.textScale != textScale;
   }
 }
