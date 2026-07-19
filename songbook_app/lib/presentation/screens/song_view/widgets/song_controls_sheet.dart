@@ -8,7 +8,7 @@ import '../../../providers/song_provider.dart';
 /// Bottom sheet widget containing all song control sections.
 ///
 /// Organized into three labeled sections:
-/// - View: Preset chips (Sheet Music, Chords, Lyrics) + Custom toggles
+/// - View: Preset chips (Sheet Music, Chords, Lyrics)
 /// - Transpose: +/- buttons with key display and reset
 /// - Text Size: A-/A+ buttons with scale percentage
 class SongControlsSheet extends ConsumerStatefulWidget {
@@ -38,11 +38,6 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
       transpose,
     );
     final hasTranspose = transpose != 0;
-
-    // Determine if Custom is selected (not a preset)
-    final isCustomSelected = !viewConfig.isSheetMusicPreset &&
-        !viewConfig.isChordsPreset &&
-        !viewConfig.isLyricsOnlyPreset;
 
     return Container(
       decoration: BoxDecoration(
@@ -120,52 +115,6 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-
-                // Custom section
-                ChoiceChip(
-                  label: const Text('Custom'),
-                  selected: isCustomSelected,
-                  onSelected: (_) {
-                    // If not already custom, toggle notation to enter custom mode
-                    // This makes the toggles visible for user adjustment
-                    if (!isCustomSelected) {
-                      songViewNotifier.toggleNotation();
-                    }
-                  },
-                ),
-
-                // Custom toggles - animate expand/collapse
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeInOut,
-                  child: isCustomSelected
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SwitchListTile(
-                              title: const Text('Show Notation'),
-                              value: viewConfig.showNotation,
-                              onChanged: (_) {
-                                songViewNotifier.toggleNotation();
-                              },
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            SwitchListTile(
-                              title: const Text('Show Chords'),
-                              value: viewConfig.showChords,
-                              onChanged: (_) {
-                                songViewNotifier.toggleChords();
-                              },
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
-
                 const Divider(height: 32),
 
                 // Transpose Section
@@ -188,13 +137,20 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          if (hasTranspose)
-                            Text(
-                              '${transpose > 0 ? '+' : ''}$transpose',
+                          Visibility(
+                            visible: hasTranspose,
+                            maintainSize: true,
+                            maintainAnimation: true,
+                            maintainState: true,
+                            child: Text(
+                              hasTranspose
+                                  ? '${transpose > 0 ? '+' : ''}$transpose'
+                                  : '0',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
+                          ),
                         ],
                       ),
                     ),
@@ -205,15 +161,19 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                     ),
                   ],
                 ),
-                if (hasTranspose) ...[
-                  const SizedBox(height: 8),
-                  Center(
+                const SizedBox(height: 8),
+                Center(
+                  child: Visibility(
+                    visible: hasTranspose,
+                    maintainSize: true,
+                    maintainAnimation: true,
+                    maintainState: true,
                     child: TextButton(
                       onPressed: songViewNotifier.resetTranspose,
                       child: Text('Reset to ${widget.originalKey}'),
                     ),
                   ),
-                ],
+                ),
 
                 const Divider(height: 32),
 
