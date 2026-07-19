@@ -16,11 +16,13 @@ class SheetMusicViewWidget extends ConsumerWidget {
   final Song song;
   final int transpose;
   final bool showChords;
+  final double textScale;
 
   const SheetMusicViewWidget({
     required this.song,
     required this.transpose,
     this.showChords = true,
+    this.textScale = 1.0,
     super.key,
   });
 
@@ -49,6 +51,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
       notation: song.notation!,
       transpose: transpose,
       showChords: showChords,
+      textScale: textScale,
     );
 
     // Add debug badge in debug mode

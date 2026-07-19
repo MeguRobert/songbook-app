@@ -110,6 +110,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
                     song: song,
                     transpose: transpose,
                     showChords: viewConfig.showChords,
+                    textScale: textScale,
                   )
                 else if (viewConfig.showChords)
                   ChordView(
