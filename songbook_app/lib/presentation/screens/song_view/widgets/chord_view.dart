@@ -31,17 +31,14 @@ class ChordView extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return InteractiveViewer(
-      minScale: 0.5,
-      maxScale: 3.0,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Song metadata
             if (song.reference != null) ...[
               Text(
@@ -84,8 +81,7 @@ class ChordView extends ConsumerWidget {
                   style: theme.textTheme.bodySmall,
                 ),
             ],
-          ],
-        ),
+            ],
           ),
         ),
       ),

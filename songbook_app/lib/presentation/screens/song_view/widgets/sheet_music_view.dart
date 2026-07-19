@@ -96,11 +96,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
       transpose,
     );
 
-    final legacyView = InteractiveViewer(
-      constrained: false,
-      minScale: 0.5,
-      maxScale: 3.0,
-      boundaryMargin: const EdgeInsets.all(100),
+    final legacyView = SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
