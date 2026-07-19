@@ -39,9 +39,6 @@ class ViewConfig {
   /// Returns true if this config matches the lyrics-only preset
   bool get isLyricsOnlyPreset => !showNotation && !showChords;
 
-  /// Returns true if notation is shown without chords (4th valid state)
-  bool get isNotationWithoutChords => showNotation && !showChords;
-
   // --- Copy ---
 
   ViewConfig copyWith({
@@ -71,6 +68,12 @@ class ViewConfig {
 
     final notation = parts[0].toLowerCase() == 'true';
     final chords = parts[1].toLowerCase() == 'true';
+
+    // Normalize the orphaned notation-only state (removed "Custom" state)
+    // to the Sheet Music preset so legacy persisted data never surfaces it.
+    if (notation && !chords) {
+      return const ViewConfig.sheetMusic();
+    }
 
     return ViewConfig(
       showNotation: notation,
