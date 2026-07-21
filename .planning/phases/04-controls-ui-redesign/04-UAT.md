@@ -123,7 +123,8 @@ skipped: 0
   reason: "User reported: it does not scale the text as the FAB menu does — it scales the content like an image, and pinch-to-zoom does not work in Sheet Music view"
   severity: major
   test: 6
-  root_cause: "Two independent causes: (1) ChordView wraps content in InteractiveViewer (chord_view.dart:34-36) whose scale recognizer is deeper in the tree and wins the gesture arena, applying a matrix transform (image zoom) — the screen-level onScaleUpdate (correctly wired to setTextScale) never receives the pinch; legacy SVG path has the same wrapper (sheet_music_view.dart:96). (2) In the Canvas sheet music view, the SingleChildScrollView's drag recognizer claims the pinch pointers (sheet_music_renderer.dart:149-152), and even if the gesture fired nothing consumes textScale in the sheet music widgets."
+  status_final: fixed (commits bf49fa8, b61899e, a6bb140)
+  root_cause: "THREE causes. Original diagnosis found two: (1) ChordView/legacy-SVG wrapped content in InteractiveViewer stealing the gesture as matrix zoom; (2) sheet music widgets didn't consume textScale (fixed by 04-04). Removing InteractiveViewer (04-05 task 1) was necessary but INSUFFICIENT. The decisive missed cause (3): on Flutter WEB a desktop trackpad pinch / Ctrl+mouse-wheel is delivered as a PointerScaleEvent (a pointer signal), which GestureDetector/ScaleGestureRecognizer never receive — so onScaleUpdate never fired on desktop. Proven via instrumentation + Playwright: ctrl+wheel produced onPointerSignal/_TransformedPointerScaleEvent x N with onScaleStart/Update at 0, while synthetic 2-finger touch fired onScaleUpdate and scaled correctly. Fix (a6bb140): Listener.onPointerSignal maps PointerScaleEvent -> setTextScale; GestureDetector retained for mobile touch."
   artifacts:
     - path: "songbook_app/lib/presentation/screens/song_view/widgets/chord_view.dart"
       issue: "InteractiveViewer steals pinch, applies geometric zoom (lines 34-36)"
