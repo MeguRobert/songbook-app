@@ -70,6 +70,31 @@ Flutter **web**:
 - Not yet confirmed on a physical touch device by the user (automation covered the
   desktop ctrl+wheel path and synthetic touch path).
 
+## Post-verification refinement: smooth uniform zoom (user-confirmed)
+
+After the pinch fix landed, the user reported the notation zoomed in "chunks" and
+wasn't a "customizable size," wanting the continuous feel of a trackpad pinch.
+Instrumentation (Playwright + a setTextScale log) showed a single Ctrl+wheel notch
+triggered ~100 notation rebuilds, each re-running the full layout engine — because
+04-04 laid out at `availableWidth / textScale`, so every zoom step re-wrapped the
+music onto fewer measures per line. That re-wrap was the "chunk"; the relayout flood
+was the jank.
+
+Two earlier attempts (per-notch step clamp `453882b`, per-notch eased animation
+`8ad2dc7`) treated the symptom. The user chose (AskUserQuestion) the architectural
+fix — **smooth uniform zoom** (`4e8031b`):
+- Lay the engraving out ONCE at the viewport width (independent of textScale) and
+  memoize it (recompute only on width/notation/transpose/showChords).
+- Apply zoom purely as a visual scale (canvas.scale + scaled SizedBox) — no relayout
+  or re-wrap per step, so it's continuous to any size and jank-free.
+- Added horizontal scrolling so the enlarged sheet can be panned when it exceeds the
+  viewport.
+- **Accepted trade-off:** when zoomed past the screen width, the sheet scrolls
+  horizontally (like zooming a PDF) instead of re-fitting to the width.
+
+The Ctrl+wheel per-notch eased animation (`8ad2dc7`) is retained and now glides
+cheaply since zoom no longer relayouts. User confirmed the result is good.
+
 ## Known limitation (pre-existing, out of scope)
 
 For a song with **no** engraved notation shown in the notation/placeholder view

@@ -82,6 +82,7 @@ Recent decisions affecting current work:
 - [04-04]: Center header text against unscaled layout.totalWidth (not scaled CustomPaint size) to avoid double-scaling the offset
 - [04-05]: Removed InteractiveViewer from chord/legacy-SVG views (was stealing pinch as matrix zoom); viewport meta user-scalable=no
 - [04-05]: KEY WEB GOTCHA — desktop trackpad pinch / Ctrl+wheel arrives as PointerScaleEvent (a pointer signal), NOT handled by GestureDetector/ScaleGestureRecognizer. Fixed via Listener.onPointerSignal → setTextScale in song_view_screen.dart; GestureDetector retained for mobile touch. Verified with Playwright + instrumentation.
+- [04-05]: Notation zoom is SMOOTH UNIFORM (user choice): layout computed once at viewport width and memoized (independent of textScale); zoom applied as pure visual scale (canvas.scale + scaled SizedBox). No re-wrap, no per-step relayout. Enlarged sheet scrolls horizontally (accepted trade-off vs re-fitting width). Ctrl+wheel notch uses a short eased animation to glide. NOTE: chords/lyrics text view still reflows on scale (not changed).
 
 ### Pending Todos
 
