@@ -23,18 +23,50 @@ class SongViewScreen extends ConsumerStatefulWidget {
   ConsumerState<SongViewScreen> createState() => _SongViewScreenState();
 }
 
-class _SongViewScreenState extends ConsumerState<SongViewScreen> {
+class _SongViewScreenState extends ConsumerState<SongViewScreen>
+    with SingleTickerProviderStateMixin {
   double _baseScale = 1.0;
+
+  // Smooth zoom for discrete Ctrl+wheel notches. A trackpad pinch streams many
+  // tiny scale events (already continuous); a mouse wheel fires one large event
+  // per notch. To make the wheel feel like the trackpad, each notch animates the
+  // text scale to a target over a short duration, emitting many small steps —
+  // the same per-frame work the trackpad already does smoothly.
+  late final AnimationController _zoomController;
+  double _zoomFrom = 1.0;
+  double _zoomTo = 1.0;
 
   @override
   void initState() {
     super.initState();
+    _zoomController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 160),
+    )..addListener(() {
+        final t = Curves.easeOut.transform(_zoomController.value);
+        final value = _zoomFrom + (_zoomTo - _zoomFrom) * t;
+        ref.read(songViewProvider.notifier).setTextScale(value);
+      });
     // Open the song in the provider — openSong() resets transpose and textScale
     // No closeSong() in dispose needed: openSong() always creates fresh state,
     // and modifying provider state in dispose is forbidden by Riverpod.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(songViewProvider.notifier).openSong(widget.songNumber);
     });
+  }
+
+  @override
+  void dispose() {
+    _zoomController.dispose();
+    super.dispose();
+  }
+
+  /// Animate the text scale to [target] over a short eased duration so a
+  /// discrete zoom step (mouse wheel) glides instead of snapping.
+  void _animateZoomTo(double target) {
+    _zoomFrom = ref.read(textScaleProvider);
+    _zoomTo = target.clamp(0.5, 2.0);
+    _zoomController.forward(from: 0);
   }
 
   void _showControlsSheet(BuildContext context, String originalKey) {
@@ -99,16 +131,23 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
           body: Listener(
             onPointerSignal: (event) {
               if (event is PointerScaleEvent) {
-                // A mouse Ctrl+wheel notch can arrive as a single large scale
-                // factor (a big lurch); a trackpad pinch arrives as many tiny
-                // factors (already smooth). Clamp each step so wheel zooming is
-                // as gentle and continuous as trackpad pinch — the trackpad's
-                // tiny factors fall inside the clamp and pass through unchanged.
-                final step = event.scale.clamp(0.94, 1.06);
+                final raw = event.scale;
                 final current = ref.read(textScaleProvider);
-                ref
-                    .read(songViewProvider.notifier)
-                    .setTextScale(current * step);
+                if ((raw - 1.0).abs() > 0.08) {
+                  // Large factor = one discrete mouse-wheel notch. Animate to a
+                  // clamped target so it glides like a trackpad pinch instead of
+                  // lurching. If a burst of notches arrives, accumulate onto the
+                  // in-flight target so continuous scrolling keeps gliding.
+                  final base = _zoomController.isAnimating ? _zoomTo : current;
+                  _animateZoomTo(base * raw.clamp(0.6, 1.6));
+                } else {
+                  // Small factor = trackpad pinch stream, already continuous.
+                  // Apply directly (and stop any wheel animation in progress).
+                  if (_zoomController.isAnimating) _zoomController.stop();
+                  ref
+                      .read(songViewProvider.notifier)
+                      .setTextScale((current * raw).clamp(0.5, 2.0));
+                }
               }
             },
             child: GestureDetector(
