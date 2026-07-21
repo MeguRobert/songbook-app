@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 4 gap closure in progress (UAT found sheet-music scaling + pinch gaps) — plan 04-05 remaining before Phase 5 (Song Books)
+**Current focus:** Phase 4 COMPLETE (gaps closed + verified) — next: Phase 5 (Song Books)
 
 ## Current Position
 
-Phase: 4 of 12 (Controls UI Redesign) — gap closure in progress
-Plan: 04-04 of gap-closure plans (04-03, 04-04, 04-05)
-Status: In progress — 04-04 complete, 04-05 (pinch-to-zoom fix, wave 2) remaining
-Last activity: 2026-07-20 — Completed 04-04-PLAN.md (sheet music textScale scaling)
+Phase: 4 of 12 (Controls UI Redesign) — COMPLETE (incl. gap closure)
+Plan: 5 of 5 (04-01, 04-02 + gap-closure 04-03/04-04/04-05)
+Status: Complete — 4 UAT gaps closed, verifier passed 5/5 must-haves
+Last activity: 2026-07-21 — Fixed web pinch-to-zoom (PointerScaleEvent), verified Phase 4
 
-Progress: [████░░░░░░] 33% (4/12 phases, 9/24 plans)
+Progress: [████░░░░░░] 33% (4/12 phases, 10/24 plans)
 
 ## Performance Metrics
 
@@ -80,8 +80,12 @@ Recent decisions affecting current work:
 - [04-04]: Scale entire sheet-music engraving via canvas.scale(textScale) rather than making EngravingConstants scale-aware
 - [04-04]: Lay out SheetMusicLayoutEngine at availableWidth/textScale so line wrapping matches true visible width at any scale
 - [04-04]: Center header text against unscaled layout.totalWidth (not scaled CustomPaint size) to avoid double-scaling the offset
+- [04-05]: Removed InteractiveViewer from chord/legacy-SVG views (was stealing pinch as matrix zoom); viewport meta user-scalable=no
+- [04-05]: KEY WEB GOTCHA — desktop trackpad pinch / Ctrl+wheel arrives as PointerScaleEvent (a pointer signal), NOT handled by GestureDetector/ScaleGestureRecognizer. Fixed via Listener.onPointerSignal → setTextScale in song_view_screen.dart; GestureDetector retained for mobile touch. Verified with Playwright + instrumentation.
 
 ### Pending Todos
+
+- [Follow-up] Legacy "no sheet music" placeholder view renders plain-text verses that do NOT honor textScale (04-04 only wired the custom Canvas renderer). Chords/Lyrics presets scale fine. Low priority.
 
 None (redesign-song-controls-ui todo completed by Phase 4)
 
@@ -92,6 +96,6 @@ None (redesign-song-controls-ui todo completed by Phase 4)
 
 ## Session Continuity
 
-Last session: 2026-07-20
-Stopped at: Completed 04-04-PLAN.md (sheet music textScale scaling); 04-05 (pinch-to-zoom fix) remains before Phase 4 gap closure is fully done
+Last session: 2026-07-21
+Stopped at: Phase 4 fully complete — all gap-closure plans (04-03/04/05) executed, pinch-to-zoom web fix verified, gsd-verifier passed 5/5. Ready for Phase 5 (Song Books).
 Resume file: None

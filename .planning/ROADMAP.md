@@ -17,7 +17,7 @@ Ship a polished, store-ready songbook app by building on the existing functional
 - [x] **Phase 1: Bug Fixes & Core Polish** - Fix known bugs and polish existing UI for reliability
 - [x] **Phase 2: Configurable Song View** - Merged notation+chords+lyrics with toggle controls
 - [x] **Phase 3: Presentation Mode** - Full-screen lyrics display for projection and personal use
-- [ ] **Phase 4: Controls UI Redesign** - Bottom sheet controls, pinch-to-zoom, decluttered UX
+- [x] **Phase 4: Controls UI Redesign** - Bottom sheet controls, pinch-to-zoom, decluttered UX
 - [ ] **Phase 5: Song Books** - Organize songs by hymnal/book with book browser
 - [ ] **Phase 6: Store Release Prep** - Branding, metadata, platform polish, submission
 
@@ -96,8 +96,11 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 04-01-PLAN.md — Bottom sheet controls widget, FAB trigger, pinch-to-zoom gesture
-- [ ] 04-02-PLAN.md — App bar presentation button, Custom view option, cleanup old floating menu
+- [x] 04-01-PLAN.md — Bottom sheet controls widget, FAB trigger, pinch-to-zoom gesture
+- [x] 04-02-PLAN.md — App bar presentation button, Custom view option, cleanup old floating menu
+- [x] 04-03-PLAN.md — (gap closure) Remove broken Custom view; fix transpose Reset button layout shift
+- [x] 04-04-PLAN.md — (gap closure) Scale sheet music notation with textScale (A+/A- and pinch)
+- [x] 04-05-PLAN.md — (gap closure) Fix pinch-to-zoom on web (PointerScaleEvent → setTextScale)
 
 ### Phase 5: Song Books
 **Goal**: Organize songs by hymnal/book (Hallelujah, Reformed, Youth Worship, etc.) with a book browser for navigating large collections
@@ -207,7 +210,7 @@ Phases 1 → 2 → 3 → 4 in sequence. Phase 5 can run parallel to 2/3/4. Phase
 | 1. Bug Fixes & Core Polish | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 2. Configurable Song View | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 3. Presentation Mode | v1.0 | 2/2 | Complete | 2026-02-14 |
-| 4. Controls UI Redesign | v1.0 | 0/2 | Not started | - |
+| 4. Controls UI Redesign | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 5. Song Books | v1.0 | 0/2 | Not started | - |
 | 6. Store Release Prep | v1.0 | 0/2 | Not started | - |
 | 7. Import Pipeline | v1.1 | 0/? | Not started | - |
