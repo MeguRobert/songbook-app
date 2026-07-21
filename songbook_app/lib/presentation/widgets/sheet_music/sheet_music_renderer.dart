@@ -42,33 +42,46 @@ class SheetMusicRenderer extends StatefulWidget {
 
 class _SheetMusicRendererState extends State<SheetMusicRenderer> {
   final TranspositionService _transpositionService = const TranspositionService();
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _vScrollController = ScrollController();
+  final ScrollController _hScrollController = ScrollController();
 
-  @override
-  void initState() {
-    super.initState();
-    _calculateLayout();
-  }
+  // Cached layout. The engraving layout (note positions, line wrapping) is
+  // INDEPENDENT of textScale — zoom is applied purely as a visual scale
+  // (canvas.scale + a scaled SizedBox), so the layout is recomputed only when
+  // the width, notation, transpose or chord visibility change, never on zoom.
+  // This is what makes zooming smooth: no relayout/re-wrap per zoom step.
+  SheetMusicLayout? _layout;
+  double? _layoutWidth;
+  SongNotation? _layoutNotation;
+  int? _layoutTranspose;
+  bool? _layoutShowChords;
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _vScrollController.dispose();
+    _hScrollController.dispose();
     super.dispose();
   }
 
-  @override
-  void didUpdateWidget(SheetMusicRenderer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.notation != widget.notation ||
-        oldWidget.transpose != widget.transpose ||
-        oldWidget.showChords != widget.showChords ||
-        oldWidget.textScale != widget.textScale) {
-      _calculateLayout();
+  SheetMusicLayout _layoutFor(double width) {
+    if (_layout == null ||
+        _layoutWidth != width ||
+        _layoutNotation != widget.notation ||
+        _layoutTranspose != widget.transpose ||
+        _layoutShowChords != widget.showChords) {
+      final engine = SheetMusicLayoutEngine(
+        availableWidth: width,
+        transposePitch: _transposePitch,
+        transposeChord: _transposeChord,
+        showChords: widget.showChords,
+      );
+      _layout = engine.calculateLayout(widget.notation, widget.transpose);
+      _layoutWidth = width;
+      _layoutNotation = widget.notation;
+      _layoutTranspose = widget.transpose;
+      _layoutShowChords = widget.showChords;
     }
-  }
-
-  void _calculateLayout() {
-    // We'll calculate layout in build using LayoutBuilder for width
+    return _layout!;
   }
 
   String _transposePitch(String pitch, int semitones) {
@@ -138,67 +151,71 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final layoutEngine = SheetMusicLayoutEngine(
-          availableWidth: constraints.maxWidth / widget.textScale,
-          transposePitch: _transposePitch,
-          transposeChord: _transposeChord,
-          showChords: widget.showChords,
-        );
+        // Lay out once at the viewport width — NOT divided by textScale — so the
+        // music never re-wraps as it zooms. Zoom is a pure visual scale below.
+        final layout = _layoutFor(constraints.maxWidth);
+        final scaledWidth = layout.totalWidth * widget.textScale;
 
-        final layout = layoutEngine.calculateLayout(
-          widget.notation,
-          widget.transpose,
-        );
-
-        // Use Scrollbar with SingleChildScrollView for normal scrolling
         return Scrollbar(
-          controller: _scrollController,
+          controller: _vScrollController,
           thumbVisibility: true,
           child: SingleChildScrollView(
-            controller: _scrollController,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: layout.totalWidth * widget.textScale,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Song header
-                    _buildHeader(context),
+            controller: _vScrollController,
+            // Horizontal scroll for when the zoomed sheet is wider than the
+            // viewport. minWidth keeps it centered while it still fits.
+            child: Scrollbar(
+              controller: _hScrollController,
+              thumbVisibility: scaledWidth > constraints.maxWidth,
+              notificationPredicate: (n) => n.depth == 1,
+              child: SingleChildScrollView(
+                controller: _hScrollController,
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: scaledWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Song header
+                          _buildHeader(context),
 
-                    const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                    // Sheet music canvas with RepaintBoundary for performance
-                    RepaintBoundary(
-                      child: SizedBox(
-                        width: layout.totalWidth * widget.textScale,
-                        height: layout.totalHeight * widget.textScale,
-                        child: CustomPaint(
-                          painter: SheetMusicPainter(
-                            layout: layout,
-                            noteColor: theme.brightness == Brightness.dark
-                                ? Colors.white
-                                : const Color(0xFF333333),
-                            staffColor: theme.brightness == Brightness.dark
-                                ? Colors.white70
-                                : const Color(0xFF333333),
-                            showChords: widget.showChords,
-                            textScale: widget.textScale,
+                          // Sheet music canvas with RepaintBoundary for performance
+                          RepaintBoundary(
+                            child: SizedBox(
+                              width: scaledWidth,
+                              height: layout.totalHeight * widget.textScale,
+                              child: CustomPaint(
+                                painter: SheetMusicPainter(
+                                  layout: layout,
+                                  noteColor: theme.brightness == Brightness.dark
+                                      ? Colors.white
+                                      : const Color(0xFF333333),
+                                  staffColor: theme.brightness == Brightness.dark
+                                      ? Colors.white70
+                                      : const Color(0xFF333333),
+                                  showChords: widget.showChords,
+                                  textScale: widget.textScale,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+
+                          const SizedBox(height: 24),
+
+                          // Additional verses without notation
+                          ..._buildAdditionalVerses(context),
+
+                          // Metadata footer
+                          _buildFooter(context),
+                        ],
                       ),
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // Additional verses without notation
-                    ..._buildAdditionalVerses(context),
-
-                    // Metadata footer
-                    _buildFooter(context),
-                  ],
+                  ),
                 ),
               ),
             ),
