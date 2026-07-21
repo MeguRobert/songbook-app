@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -88,7 +89,23 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
               ),
             ],
           ),
-          body: GestureDetector(
+          // Two gesture sources feed the same text-scale setting:
+          //  - Listener.onPointerSignal handles PointerScaleEvent, which is how
+          //    Flutter web delivers a desktop trackpad pinch / Ctrl+mouse-wheel
+          //    (Chrome sends these as ctrl+wheel). GestureDetector/ScaleGesture-
+          //    Recognizer does NOT receive pointer-signal scale events, so this
+          //    is required for pinch-to-zoom to work on web.
+          //  - GestureDetector.onScaleUpdate handles multi-touch pinch on mobile.
+          body: Listener(
+            onPointerSignal: (event) {
+              if (event is PointerScaleEvent) {
+                final current = ref.read(textScaleProvider);
+                ref
+                    .read(songViewProvider.notifier)
+                    .setTextScale(current * event.scale);
+              }
+            },
+            child: GestureDetector(
             onScaleStart: (details) {
               _baseScale = textScale;
             },
@@ -128,6 +145,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
                   ),
               ],
             ),
+          ),
           ),
           floatingActionButton: FloatingActionButton.small(
             onPressed: () => _showControlsSheet(context, song.originalKey),
