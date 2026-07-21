@@ -99,10 +99,16 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen> {
           body: Listener(
             onPointerSignal: (event) {
               if (event is PointerScaleEvent) {
+                // A mouse Ctrl+wheel notch can arrive as a single large scale
+                // factor (a big lurch); a trackpad pinch arrives as many tiny
+                // factors (already smooth). Clamp each step so wheel zooming is
+                // as gentle and continuous as trackpad pinch — the trackpad's
+                // tiny factors fall inside the clamp and pass through unchanged.
+                final step = event.scale.clamp(0.94, 1.06);
                 final current = ref.read(textScaleProvider);
                 ref
                     .read(songViewProvider.notifier)
-                    .setTextScale(current * event.scale);
+                    .setTextScale(current * step);
               }
             },
             child: GestureDetector(
