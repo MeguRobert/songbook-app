@@ -175,4 +175,41 @@ void main() {
     await container.read(favoritesProvider.notifier).toggleFavorite(1);
     expect(container.dispose, returnsNormally);
   });
+
+  // The Set answers "is this a favourite?" but cannot carry order, so display
+  // order lives in a parallel list. Every mutation must keep the two in step —
+  // updating only the Set left the Favorites screen showing nothing.
+  group('display order', () {
+    test('ordered list follows sortOrder and stays in step with the set',
+        () async {
+      final container =
+          await makeContainer(prefs: {'favorites': favoritesJson([42, 7])});
+      final notifier = container.read(favoritesProvider.notifier);
+
+      expect(container.read(favoritesProvider).orderedSongNumbers, [42, 7]);
+
+      await notifier.toggleFavorite(1);
+      final afterAdd = container.read(favoritesProvider);
+      expect(afterAdd.favoriteSongNumbers, {42, 7, 1});
+      expect(afterAdd.orderedSongNumbers.toSet(), {42, 7, 1});
+
+      await notifier.toggleFavorite(7);
+      final afterRemove = container.read(favoritesProvider);
+      expect(afterRemove.favoriteSongNumbers, {42, 1});
+      expect(afterRemove.orderedSongNumbers.toSet(), {42, 1});
+    });
+
+    test('reorder persists the new order', () async {
+      final container =
+          await makeContainer(prefs: {'favorites': favoritesJson([42, 7, 1])});
+      final notifier = container.read(favoritesProvider.notifier);
+
+      await notifier.reorder([1, 42, 7]);
+      expect(container.read(favoritesProvider).orderedSongNumbers, [1, 42, 7]);
+
+      // Survives a fresh notifier reading the same storage.
+      final reread = container.read(favoritesRepositoryProvider);
+      expect(reread.getFavoriteSongNumbers(), [1, 42, 7]);
+    });
+  });
 }

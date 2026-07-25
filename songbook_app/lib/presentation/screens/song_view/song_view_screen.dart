@@ -312,7 +312,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
             tooltip: 'Song controls',
             child: const Icon(Icons.tune),
           ),
-          bottomNavigationBar: const SetlistNavBar(),
+          bottomNavigationBar: SetlistNavBar(songNumber: widget.songNumber),
         );
       },
       loading: () => Scaffold(

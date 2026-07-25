@@ -133,6 +133,20 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                         ),
                       ],
                     ),
+
+                    // Chord symbols above the staff — only meaningful while
+                    // notation is shown. This is the notation-with/without-
+                    // chords control; the old "Custom" chip that nominally
+                    // covered it never worked and was removed.
+                    if (viewConfig.showNotation)
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        value: viewConfig.showChords,
+                        onChanged: songViewNotifier.setShowChords,
+                        title: const Text('Chords above staff'),
+                      ),
+
                     const Divider(height: 32),
 
                     // Transpose Section

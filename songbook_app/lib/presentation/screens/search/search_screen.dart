@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../router/app_router.dart';
 import '../../providers/search_provider.dart';
+import '../../providers/tag_provider.dart';
 import '../song_list/widgets/song_list_tile.dart';
 
 /// Search screen for finding songs
@@ -25,10 +26,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notifier = ref.read(searchProvider.notifier);
+      // searchProvider is global and outlives this screen, while the text field
+      // is recreated empty. Reset first, otherwise a previous query silently
+      // narrows the new results (arriving from the tag browser could show
+      // "No songs found" under an empty search box).
+      notifier.clear();
+
       final tag = widget.initialTag;
       if (tag != null && tag.isNotEmpty) {
         // Seed the tag filter; keep focus off the field so results show.
-        ref.read(searchProvider.notifier).setTags({tag});
+        notifier.setTags({tag});
       } else {
         _focusNode.requestFocus();
       }
@@ -78,7 +86,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       body: Column(
         children: [
-          if (searchState.hasTags) _buildTagChips(context, searchState, theme),
+          // Always shown: it carries the "Add tag" affordance, so hiding it
+          // when no tag is active made tag filtering unreachable from here.
+          _buildTagChips(context, searchState, theme),
           Expanded(child: _buildBody(context, searchState, theme)),
         ],
       ),
@@ -112,11 +122,85 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               deleteIconBoxConstraints: const BoxConstraints(),
             ),
           ),
-          TextButton(
-            onPressed: () => ref.read(searchProvider.notifier).clearTags(),
-            child: const Text('Clear tags'),
+          // Without this, tags could only ever be REMOVED: the only entry point
+          // was setTags({one}) from the tag browser, so the AND filtering that
+          // toggleTag/_recompute already implemented was unreachable.
+          ActionChip(
+            avatar: const Icon(Icons.add, size: 18),
+            label: const Text('Add tag'),
+            onPressed: () => _showTagPicker(context),
           ),
+          if (searchState.activeTags.isNotEmpty)
+            TextButton(
+              onPressed: () => ref.read(searchProvider.notifier).clearTags(),
+              child: const Text('Clear tags'),
+            ),
         ],
+      ),
+    );
+  }
+
+  /// Multi-select tag picker. Tags combine with AND, so picking two shows only
+  /// songs carrying both. Stays open while toggling so several can be chosen.
+  void _showTagPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final active = ref.watch(searchProvider).activeTags;
+          final tagsAsync = ref.watch(tagsProvider);
+
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.6,
+            maxChildSize: 0.9,
+            builder: (context, scrollController) => Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'Filter by tags',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: tagsAsync.when(
+                    data: (tags) => tags.isEmpty
+                        ? const Center(child: Text('No tags yet'))
+                        : SingleChildScrollView(
+                            controller: scrollController,
+                            padding: const EdgeInsets.all(16),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final tag in tags)
+                                  FilterChip(
+                                    label: Text(
+                                      '${tag.name} (${tag.songCount})',
+                                    ),
+                                    selected: active.any((t) =>
+                                        t.toLowerCase() ==
+                                        tag.name.toLowerCase()),
+                                    onSelected: (_) => ref
+                                        .read(searchProvider.notifier)
+                                        .toggleTag(tag.name),
+                                  ),
+                              ],
+                            ),
+                          ),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text('Error loading tags: $e')),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -69,12 +69,11 @@ class ViewConfig {
     final notation = parts[0].toLowerCase() == 'true';
     final chords = parts[1].toLowerCase() == 'true';
 
-    // Normalize the orphaned notation-only state (removed "Custom" state)
-    // to the Sheet Music preset so legacy persisted data never surfaces it.
-    if (notation && !chords) {
-      return const ViewConfig.sheetMusic();
-    }
-
+    // All four states round-trip, including notation-without-chords. That state
+    // was briefly normalised away when the broken "Custom" chip was removed,
+    // but it is reachable again through the "Chords above staff" switch in the
+    // Sheet Music preset — which is what delivers REQ "toggle chord symbols
+    // on/off above the staff".
     return ViewConfig(
       showNotation: notation,
       showChords: chords,

@@ -55,17 +55,24 @@ class SongViewState {
     this.activeViewConfig,
   });
 
+  /// [clearActiveViewConfig] exists because `activeViewConfig: null` cannot
+  /// express "clear it" through the usual `??` fallback — passing null just
+  /// keeps the old value. Without this flag `clearViewConfigForSong` was a
+  /// silent no-op.
   SongViewState copyWith({
     int? songNumber,
     int? transposeAmount,
     double? textScale,
     ViewConfig? activeViewConfig,
+    bool clearActiveViewConfig = false,
   }) {
     return SongViewState(
       songNumber: songNumber ?? this.songNumber,
       transposeAmount: transposeAmount ?? this.transposeAmount,
       textScale: textScale ?? this.textScale,
-      activeViewConfig: activeViewConfig ?? this.activeViewConfig,
+      activeViewConfig: clearActiveViewConfig
+          ? null
+          : (activeViewConfig ?? this.activeViewConfig),
     );
   }
 }
@@ -164,11 +171,28 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
     }
   }
 
-  /// Sets a preset (creates temporary override)
+  /// Applies [preset] to the current song AND remembers it for that song.
+  ///
+  /// Persisting is what makes the choice survive navigation and restart: with
+  /// only the in-memory override, picking "Chords" for a song was forgotten the
+  /// moment you left it, and `saveViewConfigForSong` had no callers at all.
   void setPreset(ViewConfig preset) {
-    if (state != null) {
-      setActiveViewConfig(preset);
-    }
+    if (state == null) return;
+    setActiveViewConfig(preset);
+    saveViewConfigForSong();
+  }
+
+  /// Toggles chord symbols above the staff without leaving the notation view.
+  ///
+  /// This is the notation-with/without-chords control; it composes with the
+  /// currently effective config so it works whether that came from the global
+  /// default or a per-song override, and it persists like any preset choice.
+  void setShowChords(bool showChords) {
+    if (state == null) return;
+    final ViewConfig current =
+        state!.activeViewConfig ?? _ref.read(viewConfigProvider);
+    setActiveViewConfig(current.copyWith(showChords: showChords));
+    saveViewConfigForSong();
   }
 
   /// Saves the current active view config as a per-song override
@@ -187,7 +211,7 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
     if (state != null) {
       final repository = _ref.read(settingsRepositoryProvider);
       await repository.clearSongViewConfig(state!.songNumber);
-      state = state!.copyWith(activeViewConfig: null);
+      state = state!.copyWith(clearActiveViewConfig: true);
     }
   }
 }

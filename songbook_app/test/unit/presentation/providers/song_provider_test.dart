@@ -214,9 +214,13 @@ void main() {
       final notifier = container.read(songViewProvider.notifier);
       notifier.openSong(1);
 
-      expect(notifier.getEffectiveConfig(), const ViewConfig.sheetMusic());
-      expect(container.read(effectiveViewConfigProvider),
-          const ViewConfig.sheetMusic());
+      // The per-song entry is notation-without-chords ('true:false'), which is
+      // preserved verbatim now that the "Chords above staff" switch can produce
+      // it; it still beats the global 'false:true' (chords) default.
+      const notationWithoutChords =
+          ViewConfig(showNotation: true, showChords: false);
+      expect(notifier.getEffectiveConfig(), notationWithoutChords);
+      expect(container.read(effectiveViewConfigProvider), notationWithoutChords);
     });
 
     test('setPreset applies a temporary override', () async {

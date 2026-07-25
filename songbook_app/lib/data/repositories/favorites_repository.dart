@@ -8,9 +8,18 @@ class FavoritesRepository {
 
   FavoritesRepository(this._localDataSource);
 
-  /// Gets all favorites
+  /// Gets all favorites in user-defined display order.
+  ///
+  /// Sorted by [Favorite.sortOrder] so a reorder actually shows up; the stored
+  /// blob is in insertion order. Ties (e.g. entries written before reordering
+  /// existed, all sortOrder 0) fall back to song number for a stable result.
   List<Favorite> getFavorites() {
-    return _localDataSource.getFavorites();
+    final favorites = _localDataSource.getFavorites();
+    favorites.sort((a, b) {
+      final byOrder = a.sortOrder.compareTo(b.sortOrder);
+      return byOrder != 0 ? byOrder : a.songNumber.compareTo(b.songNumber);
+    });
+    return favorites;
   }
 
   /// Gets favorite song numbers

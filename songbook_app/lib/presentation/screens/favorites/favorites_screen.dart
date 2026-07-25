@@ -57,21 +57,35 @@ class FavoritesScreen extends ConsumerWidget {
 
           return ReorderableListView.builder(
             itemCount: songs.length,
+            // Same reason as the setlist list: the automatic handle is injected
+            // at the trailing edge on desktop/web, on top of the tile's
+            // favourite button. Supply our own leading handle instead.
+            buildDefaultDragHandles: false,
             onReorder: (oldIndex, newIndex) {
-              // Handle reordering
               if (newIndex > oldIndex) newIndex--;
-              final songNumbers =
-                  songs.map((s) => s.number).toList();
-              final movedNumber = songNumbers.removeAt(oldIndex);
-              songNumbers.insert(newIndex, movedNumber);
-              // Note: Would need to implement reorder in provider
+              final songNumbers = songs.map((s) => s.number).toList();
+              songNumbers.insert(newIndex, songNumbers.removeAt(oldIndex));
+              ref.read(favoritesProvider.notifier).reorder(songNumbers);
             },
             itemBuilder: (context, index) {
               final song = songs[index];
-              return SongListTile(
+              return Row(
                 key: ValueKey(song.number),
-                song: song,
-                onTap: () => context.push(AppRoutes.songPath(song.number)),
+                children: [
+                  ReorderableDragStartListener(
+                    index: index,
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 16),
+                      child: Icon(Icons.drag_handle),
+                    ),
+                  ),
+                  Expanded(
+                    child: SongListTile(
+                      song: song,
+                      onTap: () => context.push(AppRoutes.songPath(song.number)),
+                    ),
+                  ),
+                ],
               );
             },
           );

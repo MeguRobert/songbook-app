@@ -7,15 +7,29 @@ import '../../../providers/setlist_provider.dart';
 
 /// Bottom bar shown only while a setlist is being played during a service.
 ///
-/// Self-hides (returns an empty box) when no setlist is active, so it can be
-/// dropped into the song view's [Scaffold.bottomNavigationBar] unconditionally.
+/// Self-hides (returns an empty box) so it can be dropped into the song view's
+/// [Scaffold.bottomNavigationBar] unconditionally. It hides when:
+///  * no setlist is being played;
+///  * the song on screen is not part of that setlist — otherwise backing out of
+///    a setlist and opening an unrelated song left the bar showing e.g. "2 / 5"
+///    with a Next button that jumped back into the setlist;
+///  * the setlist has since been deleted, which would leave a stale name.
 class SetlistNavBar extends ConsumerWidget {
-  const SetlistNavBar({super.key});
+  /// The song currently on screen, used to scope the bar to setlist members.
+  final int songNumber;
+
+  const SetlistNavBar({required this.songNumber, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playback = ref.watch(setlistPlaybackProvider);
     if (playback == null) return const SizedBox.shrink();
+    if (!playback.songNumbers.contains(songNumber)) {
+      return const SizedBox.shrink();
+    }
+    if (ref.watch(setlistByIdProvider(playback.setlistId)) == null) {
+      return const SizedBox.shrink();
+    }
 
     final notifier = ref.read(setlistPlaybackProvider.notifier);
 

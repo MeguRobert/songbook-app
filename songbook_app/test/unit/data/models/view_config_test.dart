@@ -73,11 +73,14 @@ void main() {
           const ViewConfig.lyricsOnly());
     });
 
-    test(
-        'fromStorageString normalizes the orphaned notation-only state to Sheet Music',
-        () {
-      expect(ViewConfig.fromStorageString('true:false'),
-          const ViewConfig.sheetMusic());
+    // notation-without-chords is a real, reachable state again: it is what the
+    // "Chords above staff" switch turns off. It must survive a storage
+    // round-trip rather than being normalised to Sheet Music.
+    test('fromStorageString preserves the notation-without-chords state', () {
+      expect(
+        ViewConfig.fromStorageString('true:false'),
+        const ViewConfig(showNotation: true, showChords: false),
+      );
     });
 
     test('round-trips through storage string', () {
@@ -85,6 +88,7 @@ void main() {
         ViewConfig(),
         ViewConfig.chords(),
         ViewConfig.lyricsOnly(),
+        ViewConfig(showNotation: true, showChords: false),
       ];
       for (final config in configs) {
         expect(ViewConfig.fromStorageString(config.toStorageString()), config);

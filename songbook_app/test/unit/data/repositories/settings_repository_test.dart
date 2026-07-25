@@ -132,7 +132,12 @@ void main() {
     test('reads a stored override for the right song key', () {
       when(() => dataSource.getStringSetting('song_view_config_42'))
           .thenReturn('true:false');
-      expect(repository.getSongViewConfig(42), const ViewConfig.sheetMusic());
+      // 'true:false' is notation-without-chords — a real state again, set by
+      // the "Chords above staff" switch, so it is read back verbatim.
+      expect(
+        repository.getSongViewConfig(42),
+        const ViewConfig(showNotation: true, showChords: false),
+      );
     });
 
     test('setSongViewConfig writes under the per-song key', () async {
