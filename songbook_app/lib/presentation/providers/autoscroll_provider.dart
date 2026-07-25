@@ -52,19 +52,28 @@ class AutoScrollNotifier extends StateNotifier<AutoScrollState> {
 
   void toggle() => state = state.copyWith(isPlaying: !state.isPlaying);
 
-  /// Sets the scroll speed (clamped to the allowed range) and persists it for
-  /// the current song so the choice is remembered next time.
+  /// Sets the scroll speed (clamped to the allowed range) WITHOUT persisting.
+  ///
+  /// Called on every slider frame, so it must stay cheap — use [commitSpeed]
+  /// when the drag ends to write the value once.
   void setSpeed(double pixelsPerSecond) {
-    final clamped = pixelsPerSecond.clamp(
-      AutoScrollState.minSpeed,
-      AutoScrollState.maxSpeed,
+    state = state.copyWith(
+      speed: pixelsPerSecond.clamp(
+        AutoScrollState.minSpeed,
+        AutoScrollState.maxSpeed,
+      ),
     );
-    state = state.copyWith(speed: clamped);
+  }
+
+  /// Persists the current speed for the current song so the choice is
+  /// remembered next time. Call this when the slider drag ends.
+  void commitSpeed([double? pixelsPerSecond]) {
+    if (pixelsPerSecond != null) setSpeed(pixelsPerSecond);
     final song = _songNumber;
     if (song != null) {
       _ref
           .read(settingsRepositoryProvider)
-          .setAutoScrollSpeed(song, clamped.round());
+          .setAutoScrollSpeed(song, state.speed.round());
     }
   }
 }

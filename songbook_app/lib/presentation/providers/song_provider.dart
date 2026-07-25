@@ -19,10 +19,20 @@ final songsProvider = FutureProvider<List<Song>>((ref) async {
   return searchService.applyTagOverrides(songs, overrides);
 });
 
-/// Provider for a single song by number
-final songByNumberProvider = FutureProvider.family<Song?, int>((ref, number) async {
-  final repository = ref.watch(songRepositoryProvider);
-  return repository.getSongByNumber(number);
+/// Provider for a single song by number, with user tag overrides applied.
+///
+/// Derived from [songsProvider] rather than hitting the repository directly, so
+/// this shares the same merged view as the list, search and tag browser AND is
+/// invalidated when tags change. Reading the repository here meant the in-song
+/// tag editor was seeded with the BUNDLED tags: reopening it after an edit
+/// showed stale tags and saving silently discarded the earlier edit.
+final songByNumberProvider =
+    FutureProvider.family<Song?, int>((ref, number) async {
+  final songs = await ref.watch(songsProvider.future);
+  for (final song in songs) {
+    if (song.number == number) return song;
+  }
+  return null;
 });
 
 /// Provider for the total song count

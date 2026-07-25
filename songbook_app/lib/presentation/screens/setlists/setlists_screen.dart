@@ -111,31 +111,14 @@ class SetlistsScreen extends ConsumerWidget {
     required String title,
     String initialValue = '',
   }) {
-    final controller = TextEditingController(text: initialValue);
+    // The controller lives inside _NamePromptDialog so it is disposed by that
+    // widget's own State. Disposing it when showDialog's future completes is
+    // too early: the future resolves on pop() while the dialog is still
+    // animating out and rebuilding its TextField.
     return showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Setlist name',
-            labelText: 'Name',
-          ),
-          onSubmitted: (value) => Navigator.of(context).pop(value),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+      builder: (context) =>
+          _NamePromptDialog(title: title, initialValue: initialValue),
     );
   }
 }
@@ -177,6 +160,59 @@ class _EmptyState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Single-text-field dialog that owns its [TextEditingController].
+///
+/// Stateful so the controller is disposed by this widget's State, after the
+/// dialog route is gone. Creating it in the caller and disposing on the
+/// showDialog future is a use-after-dispose: the future completes at pop()
+/// while the dialog is still animating out and rebuilding the TextField.
+class _NamePromptDialog extends StatefulWidget {
+  final String title;
+  final String initialValue;
+
+  const _NamePromptDialog({required this.title, required this.initialValue});
+
+  @override
+  State<_NamePromptDialog> createState() => _NamePromptDialogState();
+}
+
+class _NamePromptDialogState extends State<_NamePromptDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialValue);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: 'Setlist name',
+          labelText: 'Name',
+        ),
+        onSubmitted: (value) => Navigator.of(context).pop(value),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }

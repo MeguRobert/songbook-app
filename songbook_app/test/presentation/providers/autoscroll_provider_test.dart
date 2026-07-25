@@ -58,7 +58,11 @@ void main() {
       final notifier = container.read(autoScrollProvider.notifier);
 
       notifier.init(42);
+      // setSpeed only updates live state (it runs on every slider frame);
+      // commitSpeed is what writes to SharedPreferences, on drag end.
       notifier.setSpeed(90);
+      expect(container.read(autoScrollProvider).speed, 90.0);
+      notifier.commitSpeed();
 
       // A fresh notifier (same prefs) restores the persisted speed for song 42
       // but keeps the default for an untouched song.

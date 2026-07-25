@@ -38,15 +38,21 @@ class Favorite {
     );
   }
 
+  /// Value equality over ALL fields. `sortOrder` in particular MUST be included:
+  /// once favorites reordering is wired to a provider holding `List<Favorite>`, an
+  /// id-only comparison would report "no change" after a reorder and the list
+  /// would never redraw — exactly how Setlist.== broke setlist editing.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is Favorite &&
           runtimeType == other.runtimeType &&
-          songNumber == other.songNumber;
+          songNumber == other.songNumber &&
+          addedAt == other.addedAt &&
+          sortOrder == other.sortOrder;
 
   @override
-  int get hashCode => songNumber.hashCode;
+  int get hashCode => Object.hash(songNumber, addedAt, sortOrder);
 
   @override
   String toString() =>

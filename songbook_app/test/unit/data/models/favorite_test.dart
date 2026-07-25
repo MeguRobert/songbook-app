@@ -54,15 +54,25 @@ void main() {
   });
 
   group('equality', () {
-    test('is based on songNumber only', () {
+    // Covers every field, sortOrder included: providers compare old/new values
+    // with == to decide whether to rebuild, so an id-only comparison would
+    // report "no change" after a reorder and the list would never redraw. That
+    // is exactly how Setlist.== broke setlist editing.
+    test('covers all fields, including sortOrder', () {
       final a = Favorite(songNumber: 5, addedAt: when, sortOrder: 0);
-      final b = Favorite(
+      final same = Favorite(songNumber: 5, addedAt: when, sortOrder: 0);
+      final laterAddedAt = Favorite(
         songNumber: 5,
         addedAt: when.add(const Duration(days: 3)),
-        sortOrder: 7,
+        sortOrder: 0,
       );
-      expect(a, b);
-      expect(a.hashCode, b.hashCode);
+      final reordered = Favorite(songNumber: 5, addedAt: when, sortOrder: 7);
+
+      expect(a, same);
+      expect(a.hashCode, same.hashCode);
+
+      expect(a, isNot(laterAddedAt));
+      expect(a, isNot(reordered));
       expect(a, isNot(Favorite(songNumber: 6, addedAt: when)));
     });
   });

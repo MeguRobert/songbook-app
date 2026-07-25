@@ -30,15 +30,20 @@ class RecentSong {
     );
   }
 
+  /// Value equality over ALL fields. Must include [viewedAt]: providers compare
+  /// old and new values with `==` to decide whether to rebuild, so ignoring a
+  /// mutable field silently suppresses UI updates — the bug that made setlist
+  /// edits invisible until Setlist.== was fixed the same way.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is RecentSong &&
           runtimeType == other.runtimeType &&
-          songNumber == other.songNumber;
+          songNumber == other.songNumber &&
+          viewedAt == other.viewedAt;
 
   @override
-  int get hashCode => songNumber.hashCode;
+  int get hashCode => Object.hash(songNumber, viewedAt);
 
   @override
   String toString() => 'RecentSong(songNumber: $songNumber, viewedAt: $viewedAt)';

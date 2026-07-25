@@ -15,12 +15,14 @@ class TagOverridesNotifier extends StateNotifier<Map<int, List<String>>> {
   TagOverridesNotifier(this._ref)
       : super(_ref.read(tagRepositoryProvider).getOverrides());
 
-  /// Replaces the tags for [songNumber]. An empty list clears the override.
+  /// Replaces the tags for [songNumber].
+  ///
+  /// An empty list persists an EMPTY override, which is deliberately distinct
+  /// from having no override: it means "this song has no tags". Routing empty
+  /// to [clearOverride] instead made bundled tags reappear, so a user could
+  /// never remove a song's last tag. Reverting to the bundled tags is the
+  /// separate, explicit [clearOverride] ("Reset to default" in the editor).
   Future<void> setTags(int songNumber, List<String> tags) async {
-    if (tags.isEmpty) {
-      await clearOverride(songNumber);
-      return;
-    }
     final repository = _ref.read(tagRepositoryProvider);
     await repository.setTags(songNumber, tags);
     state = {...state, songNumber: List<String>.from(tags)};

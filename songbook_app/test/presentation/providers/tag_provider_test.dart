@@ -98,7 +98,12 @@ void main() {
       expect(container.read(tagOverridesProvider)[1], equals(['praise']));
     });
 
-    test('setTags([]) clears the override', () async {
+    // setTags([]) means "this song has no tags" and must persist as an EMPTY
+    // override. Routing it to clearOverride made the bundled tags reappear, so
+    // a user could never remove a song's last tag. Reverting to bundled tags is
+    // clearOverride's job ("Reset to default"), covered separately below.
+    test('setTags([]) persists an empty override, it does not clear it',
+        () async {
       final container = await makeContainer();
       addTearDown(container.dispose);
 
@@ -107,6 +112,19 @@ void main() {
       expect(container.read(tagOverridesProvider).containsKey(1), isTrue);
 
       await notifier.setTags(1, []);
+      expect(container.read(tagOverridesProvider).containsKey(1), isTrue);
+      expect(container.read(tagOverridesProvider)[1], isEmpty);
+    });
+
+    test('clearOverride reverts to the bundled tags', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(tagOverridesProvider.notifier);
+      await notifier.setTags(1, ['x']);
+      expect(container.read(tagOverridesProvider).containsKey(1), isTrue);
+
+      await notifier.clearOverride(1);
       expect(container.read(tagOverridesProvider).containsKey(1), isFalse);
     });
 

@@ -280,7 +280,10 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                               max: AutoScrollState.maxSpeed,
                               divisions: 18,
                               label: '${autoScroll.speed.round()} px/s',
+                              // Live update while dragging; persist once on
+                              // release rather than on every frame.
                               onChanged: autoScrollNotifier.setSpeed,
+                              onChangeEnd: autoScrollNotifier.commitSpeed,
                             ),
                           ),
                           const Icon(Icons.directions_run, size: 18),

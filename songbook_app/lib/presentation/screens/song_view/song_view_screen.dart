@@ -162,6 +162,18 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
       (_, playing) => _setAutoScrollRunning(playing),
     );
 
+    // Switching to a notation view hides every auto-scroll control, so pause
+    // the state too — otherwise playback stays "on" with no way to stop it, the
+    // ticker keeps burning frames, and switching back resumes unexpectedly.
+    ref.listen<bool>(
+      effectiveViewConfigProvider.select((c) => c.showNotation),
+      (_, showsNotation) {
+        if (showsNotation && ref.read(autoScrollProvider).isPlaying) {
+          ref.read(autoScrollProvider.notifier).pause();
+        }
+      },
+    );
+
     // Auto-scroll only drives the chord/lyrics view (sheet music is a separate
     // widget); the play control is hidden in sheet-music mode.
     final canAutoScroll = !viewConfig.showNotation;

@@ -63,10 +63,22 @@ class SetlistDetailScreen extends ConsumerWidget {
             buildDefaultDragHandles: false,
             onReorder: (oldIndex, newIndex) {
               if (newIndex > oldIndex) newIndex--;
-              final ordered = songs.map((s) => s.number).toList();
-              final moved = ordered.removeAt(oldIndex);
-              ordered.insert(newIndex, moved);
-              ref.read(setlistsProvider.notifier).reorder(setlist.id, ordered);
+
+              // Reorder the VISIBLE rows, then write the change back into the
+              // full stored list. Writing `songs` directly would persist only
+              // the catalog-filtered subset, permanently deleting any setlist
+              // entry whose song is missing from songs.json.
+              final visible = songs.map((s) => s.number).toList();
+              final reordered = [...visible];
+              reordered.insert(newIndex, reordered.removeAt(oldIndex));
+
+              final visibleNumbers = visible.toSet();
+              var next = 0;
+              final full = setlist.songNumbers
+                  .map((n) => visibleNumbers.contains(n) ? reordered[next++] : n)
+                  .toList();
+
+              ref.read(setlistsProvider.notifier).reorder(setlist.id, full);
             },
             itemBuilder: (context, index) {
               final song = songs[index];
