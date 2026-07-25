@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/view_config.dart';
+import '../../providers/app_info_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -72,7 +73,11 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Version'),
-            subtitle: const Text('1.0.0'),
+            subtitle: ref.watch(appVersionProvider).when(
+                  data: (version) => Text(version),
+                  loading: () => const Text('…'),
+                  error: (_, __) => const Text('unknown'),
+                ),
           ),
           ListTile(
             leading: const Icon(Icons.library_books),

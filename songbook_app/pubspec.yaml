@@ -2,7 +2,11 @@ name: songbook_app
 description: "Worship Songbook App - A Flutter application for displaying hymns and worship songs with chord transposition and sheet music support."
 publish_to: 'none'
 
-version: 1.0.0+1
+# The build number here is a local-development placeholder. CI overrides it
+# with the commit count at build time (see .github/workflows/deploy-pages.yml),
+# so every deployment reports a distinct, increasing version. Bump the semantic
+# part deliberately when a release is worth naming.
+version: 1.1.0+1
 
 environment:
   sdk: ^3.9.0
@@ -27,6 +31,7 @@ dependencies:
   path_provider: ^2.1.5
   shared_preferences: ^2.3.5
   collection: ^1.19.1
+  package_info_plus: ^9.0.1
 
 dev_dependencies:
   flutter_test:

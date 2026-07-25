@@ -21,6 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: the build number is the commit count, and the default
+          # shallow clone would make every deploy report build 1.
+          fetch-depth: 0
 
       - uses: subosito/flutter-action@v2
         with:
@@ -51,9 +55,26 @@ jobs:
         working-directory: tools
         run: python -m unittest test_song_validator test_batch_import
 
+      # Every deployment must report a distinct, increasing version, so the
+      # build number is derived rather than hand-maintained: nobody has to
+      # remember to bump it, and there is no commit-back step that would
+      # retrigger this workflow. The semantic part stays in pubspec.yaml and is
+      # bumped deliberately when a release means something.
+      - name: Derive build number from commit count
+        id: version
+        run: echo "build=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Build web
         working-directory: songbook_app
-        run: flutter build web --release --base-href /songbook-app/
+        run: |
+          flutter build web --release \
+            --base-href /songbook-app/ \
+            --build-number=${{ steps.version.outputs.build }}
+
+      - name: Report deployed version
+        working-directory: songbook_app
+        run: |
+          echo "Deploying $(cat build/web/version.json)" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-pages-artifact@v3
         with:
