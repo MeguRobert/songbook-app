@@ -184,22 +184,33 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
 
                           const SizedBox(height: 16),
 
-                          // Sheet music canvas with RepaintBoundary for performance
-                          RepaintBoundary(
-                            child: SizedBox(
-                              width: scaledWidth,
-                              height: layout.totalHeight * widget.textScale,
-                              child: CustomPaint(
-                                painter: SheetMusicPainter(
-                                  layout: layout,
-                                  noteColor: theme.brightness == Brightness.dark
-                                      ? Colors.white
-                                      : const Color(0xFF333333),
-                                  staffColor: theme.brightness == Brightness.dark
-                                      ? Colors.white70
-                                      : const Color(0xFF333333),
-                                  showChords: widget.showChords,
-                                  textScale: widget.textScale,
+                          // Sheet music canvas with RepaintBoundary for
+                          // performance. The canvas is invisible to the
+                          // accessibility tree, so a Semantics label describes
+                          // it for screen-reader users (06-01). Sizing is
+                          // scaled by textScale for smooth zoom (04-04).
+                          Semantics(
+                            label:
+                                'Sheet music notation for ${widget.song.title}',
+                            image: true,
+                            child: RepaintBoundary(
+                              child: SizedBox(
+                                width: scaledWidth,
+                                height: layout.totalHeight * widget.textScale,
+                                child: CustomPaint(
+                                  painter: SheetMusicPainter(
+                                    layout: layout,
+                                    noteColor:
+                                        theme.brightness == Brightness.dark
+                                            ? Colors.white
+                                            : const Color(0xFF333333),
+                                    staffColor:
+                                        theme.brightness == Brightness.dark
+                                            ? Colors.white70
+                                            : const Color(0xFF333333),
+                                    showChords: widget.showChords,
+                                    textScale: widget.textScale,
+                                  ),
                                 ),
                               ),
                             ),

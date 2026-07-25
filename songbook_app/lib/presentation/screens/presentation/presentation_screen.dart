@@ -442,10 +442,13 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
               style: TextStyle(fontSize: 48, fontWeight: FontWeight.w300, color: textColor),
             ),
             const SizedBox(height: 24),
-            Text(
-              title,
-              style: TextStyle(fontSize: 56, fontWeight: FontWeight.bold, color: textColor),
-              textAlign: TextAlign.center,
+            Semantics(
+              header: true,
+              child: Text(
+                title,
+                style: TextStyle(fontSize: 56, fontWeight: FontWeight.bold, color: textColor),
+                textAlign: TextAlign.center,
+              ),
             ),
           ],
         ),

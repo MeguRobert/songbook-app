@@ -4,8 +4,12 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<!-- No privacy usage-description keys are declared: the app uses no camera,
+	     microphone, location, photo library, contacts, or tracking. It is fully
+	     offline/local-first. Add NS*UsageDescription keys only if a real feature
+	     needs them — see .planning/phases/06-store-prep/RELEASE-CHECKLIST.md. -->
 	<key>CFBundleDisplayName</key>
-	<string>Songbook App</string>
+	<string>Songbook</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

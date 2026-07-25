@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 5 (Song Books) integrated into master — next: Phase 6 (Store Release Prep). Phases 5+ still await hands-on UAT.
+**Current focus:** Phase 6 (Store Release Prep) integrated into master — next: Phase 7 (Import Pipeline). On-device/store submission and hands-on UAT for Phases 5+ still pending.
 
 ## Current Position
 
-Phase: 5 of 12 (Song Books) — COMPLETE (code + verifier; hands-on UAT pending)
+Phase: 6 of 12 (Store Release Prep) — COMPLETE (codeable slice; on-device + store submission pending)
 Plan: 2 of 2 in current phase
-Status: Complete — implemented overnight 2026-06-13, merged to master 2026-07-25
-Last activity: 2026-07-25 — Integrated Phase 5 into master (convergent Custom-removal conflicts resolved in favour of Phase 4's verified code)
+Status: Complete (code) — implemented overnight 2026-06-13, merged to master 2026-07-25
+Last activity: 2026-07-25 — Integrated Phase 6 into master (combined 06-01 Semantics a11y label with 04-04 scaled-canvas zoom in the sheet music renderer)
 
-Progress: [█████░░░░░] 42% (5/12 phases, 13/24 plans)
+Progress: [██████░░░░] 50% (6/12 phases, 15/24 plans)
 
 ## Performance Metrics
 
@@ -84,6 +84,11 @@ Recent decisions affecting current work:
 - [05-02]: Book browser is a /books screen opened from a song-list app-bar icon (NOT a 4th nav tab)
 - [05-02]: Selected book persists across restart via SettingsRepository (key selected_book)
 - [05-02]: Search + favorites span all books regardless of the active book filter
+- [06-01]: Use Flutter meetsGuideline() matchers (tap-target size + labeled tap targets) as the automated a11y gate
+- [06-01]: Relabel icon/letter-only controls via Semantics(label:, excludeSemantics:) + tooltips, preserving compact visuals
+- [06-02]: App display name "Songbook"; ids stay com.songbook.songbook_app; version 1.0.0+1
+- [06-02]: Zero Android runtime permissions (offline/local-first), documented in manifest
+- [06-02]: Icon/splash via standalone generator config files, NOT pubspec deps (offline-safe); deps added later via `flutter pub add`
 
 Integration decisions (2026-07-25) are logged in `.planning/INTEGRATION-DECISIONS.md`.
 
@@ -103,5 +108,7 @@ Integration decisions (2026-07-25) are logged in `.planning/INTEGRATION-DECISION
 ## Session Continuity
 
 Last session: 2026-07-25
-Stopped at: Phase 5 merged into master. Test suite (336 previously-untracked tests) committed; CI Pages deploy fixed and live. Next: integrate Phase 6.
-Resume file: None
+Stopped at: Phases 5 and 6 merged into master. Test suite (336 previously-untracked tests) committed;
+CI Pages deploy fixed and live. Phase 6's human/online steps (final art, signing, on-device testing,
+screenshots, submission) remain outstanding — see its overnight report. Next: integrate Phase 7.
+Resume file: .planning/phases/06-store-prep/OVERNIGHT-REPORT-2026-06-13.md (Phase 6 human steps)

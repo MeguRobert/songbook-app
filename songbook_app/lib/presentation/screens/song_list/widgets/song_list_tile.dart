@@ -23,11 +23,15 @@ class SongListTile extends ConsumerWidget {
     return ListTile(
       leading: SizedBox(
         width: 48,
-        child: Text(
-          song.number.toString(),
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
+        child: Semantics(
+          label: 'Song ${song.number}',
+          excludeSemantics: true,
+          child: Text(
+            song.number.toString(),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
           ),
         ),
       ),

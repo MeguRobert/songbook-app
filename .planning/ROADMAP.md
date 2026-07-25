@@ -19,7 +19,7 @@ Ship a polished, store-ready songbook app by building on the existing functional
 - [x] **Phase 3: Presentation Mode** - Full-screen lyrics display for projection and personal use
 - [x] **Phase 4: Controls UI Redesign** - Bottom sheet controls, pinch-to-zoom, decluttered UX
 - [x] **Phase 5: Song Books** - Organize songs by hymnal/book with book browser
-- [ ] **Phase 6: Store Release Prep** - Branding, metadata, platform polish, submission
+- [x] **Phase 6: Store Release Prep** - Branding, metadata, platform polish, submission *(codeable slice; on-device + submission pending)*
 
 ### 📋 v1.1 Content & Organization
 
@@ -128,11 +128,13 @@ Plans:
   3. App runs smoothly on Android and iOS without crashes
   4. Basic accessibility (text scaling, screen reader labels) works
   5. App passes store review requirements (no placeholder content, proper permissions)
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 06-01: Create branding assets and configure platform manifests
-- [ ] 06-02: Platform testing and store submission
+- [x] 06-01-PLAN.md — Accessibility: screen-reader labels + header semantics + text-scaling, with automated guideline tests
+- [x] 06-02-PLAN.md — Platform config (app name, minimal permissions), icon/splash generator scaffold (placeholder), drafted store listing + release checklist
+
+*Human/online remaining (see 06-VERIFICATION.md + RELEASE-CHECKLIST.md): final art + regen, dep install, release signing, on-device crash/a11y UAT, screenshots, store submission.*
 
 ### Phase 7: Import Pipeline
 **Goal**: Improve the Audiveris + OCR + AI import workflow for faster, more accurate song importing with less manual correction
@@ -212,7 +214,7 @@ Phases 1 → 2 → 3 → 4 in sequence. Phase 5 can run parallel to 2/3/4. Phase
 | 3. Presentation Mode | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 4. Controls UI Redesign | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 5. Song Books | v1.0 | 2/2 | Complete | 2026-06-13 |
-| 6. Store Release Prep | v1.0 | 0/2 | Not started | - |
+| 6. Store Release Prep | v1.0 | 2/2 | Complete (code; submission pending) | 2026-06-13 |
 | 7. Import Pipeline | v1.1 | 0/? | Not started | - |
 | 8. Setlists & Playlists | v1.1 | 0/? | Not started | - |
 | 9. Tags & Search | v1.1 | 0/? | Not started | - |

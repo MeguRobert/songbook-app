@@ -1,0 +1,26 @@
+# ============================================================================
+#  ⚠️  NEEDS FINAL ART — placeholder configuration.
+#  Drop the real splash image at assets/icons/splash_logo.png (see
+#  assets/icons/README.md), install the dev dependency, then run:
+#      dart run flutter_native_splash:create
+#  Intentionally NOT auto-run overnight (no art, no network).
+# ============================================================================
+flutter_native_splash:
+  # Background behind the centered logo. «confirm brand colors»
+  color: "#FFFFFF"
+  color_dark: "#121212"
+
+  # Centered logo (transparent PNG, ~1152x1152 recommended for android12).
+  image: "assets/icons/splash_logo.png"
+  image_dark: "assets/icons/splash_logo.png"
+
+  android: true
+  ios: true
+  web: false
+
+  # Android 12+ uses the new splash API (icon + window background).
+  android_12:
+    image: "assets/icons/splash_logo.png"
+    image_dark: "assets/icons/splash_logo.png"
+    color: "#FFFFFF"
+    color_dark: "#121212"
