@@ -53,6 +53,11 @@ class SearchNotifier extends StateNotifier<SearchState> {
   SearchNotifier(this._ref) : super(const SearchState());
 
   Future<void> search(String query) async {
+    // Repeating the identical query is a no-op — it would otherwise re-run the
+    // search on every keystroke that leaves the text unchanged. Tag filters do
+    // not need this path: toggleTag/setTags/clearTags recompute on their own.
+    if (query == state.query) return;
+
     state = state.copyWith(query: query, isSearching: true);
     await _recompute();
   }
