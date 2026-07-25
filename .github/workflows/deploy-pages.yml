@@ -34,6 +34,23 @@ jobs:
         working-directory: songbook_app
         run: flutter pub get
 
+      - name: Analyze
+        working-directory: songbook_app
+        # Gate on errors/warnings only. The repo currently carries 8 pre-existing
+        # info-level RadioListTile deprecations; --no-fatal-infos keeps those from
+        # blocking the deploy while still failing on anything more serious.
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        working-directory: songbook_app
+        # A failing test blocks the deploy — the suite is tracked in git as of
+        # 1c0cf1f, so CI runs all of it.
+        run: flutter test
+
+      - name: Test import tooling (Python)
+        working-directory: tools
+        run: python -m unittest test_song_validator test_batch_import
+
       - name: Build web
         working-directory: songbook_app
         run: flutter build web --release --base-href /songbook-app/
