@@ -1,8 +1,10 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../providers/autoscroll_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/recents_provider.dart';
 import '../../providers/song_provider.dart';
@@ -28,7 +30,10 @@ class SongViewScreen extends ConsumerStatefulWidget {
 }
 
 class _SongViewScreenState extends ConsumerState<SongViewScreen>
-    with SingleTickerProviderStateMixin {
+    // TickerProviderStateMixin (not SingleTicker): this state drives TWO
+    // tickers — the zoom AnimationController (04-05) and the auto-scroll
+    // Ticker (POC 1). SingleTickerProviderStateMixin asserts on the second.
+    with TickerProviderStateMixin {
   double _baseScale = 1.0;
 
   // Smooth zoom for discrete Ctrl+wheel notches. A trackpad pinch streams many
@@ -39,6 +44,10 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   late final AnimationController _zoomController;
   double _zoomFrom = 1.0;
   double _zoomTo = 1.0;
+  // --- Auto-scroll (POC) ---
+  final ScrollController _scrollController = ScrollController();
+  late final Ticker _ticker;
+  Duration _lastTick = Duration.zero;
 
   @override
   void initState() {
@@ -51,6 +60,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
         final value = _zoomFrom + (_zoomTo - _zoomFrom) * t;
         ref.read(songViewProvider.notifier).setTextScale(value);
       });
+    _ticker = createTicker(_onAutoScrollTick);
     // Open the song in the provider — openSong() resets transpose and textScale
     // No closeSong() in dispose needed: openSong() always creates fresh state,
     // and modifying provider state in dispose is forbidden by Riverpod.
@@ -58,6 +68,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
       ref.read(songViewProvider.notifier).openSong(widget.songNumber);
       // Record this song as recently viewed (powers the Home "Recent" rail).
       ref.read(recentsProvider.notifier).record(widget.songNumber);
+      ref.read(autoScrollProvider.notifier).init(widget.songNumber);
       _syncSetlistPosition();
     });
   }
@@ -74,6 +85,36 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     _zoomFrom = ref.read(textScaleProvider);
     _zoomTo = target.clamp(0.5, 2.0);
     _zoomController.forward(from: 0);
+    _ticker.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Advances the scroll position by `speed * dt` each frame while playing.
+  /// Stops automatically when the bottom of the song is reached.
+  void _onAutoScrollTick(Duration elapsed) {
+    final dt = (elapsed - _lastTick).inMicroseconds / Duration.microsecondsPerSecond;
+    _lastTick = elapsed;
+    if (!_scrollController.hasClients) return;
+
+    final speed = ref.read(autoScrollProvider).speed;
+    final position = _scrollController.position;
+    final next = _scrollController.offset + speed * dt;
+    if (next >= position.maxScrollExtent) {
+      _scrollController.jumpTo(position.maxScrollExtent);
+      ref.read(autoScrollProvider.notifier).pause(); // reached the end
+    } else {
+      _scrollController.jumpTo(next);
+    }
+  }
+
+  void _setAutoScrollRunning(bool running) {
+    if (running && !_ticker.isActive) {
+      _lastTick = Duration.zero;
+      _ticker.start();
+    } else if (!running && _ticker.isActive) {
+      _ticker.stop();
+    }
   }
 
   /// Keeps the setlist playback cursor aligned with the song being shown, so
@@ -114,6 +155,17 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     final viewConfig = ref.watch(effectiveViewConfigProvider);
     final transpose = ref.watch(transposeProvider);
     final textScale = ref.watch(textScaleProvider);
+    final autoScroll = ref.watch(autoScrollProvider);
+
+    // Start/stop the ticker as the play state changes.
+    ref.listen<bool>(
+      autoScrollProvider.select((s) => s.isPlaying),
+      (_, playing) => _setAutoScrollRunning(playing),
+    );
+
+    // Auto-scroll only drives the chord/lyrics view (sheet music is a separate
+    // widget); the play control is hidden in sheet-music mode.
+    final canAutoScroll = !viewConfig.showNotation;
 
     return songAsync.when(
       data: (song) {
@@ -134,6 +186,20 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                 onPressed: () => _showTagEditor(context, song.tags),
                 tooltip: 'Edit tags',
               ),
+              // Auto-scroll play/pause (chord/lyrics view only)
+              if (canAutoScroll)
+                IconButton(
+                  icon: Icon(
+                    autoScroll.isPlaying
+                        ? Icons.pause_circle_outline
+                        : Icons.play_circle_outline,
+                  ),
+                  onPressed: () =>
+                      ref.read(autoScrollProvider.notifier).toggle(),
+                  tooltip: autoScroll.isPlaying
+                      ? 'Stop auto-scroll'
+                      : 'Start auto-scroll',
+                ),
               // Presentation mode button
               IconButton(
                 icon: const Icon(Icons.fullscreen),
@@ -216,6 +282,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                     transpose: transpose,
                     textScale: textScale,
                     showChords: true,
+                    scrollController: _scrollController,
                   )
                 else
                   ChordView(
@@ -223,6 +290,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                     transpose: transpose,
                     textScale: textScale,
                     showChords: false,
+                    scrollController: _scrollController,
                   ),
               ],
             ),

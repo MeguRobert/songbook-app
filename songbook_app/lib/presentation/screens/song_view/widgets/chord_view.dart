@@ -16,11 +16,16 @@ class ChordView extends ConsumerWidget {
   final double textScale;
   final bool showChords;
 
+  /// Optional external controller so the song view can drive auto-scroll.
+  /// When null, the inner [SingleChildScrollView] manages its own scrolling.
+  final ScrollController? scrollController;
+
   const ChordView({
     required this.song,
     required this.transpose,
     this.textScale = 1.0,
     this.showChords = true,
+    this.scrollController,
     super.key,
   });
 
@@ -32,6 +37,7 @@ class ChordView extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return SingleChildScrollView(
+      controller: scrollController,
       padding: const EdgeInsets.all(16),
       child: Center(
         child: ConstrainedBox(

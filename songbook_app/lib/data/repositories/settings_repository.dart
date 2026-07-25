@@ -131,4 +131,22 @@ class SettingsRepository {
   Future<bool> clearSelectedBook() {
     return _localDataSource.removeStringSetting(SettingsKeys.selectedBook);
   }
+
+  // --- Auto-scroll speed (per song) ---
+
+  /// Default auto-scroll speed in logical pixels per second.
+  static const defaultAutoScrollSpeed = 40;
+
+  /// Returns the saved auto-scroll speed (logical px/s) for [songNumber],
+  /// falling back to [defaultAutoScrollSpeed] when none has been set.
+  int getAutoScrollSpeed(int songNumber) {
+    final key = 'autoscroll_speed_$songNumber';
+    return _localDataSource.getIntSetting(key) ?? defaultAutoScrollSpeed;
+  }
+
+  /// Persists the auto-scroll speed (logical px/s) for [songNumber].
+  Future<bool> setAutoScrollSpeed(int songNumber, int pixelsPerSecond) {
+    final key = 'autoscroll_speed_$songNumber';
+    return _localDataSource.setIntSetting(key, pixelsPerSecond);
+  }
 }
