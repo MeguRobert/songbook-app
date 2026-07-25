@@ -50,6 +50,11 @@ class SearchState {
 class SearchNotifier extends StateNotifier<SearchState> {
   final Ref _ref;
 
+  /// The song catalog the current [SearchState.results] were computed from.
+  /// Kept so [onCatalogUpdated] can tell a genuine change (a tag edit) from
+  /// the catalog simply finishing its first load.
+  List<Song>? _catalog;
+
   SearchNotifier(this._ref) : super(const SearchState());
 
   Future<void> search(String query) async {
@@ -98,7 +103,19 @@ class SearchNotifier extends StateNotifier<SearchState> {
       return;
     }
 
-    final allSongs = await _ref.read(songsProvider.future);
+    final cached = _catalog;
+    final List<Song> allSongs =
+        cached ?? await _ref.read(songsProvider.future);
+    _catalog = allSongs;
+
+    // The filter can be cleared while the catalog is loading (type, then hit
+    // the X). Without this second check the post-await path treats "no query,
+    // no tags" as "no narrowing" and publishes the ENTIRE catalog as results.
+    if (!state.isFiltering) {
+      state = state.copyWith(results: [], isSearching: false);
+      return;
+    }
+
     final searchService = _ref.read(searchServiceProvider);
 
     var songs = allSongs;
@@ -110,6 +127,23 @@ class SearchNotifier extends StateNotifier<SearchState> {
         state.hasQuery ? searchService.search(songs, state.query) : songs;
 
     state = state.copyWith(results: results, isSearching: false);
+  }
+
+  /// Re-runs the current filter against a changed song catalog.
+  ///
+  /// Wired to [songsProvider] from the provider body (see [searchProvider]).
+  /// The results list is a snapshot, so without this an open search kept
+  /// showing pre-edit tags — and a song that gained or lost the active tag
+  /// never joined or left the list.
+  ///
+  /// The catalog merely *finishing its first load* is not a change: the
+  /// [_recompute] that triggered it is already awaiting the same list, and
+  /// recomputing here would publish a second, identical results list.
+  Future<void> onCatalogUpdated(List<Song> songs) async {
+    final previous = _catalog;
+    _catalog = songs;
+    if (previous == null || identical(previous, songs)) return;
+    if (state.isFiltering) await _recompute();
   }
 
   void clear() {
@@ -142,7 +176,15 @@ class SearchNotifier extends StateNotifier<SearchState> {
 /// Provider for search state
 final searchProvider =
     StateNotifierProvider<SearchNotifier, SearchState>((ref) {
-  return SearchNotifier(ref);
+  final notifier = SearchNotifier(ref);
+  // Audit finding S9: results were computed with a one-shot `read` of
+  // songsProvider, so a tag edit made elsewhere never reached an open search.
+  // Listening here rather than watching inside the notifier keeps the
+  // subscription tied to the provider's own lifecycle.
+  ref.listen<AsyncValue<List<Song>>>(songsProvider, (previous, next) {
+    if (next is AsyncData<List<Song>>) notifier.onCatalogUpdated(next.value);
+  });
+  return notifier;
 });
 
 /// Provider for search results

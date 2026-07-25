@@ -131,6 +131,94 @@ void main() {
     });
   });
 
+  // Audit finding S14. A single unreadable record must not take the whole
+  // collection with it: the previous `catch (_) { return []; }` wrapped the
+  // entire `map`, so one bad entry silently presented as "you have no
+  // favourites / no setlists / no history" and the next write erased the rest.
+  group('partial corruption', () {
+    test('getFavorites keeps the readable entries and skips the bad one',
+        () async {
+      final ds = await makeDataSource({
+        'favorites': json.encode([
+          {
+            'songNumber': 1,
+            'addedAt': '2026-01-01T00:00:00.000',
+            'sortOrder': 0,
+          },
+          {'songNumber': 'not-a-number', 'addedAt': 'not-a-date'},
+          {
+            'songNumber': 3,
+            'addedAt': '2026-01-03T00:00:00.000',
+            'sortOrder': 2,
+          },
+        ]),
+      });
+
+      expect(ds.getFavorites().map((f) => f.songNumber), [1, 3]);
+    });
+
+    test('getFavorites skips an entry that is not an object at all', () async {
+      final ds = await makeDataSource({
+        'favorites': json.encode([
+          'garbage',
+          {
+            'songNumber': 9,
+            'addedAt': '2026-01-01T00:00:00.000',
+            'sortOrder': 0,
+          },
+        ]),
+      });
+
+      expect(ds.getFavorites().map((f) => f.songNumber), [9]);
+    });
+
+    test('getSetlists keeps the readable entries and skips the bad one',
+        () async {
+      Map<String, Object?> setlist(String id, String name) => {
+            'id': id,
+            'name': name,
+            'songNumbers': [1, 2],
+            'createdAt': '2026-01-01T00:00:00.000',
+            'updatedAt': '2026-01-01T00:00:00.000',
+          };
+
+      final ds = await makeDataSource({
+        'setlists': json.encode([
+          setlist('a', 'Sunday'),
+          {'id': 'broken'}, // missing required name/createdAt/updatedAt
+          setlist('c', 'Evening'),
+        ]),
+      });
+
+      expect(ds.getSetlists().map((s) => s.id), ['a', 'c']);
+    });
+
+    test('getRecentSongs keeps the readable entries and skips the bad one',
+        () async {
+      final ds = await makeDataSource({
+        'recent_songs': json.encode([
+          {'n': 1, 't': 1000},
+          {'n': 'oops'},
+          {'n': 3, 't': 3000},
+        ]),
+      });
+
+      expect(ds.getRecentSongs().map((r) => r.songNumber), [1, 3]);
+    });
+
+    test('a wholly unreadable blob still yields an empty collection', () async {
+      final ds = await makeDataSource({
+        'favorites': 'not json',
+        'setlists': 'not json',
+        'recent_songs': 'not json',
+      });
+
+      expect(ds.getFavorites(), isEmpty);
+      expect(ds.getSetlists(), isEmpty);
+      expect(ds.getRecentSongs(), isEmpty);
+    });
+  });
+
   group('settings', () {
     test('string settings round-trip and are namespaced', () async {
       SharedPreferences.setMockInitialValues({});

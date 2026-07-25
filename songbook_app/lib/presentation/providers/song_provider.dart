@@ -26,8 +26,12 @@ final songsProvider = FutureProvider<List<Song>>((ref) async {
 /// invalidated when tags change. Reading the repository here meant the in-song
 /// tag editor was seeded with the BUNDLED tags: reopening it after an edit
 /// showed stale tags and saving silently discarded the earlier edit.
+///
+/// `autoDispose` because this is a family: without it every song ever opened
+/// keeps its own provider alive for the rest of the process (audit finding
+/// S20). Re-resolving is cheap — [songsProvider] itself stays cached.
 final songByNumberProvider =
-    FutureProvider.family<Song?, int>((ref, number) async {
+    FutureProvider.autoDispose.family<Song?, int>((ref, number) async {
   final songs = await ref.watch(songsProvider.future);
   for (final song in songs) {
     if (song.number == number) return song;

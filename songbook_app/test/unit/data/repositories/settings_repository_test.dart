@@ -42,23 +42,6 @@ void main() {
     });
   });
 
-  group('default transpose', () {
-    test('defaults to 0 when absent', () {
-      when(() => dataSource.getIntSetting('default_transpose')).thenReturn(null);
-      expect(repository.getDefaultTranspose(), 0);
-    });
-
-    test('round-trips through the data source', () async {
-      when(() => dataSource.setIntSetting('default_transpose', -3))
-          .thenAnswer((_) async => true);
-      await repository.setDefaultTranspose(-3);
-      verify(() => dataSource.setIntSetting('default_transpose', -3)).called(1);
-
-      when(() => dataSource.getIntSetting('default_transpose')).thenReturn(-3);
-      expect(repository.getDefaultTranspose(), -3);
-    });
-  });
-
   group('show chords', () {
     test('defaults to true when absent', () {
       when(() => dataSource.getBoolSetting('show_chords')).thenReturn(null);

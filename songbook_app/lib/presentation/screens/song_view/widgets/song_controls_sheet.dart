@@ -42,6 +42,11 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
     final hasTranspose = transpose != 0;
     final capoSuggestions = capoService.suggestionsFor(targetKey);
 
+    // Transposition only ever repaints chord symbols or the staff. With
+    // neither on screen (the Lyrics preset) it is a no-op, and so is the capo
+    // helper that hangs off the resulting key.
+    final transposeIsVisible = viewConfig.showChords || viewConfig.showNotation;
+
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -147,76 +152,82 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                         title: const Text('Chords above staff'),
                       ),
 
-                    const Divider(height: 32),
+                    // Transpose + Capo — only where a key change is visible.
+                    // The Lyrics preset shows neither chord symbols nor a
+                    // staff, so these controls used to report a new key that
+                    // nothing on screen reflected (audit finding S12).
+                    if (transposeIsVisible) ...[
+                      const Divider(height: 32),
 
-                    // Transpose Section
-                    _SectionHeader(text: 'TRANSPOSE', theme: theme),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.remove),
-                          onPressed: songViewNotifier.transposeDown,
-                          tooltip: 'Transpose down',
-                        ),
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                targetKey,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Visibility(
-                                visible: hasTranspose,
-                                maintainSize: true,
-                                maintainAnimation: true,
-                                maintainState: true,
-                                child: Text(
-                                  hasTranspose
-                                      ? '${transpose > 0 ? '+' : ''}$transpose'
-                                      : '0',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                      // Transpose Section
+                      _SectionHeader(text: 'TRANSPOSE', theme: theme),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove),
+                            onPressed: songViewNotifier.transposeDown,
+                            tooltip: 'Transpose down',
+                          ),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  targetKey,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
-                            ],
+                                Visibility(
+                                  visible: hasTranspose,
+                                  maintainSize: true,
+                                  maintainAnimation: true,
+                                  maintainState: true,
+                                  child: Text(
+                                    hasTranspose
+                                        ? '${transpose > 0 ? '+' : ''}$transpose'
+                                        : '0',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: songViewNotifier.transposeUp,
+                            tooltip: 'Transpose up',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Center(
+                        child: Visibility(
+                          visible: hasTranspose,
+                          maintainSize: true,
+                          maintainAnimation: true,
+                          maintainState: true,
+                          child: TextButton(
+                            onPressed: songViewNotifier.resetTranspose,
+                            child: Text('Reset to ${widget.originalKey}'),
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: songViewNotifier.transposeUp,
-                          tooltip: 'Transpose up',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Visibility(
-                        visible: hasTranspose,
-                        maintainSize: true,
-                        maintainAnimation: true,
-                        maintainState: true,
-                        child: TextButton(
-                          onPressed: songViewNotifier.resetTranspose,
-                          child: Text('Reset to ${widget.originalKey}'),
-                        ),
                       ),
-                    ),
 
-                    const Divider(height: 32),
+                      const Divider(height: 32),
 
-                    // Capo Section
-                    _SectionHeader(text: 'CAPO', theme: theme),
-                    const SizedBox(height: 12),
-                    _CapoSection(
-                      soundingKey: targetKey,
-                      suggestions: capoSuggestions,
-                      theme: theme,
-                    ),
+                      // Capo Section
+                      _SectionHeader(text: 'CAPO', theme: theme),
+                      const SizedBox(height: 12),
+                      _CapoSection(
+                        soundingKey: targetKey,
+                        suggestions: capoSuggestions,
+                        theme: theme,
+                      ),
+                    ],
 
                     const Divider(height: 32),
 

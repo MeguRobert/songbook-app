@@ -7,12 +7,17 @@ import 'package:songbook_app/presentation/screens/song_view/song_view_screen.dar
 import 'helpers.dart';
 
 void main() {
-  Future<void> openControlsSheet(WidgetTester tester) async {
+  /// Opens the controls sheet with [viewConfig] as the stored default view
+  /// ("notation:chords" — the default 'false:true' is the Chords preset).
+  Future<void> openControlsSheet(
+    WidgetTester tester, {
+    String viewConfig = 'false:true',
+  }) async {
     final song = makeTestSong(); // originalKey Bb
     await pumpScreen(
       tester,
       const SongViewScreen(songNumber: 42),
-      prefs: {'settings_view_config': 'false:true'},
+      prefs: {'settings_view_config': viewConfig},
       overrides: [
         songByNumberProvider.overrideWith(
             (ref, number) async => number == 42 ? song : null),
@@ -65,5 +70,46 @@ void main() {
     );
     final state = container.read(songViewProvider);
     expect(state!.activeViewConfig?.isLyricsOnlyPreset, isTrue);
+  });
+
+  // Audit finding S12. Transposition only ever changes chord symbols or the
+  // staff; in the Lyrics preset both are hidden, so the controls sat there
+  // reporting a key change that nothing on screen reflected.
+  group('transpose + capo visibility', () {
+    testWidgets('present in the Chords preset', (tester) async {
+      await openControlsSheet(tester, viewConfig: 'false:true');
+
+      expect(find.text('TRANSPOSE'), findsOneWidget);
+      expect(find.text('CAPO'), findsOneWidget);
+    });
+
+    testWidgets('present in the Sheet Music preset', (tester) async {
+      await openControlsSheet(tester, viewConfig: 'true:true');
+
+      expect(find.text('TRANSPOSE'), findsOneWidget);
+      expect(find.text('CAPO'), findsOneWidget);
+    });
+
+    testWidgets('hidden in the Lyrics-only preset', (tester) async {
+      await openControlsSheet(tester, viewConfig: 'false:false');
+
+      expect(find.text('TRANSPOSE'), findsNothing);
+      expect(find.text('CAPO'), findsNothing);
+      // The sections that still do something stay put.
+      expect(find.text('VIEW'), findsOneWidget);
+      expect(find.text('TEXT SIZE'), findsOneWidget);
+    });
+
+    testWidgets('disappear when the user switches to Lyrics in the sheet',
+        (tester) async {
+      await openControlsSheet(tester, viewConfig: 'false:true');
+      expect(find.text('TRANSPOSE'), findsOneWidget);
+
+      await tester.tap(find.text('Lyrics'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('TRANSPOSE'), findsNothing);
+      expect(find.text('CAPO'), findsNothing);
+    });
   });
 }

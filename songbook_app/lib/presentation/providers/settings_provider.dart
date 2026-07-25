@@ -7,23 +7,19 @@ import 'providers.dart';
 class SettingsState {
   final double fontSize;
   final ViewConfig viewConfig;
-  final int defaultTranspose;
 
   const SettingsState({
     this.fontSize = 18.0,
     this.viewConfig = const ViewConfig(),
-    this.defaultTranspose = 0,
   });
 
   SettingsState copyWith({
     double? fontSize,
     ViewConfig? viewConfig,
-    int? defaultTranspose,
   }) {
     return SettingsState(
       fontSize: fontSize ?? this.fontSize,
       viewConfig: viewConfig ?? this.viewConfig,
-      defaultTranspose: defaultTranspose ?? this.defaultTranspose,
     );
   }
 }
@@ -41,7 +37,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     state = SettingsState(
       fontSize: repository.getFontSize(),
       viewConfig: repository.getViewConfig(),
-      defaultTranspose: repository.getDefaultTranspose(),
     );
   }
 
@@ -59,12 +54,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   Future<void> setPreset(ViewConfig preset) async {
     await setViewConfig(preset);
-  }
-
-  Future<void> setDefaultTranspose(int semitones) async {
-    final repository = _ref.read(settingsRepositoryProvider);
-    await repository.setDefaultTranspose(semitones);
-    state = state.copyWith(defaultTranspose: semitones);
   }
 
   void increaseFontSize() {

@@ -1,10 +1,30 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:songbook_app/data/models/song.dart';
+import 'package:songbook_app/data/models/verse.dart';
+import 'package:songbook_app/presentation/providers/autoscroll_provider.dart';
+import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
 import 'package:songbook_app/presentation/screens/song_view/song_view_screen.dart';
+import 'package:songbook_app/presentation/screens/song_view/widgets/chord_view.dart';
+import 'package:songbook_app/presentation/screens/song_view/widgets/sheet_music_view.dart';
 
 import 'helpers.dart';
+
+/// A song long enough that the chord view actually scrolls in a test viewport.
+Song makeScrollableSong() => Song(
+      number: 42,
+      title: 'Mint a szép híves patakra',
+      originalKey: 'Bb',
+      verses: [
+        for (var i = 1; i <= 40; i++)
+          Verse(number: i, plainText: 'Verse $i line of text'),
+      ],
+      tags: const [],
+    );
 
 void main() {
   testWidgets('renders song title, lyrics and transposed chords in chord view',
@@ -121,5 +141,166 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+  });
+
+  // Audit finding S11. Pushing presentation mode covers the song view with an
+  // opaque route, which mutes the ticker via TickerMode — but a muted Ticker
+  // keeps its start time, so the first tick after returning carries the whole
+  // time spent away as one `dt` and the page teleports.
+  group('auto-scroll across a pushed route', () {
+    double offsetOf(WidgetTester tester) => tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byType(ChordView, skipOffstage: false),
+            matching: find.byType(Scrollable, skipOffstage: false),
+          ),
+        )
+        .position
+        .pixels;
+
+    /// pumpAndSettle never settles while the auto-scroll ticker is active.
+    Future<void> pumpFrames(WidgetTester tester, int count) async {
+      for (var i = 0; i < count; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    testWidgets('ten seconds away does not teleport the scroll position',
+        (tester) async {
+      final song = makeScrollableSong();
+      await pumpScreen(
+        tester,
+        const SongViewScreen(songNumber: 42),
+        prefs: {'settings_view_config': 'false:true'},
+        overrides: [
+          songByNumberProvider
+              .overrideWith((ref, number) async => number == 42 ? song : null),
+        ],
+      );
+      await tester.pumpAndSettle();
+
+      final element = tester.element(find.byType(SongViewScreen));
+      final container = ProviderScope.containerOf(element, listen: false);
+      final navigator = Navigator.of(element);
+
+      container.read(autoScrollProvider.notifier).play();
+      await pumpFrames(tester, 10); // ~1s of scrolling at 40 px/s
+      final before = offsetOf(tester);
+      expect(before, greaterThan(0), reason: 'auto-scroll should have moved');
+
+      // Cover the screen the way presentation mode does.
+      navigator.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('presentation')),
+        ),
+      );
+      await pumpFrames(tester, 6); // let the push transition finish
+      final covered = offsetOf(tester);
+
+      await tester.pump(const Duration(seconds: 10)); // time spent away
+
+      // The framework already stops the ticker while an opaque route covers
+      // us: Overlay marks the entry below with tickerEnabled:false and
+      // TickerMode mutes it. The audit's "keeps running" premise was wrong —
+      // the damage was entirely the stale elapsed clock, below.
+      expect(offsetOf(tester), covered);
+
+      navigator.pop();
+      await pumpFrames(tester, 6);
+
+      final after = offsetOf(tester);
+      // Transitions themselves are worth a few tens of pixels at 40 px/s. The
+      // bug produced the full 10 s × 40 px/s = 400 px in a single frame.
+      expect(after - before, lessThan(120));
+    });
+  });
+
+  // Audit finding S13. openSong() runs in a post-frame callback, so the frame
+  // that first paints a newly opened song was still describing the previous
+  // one — its transpose, its zoom, even its preset.
+  group('first frame of a newly opened song', () {
+    late ProviderContainer container;
+
+    Widget appFor(int songNumber) => UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(home: SongViewScreen(songNumber: songNumber)),
+        );
+
+    Future<void> setUpContainer({
+      Map<String, Object> prefs = const {'settings_view_config': 'false:true'},
+    }) async {
+      SharedPreferences.setMockInitialValues(prefs);
+      final sharedPreferences = await SharedPreferences.getInstance();
+      container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+          songByNumberProvider.overrideWith(
+            (ref, number) async => makeTestSong(number: number),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+    }
+
+    testWidgets('does not inherit the previous song\'s transpose or zoom',
+        (tester) async {
+      await setUpContainer();
+
+      await tester.pumpWidget(appFor(42));
+      await tester.pumpAndSettle();
+
+      container.read(songViewProvider.notifier).setTranspose(3);
+      container.read(songViewProvider.notifier).setTextScale(1.8);
+      await tester.pumpAndSettle();
+      expect(tester.widget<ChordView>(find.byType(ChordView)).transpose, 3);
+
+      // Exactly one frame: openSong() for song 43 has been scheduled but its
+      // state change cannot land until the frame after this one.
+      await tester.pumpWidget(appFor(43));
+      await tester.pump();
+
+      final firstFrame = tester.widget<ChordView>(find.byType(ChordView));
+      expect(firstFrame.song.number, 43);
+      expect(firstFrame.transpose, 0);
+      expect(firstFrame.textScale, 1.0);
+    });
+
+    testWidgets('does not inherit the previous song\'s preset', (tester) async {
+      // Global default is Sheet Music; song 42 is pinned to Lyrics-only.
+      await setUpContainer(prefs: {
+        'settings_view_config': 'true:true',
+        'settings_song_view_config_42': 'false:false',
+      });
+
+      await tester.pumpWidget(appFor(42));
+      await tester.pumpAndSettle();
+      expect(tester.widget<ChordView>(find.byType(ChordView)).showChords,
+          isFalse);
+
+      await tester.pumpWidget(appFor(43));
+      await tester.pump();
+
+      // Song 43 has no override, so it must open on the global Sheet Music
+      // default — not carry song 42's Lyrics-only preset into frame one.
+      expect(find.byType(ChordView), findsNothing);
+      expect(find.byType(SheetMusicView), findsOneWidget);
+    });
+
+    testWidgets('honours the new song\'s own saved preset on frame one',
+        (tester) async {
+      await setUpContainer(prefs: {
+        'settings_view_config': 'true:true',
+        'settings_song_view_config_43': 'false:true',
+      });
+
+      await tester.pumpWidget(appFor(42));
+      await tester.pumpAndSettle();
+
+      await tester.pumpWidget(appFor(43));
+      await tester.pump();
+
+      final firstFrame = tester.widget<ChordView>(find.byType(ChordView));
+      expect(firstFrame.showChords, isTrue);
+    });
   });
 }

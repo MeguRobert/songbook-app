@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:songbook_app/data/datasources/local/local_datasource.dart';
 import 'package:songbook_app/data/models/song.dart';
+import 'package:songbook_app/data/repositories/song_repository.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/search_provider.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
+import 'package:songbook_app/presentation/providers/tag_provider.dart';
 
 Song song(int number, String title, {List<String> tags = const []}) => Song(
       number: number,
@@ -108,4 +111,91 @@ void main() {
     expect(state.activeTags, isEmpty);
     expect(state.results, isEmpty);
   });
+
+  // Audit finding S9. The results list is a snapshot taken when the filter last
+  // ran; editing a song's tags from another screen has to push a new snapshot,
+  // or an open search keeps showing the pre-edit answer.
+  group('results follow tag edits', () {
+    /// Container whose songsProvider is the REAL one, so a tag override
+    /// actually invalidates it (the fixture-override container cannot).
+    Future<ProviderContainer> makeLiveContainer() async {
+      final prefs = await SharedPreferences.getInstance();
+      return ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          songRepositoryProvider.overrideWith(
+            (ref) => _FakeSongRepository(LocalDataSource(prefs), fixtureSongs),
+          ),
+        ],
+      );
+    }
+
+    /// Lets songsProvider rebuild and the search recompute settle.
+    Future<void> settle(ProviderContainer container) async {
+      await container.read(songsProvider.future);
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    test('a song gaining the active tag joins the open result list', () async {
+      final container = await makeLiveContainer();
+      addTearDown(container.dispose);
+
+      await container.read(searchProvider.notifier).toggleTag('praise');
+      expect(container.read(searchProvider).results.map((s) => s.number),
+          equals([1, 2]));
+
+      await container
+          .read(tagOverridesProvider.notifier)
+          .setTags(3, ['communion', 'praise']);
+      await settle(container);
+
+      expect(container.read(searchProvider).results.map((s) => s.number),
+          equals([1, 2, 3]));
+    });
+
+    test('a song losing the active tag leaves the open result list', () async {
+      final container = await makeLiveContainer();
+      addTearDown(container.dispose);
+
+      await container.read(searchProvider.notifier).toggleTag('praise');
+      expect(container.read(searchProvider).results.map((s) => s.number),
+          equals([1, 2]));
+
+      await container.read(tagOverridesProvider.notifier).setTags(2, []);
+      await settle(container);
+
+      expect(container.read(searchProvider).results.map((s) => s.number),
+          equals([1]));
+    });
+
+    test('a text-query result set picks up edited tags', () async {
+      final container = await makeLiveContainer();
+      addTearDown(container.dispose);
+
+      await container.read(searchProvider.notifier).search('praise');
+      expect(container.read(searchProvider).results.map((s) => s.number),
+          equals([1, 2]));
+
+      await container
+          .read(tagOverridesProvider.notifier)
+          .setTags(1, ['renamed']);
+      await settle(container);
+
+      // Song 1 still matches on its title ("Advent Praise") — it just carries
+      // the edited tags now, and ranks below song 2 having lost the tag match.
+      final results = container.read(searchProvider).results;
+      final songOne = results.firstWhere((s) => s.number == 1);
+      expect(songOne.tags, equals(['renamed']));
+    });
+  });
+}
+
+/// Minimal SongRepository stand-in returning a fixed list (avoids loading the
+/// bundled asset and lets songsProvider exercise the override merge).
+class _FakeSongRepository extends SongRepository {
+  final List<Song> _songs;
+  _FakeSongRepository(super.localDataSource, this._songs);
+
+  @override
+  Future<List<Song>> getAllSongs() async => _songs;
 }

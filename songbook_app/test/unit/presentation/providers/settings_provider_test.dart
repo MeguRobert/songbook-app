@@ -25,19 +25,16 @@ void main() {
       final state = container.read(settingsProvider);
       expect(state.fontSize, 18.0);
       expect(state.viewConfig, const ViewConfig());
-      expect(state.defaultTranspose, 0);
     });
 
     test('loads persisted settings', () async {
       final container = await makeContainer(prefs: {
         'settings_font_size': 24,
         'settings_view_config': 'false:true',
-        'settings_default_transpose': 2,
       });
       final state = container.read(settingsProvider);
       expect(state.fontSize, 24.0);
       expect(state.viewConfig, const ViewConfig.chords());
-      expect(state.defaultTranspose, 2);
     });
   });
 
@@ -107,26 +104,16 @@ void main() {
     });
   });
 
-  group('setDefaultTranspose', () {
-    test('updates state and persists', () async {
-      final container = await makeContainer();
-      await container.read(settingsProvider.notifier).setDefaultTranspose(-4);
-
-      expect(container.read(settingsProvider).defaultTranspose, -4);
-      final prefs = container.read(sharedPreferencesProvider);
-      expect(prefs.getInt('settings_default_transpose'), -4);
-    });
-  });
-
   group('SettingsState.copyWith', () {
     test('overrides fields independently', () {
       const state = SettingsState();
       expect(state.copyWith(fontSize: 22).fontSize, 22);
-      expect(state.copyWith(fontSize: 22).defaultTranspose, 0);
+      expect(state.copyWith(fontSize: 22).viewConfig, const ViewConfig());
       expect(
           state.copyWith(viewConfig: const ViewConfig.chords()).viewConfig,
           const ViewConfig.chords());
-      expect(state.copyWith(defaultTranspose: 3).defaultTranspose, 3);
+      expect(state.copyWith(viewConfig: const ViewConfig.chords()).fontSize,
+          18.0);
     });
   });
 

@@ -5,7 +5,6 @@ import '../models/view_config.dart';
 /// Keys for settings storage
 class SettingsKeys {
   static const themeMode = 'theme_mode';
-  static const defaultTranspose = 'default_transpose';
   static const showChords = 'show_chords';
   static const fontSize = 'font_size';
   static const viewConfig = 'view_config';
@@ -31,19 +30,6 @@ class SettingsRepository {
 
   Future<bool> setThemeMode(AppThemeMode mode) {
     return _localDataSource.setStringSetting(SettingsKeys.themeMode, mode.name);
-  }
-
-  // --- Transpose ---
-
-  int getDefaultTranspose() {
-    return _localDataSource.getIntSetting(SettingsKeys.defaultTranspose) ?? 0;
-  }
-
-  Future<bool> setDefaultTranspose(int semitones) {
-    return _localDataSource.setIntSetting(
-      SettingsKeys.defaultTranspose,
-      semitones,
-    );
   }
 
   // --- Chords ---

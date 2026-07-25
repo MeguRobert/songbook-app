@@ -4,9 +4,12 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../data/models/view_config.dart';
 import '../../providers/autoscroll_provider.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/providers.dart';
 import '../../providers/recents_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/song_provider.dart';
 import '../../providers/setlist_provider.dart';
 import '../../../router/app_router.dart';
@@ -49,9 +52,16 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   late final Ticker _ticker;
   Duration _lastTick = Duration.zero;
 
+  /// This song's persisted per-song view config, read synchronously so the
+  /// very first frame can already use it. See [build] for why that matters.
+  ViewConfig? _savedViewConfig;
+
   @override
   void initState() {
     super.initState();
+    _savedViewConfig = ref
+        .read(settingsRepositoryProvider)
+        .getSongViewConfig(widget.songNumber);
     _zoomController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 160),
@@ -65,12 +75,36 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     // No closeSong() in dispose needed: openSong() always creates fresh state,
     // and modifying provider state in dispose is forbidden by Riverpod.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(songViewProvider.notifier).openSong(widget.songNumber);
-      // Record this song as recently viewed (powers the Home "Recent" rail).
-      ref.read(recentsProvider.notifier).record(widget.songNumber);
-      ref.read(autoScrollProvider.notifier).init(widget.songNumber);
-      _syncSetlistPosition();
+      if (mounted) _openCurrentSong();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant SongViewScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.songNumber == widget.songNumber) return;
+    // GoRouter keys each `/song/N` page separately, so today a new song always
+    // gets a fresh State and this never fires. Handle in-place reuse anyway:
+    // without it the State would keep serving the previous song's saved preset
+    // and would never open the provider for the new number at all.
+    _savedViewConfig = ref
+        .read(settingsRepositoryProvider)
+        .getSongViewConfig(widget.songNumber);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _openCurrentSong();
+    });
+  }
+
+  /// Points every per-song provider at [SongViewScreen.songNumber].
+  ///
+  /// Must run after the frame: these all mutate provider state, which Riverpod
+  /// forbids during build.
+  void _openCurrentSong() {
+    ref.read(songViewProvider.notifier).openSong(widget.songNumber);
+    // Record this song as recently viewed (powers the Home "Recent" rail).
+    ref.read(recentsProvider.notifier).record(widget.songNumber);
+    ref.read(autoScrollProvider.notifier).init(widget.songNumber);
+    _syncSetlistPosition();
   }
 
   @override
@@ -89,10 +123,28 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     _zoomController.forward(from: 0);
   }
 
+  /// Longest gap between ticks that is treated as real elapsed time.
+  ///
+  /// A [Ticker] keeps its start time while muted, so any stretch where frames
+  /// stop arriving — presentation mode pushed on top (TickerMode mutes us), a
+  /// backgrounded browser tab, a paused debugger — comes back as one enormous
+  /// `dt`. Un-clamped, ten seconds in presentation mode teleported the song
+  /// 400 px on the first frame back (audit finding S11).
+  ///
+  /// 250 ms deliberately sits between the two cases rather than near either.
+  /// Clamping at a frame or two (~33 ms) also throttles genuinely slow
+  /// rendering — a headless browser measured here at 1.3 fps scrolled ~20×
+  /// too slowly — because the clamp then applies every frame, not just after
+  /// a gap. Nothing that is actually painting runs below 4 fps, so this only
+  /// ever fires on a real stall, where it costs a 10 px step.
+  static const _maxTickDelta = 0.25;
+
   /// Advances the scroll position by `speed * dt` each frame while playing.
   /// Stops automatically when the bottom of the song is reached.
   void _onAutoScrollTick(Duration elapsed) {
-    final dt = (elapsed - _lastTick).inMicroseconds / Duration.microsecondsPerSecond;
+    final rawDt =
+        (elapsed - _lastTick).inMicroseconds / Duration.microsecondsPerSecond;
+    final dt = rawDt.clamp(0.0, _maxTickDelta);
     _lastTick = elapsed;
     if (!_scrollController.hasClients) return;
 
@@ -151,10 +203,24 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   Widget build(BuildContext context) {
     final songAsync = ref.watch(songByNumberProvider(widget.songNumber));
     final isFavorite = ref.watch(isFavoriteProvider(widget.songNumber));
-    final viewConfig = ref.watch(effectiveViewConfigProvider);
-    final transpose = ref.watch(transposeProvider);
-    final textScale = ref.watch(textScaleProvider);
     final autoScroll = ref.watch(autoScrollProvider);
+
+    // openSong() cannot run before the first build (mutating a provider during
+    // build is forbidden), so on that first frame songViewProvider still
+    // describes the song we navigated AWAY from. Reading it unguarded painted
+    // one frame of the previous song's transpose, zoom and preset — most
+    // visibly a whole different view mode (audit finding S13). Until the
+    // provider catches up, use this song's own saved config and neutral
+    // transpose/zoom.
+    final songView = ref.watch(songViewProvider);
+    final globalViewConfig = ref.watch(viewConfigProvider);
+    final isCurrentSong = songView?.songNumber == widget.songNumber;
+
+    final viewConfig = isCurrentSong
+        ? (songView!.activeViewConfig ?? globalViewConfig)
+        : (_savedViewConfig ?? globalViewConfig);
+    final transpose = isCurrentSong ? songView!.transposeAmount : 0;
+    final textScale = isCurrentSong ? songView!.textScale : 1.0;
 
     // Start/stop the ticker as the play state changes.
     ref.listen<bool>(

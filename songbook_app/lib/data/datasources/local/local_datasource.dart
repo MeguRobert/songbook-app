@@ -54,20 +54,44 @@ class LocalDataSource {
     _cachedSongs = null;
   }
 
-  // --- Favorites ---
-
-  /// Gets all favorites
-  List<Favorite> getFavorites() {
-    final jsonString = _prefs.getString(_favoritesKey);
+  /// Decodes the JSON list stored at [key] into records, **skipping** any
+  /// entry [fromJson] cannot read.
+  ///
+  /// Audit finding S14: the previous shape wrapped the whole `map` in one
+  /// `try`, so a single malformed record made the entire collection read as
+  /// empty — the user saw "no favourites" and the next write erased every
+  /// intact record with it. Only a blob that will not decode as a JSON list at
+  /// all is a total loss; everything else degrades one record at a time.
+  List<T> _decodeRecords<T>(
+    String key,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    final jsonString = _prefs.getString(key);
     if (jsonString == null) return [];
 
+    final List<dynamic> jsonList;
     try {
-      final List<dynamic> jsonList = json.decode(jsonString);
-      return jsonList.map((json) => Favorite.fromJson(json)).toList();
+      jsonList = json.decode(jsonString) as List<dynamic>;
     } catch (_) {
       return [];
     }
+
+    final records = <T>[];
+    for (final entry in jsonList) {
+      try {
+        records.add(fromJson(entry as Map<String, dynamic>));
+      } catch (_) {
+        continue; // drop just this record
+      }
+    }
+    return records;
   }
+
+  // --- Favorites ---
+
+  /// Gets all favorites (unreadable records are skipped, see [_decodeRecords])
+  List<Favorite> getFavorites() =>
+      _decodeRecords(_favoritesKey, Favorite.fromJson);
 
   /// Saves favorites
   Future<bool> saveFavorites(List<Favorite> favorites) async {
@@ -109,18 +133,9 @@ class LocalDataSource {
 
   // --- Setlists ---
 
-  /// Gets all setlists (empty list if none stored or on decode error)
-  List<Setlist> getSetlists() {
-    final jsonString = _prefs.getString(_setlistsKey);
-    if (jsonString == null) return [];
-
-    try {
-      final List<dynamic> jsonList = json.decode(jsonString);
-      return jsonList.map((json) => Setlist.fromJson(json)).toList();
-    } catch (_) {
-      return [];
-    }
-  }
+  /// Gets all setlists (unreadable records are skipped, see [_decodeRecords])
+  List<Setlist> getSetlists() =>
+      _decodeRecords(_setlistsKey, Setlist.fromJson);
 
   /// Saves all setlists
   Future<bool> saveSetlists(List<Setlist> setlists) async {
@@ -174,20 +189,10 @@ class LocalDataSource {
   }
   // --- Recently viewed ---
 
-  /// Gets recently-viewed songs, most-recent first (empty on decode error).
-  List<RecentSong> getRecentSongs() {
-    final jsonString = _prefs.getString(_recentsKey);
-    if (jsonString == null) return [];
-
-    try {
-      final List<dynamic> jsonList = json.decode(jsonString);
-      return jsonList
-          .map((json) => RecentSong.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      return [];
-    }
-  }
+  /// Gets recently-viewed songs, most-recent first (unreadable records are
+  /// skipped, see [_decodeRecords]).
+  List<RecentSong> getRecentSongs() =>
+      _decodeRecords(_recentsKey, RecentSong.fromJson);
 
   /// Records [songNumber] as the most recently viewed.
   ///
