@@ -63,322 +63,347 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
     // does not mount.
     final canAutoScroll = !viewConfig.showNotation;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
-            width: 32,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          // Flexible + SingleChildScrollView (decision 02-02): five sections
-          // overflow a short viewport, and every one is always rendered now,
-          // so the content must stay scrollable.
-          Flexible(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+    // DraggableScrollableSheet, not a plain content-sized Column: a bare
+    // SingleChildScrollView wins the vertical-drag gesture, so swiping down
+    // over the controls only scrolled them and the sheet could be dismissed
+    // solely by grabbing the 4px handle — near-impossible on a phone. Handing
+    // the scroll controller to the scroll view makes the two share one
+    // gesture: scroll while there is content above, and once at the top the
+    // same downward swipe drags the sheet itself. Reaching minChildSize emits
+    // a DraggableScrollableNotification that the modal route closes on
+    // (shouldCloseOnMinExtent, on by default), so a swipe anywhere dismisses.
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.72,
+      // Deliberately close to the initial size: the sheet closes on reaching
+      // this extent, so a small min would demand a near-full-screen drag.
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) => Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.4,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // ---------------------------------------------- 1. VIEW
-                    _SectionHeader(text: 'VIEW', theme: theme),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ChoiceChip(
-                          label: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.piano, size: 18),
-                              SizedBox(width: 6),
-                              Text('Sheet Music'),
-                            ],
-                          ),
-                          selected: viewConfig.isSheetMusicPreset,
-                          onSelected: (_) => songViewNotifier.setPreset(
-                            const ViewConfig.sheetMusic(),
-                          ),
-                        ),
-                        ChoiceChip(
-                          label: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.music_note, size: 18),
-                              SizedBox(width: 6),
-                              Text('Chords'),
-                            ],
-                          ),
-                          selected: viewConfig.isChordsPreset,
-                          onSelected: (_) => songViewNotifier.setPreset(
-                            const ViewConfig.chords(),
-                          ),
-                        ),
-                        ChoiceChip(
-                          label: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.text_snippet, size: 18),
-                              SizedBox(width: 6),
-                              Text('Lyrics'),
-                            ],
-                          ),
-                          selected: viewConfig.isLyricsOnlyPreset,
-                          onSelected: (_) => songViewNotifier.setPreset(
-                            const ViewConfig.lyricsOnly(),
-                          ),
-                        ),
-                      ],
-                    ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
 
-                    // "Chords above staff" only means anything with a staff on
-                    // screen, but it must not change the sheet's height, so it
-                    // keeps its slot and greys out instead.
-                    _Disableable(
-                      enabled: viewConfig.showNotation,
-                      child: SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                        value: viewConfig.showChords,
-                        onChanged: viewConfig.showNotation
-                            ? songViewNotifier.setShowChords
-                            : null,
-                        title: const Text('Chords above staff'),
-                      ),
-                    ),
-
-                    const Divider(height: 32),
-
-                    // ----------------------------------------- 2. TEXT SIZE
-                    _SectionHeader(text: 'TEXT SIZE', theme: theme),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        TextButton(
-                          onPressed: songViewNotifier.decreaseTextScale,
-                          child: Semantics(
-                            label: 'Decrease text size',
-                            excludeSemantics: true,
-                            child: const Text(
-                              'A-',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              '${(textScale * 100).round()}%',
-                              style: theme.textTheme.titleMedium,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: songViewNotifier.increaseTextScale,
-                          child: Semantics(
-                            label: 'Increase text size',
-                            excludeSemantics: true,
-                            child: const Text(
-                              'A+',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const Divider(height: 32),
-
-                    // ----------------------------------------- 3. TRANSPOSE
-                    _SectionHeader(
-                      text: 'TRANSPOSE',
-                      theme: theme,
-                      enabled: canTranspose,
-                      hint: canTranspose ? null : 'no chords in this view',
-                    ),
-                    const SizedBox(height: 12),
-                    _Disableable(
-                      enabled: canTranspose,
-                      child: Column(
+            // Flexible + SingleChildScrollView (decision 02-02): five sections
+            // overflow a short viewport, and every one is always rendered now,
+            // so the content must stay scrollable.
+            Flexible(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                // Always scrollable, even when the content fits: an
+                // unscrollable view reports no overscroll, and the sheet drag
+                // is driven by exactly that.
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // ---------------------------------------------- 1. VIEW
+                      _SectionHeader(text: 'VIEW', theme: theme),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.remove),
-                                onPressed: canTranspose
-                                    ? songViewNotifier.transposeDown
-                                    : null,
-                                tooltip: 'Transpose down',
+                          ChoiceChip(
+                            label: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.piano, size: 18),
+                                SizedBox(width: 6),
+                                Text('Sheet Music'),
+                              ],
+                            ),
+                            selected: viewConfig.isSheetMusicPreset,
+                            onSelected: (_) => songViewNotifier.setPreset(
+                              const ViewConfig.sheetMusic(),
+                            ),
+                          ),
+                          ChoiceChip(
+                            label: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.music_note, size: 18),
+                                SizedBox(width: 6),
+                                Text('Chords'),
+                              ],
+                            ),
+                            selected: viewConfig.isChordsPreset,
+                            onSelected: (_) => songViewNotifier.setPreset(
+                              const ViewConfig.chords(),
+                            ),
+                          ),
+                          ChoiceChip(
+                            label: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.text_snippet, size: 18),
+                                SizedBox(width: 6),
+                                Text('Lyrics'),
+                              ],
+                            ),
+                            selected: viewConfig.isLyricsOnlyPreset,
+                            onSelected: (_) => songViewNotifier.setPreset(
+                              const ViewConfig.lyricsOnly(),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // "Chords above staff" only means anything with a staff on
+                      // screen, but it must not change the sheet's height, so it
+                      // keeps its slot and greys out instead.
+                      _Disableable(
+                        enabled: viewConfig.showNotation,
+                        child: SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          value: viewConfig.showChords,
+                          onChanged: viewConfig.showNotation
+                              ? songViewNotifier.setShowChords
+                              : null,
+                          title: const Text('Chords above staff'),
+                        ),
+                      ),
+
+                      const Divider(height: 32),
+
+                      // ----------------------------------------- 2. TEXT SIZE
+                      _SectionHeader(text: 'TEXT SIZE', theme: theme),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: songViewNotifier.decreaseTextScale,
+                            child: Semantics(
+                              label: 'Decrease text size',
+                              excludeSemantics: true,
+                              child: const Text(
+                                'A-',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      targetKey,
-                                      style: theme.textTheme.titleMedium
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Visibility(
-                                      visible: hasTranspose,
-                                      maintainSize: true,
-                                      maintainAnimation: true,
-                                      maintainState: true,
-                                      child: Text(
-                                        hasTranspose
-                                            ? '${transpose > 0 ? '+' : ''}$transpose'
-                                            : '0',
-                                        style: theme.textTheme.bodySmall
+                            ),
+                          ),
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                '${(textScale * 100).round()}%',
+                                style: theme.textTheme.titleMedium,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: songViewNotifier.increaseTextScale,
+                            child: Semantics(
+                              label: 'Increase text size',
+                              excludeSemantics: true,
+                              child: const Text(
+                                'A+',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const Divider(height: 32),
+
+                      // ----------------------------------------- 3. TRANSPOSE
+                      _SectionHeader(
+                        text: 'TRANSPOSE',
+                        theme: theme,
+                        enabled: canTranspose,
+                        hint: canTranspose ? null : 'no chords in this view',
+                      ),
+                      const SizedBox(height: 12),
+                      _Disableable(
+                        enabled: canTranspose,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove),
+                                  onPressed: canTranspose
+                                      ? songViewNotifier.transposeDown
+                                      : null,
+                                  tooltip: 'Transpose down',
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        targetKey,
+                                        style: theme.textTheme.titleMedium
                                             ?.copyWith(
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                      Visibility(
+                                        visible: hasTranspose,
+                                        maintainSize: true,
+                                        maintainAnimation: true,
+                                        maintainState: true,
+                                        child: Text(
+                                          hasTranspose
+                                              ? '${transpose > 0 ? '+' : ''}$transpose'
+                                              : '0',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.add),
-                                onPressed: canTranspose
-                                    ? songViewNotifier.transposeUp
-                                    : null,
-                                tooltip: 'Transpose up',
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Center(
-                            child: Visibility(
-                              visible: hasTranspose,
-                              maintainSize: true,
-                              maintainAnimation: true,
-                              maintainState: true,
-                              child: TextButton(
-                                onPressed: canTranspose
-                                    ? songViewNotifier.resetTranspose
-                                    : null,
-                                child: Text('Reset to ${widget.originalKey}'),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const Divider(height: 32),
-
-                    // ---------------------------------------------- 4. CAPO
-                    _SectionHeader(
-                      text: 'CAPO',
-                      theme: theme,
-                      enabled: canTranspose,
-                      hint: canTranspose ? null : 'no chords in this view',
-                    ),
-                    const SizedBox(height: 12),
-                    _Disableable(
-                      enabled: canTranspose,
-                      child: _CapoSection(
-                        soundingKey: targetKey,
-                        suggestions: capoSuggestions,
-                        theme: theme,
-                      ),
-                    ),
-
-                    const Divider(height: 32),
-
-                    // --------------------------------------- 5. AUTO-SCROLL
-                    _SectionHeader(
-                      text: 'AUTO-SCROLL',
-                      theme: theme,
-                      enabled: canAutoScroll,
-                      hint: canAutoScroll ? null : 'not in sheet music view',
-                    ),
-                    const SizedBox(height: 12),
-                    _Disableable(
-                      enabled: canAutoScroll,
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              IconButton.filledTonal(
-                                icon: Icon(
-                                  autoScroll.isPlaying
-                                      ? Icons.pause
-                                      : Icons.play_arrow,
-                                ),
-                                onPressed: canAutoScroll
-                                    ? autoScrollNotifier.toggle
-                                    : null,
-                                tooltip: autoScroll.isPlaying
-                                    ? 'Stop auto-scroll'
-                                    : 'Start auto-scroll',
-                              ),
-                              const SizedBox(width: 8),
-                              const _SpeedGlyph(emoji: '🐌', label: 'Slow'),
-                              Expanded(
-                                child: Slider(
-                                  value: autoScroll.speed,
-                                  min: AutoScrollState.minSpeed,
-                                  max: AutoScrollState.maxSpeed,
-                                  divisions: 18,
-                                  label: '${autoScroll.speed.round()} px/s',
-                                  // Live update while dragging; persist once on
-                                  // release rather than on every frame.
-                                  onChanged: canAutoScroll
-                                      ? autoScrollNotifier.setSpeed
+                                IconButton(
+                                  icon: const Icon(Icons.add),
+                                  onPressed: canTranspose
+                                      ? songViewNotifier.transposeUp
                                       : null,
-                                  onChangeEnd: autoScrollNotifier.commitSpeed,
+                                  tooltip: 'Transpose up',
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Center(
+                              child: Visibility(
+                                visible: hasTranspose,
+                                maintainSize: true,
+                                maintainAnimation: true,
+                                maintainState: true,
+                                child: TextButton(
+                                  onPressed: canTranspose
+                                      ? songViewNotifier.resetTranspose
+                                      : null,
+                                  child: Text('Reset to ${widget.originalKey}'),
                                 ),
                               ),
-                              const _SpeedGlyph(emoji: '🏎️', label: 'Fast'),
-                            ],
-                          ),
-                          Center(
-                            child: Text(
-                              'Speed remembered per song',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Divider(height: 32),
+
+                      // ---------------------------------------------- 4. CAPO
+                      _SectionHeader(
+                        text: 'CAPO',
+                        theme: theme,
+                        enabled: canTranspose,
+                        hint: canTranspose ? null : 'no chords in this view',
+                      ),
+                      const SizedBox(height: 12),
+                      _Disableable(
+                        enabled: canTranspose,
+                        child: _CapoSection(
+                          soundingKey: targetKey,
+                          suggestions: capoSuggestions,
+                          theme: theme,
+                        ),
+                      ),
+
+                      const Divider(height: 32),
+
+                      // --------------------------------------- 5. AUTO-SCROLL
+                      _SectionHeader(
+                        text: 'AUTO-SCROLL',
+                        theme: theme,
+                        enabled: canAutoScroll,
+                        hint: canAutoScroll ? null : 'not in sheet music view',
+                      ),
+                      const SizedBox(height: 12),
+                      _Disableable(
+                        enabled: canAutoScroll,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                IconButton.filledTonal(
+                                  icon: Icon(
+                                    autoScroll.isPlaying
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
+                                  ),
+                                  onPressed: canAutoScroll
+                                      ? autoScrollNotifier.toggle
+                                      : null,
+                                  tooltip: autoScroll.isPlaying
+                                      ? 'Stop auto-scroll'
+                                      : 'Start auto-scroll',
+                                ),
+                                const SizedBox(width: 8),
+                                const _SpeedGlyph(emoji: '🐌', label: 'Slow'),
+                                Expanded(
+                                  child: Slider(
+                                    value: autoScroll.speed,
+                                    min: AutoScrollState.minSpeed,
+                                    max: AutoScrollState.maxSpeed,
+                                    divisions: 18,
+                                    label: '${autoScroll.speed.round()} px/s',
+                                    // Live update while dragging; persist once on
+                                    // release rather than on every frame.
+                                    onChanged: canAutoScroll
+                                        ? autoScrollNotifier.setSpeed
+                                        : null,
+                                    onChangeEnd: autoScrollNotifier.commitSpeed,
+                                  ),
+                                ),
+                                const _SpeedGlyph(emoji: '🏎️', label: 'Fast'),
+                              ],
+                            ),
+                            Center(
+                              child: Text(
+                                'Speed remembered per song',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // Bottom padding for safe area
-                    const SizedBox(height: 12),
-                  ],
+                      // Bottom padding for safe area
+                      const SizedBox(height: 12),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -418,9 +443,7 @@ class _Disableable extends StatelessWidget {
   Widget build(BuildContext context) {
     if (enabled) return child;
     return ExcludeSemantics(
-      child: IgnorePointer(
-        child: Opacity(opacity: 0.38, child: child),
-      ),
+      child: IgnorePointer(child: Opacity(opacity: 0.38, child: child)),
     );
   }
 }
@@ -485,7 +508,7 @@ class _CapoSection extends StatelessWidget {
                       recommended.fret == 0
                           ? 'Play open in ${recommended.shapeKey} (sounds $soundingKey)'
                           : 'Clamp fret ${recommended.fret}, finger '
-                              '${recommended.shapeKey} shapes — sounds $soundingKey',
+                                '${recommended.shapeKey} shapes — sounds $soundingKey',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: scheme.onPrimaryContainer,
                       ),
@@ -570,7 +593,9 @@ class _SectionHeader extends StatelessWidget {
             child: Text(
               '· $hint',
               style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.6,
+                ),
                 fontStyle: FontStyle.italic,
               ),
               overflow: TextOverflow.ellipsis,

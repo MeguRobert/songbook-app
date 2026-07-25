@@ -6,7 +6,7 @@
     "background_color": "#4338CA",
     "theme_color": "#4338CA",
     "description": "A worship hymnal with sheet music, chords, transposition, capo help and setlists.",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

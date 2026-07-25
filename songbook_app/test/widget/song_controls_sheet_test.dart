@@ -137,6 +137,46 @@ void main() {
     });
   });
 
+  // Robert, testing the installed web app on a phone: dismissing the sheet
+  // required hitting the 4px drag handle exactly, because the scroll view
+  // swallowed every vertical drag over the content.
+  group('swipe-to-dismiss', () {
+    testWidgets('a downward swipe over the controls closes the sheet',
+        (tester) async {
+      await openControlsSheet(tester);
+      expect(find.text('VIEW'), findsOneWidget);
+
+      // Start the drag on the section content, nowhere near the handle.
+      await tester.fling(find.text('TEXT SIZE'), const Offset(0, 600), 1200);
+      await tester.pumpAndSettle();
+
+      expect(find.text('VIEW'), findsNothing);
+    });
+
+    testWidgets('the handle still works', (tester) async {
+      await openControlsSheet(tester);
+
+      await tester.fling(
+        find.byType(DraggableScrollableSheet),
+        const Offset(0, 600),
+        1200,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('VIEW'), findsNothing);
+    });
+
+    testWidgets('scrolling up inside the sheet does not dismiss it',
+        (tester) async {
+      await openControlsSheet(tester);
+
+      await tester.drag(find.text('TEXT SIZE'), const Offset(0, -200));
+      await tester.pumpAndSettle();
+
+      expect(find.text('VIEW'), findsOneWidget);
+    });
+  });
+
   // Robert: switching presets repeatedly was re-aiming practice, because the
   // sheet is bottom-anchored and dropping a section slid everything above it.
   group('layout does not move between views', () {
