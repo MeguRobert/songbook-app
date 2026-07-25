@@ -1,0 +1,123 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:songbook_app/data/models/chord_position.dart';
+import 'package:songbook_app/data/models/lyric_line.dart';
+import 'package:songbook_app/data/models/verse.dart';
+
+void main() {
+  group('JSON', () {
+    test('fromJson parses a full structured verse', () {
+      final verse = Verse.fromJson({
+        'number': 1,
+        'hasNotation': true,
+        'lines': [
+          {
+            'text': 'first line',
+            'chords': [
+              {'chord': 'C', 'position': 0},
+            ],
+          },
+          {'text': 'second line'},
+        ],
+      });
+      expect(verse.number, 1);
+      expect(verse.hasNotation, isTrue);
+      expect(verse.lines, hasLength(2));
+      expect(verse.lines[0].chords.single.chord, 'C');
+      expect(verse.lines[1].chords, isEmpty);
+      expect(verse.plainText, isNull);
+    });
+
+    test('fromJson parses a plain-text verse with defaults', () {
+      final verse = Verse.fromJson({
+        'number': 2,
+        'plainText': 'A plain second verse',
+      });
+      expect(verse.number, 2);
+      expect(verse.hasNotation, isFalse);
+      expect(verse.lines, isEmpty);
+      expect(verse.plainText, 'A plain second verse');
+    });
+
+    test('toJson emits all fields', () {
+      const verse = Verse(number: 3, plainText: 'text');
+      final json = verse.toJson();
+      expect(json['number'], 3);
+      expect(json['hasNotation'], isFalse);
+      expect(json['lines'], isEmpty);
+      expect(json['plainText'], 'text');
+    });
+  });
+
+  group('displayText', () {
+    test('prefers plainText when present', () {
+      const verse = Verse(
+        number: 1,
+        plainText: 'plain wins',
+        lines: [LyricLine(text: 'line text')],
+      );
+      expect(verse.displayText, 'plain wins');
+    });
+
+    test('joins line texts when plainText is null', () {
+      const verse = Verse(
+        number: 1,
+        lines: [LyricLine(text: 'one'), LyricLine(text: 'two')],
+      );
+      expect(verse.displayText, 'one\ntwo');
+    });
+
+    test('falls back to lines when plainText is empty', () {
+      const verse = Verse(
+        number: 1,
+        plainText: '',
+        lines: [LyricLine(text: 'fallback')],
+      );
+      expect(verse.displayText, 'fallback');
+    });
+
+    test('is empty for a verse with no content', () {
+      expect(const Verse(number: 1).displayText, '');
+    });
+  });
+
+  group('hasChordData', () {
+    test('true when any line has chords', () {
+      const verse = Verse(
+        number: 1,
+        lines: [
+          LyricLine(text: 'a'),
+          LyricLine(text: 'b', chords: [ChordPosition(chord: 'C', position: 0)]),
+        ],
+      );
+      expect(verse.hasChordData, isTrue);
+    });
+
+    test('false when no line has chords', () {
+      const verse = Verse(number: 1, lines: [LyricLine(text: 'a')]);
+      expect(verse.hasChordData, isFalse);
+      expect(const Verse(number: 1).hasChordData, isFalse);
+    });
+  });
+
+  group('copyWith', () {
+    test('overrides fields independently', () {
+      const verse = Verse(number: 1, hasNotation: true, plainText: 'p');
+      expect(verse.copyWith(number: 2).number, 2);
+      expect(verse.copyWith(number: 2).hasNotation, isTrue);
+      expect(verse.copyWith(hasNotation: false).hasNotation, isFalse);
+      expect(verse.copyWith(lines: [const LyricLine(text: 'l')]).lines,
+          hasLength(1));
+    });
+  });
+
+  group('equality', () {
+    test('compares number, hasNotation and plainText (not lines)', () {
+      const a = Verse(number: 1, plainText: 'x');
+      const b = Verse(number: 1, plainText: 'x', lines: [LyricLine(text: 'l')]);
+      expect(a, b); // lines are intentionally excluded from equality
+      expect(a, isNot(const Verse(number: 2, plainText: 'x')));
+      expect(a, isNot(const Verse(number: 1, plainText: 'y')));
+      expect(a, isNot(const Verse(number: 1, plainText: 'x', hasNotation: true)));
+    });
+  });
+}
