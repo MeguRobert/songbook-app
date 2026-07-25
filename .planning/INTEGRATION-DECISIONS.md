@@ -128,6 +128,69 @@ is worth adding; it's a policy call (should a failing test block the deploy?), s
 
 ---
 
+---
+
+## D. Hands-on UAT round (2026-07-25, driven via Playwright)
+
+Robert reported the setlist "add songs" flow misbehaving. Reproduced and fixed; then
+re-verified every feature by driving the real UI with a real mouse.
+
+### D1. FIXED — setlist edits didn't update the UI (commit `32bc4d8`)
+- **Reported:** checking a checkbox did nothing; reopening the sheet showed it checked;
+  had to leave and re-enter the setlist to see songs.
+- **Root cause:** `Setlist.operator ==` compared **only `id`**. Riverpod decides whether
+  to rebuild by comparing old/new with `==`, so `setlistByIdProvider` reported "no
+  change" after add/remove/reorder. The write persisted (hence correct on reopen) but
+  nothing rebuilt.
+- **Fix:** value equality over all fields including `songNumbers`, matching what
+  Book/Tag/ViewConfig already do. The model test that asserted id-based equality was
+  pinning the *cause* of the bug, so it now pins the value-based contract.
+- **Decision to overrule if you disagree:** I changed a documented model contract and
+  rewrote its test. Alternative would have been to leave `==` alone and restructure the
+  providers, but the flaw would stay a landmine for every future `Setlist` consumer.
+
+### D2. FIXED — drag handle / remove button collision (same commit)
+- **Reported:** the drag and remove icons almost overlap on the right.
+- **Root cause:** the row had a *decorative* leading `Icons.drag_handle` that couldn't
+  actually drag, while `ReorderableListView` auto-injects its real handle at the
+  trailing edge on desktop — landing on top of the Remove button.
+- **Fix:** `buildDefaultDragHandles: false` + wrap the leading icon in
+  `ReorderableDragStartListener`. One handle, on the left, that actually works.
+
+### D3. NOT FIXED — song 42's chords are in the wrong key (needs your call)
+- Song 42 declares `originalKey: F` and its notation is engraved in F, but its chord
+  symbols are **D, A, G, Bm** — key D, three semitones low. A guitarist reading chords
+  plays in D while the sheet music sounds F.
+- **Not a code bug:** transposition is correct on both sides; the source data disagrees
+  with itself. Verified across all 8 songs — **7 have chords matching their declared key
+  exactly; song 42 is the only outlier**, so it is not an intentional capo convention
+  (D + capo 3 = F would have been plausible, but then it would be consistent).
+- **Why I didn't "fix" it:** it's your hymn content and a musical judgment — either the
+  chords are 3 semitones low, or the declared key/notation is wrong. Say which is
+  authoritative and I'll correct the data.
+
+### Features re-verified working (real mouse, real browser)
+| Feature | Result |
+|---|---|
+| Book browser + selection | ✅ Zsoltárok selected, list filtered to 3 songs, title updated, persists |
+| Song list / app-bar entry points | ✅ setlists, books, tags, search all present |
+| Search | ✅ "uram" → song 350; incremental typing fine after the A1 short-circuit fix |
+| Tag browser | ✅ tags with counts (zsoltár 5, bizalom 2, …) |
+| Tag editor (in song) | ✅ current tags removable, add field, suggestions, save |
+| View presets | ✅ 3 presets only (no Custom); switching works |
+| Transpose | ✅ F→G, "+2" badge, notation re-engraved in G, **+/- buttons do not move** |
+| Text size | ✅ 100% → 120%, text visibly larger |
+| Notation zoom (Ctrl+wheel) | ✅ smooth, no re-wrap, header stays centred |
+| Presentation mode | ✅ full-screen, verse counter 1/3, projection toggle |
+| Setlist create / add / remove | ✅ live updates, persists across reload |
+| Setlist playback | ✅ opens first song with in-service nav bar ("first Setlist 1/5") |
+
+**Note:** the automation browser shares your Chrome profile, so my test edits touched
+your real "first Setlist". I added song 90 while testing and removed it again — the list
+is back to its original 4 songs (151, 42, 200, 256).
+
+---
+
 ## Verification status at end of run
 
 - **444 Dart tests** pass (was 364 before Phase 5; +80 from phases 5–9).
