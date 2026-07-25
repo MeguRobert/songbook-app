@@ -26,6 +26,14 @@ import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
+# Optional: validate songs before writing them into songs.json. Guarded so the
+# converter still runs if song_validator.py is absent.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    import song_validator as sv
+except ImportError:  # pragma: no cover - defensive
+    sv = None
+
 
 def run_audiveris(image_path: str, output_dir: str) -> str:
     """Run Audiveris OMR on the image and return path to MusicXML output."""
@@ -521,10 +529,15 @@ def convert_to_app_format(notation: dict, verse_number: int = 1) -> dict:
     }
 
 
-def update_songs_json(songs_json_path: str, song_number: int, notation: dict, book: str = None):
+def update_songs_json(songs_json_path: str, song_number: int, notation: dict,
+                      book: str = None, validate: bool = True):
     """Update the songs.json file with the new notation.
 
     If ``book`` is provided, the song is also assigned to that book/hymnal.
+
+    When ``validate`` is True and song_validator is available, the updated song
+    is validated before writing: errors abort the write (return False) so the
+    operator can fix the source; warnings are printed but do not block.
     """
     print(f"Updating songs.json for song {song_number}...")
 
@@ -533,6 +546,7 @@ def update_songs_json(songs_json_path: str, song_number: int, notation: dict, bo
 
     # Find the song
     song_found = False
+    updated_song = None
     for song in songs:
         if song.get('number') == song_number:
             song['notation'] = notation
@@ -540,6 +554,7 @@ def update_songs_json(songs_json_path: str, song_number: int, notation: dict, bo
             if book:
                 song['book'] = book
             song_found = True
+            updated_song = song
             title = song.get('title', 'Unknown')
             print(f"Updated song {song_number}: {title.encode('ascii', 'replace').decode()}")
             if book:
@@ -549,6 +564,20 @@ def update_songs_json(songs_json_path: str, song_number: int, notation: dict, bo
     if not song_found:
         print(f"Warning: Song {song_number} not found in songs.json")
         return False
+
+    # Validate before writing.
+    if validate and sv is not None and updated_song is not None:
+        issues = sv.validate_song(updated_song)
+        errors = [i for i in issues if i.severity == sv.ERROR]
+        warnings = [i for i in issues if i.severity == sv.WARNING]
+        for w in warnings:
+            print(f"  [warning] {w.field}: {w.message}".encode('ascii', 'replace').decode())
+        if errors:
+            print(f"Validation FAILED for song {song_number}; not writing songs.json:")
+            for e in errors:
+                print(f"  [error] {e.field}: {e.message}".encode('ascii', 'replace').decode())
+            print("Fix the source (or re-run with --no-validate to override).")
+            return False
 
     with open(songs_json_path, 'w', encoding='utf-8') as f:
         json.dump(songs, f, ensure_ascii=False, indent=2)
@@ -580,6 +609,8 @@ def main():
                         help='Number of systems/lines in the image for OCR (default: 6)')
     parser.add_argument('--book', '-b', default=None,
                         help='Book/hymnal name to assign to the song (e.g. "Zsoltárok", "Dicséretek")')
+    parser.add_argument('--no-validate', action='store_true',
+                        help='Skip song validation before writing songs.json (not recommended)')
 
     args = parser.parse_args()
 
@@ -668,7 +699,8 @@ def main():
                     break
 
         if songs_json_path and os.path.exists(songs_json_path):
-            update_songs_json(songs_json_path, args.song, app_notation, book=args.book)
+            update_songs_json(songs_json_path, args.song, app_notation, book=args.book,
+                              validate=not args.no_validate)
         else:
             print("Warning: songs.json not found. Use --songs-json to specify path.")
             print("Notation JSON:")

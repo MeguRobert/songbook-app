@@ -1,0 +1,14 @@
+[
+  {
+    "song": 90,
+    "from_xml": "audiveris_output/zsolt-090.width-800.xml",
+    "book": "Zsoltárok"
+  },
+  {
+    "song": 151,
+    "image": "C:/Work/scans/dics-151.jpg",
+    "book": "Dicséretek",
+    "systems": 8,
+    "ocr_lyrics": true
+  }
+]

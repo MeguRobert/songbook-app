@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 6 (Store Release Prep) integrated into master — next: Phase 7 (Import Pipeline). On-device/store submission and hands-on UAT for Phases 5+ still pending.
+**Current focus:** Phases 6 & 7 complete (codeable slices) overnight. Next: Phase 8 (Setlists) or close out v1.0 store submission. On-device/store-submission, OMR/OCR accuracy, and Phase 5 visual UAT pending Robert.
 
 ## Current Position
 
-Phase: 6 of 12 (Store Release Prep) — COMPLETE (codeable slice; on-device + store submission pending)
+Phase: 7 of 12 (Import Pipeline) — COMPLETE (codeable slice; OMR/OCR accuracy is an external blocker)
 Plan: 2 of 2 in current phase
-Status: Complete (code) — implemented overnight 2026-06-13, merged to master 2026-07-25
-Last activity: 2026-07-25 — Integrated Phase 6 into master (combined 06-01 Semantics a11y label with 04-04 scaled-canvas zoom in the sheet music renderer)
+Status: Complete (code) — implemented overnight 2026-06-13 on branch claude/phase-7-import-pipeline
+Last activity: 2026-06-13 — Completed Phase 6 (store prep) then Phase 7 (import pipeline) codeable slices
 
-Progress: [██████░░░░] 50% (6/12 phases, 15/24 plans)
+Progress: [██████░░░░] 58% (7/12 phases, 14/24 plans)
 
 ## Performance Metrics
 
@@ -89,6 +89,9 @@ Recent decisions affecting current work:
 - [06-02]: App display name "Songbook"; ids stay com.songbook.songbook_app; version 1.0.0+1
 - [06-02]: Zero Android runtime permissions (offline/local-first), documented in manifest
 - [06-02]: Icon/splash via standalone generator config files, NOT pubspec deps (offline-safe); deps added later via `flutter pub add`
+- [07-01]: Pure-stdlib Python validator (no pip); unrecognized key = warning (OCR-tolerant), schema errors = error
+- [07-02]: Validation gate aborts import write on errors (warnings print); `--no-validate` override
+- [07-02]: batch_import uses injectable runner so orchestration is unit-tested without spawning processes
 
 Integration decisions (2026-07-25) are logged in `.planning/INTEGRATION-DECISIONS.md`.
 
@@ -107,8 +110,11 @@ Integration decisions (2026-07-25) are logged in `.planning/INTEGRATION-DECISION
 
 ## Session Continuity
 
-Last session: 2026-07-25
-Stopped at: Phases 5 and 6 merged into master. Test suite (336 previously-untracked tests) committed;
-CI Pages deploy fixed and live. Phase 6's human/online steps (final art, signing, on-device testing,
-screenshots, submission) remain outstanding — see its overnight report. Next: integrate Phase 7.
-Resume file: .planning/phases/06-store-prep/OVERNIGHT-REPORT-2026-06-13.md (Phase 6 human steps)
+Last session: 2026-06-13 (overnight, unattended)
+Stopped at: Completed Phase 6 (store-prep, branch claude/phase-6-store-prep) AND Phase 7
+(import-pipeline, branch claude/phase-7-import-pipeline) codeable slices. Phase 7 branched off Phase 6.
+Both branches local only (never pushed). Human/online blockers recorded in each phase's VERIFICATION
++ the overnight report.
+Resume file: .planning/phases/06-store-prep/OVERNIGHT-REPORT-2026-06-13.md (has Morning resume prompt)
+Note: the report's canonical path C:\Users\rober\.claude\overnight\ is unwritable from the sandbox;
+report kept in-repo (see its banner). Branches: phase-5 → phase-6 → phase-7 (stacked).
