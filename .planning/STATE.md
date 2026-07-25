@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 9 (Tags & Search) complete (code) overnight 2026-06-13 — v1.1 milestone code-complete. Next: visual UAT across Phases 5/8/9 + v1.1 audit/close, or v1.0 store submission. On-device/store-submission and OMR/OCR accuracy pending Robert.
+**Current focus:** Phases 5–9 all merged into master (2026-07-25) — v1.0 + v1.1 code-complete on one branch. Next: hands-on UAT across Phases 5/6/8/9, then the 3 POC ship/drop decisions and v1.0 store submission.
 
 ## Current Position
 
-Phase: 9 of 12 (Tags & Search) — COMPLETE (codeable slice; visual/on-device UAT pending) — last v1.1 phase
+Phase: 9 of 12 (Tags & Search) — COMPLETE (code + verifier; hands-on UAT pending) — last v1.1 phase
 Plan: 2 of 2 in current phase
-Status: Complete (code) — implemented overnight 2026-06-13 on branch claude/phase-9-tags-search
-Last activity: 2026-06-13 — Completed Phase 9 (tag model/logic/persistence + tag browser + tag-filtered search + in-song tag editor)
+Status: All phases 1–9 integrated into master. 444 Dart tests + 37 Python tests green; analyze clean.
+Last activity: 2026-07-25 — Merged Phases 5,6,7,8,9 into master sequentially; fixed a search regression found by the merge (see 09 fix below)
 
 Progress: [████████░░] 75% (9/12 phases, 18/24 plans)
 
