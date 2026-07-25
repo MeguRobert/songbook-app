@@ -25,10 +25,29 @@ class SheetMusicPainter extends CustomPainter {
   late final Paint _legerLinePaint;
   late final Paint _tiePaint;
 
+  /// Colour for lyric syllables and their hyphens.
+  ///
+  /// Separate from [noteColor] because these are drawn from
+  /// [EngravingConstants.lyricStyle], whose colour is baked in for the light
+  /// theme. Left unthemed, the lyrics under the staff — and the chord symbols
+  /// and time signature below — stayed near-black on a dark background and
+  /// were effectively unreadable, while the notes around them were white.
+  final Color lyricColor;
+
+  /// Colour for chord symbols above the staff.
+  final Color chordColor;
+
+  /// Colour for the "Key: X | Time: Y" line above the first system.
+  /// Intentionally muted relative to [lyricColor] — it is metadata, not music.
+  final Color headerColor;
+
   SheetMusicPainter({
     required this.layout,
     this.noteColor = const Color(0xFF333333),
     this.staffColor = const Color(0xFF333333),
+    this.lyricColor = const Color(0xFF333333),
+    this.chordColor = const Color(0xFF1565C0),
+    this.headerColor = const Color(0xFF666666),
     this.showChords = true,
     this.textScale = 1.0,
   }) {
@@ -111,9 +130,9 @@ class SheetMusicPainter extends CustomPainter {
     final textPainter = TextPainter(
       text: TextSpan(
         text: 'Key: ${layout.key} | Time: ${layout.timeSignature}',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
-          color: Color(0xFF666666),
+          color: headerColor,
           fontFamily: 'Arial',
         ),
       ),
@@ -254,7 +273,7 @@ class SheetMusicPainter extends CustomPainter {
     final textPainter = TextPainter(
       text: TextSpan(
         text: number,
-        style: EngravingConstants.timeSigStyle,
+        style: EngravingConstants.timeSigStyle.copyWith(color: noteColor),
       ),
       textDirection: TextDirection.ltr,
     );
@@ -901,7 +920,7 @@ class SheetMusicPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: chord.chord,
-          style: EngravingConstants.chordStyle,
+          style: EngravingConstants.chordStyle.copyWith(color: chordColor),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -917,7 +936,7 @@ class SheetMusicPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: syllable.text,
-          style: EngravingConstants.lyricStyle,
+          style: EngravingConstants.lyricStyle.copyWith(color: lyricColor),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -945,7 +964,7 @@ class SheetMusicPainter extends CustomPainter {
           final hyphenPainter = TextPainter(
             text: TextSpan(
               text: '-',
-              style: EngravingConstants.lyricStyle,
+              style: EngravingConstants.lyricStyle.copyWith(color: lyricColor),
             ),
             textDirection: TextDirection.ltr,
           );
@@ -961,6 +980,11 @@ class SheetMusicPainter extends CustomPainter {
     return oldDelegate.layout != layout ||
         oldDelegate.noteColor != noteColor ||
         oldDelegate.staffColor != staffColor ||
+        // Every colour must be compared, or toggling the theme leaves the
+        // canvas showing the previous palette until something else repaints.
+        oldDelegate.lyricColor != lyricColor ||
+        oldDelegate.chordColor != chordColor ||
+        oldDelegate.headerColor != headerColor ||
         oldDelegate.showChords != showChords ||
         oldDelegate.textScale != textScale;
   }

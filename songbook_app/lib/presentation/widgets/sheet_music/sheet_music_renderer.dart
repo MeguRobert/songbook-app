@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
 import '../../../domain/services/transposition_service.dart';
+import 'notation_palette.dart';
 import 'sheet_music_layout.dart';
 import 'sheet_music_painter.dart';
 
@@ -148,6 +149,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = NotationPalette.of(theme);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -200,14 +202,11 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
                                 child: CustomPaint(
                                   painter: SheetMusicPainter(
                                     layout: layout,
-                                    noteColor:
-                                        theme.brightness == Brightness.dark
-                                            ? Colors.white
-                                            : const Color(0xFF333333),
-                                    staffColor:
-                                        theme.brightness == Brightness.dark
-                                            ? Colors.white70
-                                            : const Color(0xFF333333),
+                                    noteColor: palette.note,
+                                    staffColor: palette.staff,
+                                    lyricColor: palette.lyric,
+                                    chordColor: palette.chord,
+                                    headerColor: palette.header,
                                     showChords: widget.showChords,
                                     textScale: widget.textScale,
                                   ),
