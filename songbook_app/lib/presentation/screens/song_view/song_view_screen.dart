@@ -76,6 +76,8 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   @override
   void dispose() {
     _zoomController.dispose();
+    _ticker.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -85,9 +87,6 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     _zoomFrom = ref.read(textScaleProvider);
     _zoomTo = target.clamp(0.5, 2.0);
     _zoomController.forward(from: 0);
-    _ticker.dispose();
-    _scrollController.dispose();
-    super.dispose();
   }
 
   /// Advances the scroll position by `speed * dt` each frame while playing.
