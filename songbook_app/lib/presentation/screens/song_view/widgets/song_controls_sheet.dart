@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/models/view_config.dart';
+import '../../../../domain/services/capo_service.dart';
 import '../../../providers/providers.dart';
 import '../../../providers/song_provider.dart';
 
@@ -31,6 +32,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
     final transpose = ref.watch(transposeProvider);
     final textScale = ref.watch(textScaleProvider);
     final transpositionService = ref.read(transpositionServiceProvider);
+    final capoService = ref.read(capoServiceProvider);
     final songViewNotifier = ref.read(songViewProvider.notifier);
 
     final targetKey = transpositionService.calculateTargetKey(
@@ -38,6 +40,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
       transpose,
     );
     final hasTranspose = transpose != 0;
+    final capoSuggestions = capoService.suggestionsFor(targetKey);
 
     return Container(
       decoration: BoxDecoration(
@@ -177,6 +180,17 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
 
                 const Divider(height: 32),
 
+                // Capo Section
+                _SectionHeader(text: 'CAPO', theme: theme),
+                const SizedBox(height: 12),
+                _CapoSection(
+                  soundingKey: targetKey,
+                  suggestions: capoSuggestions,
+                  theme: theme,
+                ),
+
+                const Divider(height: 32),
+
                 // Text Size Section
                 _SectionHeader(text: 'TEXT SIZE', theme: theme),
                 const SizedBox(height: 12),
@@ -228,6 +242,106 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Capo helper: shows the recommended capo position + open-chord shape for the
+/// current sounding key, with the remaining CAGED options listed below.
+class _CapoSection extends StatelessWidget {
+  final String soundingKey;
+  final List<CapoSuggestion> suggestions;
+  final ThemeData theme;
+
+  const _CapoSection({
+    required this.soundingKey,
+    required this.suggestions,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (suggestions.isEmpty) {
+      return Text(
+        'No capo suggestion for $soundingKey',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
+
+    final recommended = suggestions.first;
+    final alternatives = suggestions.skip(1).toList();
+    final scheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Recommended suggestion, prominent.
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: scheme.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.straighten, color: scheme.onPrimaryContainer),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      recommended.fret == 0
+                          ? 'No capo needed'
+                          : 'Capo ${recommended.fret}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                    Text(
+                      recommended.fret == 0
+                          ? 'Play open in ${recommended.shapeKey} (sounds $soundingKey)'
+                          : 'Play ${recommended.shapeKey} shapes (sounds $soundingKey)',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (alternatives.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            'Other positions',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final s in alternatives)
+                Chip(
+                  visualDensity: VisualDensity.compact,
+                  label: Text(
+                    s.fret == 0
+                        ? 'Open · ${s.shapeKey}'
+                        : 'Capo ${s.fret} · ${s.shapeKey}',
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }

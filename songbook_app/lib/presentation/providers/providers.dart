@@ -9,6 +9,7 @@ import '../../data/repositories/setlist_repository.dart';
 import '../../data/repositories/tag_repository.dart';
 import '../../domain/services/transposition_service.dart';
 import '../../domain/services/search_service.dart';
+import '../../domain/services/capo_service.dart';
 
 // --- Core Providers ---
 
@@ -59,4 +60,9 @@ final transpositionServiceProvider = Provider<TranspositionService>((ref) {
 /// Search service provider
 final searchServiceProvider = Provider<SearchService>((ref) {
   return const SearchService();
+});
+
+/// Capo helper service provider
+final capoServiceProvider = Provider<CapoService>((ref) {
+  return const CapoService();
 });
