@@ -10,6 +10,7 @@ class SettingsKeys {
   static const fontSize = 'font_size';
   static const viewConfig = 'view_config';
   static const projectionMode = 'projection_mode';
+  static const selectedBook = 'selected_book';
 }
 
 /// Repository for app settings
@@ -110,5 +111,24 @@ class SettingsRepository {
 
   Future<bool> setProjectionMode(bool enabled) {
     return _localDataSource.setBoolSetting(SettingsKeys.projectionMode, enabled);
+  }
+
+  // --- Selected Book ---
+
+  /// Returns the currently selected book name, or null for the "All Songs" view.
+  String? getSelectedBook() {
+    return _localDataSource.getStringSetting(SettingsKeys.selectedBook);
+  }
+
+  Future<bool> setSelectedBook(String bookName) {
+    return _localDataSource.setStringSetting(
+      SettingsKeys.selectedBook,
+      bookName,
+    );
+  }
+
+  /// Clears the selected book, returning to the "All Songs" view.
+  Future<bool> clearSelectedBook() {
+    return _localDataSource.removeStringSetting(SettingsKeys.selectedBook);
   }
 }

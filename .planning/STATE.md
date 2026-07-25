@@ -5,23 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Musicians can view any song with accurate chords and sheet music, transpose it to any key, and sing or play from the app during worship
-**Current focus:** Phase 4 COMPLETE (gaps closed + verified) — next: Phase 5 (Song Books)
+**Current focus:** Phase 5 (Song Books) integrated into master — next: Phase 6 (Store Release Prep). Phases 5+ still await hands-on UAT.
 
 ## Current Position
 
-Phase: 4 of 12 (Controls UI Redesign) — COMPLETE (incl. gap closure)
-Plan: 5 of 5 (04-01, 04-02 + gap-closure 04-03/04-04/04-05)
-Status: Complete — 4 UAT gaps closed, verifier passed 5/5 must-haves
-Last activity: 2026-07-21 — Fixed web pinch-to-zoom (PointerScaleEvent), verified Phase 4
+Phase: 5 of 12 (Song Books) — COMPLETE (code + verifier; hands-on UAT pending)
+Plan: 2 of 2 in current phase
+Status: Complete — implemented overnight 2026-06-13, merged to master 2026-07-25
+Last activity: 2026-07-25 — Integrated Phase 5 into master (convergent Custom-removal conflicts resolved in favour of Phase 4's verified code)
 
-Progress: [████░░░░░░] 33% (4/12 phases, 10/24 plans)
+Progress: [█████░░░░░] 42% (5/12 phases, 13/24 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 5.4 min
-- Total execution time: 0.72 hours
+- Total plans completed: 13
+- Average duration: ~5 min
 
 **By Phase:**
 
@@ -30,11 +29,8 @@ Progress: [████░░░░░░] 33% (4/12 phases, 10/24 plans)
 | 01    | 2     | 18min | 9min     |
 | 02    | 2     | 18min | 9min     |
 | 03    | 2     | 5min  | 2.5min   |
-| 04    | 2     | 6min  | 3min     |
-
-**Recent Trend:**
-- Last 5 plans: 3min, 2min, 2min, 4min
-- Trend: Excellent velocity (Phase 4: 3min average)
+| 04    | 5     | ~40min| 8min     |
+| 05    | 2     | overnight | — |
 
 *Updated after each plan completion*
 
@@ -71,32 +67,41 @@ Recent decisions affecting current work:
 - [04-01]: Material bottom sheet pattern for controls (showModalBottomSheet)
 - [04-01]: Single FAB entry point with tune icon replaces 12-button floating column
 - [04-01]: Pinch-to-zoom gesture for text scaling (GestureDetector onScaleUpdate)
-- [04-01]: AnimatedSize for Custom toggles expand/collapse
 - [04-02]: Presentation mode button in app bar (fullscreen icon, before favorite)
 - [04-02]: isScrollControlled: true for bottom sheet to prevent overflow
 - [04-03]: Custom view chip/toggles removed entirely (dead-end state per UAT) — bottom sheet View section is now exactly 3 presets
 - [04-03]: ViewConfig.fromStorageString normalizes legacy "true:false" persisted data to sheetMusic() preset
 - [04-03]: Visibility(maintainSize: true) pattern for fixed-position transpose Reset button/offset label in bottom-anchored sheet
 - [04-04]: Scale entire sheet-music engraving via canvas.scale(textScale) rather than making EngravingConstants scale-aware
-- [04-04]: Lay out SheetMusicLayoutEngine at availableWidth/textScale so line wrapping matches true visible width at any scale
 - [04-04]: Center header text against unscaled layout.totalWidth (not scaled CustomPaint size) to avoid double-scaling the offset
 - [04-05]: Removed InteractiveViewer from chord/legacy-SVG views (was stealing pinch as matrix zoom); viewport meta user-scalable=no
 - [04-05]: KEY WEB GOTCHA — desktop trackpad pinch / Ctrl+wheel arrives as PointerScaleEvent (a pointer signal), NOT handled by GestureDetector/ScaleGestureRecognizer. Fixed via Listener.onPointerSignal → setTextScale in song_view_screen.dart; GestureDetector retained for mobile touch. Verified with Playwright + instrumentation.
 - [04-05]: Notation zoom is SMOOTH UNIFORM (user choice): layout computed once at viewport width and memoized (independent of textScale); zoom applied as pure visual scale (canvas.scale + scaled SizedBox). No re-wrap, no per-step relayout. Enlarged sheet scrolls horizontally (accepted trade-off vs re-fitting width). Ctrl+wheel notch uses a short eased animation to glide. NOTE: chords/lyrics text view still reflows on scale (not changed).
+- [05-01]: `book` is a flat optional String on Song; books derived dynamically (like tags), no registry
+- [05-01]: Bundled songs split Zsoltárok (≤150) / Dicséretek (>150) — real Hungarian Reformed hymnal sections
+- [05-01]: Unbooked songs grouped under "Other", sorted last, always present in All Songs
+- [05-01]: convert_hymn.py gains --book; assigns book during import (criterion #5)
+- [05-02]: Book browser is a /books screen opened from a song-list app-bar icon (NOT a 4th nav tab)
+- [05-02]: Selected book persists across restart via SettingsRepository (key selected_book)
+- [05-02]: Search + favorites span all books regardless of the active book filter
+
+Integration decisions (2026-07-25) are logged in `.planning/INTEGRATION-DECISIONS.md`.
 
 ### Pending Todos
 
 - [Follow-up] Legacy "no sheet music" placeholder view renders plain-text verses that do NOT honor textScale (04-04 only wired the custom Canvas renderer). Chords/Lyrics presets scale fine. Low priority.
-
-None (redesign-song-controls-ui todo completed by Phase 4)
+- [Follow-up] Consider adding `flutter test` as a CI gate now that the suite is tracked in git.
 
 ### Blockers/Concerns
 
-- No test coverage — changes carry regression risk (unchanged from init, still applies)
-- RadioListTile API deprecation warnings in settings_screen.dart (Flutter 3.32+ info-level)
+- Hands-on UAT pending for Phase 5 onward — these phases were implemented unattended. Phase 4 passed its
+  automated verifier 5/5 and still needed 4 gap fixes once exercised by hand, so treat "verified" as
+  provisional until clicked through.
+- RadioListTile API deprecation warnings in settings_screen.dart (Flutter 3.32+ info-level) — 8 pre-existing analyze infos, unchanged.
+- `.claude/skills/add-song.md` edit (import --book docs) is on disk but untracked (`.claude` is gitignored).
 
 ## Session Continuity
 
-Last session: 2026-07-21
-Stopped at: Phase 4 fully complete — all gap-closure plans (04-03/04/05) executed, pinch-to-zoom web fix verified, gsd-verifier passed 5/5. Ready for Phase 5 (Song Books).
+Last session: 2026-07-25
+Stopped at: Phase 5 merged into master. Test suite (336 previously-untracked tests) committed; CI Pages deploy fixed and live. Next: integrate Phase 6.
 Resume file: None
