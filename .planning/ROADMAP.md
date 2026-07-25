@@ -24,7 +24,7 @@ Ship a polished, store-ready songbook app by building on the existing functional
 ### 📋 v1.1 Content & Organization
 
 - [x] **Phase 7: Import Pipeline** - Improved OCR workflow with less manual correction *(codeable slice: validation + batch + docs; OMR/OCR accuracy pending)*
-- [ ] **Phase 8: Setlists & Playlists** - Ordered song lists for services and events
+- [x] **Phase 8: Setlists & Playlists** - Ordered song lists for services and events *(code complete; visual UAT pending)*
 - [ ] **Phase 9: Tags & Search** - Thematic tags, advanced filtering, search improvements
 
 ### 📋 v2.0 Platform & Sharing
@@ -163,7 +163,13 @@ quality goal — recorded as a blocker; the validation gate partially serves it.
   2. Songs in setlist can be reordered
   3. Setlist provides "next song" navigation during a service
   4. Setlists persist across app restarts
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+
+Plans:
+- [x] 08-01-PLAN.md — Setlist model + persistence (LocalDataSource) + SetlistRepository + unit tests
+- [x] 08-02-PLAN.md — Setlist providers (collection + playback), setlists/detail screens, in-service nav bar, routes
+
+*All 4 criteria met (code + automated tests). Visual/on-device UAT pending (no device overnight). See 08-VERIFICATION.md.*
 
 ### Phase 9: Tags & Search
 **Goal**: Add thematic tagging and advanced filtering to help users find songs by theme, season, or occasion
@@ -223,7 +229,7 @@ Phases 1 → 2 → 3 → 4 in sequence. Phase 5 can run parallel to 2/3/4. Phase
 | 5. Song Books | v1.0 | 2/2 | Complete | 2026-06-13 |
 | 6. Store Release Prep | v1.0 | 2/2 | Complete (code; submission pending) | 2026-06-13 |
 | 7. Import Pipeline | v1.1 | 2/2 | Complete (code; OMR/OCR accuracy pending) | 2026-06-13 |
-| 8. Setlists & Playlists | v1.1 | 0/? | Not started | - |
+| 8. Setlists & Playlists | v1.1 | 2/2 | Complete (code; visual UAT pending) | 2026-06-13 |
 | 9. Tags & Search | v1.1 | 0/? | Not started | - |
 | 10. Cloud Backend | v2.0 | 0/? | Not started | - |
 | 11. Custom Songbooks & Sharing | v2.0 | 0/? | Not started | - |

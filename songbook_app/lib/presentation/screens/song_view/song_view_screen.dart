@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../providers/favorites_provider.dart';
 import '../../providers/song_provider.dart';
+import '../../providers/setlist_provider.dart';
 import '../../../router/app_router.dart';
 import 'widgets/chord_view.dart';
 import 'widgets/song_controls_sheet.dart';
 import 'widgets/sheet_music_view.dart';
+import 'widgets/setlist_nav_bar.dart';
 
 /// Screen for viewing a single song
 class SongViewScreen extends ConsumerStatefulWidget {
@@ -52,6 +54,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     // and modifying provider state in dispose is forbidden by Riverpod.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(songViewProvider.notifier).openSong(widget.songNumber);
+      _syncSetlistPosition();
     });
   }
 
@@ -67,6 +70,18 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     _zoomFrom = ref.read(textScaleProvider);
     _zoomTo = target.clamp(0.5, 2.0);
     _zoomController.forward(from: 0);
+  }
+
+  /// Keeps the setlist playback cursor aligned with the song being shown, so
+  /// the nav bar's position label stays correct when navigating via Next/
+  /// Previous (which use pushReplacement, not a new playback start).
+  void _syncSetlistPosition() {
+    final playback = ref.read(setlistPlaybackProvider);
+    if (playback == null) return;
+    final index = playback.songNumbers.indexOf(widget.songNumber);
+    if (index != -1) {
+      ref.read(setlistPlaybackProvider.notifier).jumpTo(index);
+    }
   }
 
   void _showControlsSheet(BuildContext context, String originalKey) {
@@ -197,6 +212,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
             tooltip: 'Song controls',
             child: const Icon(Icons.tune),
           ),
+          bottomNavigationBar: const SetlistNavBar(),
         );
       },
       loading: () => Scaffold(
