@@ -250,47 +250,51 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                       ],
                     ),
 
-                    const Divider(height: 32),
-
-                    // Auto-scroll Section
-                    _SectionHeader(text: 'AUTO-SCROLL', theme: theme),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        IconButton.filledTonal(
-                          icon: Icon(
-                            autoScroll.isPlaying
-                                ? Icons.pause
-                                : Icons.play_arrow,
+                    // Auto-scroll Section — only in chord/lyrics view. Auto-scroll
+                    // drives ChordView's ScrollController, which isn't mounted in
+                    // sheet-music view, so the controls would be dead there. This
+                    // matches the app bar, which hides its play button the same way.
+                    if (!viewConfig.showNotation) ...[
+                      const Divider(height: 32),
+                      _SectionHeader(text: 'AUTO-SCROLL', theme: theme),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          IconButton.filledTonal(
+                            icon: Icon(
+                              autoScroll.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
+                            ),
+                            onPressed: autoScrollNotifier.toggle,
+                            tooltip: autoScroll.isPlaying
+                                ? 'Stop auto-scroll'
+                                : 'Start auto-scroll',
                           ),
-                          onPressed: autoScrollNotifier.toggle,
-                          tooltip: autoScroll.isPlaying
-                              ? 'Stop auto-scroll'
-                              : 'Start auto-scroll',
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.directions_walk, size: 18),
-                        Expanded(
-                          child: Slider(
-                            value: autoScroll.speed,
-                            min: AutoScrollState.minSpeed,
-                            max: AutoScrollState.maxSpeed,
-                            divisions: 18,
-                            label: '${autoScroll.speed.round()} px/s',
-                            onChanged: autoScrollNotifier.setSpeed,
+                          const SizedBox(width: 8),
+                          const Icon(Icons.directions_walk, size: 18),
+                          Expanded(
+                            child: Slider(
+                              value: autoScroll.speed,
+                              min: AutoScrollState.minSpeed,
+                              max: AutoScrollState.maxSpeed,
+                              divisions: 18,
+                              label: '${autoScroll.speed.round()} px/s',
+                              onChanged: autoScrollNotifier.setSpeed,
+                            ),
                           ),
-                        ),
-                        const Icon(Icons.directions_run, size: 18),
-                      ],
-                    ),
-                    Center(
-                      child: Text(
-                        'Speed remembered per song',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                          const Icon(Icons.directions_run, size: 18),
+                        ],
+                      ),
+                      Center(
+                        child: Text(
+                          'Speed remembered per song',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
 
                     // Bottom padding for safe area
                     const SizedBox(height: 12),
