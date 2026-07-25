@@ -25,6 +25,13 @@ class ScaffoldWithNavBar extends StatelessWidget {
             selectedIcon: Icon(Icons.library_music),
             label: 'Songs',
           ),
+          // Promoted from a cramped app-bar icon on the song list. Playing a
+          // setlist is a core service workflow, not a detail of browsing.
+          NavigationDestination(
+            icon: Icon(Icons.queue_music_outlined),
+            selectedIcon: Icon(Icons.queue_music),
+            label: 'Setlists',
+          ),
           NavigationDestination(
             icon: Icon(Icons.favorite_outline),
             selectedIcon: Icon(Icons.favorite),
@@ -42,8 +49,9 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
-    if (location.startsWith(AppRoutes.favorites)) return 1;
-    if (location.startsWith(AppRoutes.settings)) return 2;
+    if (location.startsWith(AppRoutes.setlists)) return 1;
+    if (location.startsWith(AppRoutes.favorites)) return 2;
+    if (location.startsWith(AppRoutes.settings)) return 3;
     return 0; // Default to home/songs
   }
 
@@ -53,9 +61,12 @@ class ScaffoldWithNavBar extends StatelessWidget {
         context.go(AppRoutes.home);
         break;
       case 1:
-        context.go(AppRoutes.favorites);
+        context.go(AppRoutes.setlists);
         break;
       case 2:
+        context.go(AppRoutes.favorites);
+        break;
+      case 3:
         context.go(AppRoutes.settings);
         break;
     }

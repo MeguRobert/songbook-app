@@ -14,12 +14,18 @@ class SearchState {
   /// Active tag filters (AND semantics). Transient — not persisted.
   final Set<String> activeTags;
 
+  /// Matching lyric line per song number, populated only when the results came
+  /// from the lyrics fallback. A lyrics hit shows nothing in its title to
+  /// explain itself, so the line that matched is displayed under it.
+  final Map<int, String> lyricSnippets;
+
   const SearchState({
     this.query = '',
     this.results = const [],
     this.isSearching = false,
     this.recentSearches = const [],
     this.activeTags = const {},
+    this.lyricSnippets = const {},
   });
 
   SearchState copyWith({
@@ -28,6 +34,7 @@ class SearchState {
     bool? isSearching,
     List<String>? recentSearches,
     Set<String>? activeTags,
+    Map<int, String>? lyricSnippets,
   }) {
     return SearchState(
       query: query ?? this.query,
@@ -35,12 +42,17 @@ class SearchState {
       isSearching: isSearching ?? this.isSearching,
       recentSearches: recentSearches ?? this.recentSearches,
       activeTags: activeTags ?? this.activeTags,
+      lyricSnippets: lyricSnippets ?? this.lyricSnippets,
     );
   }
 
   bool get hasQuery => query.isNotEmpty;
   bool get hasResults => results.isNotEmpty;
   bool get hasTags => activeTags.isNotEmpty;
+
+  /// Whether these results were found by scanning verse text rather than
+  /// titles — drives the "found in lyrics" header.
+  bool get matchedLyricsOnly => lyricSnippets.isNotEmpty;
 
   /// Whether the results area should be shown (vs. the recent-searches hint).
   bool get isFiltering => hasQuery || hasTags;
@@ -123,10 +135,37 @@ class SearchNotifier extends StateNotifier<SearchState> {
       songs = searchService.filterByTags(songs, state.activeTags);
     }
 
-    final results =
-        state.hasQuery ? searchService.search(songs, state.query) : songs;
+    if (!state.hasQuery) {
+      state = state.copyWith(
+        results: songs,
+        isSearching: false,
+        lyricSnippets: const {},
+      );
+      return;
+    }
 
-    state = state.copyWith(results: results, isSearching: false);
+    final results = searchService.search(songs, state.query);
+    if (results.isNotEmpty) {
+      state = state.copyWith(
+        results: results,
+        isSearching: false,
+        lyricSnippets: const {},
+      );
+      return;
+    }
+
+    // Nothing matched on title, number, reference, tag or tune. Only now scan
+    // verse text: run unconditionally, a common word like "az" would bury
+    // every real title match under the whole hymnal. Tag filters still apply —
+    // `songs` is already narrowed.
+    final lyricHits = searchService.searchLyrics(songs, state.query);
+    state = state.copyWith(
+      results: lyricHits.map((h) => h.song).toList(),
+      isSearching: false,
+      lyricSnippets: {
+        for (final hit in lyricHits) hit.song.number: hit.snippet,
+      },
+    );
   }
 
   /// Re-runs the current filter against a changed song catalog.
@@ -152,6 +191,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
       results: [],
       isSearching: false,
       activeTags: {},
+      lyricSnippets: const {},
     );
   }
 

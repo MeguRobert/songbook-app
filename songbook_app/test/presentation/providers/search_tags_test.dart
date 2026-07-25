@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songbook_app/data/datasources/local/local_datasource.dart';
+import 'package:songbook_app/data/models/lyric_line.dart';
 import 'package:songbook_app/data/models/song.dart';
+import 'package:songbook_app/data/models/verse.dart';
 import 'package:songbook_app/data/repositories/song_repository.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/search_provider.dart';
@@ -187,6 +189,129 @@ void main() {
       final songOne = results.firstWhere((s) => s.number == 1);
       expect(songOne.tags, equals(['renamed']));
     });
+  });
+
+  group('lyrics fallback', _lyricsFallbackTests);
+}
+
+/// Falls back to scanning lyrics only when nothing matched on metadata, so a
+/// common word in a verse cannot outrank a real title hit.
+void _lyricsFallbackTests() {
+  Song withLyrics(int number, String title, List<String> lines) => Song(
+        number: number,
+        title: title,
+        originalKey: 'C',
+        verses: [
+          Verse(number: 1, lines: [for (final t in lines) LyricLine(text: t)]),
+        ],
+      );
+
+  final catalog = [
+    withLyrics(1, 'Szent Isten, kit a seregek', ['dicsérnek szüntelen']),
+    withLyrics(42, 'Mint a szép híves patakra', ['a szarvas kívánkozik']),
+  ];
+
+  Future<ProviderContainer> container() async {
+    final prefs = await SharedPreferences.getInstance();
+    return ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        songsProvider.overrideWith((ref) async => catalog),
+      ],
+    );
+  }
+
+  test('a lyrics-only phrase finds the song and carries a snippet', () async {
+    final c = await container();
+    addTearDown(c.dispose);
+
+    await c.read(searchProvider.notifier).search('szarvas');
+
+    final state = c.read(searchProvider);
+    expect(state.results.map((s) => s.number), [42]);
+    expect(state.lyricSnippets[42], contains('szarvas'));
+    expect(state.matchedLyricsOnly, isTrue);
+  });
+
+  test('a title match wins and never triggers the lyrics scan', () async {
+    final c = await container();
+    addTearDown(c.dispose);
+
+    await c.read(searchProvider.notifier).search('patakra');
+
+    final state = c.read(searchProvider);
+    expect(state.results.map((s) => s.number), [42]);
+    expect(state.lyricSnippets, isEmpty);
+    expect(state.matchedLyricsOnly, isFalse);
+  });
+
+  test('snippets are cleared when the query changes to a title match',
+      () async {
+    final c = await container();
+    addTearDown(c.dispose);
+    final notifier = c.read(searchProvider.notifier);
+
+    await notifier.search('szarvas');
+    expect(c.read(searchProvider).lyricSnippets, isNotEmpty);
+
+    await notifier.search('patakra');
+    expect(c.read(searchProvider).lyricSnippets, isEmpty);
+  });
+
+  test('genuinely absent text still yields no results', () async {
+    final c = await container();
+    addTearDown(c.dispose);
+
+    await c.read(searchProvider.notifier).search('villamos');
+
+    final state = c.read(searchProvider);
+    expect(state.results, isEmpty);
+    expect(state.lyricSnippets, isEmpty);
+  });
+
+  test('the lyrics scan stays inside the active tag filter', () async {
+    final tagged = [
+      Song(
+        number: 5,
+        title: 'Tagged',
+        originalKey: 'C',
+        tags: const ['advent'],
+        verses: const [
+          Verse(number: 1, plainText: 'a szarvas fut'),
+        ],
+      ),
+      Song(
+        number: 6,
+        title: 'Untagged',
+        originalKey: 'C',
+        verses: const [
+          Verse(number: 1, plainText: 'a szarvas fut'),
+        ],
+      ),
+    ];
+    final prefs = await SharedPreferences.getInstance();
+    final c = ProviderContainer(overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      songsProvider.overrideWith((ref) async => tagged),
+    ]);
+    addTearDown(c.dispose);
+    final notifier = c.read(searchProvider.notifier);
+
+    await notifier.toggleTag('advent');
+    await notifier.search('szarvas');
+
+    expect(c.read(searchProvider).results.map((s) => s.number), [5]);
+  });
+
+  test('clear() drops snippets along with the query', () async {
+    final c = await container();
+    addTearDown(c.dispose);
+    final notifier = c.read(searchProvider.notifier);
+
+    await notifier.search('szarvas');
+    notifier.clear();
+
+    expect(c.read(searchProvider).lyricSnippets, isEmpty);
   });
 }
 

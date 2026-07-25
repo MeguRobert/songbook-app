@@ -1,11 +1,11 @@
 {
-    "name": "songbook_app",
-    "short_name": "songbook_app",
+    "name": "Songbook — Worship Hymnal",
+    "short_name": "Songbook",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#4338CA",
+    "theme_color": "#4338CA",
+    "description": "A worship hymnal with sheet music, chords, transposition, capo help and setlists.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -2,9 +2,38 @@ import '../../core/extensions/string_extensions.dart';
 import '../../data/models/song.dart';
 import '../../data/models/tag.dart';
 
+/// A song found by scanning verse text, with the line that matched.
+///
+/// The [snippet] is what justifies the hit to the user: a lyrics result has
+/// nothing in its title or number explaining why it is on screen, so the
+/// matching line has to travel with it.
+class LyricMatch {
+  final Song song;
+  final String snippet;
+
+  const LyricMatch({required this.song, required this.snippet});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LyricMatch &&
+          runtimeType == other.runtimeType &&
+          song.number == other.song.number &&
+          snippet == other.snippet;
+
+  @override
+  int get hashCode => Object.hash(song.number, snippet);
+
+  @override
+  String toString() => 'LyricMatch(${song.number}, "$snippet")';
+}
+
 /// Service for searching songs
 class SearchService {
   const SearchService();
+
+  /// Longest snippet returned by [searchLyrics] before it is windowed.
+  static const _snippetBudget = 80;
 
   /// Searches songs by query string
   ///
@@ -39,6 +68,84 @@ class SearchService {
     });
 
     return scored.map((item) => item.song).toList();
+  }
+
+  /// Scans verse text for [query] and returns one hit per matching song.
+  ///
+  /// This is the full-text half of search. [search] deliberately does not look
+  /// at lyrics — a common word would drown the title matches — so the provider
+  /// calls this only when [search] comes back empty. Matching is normalised
+  /// the same way as everywhere else, so accents and case do not matter.
+  ///
+  /// Songs come back in number order: a lyrics hit has no meaningful relevance
+  /// ranking to sort by, and hymn numbers are how this book is navigated.
+  List<LyricMatch> searchLyrics(List<Song> songs, String query) {
+    final normalizedQuery = query.normalizeForSearch();
+    if (normalizedQuery.isEmpty) return const [];
+
+    final matches = <LyricMatch>[];
+    for (final song in songs) {
+      final line = _firstMatchingLine(song, normalizedQuery);
+      if (line != null) {
+        matches.add(LyricMatch(song: song, snippet: _snippet(line, normalizedQuery)));
+      }
+    }
+
+    matches.sort((a, b) => a.song.number.compareTo(b.song.number));
+    return matches;
+  }
+
+  /// The first individual line of [song] containing [normalizedQuery].
+  ///
+  /// Verses come in two shapes — structured [LyricLine]s or a `plainText`
+  /// blob — and `displayText` flattens both to newline-joined text, so
+  /// splitting on newlines gives one comparable unit either way.
+  String? _firstMatchingLine(Song song, String normalizedQuery) {
+    for (final verse in song.verses) {
+      for (final line in verse.displayText.split('\n')) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty) continue;
+        if (trimmed.normalizeForSearch().contains(normalizedQuery)) {
+          return trimmed;
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Trims [line] to a readable window around the match.
+  ///
+  /// Short lines — nearly all hymn lines — are returned untouched. A long
+  /// `plainText` paragraph is cut down to roughly [_snippetBudget] characters
+  /// centred on the hit, so the match is always visible rather than scrolled
+  /// off the end of the list tile.
+  String _snippet(String line, String normalizedQuery) {
+    if (line.length <= _snippetBudget) return line;
+
+    // Normalisation is 1:1 per character (case folding + diacritic
+    // stripping), so an index into the normalised form also indexes the
+    // original — no offset mapping needed.
+    final at = line.normalizeForSearch().indexOf(normalizedQuery);
+    if (at < 0) return line;
+
+    final slack = (_snippetBudget - normalizedQuery.length).clamp(0, _snippetBudget);
+    var start = at - slack ~/ 2;
+    var end = at + normalizedQuery.length + slack ~/ 2;
+    if (start < 0) {
+      end -= start;
+      start = 0;
+    }
+    if (end > line.length) {
+      start -= end - line.length;
+      end = line.length;
+    }
+    start = start.clamp(0, line.length);
+
+    final buffer = StringBuffer();
+    if (start > 0) buffer.write('…');
+    buffer.write(line.substring(start, end).trim());
+    if (end < line.length) buffer.write('…');
+    return buffer.toString();
   }
 
   /// Filters songs by tag
