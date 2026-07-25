@@ -9,6 +9,7 @@ import '../../models/setlist.dart';
 class LocalDataSource {
   static const _favoritesKey = 'favorites';
   static const _setlistsKey = 'setlists';
+  static const _tagOverridesKey = 'song_tag_overrides';
   static const _settingsPrefix = 'settings_';
 
   final SharedPreferences _prefs;
@@ -120,6 +121,51 @@ class LocalDataSource {
   Future<bool> saveSetlists(List<Setlist> setlists) async {
     final jsonString = json.encode(setlists.map((s) => s.toJson()).toList());
     return _prefs.setString(_setlistsKey, jsonString);
+  }
+
+  // --- Tag Overrides ---
+
+  /// Gets per-song tag overrides keyed by song number.
+  ///
+  /// An override REPLACES the bundled tags for that song (uniformly handles
+  /// add and remove). Returns an empty map if none stored or on decode error.
+  Map<int, List<String>> getTagOverrides() {
+    final jsonString = _prefs.getString(_tagOverridesKey);
+    if (jsonString == null) return {};
+
+    try {
+      final Map<String, dynamic> decoded = json.decode(jsonString);
+      final result = <int, List<String>>{};
+      decoded.forEach((key, value) {
+        final number = int.tryParse(key);
+        if (number == null || value is! List) return;
+        result[number] = value.map((e) => e.toString()).toList();
+      });
+      return result;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Saves all per-song tag overrides as a single JSON blob.
+  Future<bool> saveTagOverrides(Map<int, List<String>> overrides) async {
+    final encodable =
+        overrides.map((key, value) => MapEntry(key.toString(), value));
+    return _prefs.setString(_tagOverridesKey, json.encode(encodable));
+  }
+
+  /// Sets the tag override for a single song.
+  Future<bool> setSongTags(int songNumber, List<String> tags) async {
+    final overrides = getTagOverrides();
+    overrides[songNumber] = tags;
+    return saveTagOverrides(overrides);
+  }
+
+  /// Clears the tag override for a single song (reverting to bundled tags).
+  Future<bool> clearSongTags(int songNumber) async {
+    final overrides = getTagOverrides();
+    overrides.remove(songNumber);
+    return saveTagOverrides(overrides);
   }
 
   // --- Settings ---

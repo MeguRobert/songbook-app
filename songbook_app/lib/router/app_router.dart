@@ -8,6 +8,7 @@ import '../presentation/screens/favorites/favorites_screen.dart';
 import '../presentation/screens/search/search_screen.dart';
 import '../presentation/screens/settings/settings_screen.dart';
 import '../presentation/screens/books/book_browser_screen.dart';
+import '../presentation/screens/tags/tag_browser_screen.dart';
 import '../presentation/screens/setlists/setlists_screen.dart';
 import '../presentation/screens/setlists/setlist_detail_screen.dart';
 import '../presentation/screens/presentation/presentation_screen.dart';
@@ -22,11 +23,14 @@ class AppRoutes {
   static const search = '/search';
   static const settings = '/settings';
   static const books = '/books';
+  static const tags = '/tags';
   static const setlists = '/setlists';
 
   static String songPath(int id) => '/song/$id';
   static String presentationPath(int id) => '/presentation/$id';
   static String setlistDetailPath(String id) => '/setlists/$id';
+  static String searchWithTag(String tag) =>
+      '/search?tag=${Uri.encodeComponent(tag)}';
 }
 
 /// Router provider
@@ -86,13 +90,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.search,
         name: 'search',
-        builder: (context, state) => const SearchScreen(),
+        builder: (context, state) {
+          final tag = state.uri.queryParameters['tag'];
+          return SearchScreen(initialTag: tag);
+        },
       ),
       // Book browser route (outside shell for full-screen)
       GoRoute(
         path: AppRoutes.books,
         name: 'books',
         builder: (context, state) => const BookBrowserScreen(),
+      ),
+      // Tag browser route (outside shell for full-screen)
+      GoRoute(
+        path: AppRoutes.tags,
+        name: 'tags',
+        builder: (context, state) => const TagBrowserScreen(),
       ),
       // Setlists routes (outside shell for full-screen)
       GoRoute(
