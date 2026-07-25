@@ -61,15 +61,35 @@ class Setlist {
     );
   }
 
+  /// Value equality over ALL fields, including [songNumbers].
+  ///
+  /// This must not be id-only. Riverpod (and Flutter's widget diffing) decide
+  /// whether to rebuild by comparing old and new values with `==`, so a
+  /// Setlist whose equality ignored its song list made providers report "no
+  /// change" after add/remove/reorder — the write persisted but the UI only
+  /// refreshed after leaving and re-entering the screen.
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Setlist &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! Setlist || runtimeType != other.runtimeType) return false;
+    if (songNumbers.length != other.songNumbers.length) return false;
+    for (var i = 0; i < songNumbers.length; i++) {
+      if (songNumbers[i] != other.songNumbers[i]) return false;
+    }
+    return id == other.id &&
+        name == other.name &&
+        createdAt == other.createdAt &&
+        updatedAt == other.updatedAt;
+  }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(
+        id,
+        name,
+        Object.hashAll(songNumbers),
+        createdAt,
+        updatedAt,
+      );
 
   @override
   String toString() =>

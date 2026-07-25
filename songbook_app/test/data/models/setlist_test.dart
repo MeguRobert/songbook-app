@@ -72,14 +72,30 @@ void main() {
       expect(renamed.createdAt, original.createdAt);
     });
 
-    test('equality is id-based', () {
+    // Equality must cover songNumbers: providers compare old/new values with
+    // == to decide whether to rebuild, so id-only equality silently suppressed
+    // UI updates after add/remove/reorder.
+    test('equality is value-based, including songNumbers', () {
       final a = makeSetlist(id: 'sl_1', name: 'A', songNumbers: const [1]);
-      final b = makeSetlist(id: 'sl_1', name: 'B', songNumbers: const [2, 3]);
-      final c = makeSetlist(id: 'sl_2', name: 'A', songNumbers: const [1]);
+      final sameAsA =
+          makeSetlist(id: 'sl_1', name: 'A', songNumbers: const [1]);
+      final differentSongs =
+          makeSetlist(id: 'sl_1', name: 'A', songNumbers: const [1, 2]);
+      final differentOrder =
+          makeSetlist(id: 'sl_1', name: 'A', songNumbers: const [2, 1]);
+      final differentName =
+          makeSetlist(id: 'sl_1', name: 'B', songNumbers: const [1]);
+      final differentId =
+          makeSetlist(id: 'sl_2', name: 'A', songNumbers: const [1]);
 
-      expect(a, equals(b));
-      expect(a.hashCode, b.hashCode);
-      expect(a, isNot(equals(c)));
+      expect(a, equals(sameAsA));
+      expect(a.hashCode, sameAsA.hashCode);
+
+      // The cases that previously compared equal and broke the UI:
+      expect(a, isNot(equals(differentSongs)));
+      expect(a, isNot(equals(differentOrder)));
+      expect(a, isNot(equals(differentName)));
+      expect(a, isNot(equals(differentId)));
     });
   });
 }

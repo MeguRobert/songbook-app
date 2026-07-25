@@ -57,6 +57,10 @@ class SetlistDetailScreen extends ConsumerWidget {
 
           return ReorderableListView.builder(
             itemCount: songs.length,
+            // Suppress the automatic trailing drag handle: on desktop/web it
+            // is injected at the trailing edge, where it collided with the
+            // Remove button. We supply our own handle as `leading` instead.
+            buildDefaultDragHandles: false,
             onReorder: (oldIndex, newIndex) {
               if (newIndex > oldIndex) newIndex--;
               final ordered = songs.map((s) => s.number).toList();
@@ -68,7 +72,13 @@ class SetlistDetailScreen extends ConsumerWidget {
               final song = songs[index];
               return ListTile(
                 key: ValueKey(song.number),
-                leading: const Icon(Icons.drag_handle),
+                // Wrapped in a drag listener so the handle actually drags —
+                // previously this was a bare Icon that looked draggable but
+                // did nothing.
+                leading: ReorderableDragStartListener(
+                  index: index,
+                  child: const Icon(Icons.drag_handle),
+                ),
                 title: Text('${song.number}. ${song.title}'),
                 subtitle: song.reference != null ? Text(song.reference!) : null,
                 trailing: IconButton(
