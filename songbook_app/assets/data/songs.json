@@ -136,15 +136,15 @@
             "text": "Mint a szép híves patakra",
             "chords": [
               {
-                "chord": "D",
+                "chord": "F",
                 "position": 0
               },
               {
-                "chord": "A",
+                "chord": "C",
                 "position": 9
               },
               {
-                "chord": "D",
+                "chord": "F",
                 "position": 18
               }
             ]
@@ -153,15 +153,15 @@
             "text": "a szarvas kívánkozik,",
             "chords": [
               {
-                "chord": "G",
+                "chord": "Bb",
                 "position": 0
               },
               {
-                "chord": "D",
+                "chord": "F",
                 "position": 9
               },
               {
-                "chord": "A",
+                "chord": "C",
                 "position": 16
               }
             ]
@@ -170,15 +170,15 @@
             "text": "Lelkem úgy óhajt Uramra,",
             "chords": [
               {
-                "chord": "D",
+                "chord": "F",
                 "position": 0
               },
               {
-                "chord": "Bm",
+                "chord": "Dm",
                 "position": 7
               },
               {
-                "chord": "A",
+                "chord": "C",
                 "position": 17
               }
             ]
@@ -187,19 +187,19 @@
             "text": "és hozzá fohászkodik.",
             "chords": [
               {
-                "chord": "G",
+                "chord": "Bb",
                 "position": 0
               },
               {
-                "chord": "D",
+                "chord": "F",
                 "position": 8
               },
               {
-                "chord": "A",
+                "chord": "C",
                 "position": 14
               },
               {
-                "chord": "D",
+                "chord": "F",
                 "position": 18
               }
             ]
