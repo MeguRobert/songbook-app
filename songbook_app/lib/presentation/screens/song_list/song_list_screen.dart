@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../router/app_router.dart';
 import '../../providers/book_provider.dart';
 import '../../providers/song_provider.dart';
+import 'widgets/recent_songs_rail.dart';
 import 'widgets/song_list_tile.dart';
 
 /// Main screen showing the list of songs, filtered by the selected book.
@@ -52,15 +53,23 @@ class SongListScreen extends ConsumerWidget {
             return _EmptyState(selectedBook: selectedBook);
           }
 
-          return ListView.builder(
-            itemCount: songs.length,
-            itemBuilder: (context, index) {
-              final song = songs[index];
-              return SongListTile(
-                song: song,
-                onTap: () => context.push(AppRoutes.songPath(song.number)),
-              );
-            },
+          return Column(
+            children: [
+              const RecentSongsRail(),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: songs.length,
+                  itemBuilder: (context, index) {
+                    final song = songs[index];
+                    return SongListTile(
+                      song: song,
+                      onTap: () =>
+                          context.push(AppRoutes.songPath(song.number)),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
         loading: () => const Center(

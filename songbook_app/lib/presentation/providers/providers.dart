@@ -7,6 +7,7 @@ import '../../data/repositories/favorites_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../data/repositories/setlist_repository.dart';
 import '../../data/repositories/tag_repository.dart';
+import '../../data/repositories/recents_repository.dart';
 import '../../domain/services/transposition_service.dart';
 import '../../domain/services/search_service.dart';
 import '../../domain/services/capo_service.dart';
@@ -48,6 +49,11 @@ final setlistRepositoryProvider = Provider<SetlistRepository>((ref) {
 /// Tag repository provider (per-song tag overrides)
 final tagRepositoryProvider = Provider<TagRepository>((ref) {
   return TagRepository(ref.watch(localDataSourceProvider));
+});
+
+/// Recently-viewed songs repository provider
+final recentsRepositoryProvider = Provider<RecentsRepository>((ref) {
+  return RecentsRepository(ref.watch(localDataSourceProvider));
 });
 
 // --- Service Providers ---
