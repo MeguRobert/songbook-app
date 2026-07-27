@@ -142,6 +142,48 @@ void main() {
       }
     });
 
+    test('transposes the bass note of a slash chord, not just the root', () {
+      // Regression: parseChord hands back "/B" as opaque quality, so the bass
+      // used to ride along untransposed and G/B +2 came out as A/B.
+      expect(ChordTransposer.transposeChord('G/B', 2), 'A/C#');
+      expect(ChordTransposer.transposeChord('C/E', 2), 'D/F#');
+      expect(ChordTransposer.transposeChord('D/F#', -2), 'C/E');
+      expect(ChordTransposer.transposeChord('D7/F#', 2), 'E7/G#');
+      expect(ChordTransposer.transposeChord('Am7/G', 3), 'Cm7/A#');
+    });
+
+    test('slash chords follow useFlats on both sides', () {
+      expect(ChordTransposer.transposeChord('Bb/D', 2), 'C/E');
+      expect(ChordTransposer.transposeChord('Bb/D', 1, useFlats: true),
+          'B/Eb');
+      expect(ChordTransposer.transposeChord('C/E', 1, useFlats: true),
+          'Db/F');
+      // Only the bass gains an accidental here.
+      expect(ChordTransposer.transposeChord('C/G', 2), 'D/A');
+      expect(ChordTransposer.transposeChord('C/A', 3), 'D#/C');
+    });
+
+    test('slash chords round-trip and wrap like plain chords', () {
+      // Sharp-spelled only: a flat root comes back sharp-spelled by default,
+      // exactly as it does for plain chords.
+      for (final chord in ['G/B', 'C/E', 'F#m7/A']) {
+        for (var n = 1; n <= 6; n++) {
+          final up = ChordTransposer.transposeChord(chord, n);
+          expect(ChordTransposer.transposeChord(up, -n), chord,
+              reason: '$chord +$n -$n');
+        }
+      }
+      expect(ChordTransposer.transposeChord('B/G#', 1), 'C/A');
+      expect(ChordTransposer.transposeChord('G/B', 0), 'G/B');
+    });
+
+    test('an unresolvable side leaves the whole slash chord alone', () {
+      // Half-transposing would quietly change the harmony.
+      expect(ChordTransposer.transposeChord('G/H', 2), 'G/H');
+      expect(ChordTransposer.transposeChord('x/G', 2), 'x/G');
+      expect(ChordTransposer.transposeChord('Cb/G', 2), 'Cb/G');
+    });
+
     test('returns unparseable chords unchanged', () {
       expect(ChordTransposer.transposeChord('H', 2), 'H');
       expect(ChordTransposer.transposeChord('', 2), '');

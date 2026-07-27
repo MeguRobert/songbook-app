@@ -1,0 +1,281 @@
+import '../../data/models/chord_position.dart';
+import '../../data/models/lyric_line.dart';
+import '../../data/models/verse.dart';
+
+/// The result of parsing a pasted chord sheet.
+///
+/// Directives are optional in real-world pastes, so [title] and [key] are null
+/// whenever the source did not declare them — callers must treat them as hints,
+/// never as guaranteed data.
+class ParsedChordSheet {
+  /// Verses in source order, numbered from 1.
+  final List<Verse> verses;
+
+  /// Value of `{title:}` / `{t:}`, if present.
+  final String? title;
+
+  /// Value of `{key:}` / `{k:}`, if present.
+  final String? key;
+
+  /// Free text from `{c:}` / `{comment:}` directives, in source order.
+  final List<String> comments;
+
+  /// Numbers of the verses that sat inside a `{soc}` … `{eoc}` block.
+  ///
+  /// [Verse] has no chorus flag, so the marking is reported here rather than
+  /// forcing a model change on every consumer of the song data.
+  final Set<int> chorusVerseNumbers;
+
+  /// Non-fatal problems: ambiguous lines, brackets that were not chords,
+  /// directives we did not understand. Each entry names the source line.
+  final List<String> warnings;
+
+  const ParsedChordSheet({
+    this.verses = const [],
+    this.title,
+    this.key,
+    this.comments = const [],
+    this.chorusVerseNumbers = const {},
+    this.warnings = const [],
+  });
+
+  /// True when nothing parseable was found.
+  bool get isEmpty => verses.isEmpty;
+
+  @override
+  String toString() => 'ParsedChordSheet(verses: ${verses.length}, '
+      'title: $title, key: $key, warnings: ${warnings.length})';
+}
+
+/// Parses pasted chord-sheet text into [Verse]s.
+///
+/// Three input shapes are accepted, and they may be mixed in one paste:
+///
+/// 1. Inline / ChordPro brackets — `[G]Amazing [C]grace`
+/// 2. Chords on the line above the lyrics:
+///    ```
+///    G       C
+///    Amazing grace
+///    ```
+/// 3. Plain lyrics with no chords at all.
+///
+/// Both chorded shapes collapse to the same output because
+/// [ChordPosition.position] is a character index into [LyricLine.text]: a
+/// bracket's position is the length of the text stripped so far, and a chord
+/// token's position in shape 2 is its column in the line above. Neither shape
+/// loses information.
+///
+/// A blank line ends a verse. Verses are numbered from 1 and carry
+/// `hasNotation: false` — engraved notation comes from a different source.
+class ChordSheetParser {
+  const ChordSheetParser();
+
+  /// Strict chord token, used only to DECIDE WHETHER a token is a chord.
+  ///
+  /// This must never be merged with `ChordTransposer`'s `^([A-G][#b]?)(.*)$`.
+  /// There, quality is `.*` — correct for transposing a token already known to
+  /// be a chord, and catastrophic as a detector, because every word starting
+  /// with A–G "matches". Hungarian lyrics are full of them: `Csak Egy Az`
+  /// reads as C+"sak", E+"gy", A+"z", so the whole line would be classified as
+  /// chords and its words silently destroyed. Hence the quality whitelist.
+  ///
+  /// Extensions may carry their own accidental (`Em7b5`, `C7#9`) — that `b` is
+  /// part of a numbered extension, which is why it is only allowed in front of
+  /// digits and not as a bare trailing letter (`Bbb` is not a chord here).
+  static final RegExp _chordToken = RegExp(
+    r'^[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*(?:/[A-G][#b]?)?$',
+  );
+
+  /// A lone root letter with no accidental and no quality.
+  ///
+  /// `A` and `E` are both plausible one-chord lines and plausible lyrics (in
+  /// Hungarian `A` is the definite article), so a single-token line of this
+  /// shape is resolved towards lyrics — losing a chord is recoverable, losing
+  /// a line of words is not.
+  static final RegExp _bareRoot = RegExp(r'^[A-G]$');
+
+  /// `{name}` or `{name: value}` occupying a whole line.
+  static final RegExp _directive =
+      RegExp(r'^\{\s*([^:}]+?)\s*(?::\s*(.*?)\s*)?\}$');
+
+  static final RegExp _hasBracket = RegExp(r'\[[^\]]*\]');
+
+  static final RegExp _token = RegExp(r'\S+');
+
+  /// Returns true when [token] is unambiguously a chord symbol.
+  ///
+  /// Whitespace is not tolerated: callers split lines into tokens first.
+  bool isChordToken(String token) => _chordToken.hasMatch(token);
+
+  /// Returns true when [line] should be read as a row of chords.
+  ///
+  /// The rule is all-or-nothing: EVERY whitespace-separated token must be a
+  /// chord. One ordinary word is enough to make the line lyrics, which is what
+  /// keeps a line like `Csak Egy Az` intact even though each of its words
+  /// starts with a note letter.
+  ///
+  /// A single bare root (`A`) returns false by design; see [_bareRoot].
+  bool isChordLine(String line) {
+    final tokens = _token.allMatches(line).map((m) => m.group(0)!).toList();
+    if (tokens.isEmpty) return false;
+    if (tokens.length == 1 && _bareRoot.hasMatch(tokens.first)) return false;
+    return tokens.every(isChordToken);
+  }
+
+  /// Parses [input] into verses plus whatever metadata it carried.
+  ParsedChordSheet parse(String input) {
+    final lines = input.split(RegExp(r'\r\n|\r|\n'));
+
+    final verses = <Verse>[];
+    final comments = <String>[];
+    final chorusVerses = <int>{};
+    final warnings = <String>[];
+    var pending = <LyricLine>[];
+    String? title;
+    String? key;
+    var inChorus = false;
+    var verseNumber = 1;
+
+    void flush() {
+      if (pending.isEmpty) return;
+      verses.add(Verse(
+        number: verseNumber,
+        hasNotation: false,
+        lines: List.of(pending),
+      ));
+      if (inChorus) chorusVerses.add(verseNumber);
+      verseNumber++;
+      pending = <LyricLine>[];
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      final raw = lines[i];
+      final trimmed = raw.trim();
+      final lineNo = i + 1;
+
+      if (trimmed.isEmpty) {
+        flush();
+        continue;
+      }
+
+      final directive = _directive.firstMatch(trimmed);
+      if (directive != null) {
+        final name = directive.group(1)!.toLowerCase();
+        final value = directive.group(2) ?? '';
+        switch (name) {
+          case 't':
+          case 'title':
+            title = value.isEmpty ? title : value;
+          case 'k':
+          case 'key':
+            key = value.isEmpty ? key : value;
+          case 'c':
+          case 'ci':
+          case 'comment':
+          case 'comment_italic':
+            comments.add(value);
+          case 'soc':
+          case 'start_of_chorus':
+            // A chorus is its own block, so it always starts a fresh verse.
+            flush();
+            inChorus = true;
+          case 'eoc':
+          case 'end_of_chorus':
+            flush();
+            inChorus = false;
+          default:
+            warnings.add('Line $lineNo: ignored unknown directive "$trimmed".');
+        }
+        continue;
+      }
+
+      // Explicit brackets win: the author already marked the chords.
+      if (_hasBracket.hasMatch(raw)) {
+        pending.add(_parseInline(raw, lineNo, warnings));
+        continue;
+      }
+
+      if (isChordLine(raw)) {
+        final next = i + 1 < lines.length ? lines[i + 1] : null;
+        if (next != null && _isLyricLine(next)) {
+          pending.add(_parseChordsOverLyrics(raw, next));
+          i++; // the lyric line was consumed as part of this pair
+        } else {
+          // Instrumental / intro run with nothing underneath. Positions past
+          // the end of an empty text are fine: the renderer uses them for
+          // horizontal offset only, it never indexes into the text.
+          pending.add(_parseChordsOverLyrics(raw, ''));
+        }
+        continue;
+      }
+
+      if (_bareRoot.hasMatch(trimmed)) {
+        warnings.add('Line $lineNo: "$trimmed" could be a one-chord line or a '
+            'lyric; treated as a lyric.');
+      }
+      pending.add(LyricLine(text: raw.trimRight()));
+    }
+
+    flush();
+
+    return ParsedChordSheet(
+      verses: verses,
+      title: title,
+      key: key,
+      comments: comments,
+      chorusVerseNumbers: chorusVerses,
+      warnings: warnings,
+    );
+  }
+
+  /// True when [line] can serve as the lyrics under a chord line.
+  bool _isLyricLine(String line) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) return false;
+    if (_directive.hasMatch(trimmed)) return false;
+    if (_hasBracket.hasMatch(line)) return false;
+    return !isChordLine(line);
+  }
+
+  /// Strips `[…]` markers, recording each one at the length of the text
+  /// emitted so far — which is exactly its index in the finished lyric.
+  LyricLine _parseInline(String raw, int lineNo, List<String> warnings) {
+    final text = StringBuffer();
+    final chords = <ChordPosition>[];
+
+    var i = 0;
+    while (i < raw.length) {
+      final char = raw[i];
+      if (char == '[') {
+        final close = raw.indexOf(']', i + 1);
+        if (close != -1) {
+          final token = raw.substring(i + 1, close).trim();
+          if (isChordToken(token)) {
+            chords.add(ChordPosition(chord: token, position: text.length));
+            i = close + 1;
+            continue;
+          }
+          // Section markers and repeat counts (`[Chorus]`, `[2x]`) are not
+          // chords; keeping them as visible text beats inventing a chord.
+          warnings.add(
+              'Line $lineNo: "[$token]" is not a chord; kept as lyric text.');
+        }
+      }
+      text.write(char);
+      i++;
+    }
+
+    return LyricLine(text: text.toString().trimRight(), chords: chords);
+  }
+
+  /// Maps each chord token's column in [chordLine] onto the text of
+  /// [lyricLine]. Leading whitespace is preserved on both so the columns stay
+  /// aligned; only trailing whitespace is dropped.
+  LyricLine _parseChordsOverLyrics(String chordLine, String lyricLine) {
+    final chords = _token
+        .allMatches(chordLine)
+        .map((m) => ChordPosition(chord: m.group(0)!, position: m.start))
+        .toList();
+    return LyricLine(text: lyricLine.trimRight(), chords: chords);
+  }
+}
