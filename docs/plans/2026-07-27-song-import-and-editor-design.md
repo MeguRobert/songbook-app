@@ -162,6 +162,16 @@ guesses when derivable (`{title:}`, or key from the first / most common chord) �
 Validation, in the spirit of the old app (`song_repository.dart:86`): title required, at least one
 verse, whitespace-only rejected, duplicate title warned.
 
+**Parser done** — `lib/domain/services/chord_sheet_parser.dart`, 34 tests. Inline and two-line input
+produce byte-identical output, verified. The strict whitelist rejects `Csak Egy Az` while accepting
+`G7sus4`, `Em7b5`, `C7#9`; the quality group had to be *repeatable*, not one-quality-then-digits, or
+real chart chords fail. Slash-chord transposition fixed alongside (`G/B` +2 → `A/C#`).
+
+Positions are deliberately **not** clamped to `text.length` — a chord may overhang a short lyric, and
+`chord_view.dart` uses `position` only as a horizontal offset, never as a string index.
+
+**Still to build:** the review screen, the metadata form, and local persistence for user songs.
+
 *Depends on: A. Large.*
 
 ---
@@ -185,6 +195,26 @@ The importer must choose a reduction rule (melody / top staff / voice 1) and wil
 idea — that feature's data arrives at this exact line of code. Even while only the melody renders,
 retain the other voices in the imported draft rather than dropping them, or every file has to be
 re-imported when choral support lands.
+
+**Parser done** — `lib/domain/services/musicxml_importer.dart`, 40 tests. Reduction rule is first
+part → lowest staff → lowest voice (the melody under both common SATB encodings); a `<chord>` reduces
+to its top note. Non-melody voices come back in `additionalVoices`, measure-aligned with the melody
+and rest-padded, with a warning naming how many.
+
+Verified end-to-end against the real pipeline: `tools/audiveris_output/zsolt-090.mxl` reproduces
+`tools/audiveris_output.json` exactly (key Bb, 6 measures, 68 beats, identical pitch/duration
+sequence).
+
+Departures from the Python, all fixes: it ignored `<chord>` and emitted every member as a sequential
+beat (destroying the bar's rhythm), ignored `<voice>`/`<staff>` (interleaving all four parts),
+and defaulted a missing `<type>` to quarter. Empty measures are now kept, because dropping them
+desynchronises the retained voices.
+
+**Known gap, pre-existing:** `SongNotation.pickup` is declared but read by nothing in `lib/` — not
+the renderer, not the layout engine. An anacrusis therefore imports and renders as a full bar. Hymns
+often start on an upbeat, so this is worth fixing, but it is a *renderer* gap, not an importer one.
+
+**Still to build:** file picker, and wiring the result into the review screen.
 
 *Depends on: B1 (review screen). Medium.*
 
