@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'notation.dart';
 import 'verse.dart';
@@ -205,15 +206,49 @@ class Song {
     );
   }
 
+  /// Value equality over ALL fields.
+  ///
+  /// This compared `number` and nothing else, so any two songs sharing a number
+  /// were interchangeable — a song whose tags, verses or book had changed was
+  /// indistinguishable from the original. That is the identity-only-equality
+  /// trap behind the setlist bug, and it becomes unusable once songs are
+  /// editable: an edited song must not equal its own previous version.
+  ///
+  /// Depends on [SongNotation] and [Verse] carrying value equality too;
+  /// both were fixed alongside this.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is Song &&
           runtimeType == other.runtimeType &&
-          number == other.number;
+          number == other.number &&
+          title == other.title &&
+          reference == other.reference &&
+          origin == other.origin &&
+          tune == other.tune &&
+          originalKey == other.originalKey &&
+          timeSignature == other.timeSignature &&
+          sheetMusic == other.sheetMusic &&
+          notation == other.notation &&
+          book == other.book &&
+          const ListEquality<Verse>().equals(verses, other.verses) &&
+          const ListEquality<String>().equals(tags, other.tags);
 
   @override
-  int get hashCode => number.hashCode;
+  int get hashCode => Object.hash(
+        number,
+        title,
+        reference,
+        origin,
+        tune,
+        originalKey,
+        timeSignature,
+        sheetMusic,
+        notation,
+        book,
+        Object.hashAll(verses),
+        Object.hashAll(tags),
+      );
 
   @override
   String toString() => 'Song(number: $number, title: $title)';

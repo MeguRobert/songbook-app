@@ -1,6 +1,13 @@
+import 'package:collection/collection.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'notation.g.dart';
+
+// Every class in this file carries value equality over ALL of its fields,
+// including its lists. Notation used to be built once at load time and only
+// ever read, so identity equality was invisible; the song import and the
+// beat-level correction editor both mutate it, and a `copyWith` that compares
+// equal to its own original is a change no widget or provider can see.
 
 /// Duration of a musical note
 enum NoteDuration {
@@ -145,6 +152,32 @@ class NotatedBeat {
       dotted: dotted ?? this.dotted,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NotatedBeat &&
+          runtimeType == other.runtimeType &&
+          pitch == other.pitch &&
+          duration == other.duration &&
+          syllable == other.syllable &&
+          const ListEquality<String>().equals(syllables, other.syllables) &&
+          chord == other.chord &&
+          tieStart == other.tieStart &&
+          tieEnd == other.tieEnd &&
+          dotted == other.dotted;
+
+  @override
+  int get hashCode => Object.hash(
+        pitch,
+        duration,
+        syllable,
+        syllables == null ? null : Object.hashAll(syllables!),
+        chord,
+        tieStart,
+        tieEnd,
+        dotted,
+      );
 }
 
 /// Represents a measure (bar) in the notation
@@ -179,6 +212,24 @@ class NotatedMeasure {
 
   /// Total beats in this measure
   double get totalBeats => beats.fold(0.0, (sum, beat) => sum + beat.actualBeats);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NotatedMeasure &&
+          runtimeType == other.runtimeType &&
+          const ListEquality<NotatedBeat>().equals(beats, other.beats) &&
+          repeatStart == other.repeatStart &&
+          repeatEnd == other.repeatEnd &&
+          lineBreakAfter == other.lineBreakAfter;
+
+  @override
+  int get hashCode => Object.hash(
+        Object.hashAll(beats),
+        repeatStart,
+        repeatEnd,
+        lineBreakAfter,
+      );
 }
 
 /// Represents a verse with musical notation
@@ -203,6 +254,17 @@ class NotatedVerse {
   /// Gets all beats from all measures
   List<NotatedBeat> get allBeats =>
       measures.expand((m) => m.beats).toList();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NotatedVerse &&
+          runtimeType == other.runtimeType &&
+          number == other.number &&
+          const ListEquality<NotatedMeasure>().equals(measures, other.measures);
+
+  @override
+  int get hashCode => Object.hash(number, Object.hashAll(measures));
 }
 
 /// Complete notation data for a song
@@ -245,4 +307,24 @@ class SongNotation {
 
   /// Gets beats per measure
   int get beatsPerMeasure => parsedTimeSignature.$1;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SongNotation &&
+          runtimeType == other.runtimeType &&
+          originalKey == other.originalKey &&
+          timeSignature == other.timeSignature &&
+          showTimeSignature == other.showTimeSignature &&
+          const ListEquality<NotatedVerse>().equals(verses, other.verses) &&
+          const ListEquality<NotatedBeat>().equals(pickup, other.pickup);
+
+  @override
+  int get hashCode => Object.hash(
+        originalKey,
+        timeSignature,
+        showTimeSignature,
+        Object.hashAll(verses),
+        pickup == null ? null : Object.hashAll(pickup!),
+      );
 }

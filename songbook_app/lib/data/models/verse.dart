@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'lyric_line.dart';
 
@@ -56,6 +57,14 @@ class Verse {
     );
   }
 
+  /// Value equality over ALL fields, `lines` included.
+  ///
+  /// `lines` used to be excluded. That was invisible while verses were built
+  /// once from the bundled catalogue and only read, but the song editor mutates
+  /// them: `verse.copyWith(lines: …)` returned a verse that compared **equal**
+  /// to the original, so an edit reached no widget or provider that diffs
+  /// verses. Same family as the identity-only `Song.==` that caused the setlist
+  /// bug.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -63,11 +72,12 @@ class Verse {
           runtimeType == other.runtimeType &&
           number == other.number &&
           hasNotation == other.hasNotation &&
-          plainText == other.plainText;
+          plainText == other.plainText &&
+          const ListEquality<LyricLine>().equals(lines, other.lines);
 
   @override
   int get hashCode =>
-      number.hashCode ^ hasNotation.hashCode ^ plainText.hashCode;
+      Object.hash(number, hasNotation, plainText, Object.hashAll(lines));
 
   @override
   String toString() =>

@@ -111,13 +111,38 @@ void main() {
   });
 
   group('equality', () {
-    test('compares number, hasNotation and plainText (not lines)', () {
+    test('compares every field, lines included', () {
       const a = Verse(number: 1, plainText: 'x');
       const b = Verse(number: 1, plainText: 'x', lines: [LyricLine(text: 'l')]);
-      expect(a, b); // lines are intentionally excluded from equality
+      // `lines` used to be excluded here, which made an edited verse compare
+      // equal to the version it replaced.
+      expect(a, isNot(b));
       expect(a, isNot(const Verse(number: 2, plainText: 'x')));
       expect(a, isNot(const Verse(number: 1, plainText: 'y')));
       expect(a, isNot(const Verse(number: 1, plainText: 'x', hasNotation: true)));
+
+      expect(a, const Verse(number: 1, plainText: 'x'));
+      expect(b, const Verse(number: 1, plainText: 'x',
+          lines: [LyricLine(text: 'l')]));
+    });
+
+    test('an edited verse differs from the one it replaced', () {
+      const original = Verse(number: 1, lines: [LyricLine(text: 'eredeti')]);
+      final edited = original.copyWith(
+        lines: [const LyricLine(text: 'javított')],
+      );
+
+      expect(edited, isNot(original));
+      expect(edited.hashCode, isNot(original.hashCode));
+    });
+
+    test('equal verses hash equally', () {
+      const a = Verse(number: 1, lines: [LyricLine(text: 'l')]);
+      const b = Verse(number: 1, lines: [LyricLine(text: 'l')]);
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      // Set membership relies on the hash contract holding.
+      expect({a, b}, hasLength(1));
     });
   });
 }

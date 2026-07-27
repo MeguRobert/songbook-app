@@ -44,8 +44,12 @@ class LyricLine {
           text == other.text &&
           _listEquals(chords, other.chords);
 
+  // `chords.hashCode` is List identity, so two LyricLines that compared EQUAL
+  // hashed differently — a broken hashCode contract that makes them unusable
+  // as Set members or Map keys. `==` already compared the chords element-wise;
+  // only the hash was wrong.
   @override
-  int get hashCode => text.hashCode ^ chords.hashCode;
+  int get hashCode => Object.hash(text, Object.hashAll(chords));
 
   @override
   String toString() => 'LyricLine(text: $text, chords: $chords)';

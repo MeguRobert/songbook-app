@@ -231,13 +231,46 @@ void main() {
       expect(s.copyWith(originalKey: 'D').originalKey, 'D');
     });
 
-    test('equality is based on number only', () {
+    test('equality covers every field, not just the number', () {
       final a = Song(number: 5, title: 'x', originalKey: 'C', verses: const []);
+      // Same number, different everything else. These used to compare equal.
       final b = Song(number: 5, title: 'y', originalKey: 'G', verses: const []);
-      expect(a, b);
-      expect(a.hashCode, b.hashCode);
-      expect(a,
-          isNot(Song(number: 6, title: 'x', originalKey: 'C', verses: const [])));
+      expect(a, isNot(b));
+      expect(
+          a, isNot(Song(number: 6, title: 'x', originalKey: 'C', verses: const [])));
+
+      final same = Song(number: 5, title: 'x', originalKey: 'C', verses: const []);
+      expect(a, same);
+      expect(a.hashCode, same.hashCode);
+    });
+
+    test('a retagged song differs from the one it replaced', () {
+      final original = Song(
+        number: 5,
+        title: 'x',
+        originalKey: 'C',
+        verses: const [],
+        tags: const ['zsoltár'],
+      );
+      final retagged = original.copyWith(tags: const ['zsoltár', 'advent']);
+
+      expect(retagged, isNot(original));
+      expect(retagged.hashCode, isNot(original.hashCode));
+    });
+
+    test('an edited verse makes the song differ', () {
+      final original = Song(
+        number: 5,
+        title: 'x',
+        originalKey: 'C',
+        verses: const [Verse(number: 1, lines: [LyricLine(text: 'eredeti')])],
+      );
+      final edited = original.copyWith(
+        verses: const [Verse(number: 1, lines: [LyricLine(text: 'javított')])],
+      );
+
+      // Only reaches through if BOTH Verse and LyricLine carry value equality.
+      expect(edited, isNot(original));
     });
   });
 }
