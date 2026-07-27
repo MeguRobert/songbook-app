@@ -141,8 +141,13 @@ void main() {
       const b = Verse(number: 1, lines: [LyricLine(text: 'l')]);
       expect(a, b);
       expect(a.hashCode, b.hashCode);
-      // Set membership relies on the hash contract holding.
-      expect({a, b}, hasLength(1));
+      // Set membership relies on the hash contract holding. Built at runtime,
+      // not as a literal: two equal const operands get folded at compile time,
+      // so `{a, b}` would prove nothing about hashCode.
+      final deduped = <Verse>{}
+        ..add(a)
+        ..add(b);
+      expect(deduped, hasLength(1));
     });
   });
 }

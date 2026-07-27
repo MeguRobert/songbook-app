@@ -93,7 +93,12 @@ void main() {
       expect(const SongId.hymnal(151), const SongId.hymnal(151));
       expect(const SongId.hymnal(151).hashCode,
           const SongId.hymnal(151).hashCode);
-      expect({const SongId.hymnal(151), const SongId.hymnal(151)}, hasLength(1));
+      // Built at runtime: two equal const operands in a set literal are folded
+      // at compile time, which would prove nothing about hashCode.
+      final deduped = <SongId>{}
+        ..add(const SongId.hymnal(151))
+        ..add(const SongId.hymnal(151));
+      expect(deduped, hasLength(1));
     });
 
     test('the same ref from different sources is NOT equal', () {
