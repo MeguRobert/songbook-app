@@ -33,6 +33,11 @@ dependencies:
   collection: ^1.19.1
   package_info_plus: ^9.0.1
 
+  # Song import (Phase B). `xml` parses MusicXML; `archive` unzips .mxl, which
+  # is compressed MusicXML rather than a distinct format.
+  xml: ^6.5.0
+  archive: ^3.6.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
