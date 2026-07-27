@@ -36,10 +36,23 @@ has no room.
 `song_view_screen.dart:257` renders back · `"151. Title"` · tags · auto-scroll · presentation ·
 favourite. Five targets crowd the title on a phone, which is why the full title is unreadable.
 
-- Song number becomes a leading chip or moves below; the title takes the width and may wrap to two lines
-- At most one action stays visible (favourite). The rest move into `song_controls_sheet.dart`, which
-  already has a fixed five-section layout and is the established home for view controls
-- Same pass on `song_list_screen.dart:75`
+- Song number moves onto its own line above the title; the title takes the full width and wraps to
+  two lines before ellipsizing
+- Only the favourite stays in the bar. Presentation mode and tag editing move to an overflow menu
+- Auto-scroll is removed outright: `song_controls_sheet.dart` section 5 already has play/pause
+  **and** a speed slider, so the bar button was a second, poorer affordance over the same state
+
+**Done — `claude/phase-0-declutter`.** Verified at 390 px against the live build:
+
+| | app bar |
+|---|---|
+| before (build 148) | `151. Hatalmas Isten, n…` + 3 actions |
+| after | `151` / `Hatalmas Isten, nagy haragodban` + favourite + ⋮ |
+
+**The song list bar was left alone, deliberately.** `song_list_screen.dart:75` carries three actions
+(search, books, tags) under a short title — "Songbook", or a book name. Nothing truncates at 390 px,
+and folding Books and Tags into one filter menu would add a tap to the two most common actions to
+solve a problem that isn't there.
 
 *No dependencies. Small.*
 

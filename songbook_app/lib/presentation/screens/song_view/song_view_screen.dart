@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../data/models/song.dart';
 import '../../../data/models/view_config.dart';
 import '../../providers/autoscroll_provider.dart';
 import '../../providers/favorites_provider.dart';
@@ -18,6 +19,11 @@ import 'widgets/song_controls_sheet.dart';
 import 'widgets/sheet_music_view.dart';
 import 'widgets/setlist_nav_bar.dart';
 import 'widgets/tag_editor_sheet.dart';
+
+/// Actions behind the song-view overflow menu.
+///
+/// These were app-bar icons until the Phase 0 declutter; see [_buildAppBar].
+enum _SongMenuAction { presentation, editTags }
 
 /// Screen for viewing a single song
 class SongViewScreen extends ConsumerStatefulWidget {
@@ -199,11 +205,116 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     );
   }
 
+  /// The song-view app bar.
+  ///
+  /// This bar used to carry back + `"151. Title"` + four actions (tags,
+  /// auto-scroll, presentation, favourite). On a phone that left a long
+  /// Hungarian hymn title a few characters wide — the UAT complaint this
+  /// rewrite answers. Three changes:
+  ///
+  ///   - the number moves out of the title string onto its own line, so it and
+  ///     its separator stop eating title width on every song
+  ///   - the title gets two lines before it ellipsizes
+  ///   - only the favourite stays in the bar. Presentation and tag editing move
+  ///     behind an overflow menu, and auto-scroll is dropped outright: the
+  ///     controls sheet already owns it *with* a speed slider, and one piece of
+  ///     state behind two affordances is how the two drift apart.
+  ///
+  /// [AppBar.toolbarHeight] is derived from the text scaler rather than fixed.
+  /// Two lines of scaled title plus the number line does not fit
+  /// [kToolbarHeight], and a fixed height overflows in yellow stripes as soon
+  /// as the system font is enlarged.
+  AppBar _buildAppBar(BuildContext context, Song song, bool isFavorite) {
+    final theme = Theme.of(context);
+    final textScaler = MediaQuery.textScalerOf(context);
+    final numberStyle = theme.textTheme.labelMedium;
+    final titleStyle = theme.textTheme.titleMedium;
+
+    final numberHeight = textScaler.scale(numberStyle?.fontSize ?? 12) * 1.4;
+    final titleLineHeight = textScaler.scale(titleStyle?.fontSize ?? 16) * 1.35;
+    final toolbarHeight = (numberHeight + titleLineHeight * 2 + 16)
+        .clamp(kToolbarHeight, 180.0)
+        .toDouble();
+
+    return AppBar(
+      toolbarHeight: toolbarHeight,
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            song.displayNumber,
+            style: numberStyle?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          // Flexible, not a bare Text: at extreme text scales the computed
+          // height hits the clamp above, and without this the two lines
+          // overflow the toolbar instead of ellipsizing into the room there is.
+          Flexible(
+            child: Text(
+              song.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: titleStyle,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            isFavorite ? Icons.favorite : Icons.favorite_border,
+            color: isFavorite ? Colors.red : null,
+          ),
+          onPressed: () => ref
+              .read(favoritesProvider.notifier)
+              .toggleFavorite(widget.songNumber),
+          tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+        ),
+        PopupMenuButton<_SongMenuAction>(
+          icon: const Icon(Icons.more_vert),
+          tooltip: 'More actions',
+          onSelected: (action) {
+            switch (action) {
+              case _SongMenuAction.presentation:
+                context.push(AppRoutes.presentationPath(widget.songNumber));
+              case _SongMenuAction.editTags:
+                _showTagEditor(context, song.tags);
+            }
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(
+              value: _SongMenuAction.presentation,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.fullscreen),
+                title: Text('Presentation mode'),
+              ),
+            ),
+            PopupMenuItem(
+              value: _SongMenuAction.editTags,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.label_outline),
+                title: Text('Edit tags'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final songAsync = ref.watch(songByNumberProvider(widget.songNumber));
     final isFavorite = ref.watch(isFavoriteProvider(widget.songNumber));
-    final autoScroll = ref.watch(autoScrollProvider);
+    // Deliberately NOT watching autoScrollProvider. The play control lives in
+    // the controls sheet, which watches it itself; watching here rebuilt the
+    // whole screen on every frame of a speed-slider drag. The ticker is driven
+    // by the ref.listen below, which needs no watch.
 
     // openSong() cannot run before the first build (mutating a provider during
     // build is forbidden), so on that first frame songViewProvider still
@@ -240,10 +351,6 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
       },
     );
 
-    // Auto-scroll only drives the chord/lyrics view (sheet music is a separate
-    // widget); the play control is hidden in sheet-music mode.
-    final canAutoScroll = !viewConfig.showNotation;
-
     return songAsync.when(
       data: (song) {
         if (song == null) {
@@ -254,52 +361,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
         }
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text('${song.number}. ${song.title}'),
-            actions: [
-              // Edit tags button
-              IconButton(
-                icon: const Icon(Icons.label_outline),
-                onPressed: () => _showTagEditor(context, song.tags),
-                tooltip: 'Edit tags',
-              ),
-              // Auto-scroll play/pause (chord/lyrics view only)
-              if (canAutoScroll)
-                IconButton(
-                  icon: Icon(
-                    autoScroll.isPlaying
-                        ? Icons.pause_circle_outline
-                        : Icons.play_circle_outline,
-                  ),
-                  onPressed: () =>
-                      ref.read(autoScrollProvider.notifier).toggle(),
-                  tooltip: autoScroll.isPlaying
-                      ? 'Stop auto-scroll'
-                      : 'Start auto-scroll',
-                ),
-              // Presentation mode button
-              IconButton(
-                icon: const Icon(Icons.fullscreen),
-                onPressed: () {
-                  context.push(AppRoutes.presentationPath(widget.songNumber));
-                },
-                tooltip: 'Presentation mode',
-              ),
-              // Favorite button
-              IconButton(
-                icon: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? Colors.red : null,
-                ),
-                onPressed: () {
-                  ref
-                      .read(favoritesProvider.notifier)
-                      .toggleFavorite(widget.songNumber);
-                },
-                tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
-              ),
-            ],
-          ),
+          appBar: _buildAppBar(context, song, isFavorite),
           // Two gesture sources feed the same text-scale setting:
           //  - Listener.onPointerSignal handles PointerScaleEvent, which is how
           //    Flutter web delivers a desktop trackpad pinch / Ctrl+mouse-wheel

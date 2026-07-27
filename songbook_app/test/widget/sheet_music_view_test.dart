@@ -54,7 +54,9 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byType(CustomPaint), findsWidgets);
-    expect(find.text('42. Mint a szép híves patakra'), findsOneWidget);
+    // App bar renders the number and title on separate lines (Phase 0).
+    expect(find.text('42'), findsOneWidget);
+    expect(find.text('Mint a szép híves patakra'), findsOneWidget);
   });
 
   testWidgets(

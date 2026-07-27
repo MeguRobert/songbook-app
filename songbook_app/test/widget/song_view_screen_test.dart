@@ -42,11 +42,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('42. Mint a szép híves patakra'), findsOneWidget);
+    // Number and title are separate app-bar lines since the Phase 0 declutter;
+    // see song_view_app_bar_test.dart for the full set of rules.
+    expect(find.text('42'), findsOneWidget);
     expect(find.textContaining('Mint a szép híves patakra'), findsWidgets);
     expect(find.text('Second verse plain text'), findsOneWidget);
     expect(find.byIcon(Icons.favorite_border), findsOneWidget);
-    expect(find.byIcon(Icons.fullscreen), findsOneWidget);
+    // Presentation mode moved behind the overflow menu.
+    expect(find.byIcon(Icons.more_vert), findsOneWidget);
     expect(find.byIcon(Icons.tune), findsOneWidget);
   });
 
@@ -118,7 +121,7 @@ void main() {
 
     // Still mounted and rendering: nothing was disposed out from under us.
     expect(tester.takeException(), isNull);
-    expect(find.text('42. Mint a szép híves patakra'), findsOneWidget);
+    expect(find.text('Mint a szép híves patakra'), findsWidgets);
   });
 
   testWidgets('disposes cleanly when navigating away', (tester) async {
