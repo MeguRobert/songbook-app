@@ -61,8 +61,24 @@ class UserSongRepository {
     return _localDataSource.upsertUserSong(song);
   }
 
-  /// Deletes the user song with [songId]. False if there was none.
-  Future<bool> delete(SongId songId) => _localDataSource.deleteUserSong(songId);
+  /// Deletes the user song with [songId], and everything that pointed at it.
+  ///
+  /// Returns false if there was no such song — but the cleanup runs either way,
+  /// because a reference can outlive its song (an interrupted delete) and every
+  /// step of it is idempotent.
+  ///
+  /// The cleanup is not optional. A user song's id is never reissued, so a
+  /// favourite, setlist entry, tag override or per-song setting left behind
+  /// points at something that can never resolve again — and since each of those
+  /// silently skips ids it cannot find, the leftovers are invisible rather than
+  /// harmless. [add] writes a per-song view config itself, which makes this the
+  /// symmetric half of it.
+  Future<bool> delete(SongId songId) async {
+    final removed = await _localDataSource.deleteUserSong(songId);
+    await _localDataSource.purgeSongReferences(songId);
+    await _settings.clearSongSettings(songId);
+    return removed;
+  }
 
   /// Whether any user songs exist.
   bool get isEmpty => getAll().isEmpty;

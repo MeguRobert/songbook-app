@@ -260,6 +260,48 @@ class LocalDataSource {
     return saveUserSongs(songs);
   }
 
+  // --- Cross-collection cleanup ---
+
+  /// Removes every stored reference to [songId] from the collections that point
+  /// at songs: favourites, setlists, tag overrides and recents.
+  ///
+  /// Nothing here fails loudly if a reference is absent — the whole thing is
+  /// idempotent, which is what makes it safe to run after a delete that found
+  /// nothing.
+  ///
+  /// This lives here rather than in each repository because this class owns all
+  /// four blobs, and because the reason to do it is one reason: a user song's id
+  /// is minted from a timestamp plus randomness and is never reissued, so a
+  /// reference that outlives its song can never resolve again. Every one of
+  /// these collections skips ids it cannot find, which makes the leftovers
+  /// invisible rather than harmless.
+  Future<void> purgeSongReferences(SongId songId) async {
+    await removeFavorite(songId);
+    await clearSongTags(songId);
+
+    // Setlists keep their `updatedAt`: dropping a reference the user cannot see
+    // any more is not an edit they made to the setlist.
+    final setlists = getSetlists();
+    var setlistsChanged = false;
+    for (var i = 0; i < setlists.length; i++) {
+      if (!setlists[i].songIds.contains(songId)) continue;
+      setlists[i] = setlists[i].copyWith(
+        songIds: setlists[i].songIds.where((id) => id != songId).toList(),
+      );
+      setlistsChanged = true;
+    }
+    if (setlistsChanged) await saveSetlists(setlists);
+
+    final recents = getRecentSongs();
+    if (recents.any((r) => r.songId == songId)) {
+      final kept = recents.where((r) => r.songId != songId).toList();
+      await _prefs.setString(
+        _recentsKey,
+        json.encode(kept.map((r) => r.toJson()).toList()),
+      );
+    }
+  }
+
   // --- Settings ---
 
   /// Gets a string setting
@@ -285,6 +327,11 @@ class LocalDataSource {
   /// Sets an int setting
   Future<bool> setIntSetting(String key, int value) {
     return _prefs.setInt('$_settingsPrefix$key', value);
+  }
+
+  /// Removes an int setting
+  Future<bool> removeIntSetting(String key) {
+    return _prefs.remove('$_settingsPrefix$key');
   }
 
   /// Gets a bool setting

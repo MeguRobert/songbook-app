@@ -172,4 +172,24 @@ class SettingsRepository {
     return _localDataSource.setIntSetting(
         _songKey('autoscroll_speed', songId), pixelsPerSecond);
   }
+
+  // --- Deleting a song's preferences ---
+
+  /// Removes every per-song preference for [songId].
+  ///
+  /// Called when a user song is deleted. `UserSongRepository.add` writes a view
+  /// config for every imported song, so without this the app's own write
+  /// outlives the song it described, under a key that can never be addressed
+  /// again. The legacy keys go too, for the same reason
+  /// [clearSongViewConfig] clears them: the getters fall back to them, so a key
+  /// left behind resurrects a preference that should be gone.
+  Future<void> clearSongSettings(SongId songId) async {
+    await clearSongViewConfig(songId);
+    await _localDataSource
+        .removeIntSetting(_songKey('autoscroll_speed', songId));
+    final legacySpeed = _legacySongKey('autoscroll_speed', songId);
+    if (legacySpeed != null) {
+      await _localDataSource.removeIntSetting(legacySpeed);
+    }
+  }
 }
