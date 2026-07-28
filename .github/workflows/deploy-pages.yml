@@ -19,6 +19,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.version.outputs.build }}
+      semver: ${{ steps.version.outputs.semver }}
+      semver_changed: ${{ steps.version.outputs.semver_changed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,7 +66,26 @@ jobs:
       # bumped deliberately when a release means something.
       - name: Derive build number from commit count
         id: version
-        run: echo "build=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "build=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+
+          # The semantic part, without the +buildnumber suffix.
+          read_semver() { sed -n 's/^version: *\([^+]*\).*/\1/p' | tr -d '[:space:]'; }
+          semver=$(read_semver < songbook_app/pubspec.yaml)
+          echo "semver=$semver" >> "$GITHUB_OUTPUT"
+
+          # A Release is cut only when the semantic version actually moves.
+          # Tagging every deploy is cheap and invisible; a Release per deploy
+          # would bury the handful that mean something under hundreds of
+          # untitled build entries.
+          previous=$(git show HEAD~1:songbook_app/pubspec.yaml 2>/dev/null \
+            | read_semver || true)
+          if [ "$semver" != "$previous" ]; then
+            echo "semver_changed=true" >> "$GITHUB_OUTPUT"
+            echo "Semantic version ${previous:-none} -> $semver" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "semver_changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build web
         working-directory: songbook_app
@@ -89,3 +112,61 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Marks the commit that produced the live site.
+  #
+  # `version.json` reports a build number, but nothing mapped that number back
+  # to a commit — finding the source of "build 148" meant computing
+  # `git rev-list --count` against candidates. A tag makes it one command:
+  #
+  #     git checkout -b hotfix build-148
+  #
+  # Runs after `deploy`, not after `build`: a tag on something that never
+  # reached the live site would be a lie.
+  tag:
+    needs: [build, deploy]
+    # Only the branch that actually serves the site. `deploy-pages.yml` also
+    # triggers on a stale feature branch, and tagging those would attach
+    # build numbers to commits that are not what production is running.
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BUILD: ${{ needs.build.outputs.build }}
+      SEMVER: ${{ needs.build.outputs.semver }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag this deployment
+        run: |
+          tag="build-$BUILD"
+          # workflow_dispatch can re-run against a commit that is already
+          # tagged. Re-tagging is not an error worth failing a green deploy
+          # over, and force-moving the tag would silently rewrite history.
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "Tag $tag already exists — nothing to do." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Deployed build $BUILD (v$SEMVER)"
+          git push origin "$tag"
+          echo "Tagged \`$tag\` -> $(git rev-parse --short HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cut a Release when the semantic version moved
+        if: needs.build.outputs.semver_changed == 'true'
+        run: |
+          tag="v$SEMVER"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists — nothing to do." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh release create "$tag" \
+            --target "$GITHUB_SHA" \
+            --title "v$SEMVER" \
+            --generate-notes
+          echo "Released **$tag** (build $BUILD)" >> "$GITHUB_STEP_SUMMARY"
