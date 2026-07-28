@@ -1,22 +1,58 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
+import '../../../data/models/verse.dart';
 import '../../../domain/services/chord_sheet_parser.dart';
+import '../../../domain/services/musicxml_importer.dart';
 import '../../providers/book_provider.dart';
 import '../../providers/song_provider.dart';
 import '../../../router/app_router.dart';
 import '../song_view/widgets/chord_view.dart';
+import '../song_view/widgets/sheet_music_view.dart';
 
-/// Adds a song by pasting a chord sheet.
+/// What an importer produced, whatever the source.
+///
+/// Both paths converge here so the review surface below is written once. Adding
+/// a third source (a photo) means producing one of these, not another screen.
+class _PendingImport {
+  final List<Verse> verses;
+
+  /// Only MusicXML yields notation; a pasted chord sheet never does.
+  final SongNotation? notation;
+
+  final String? title;
+  final String? key;
+  final String? timeSignature;
+  final List<String> warnings;
+
+  /// Shown so it is obvious which source produced what is on screen.
+  final String sourceLabel;
+
+  const _PendingImport({
+    required this.verses,
+    required this.sourceLabel,
+    this.notation,
+    this.title,
+    this.key,
+    this.timeSignature,
+    this.warnings = const [],
+  });
+}
+
+/// Adds a song by pasting a chord sheet or opening a MusicXML file.
 ///
 /// The songs being added are overwhelmingly ones that already exist — from a
-/// chord site, or a book that was never digitised — so pasting is the fast
-/// path, not typing. What the parser produces is shown immediately, rendered
-/// with [ChordView], the same widget the real song view uses: what is approved
-/// here is exactly what will be displayed later, rather than an approximation
-/// that can drift from it.
+/// chord site, a MuseScore file, or a book that was never digitised — so
+/// importing is the fast path, not typing. Whatever an importer produces is
+/// shown immediately, rendered with the same widgets the real song view uses
+/// ([SheetMusicView] when there is notation, [ChordView] otherwise): what is
+/// approved here is exactly what will be displayed later.
 class ImportSongScreen extends ConsumerStatefulWidget {
   const ImportSongScreen({super.key});
 
@@ -26,19 +62,22 @@ class ImportSongScreen extends ConsumerStatefulWidget {
 
 class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   static const _parser = ChordSheetParser();
+  static const _musicXml = MusicXmlImporter();
 
   final _sheetController = TextEditingController();
   final _titleController = TextEditingController();
   final _numberController = TextEditingController();
   final _bookController = TextEditingController();
 
-  ParsedChordSheet? _parsed;
+  _PendingImport? _pending;
   String? _key;
   bool _saving = false;
+  bool _picking = false;
+  String? _fileError;
 
-  /// Whether the title/number/book fields have been touched. Once they have,
-  /// re-parsing must not overwrite them: the parser's guesses are a starting
-  /// point, and silently reverting a correction is worse than not guessing.
+  /// Once the title has been touched, re-importing must not overwrite it: an
+  /// importer's guess is a starting point, and silently reverting a correction
+  /// is worse than not guessing at all.
   bool _titleEdited = false;
 
   @override
@@ -50,21 +89,88 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     super.dispose();
   }
 
-  void _parse() {
-    final result = _parser.parse(_sheetController.text);
+  void _accept(_PendingImport pending) {
     setState(() {
-      _parsed = result;
-      _key = result.key ?? _firstChord(result);
-      if (!_titleEdited && (result.title ?? '').isNotEmpty) {
-        _titleController.text = result.title!;
+      _pending = pending;
+      _fileError = null;
+      _key = pending.key ?? _firstChord(pending.verses);
+      if (!_titleEdited && (pending.title ?? '').isNotEmpty) {
+        _titleController.text = pending.title!;
       }
     });
   }
 
-  /// The song's key, guessed from the first chord when no `{key:}` directive
-  /// says otherwise. A guess, and labelled as one in the UI.
-  String? _firstChord(ParsedChordSheet sheet) {
-    for (final verse in sheet.verses) {
+  void _parsePasted() {
+    final result = _parser.parse(_sheetController.text);
+    _accept(_PendingImport(
+      verses: result.verses,
+      title: result.title,
+      key: result.key,
+      warnings: result.warnings,
+      sourceLabel: 'pasted text',
+    ));
+  }
+
+  Future<void> _pickMusicXmlFile() async {
+    setState(() {
+      _picking = true;
+      _fileError = null;
+    });
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['xml', 'musicxml', 'mxl'],
+        // Required on web, and avoids a second read on mobile.
+        withData: true,
+      );
+      if (picked == null || picked.files.isEmpty) return; // cancelled
+      final file = picked.files.single;
+
+      final name = file.name.toLowerCase();
+      if (!name.endsWith('.xml') &&
+          !name.endsWith('.musicxml') &&
+          !name.endsWith('.mxl')) {
+        setState(() => _fileError =
+            '${file.name} is not a MusicXML file. Expected .xml, .musicxml '
+            'or .mxl — a MuseScore .mscz has to be exported first.');
+        return;
+      }
+
+      final bytes = file.bytes;
+      if (bytes == null) {
+        setState(() => _fileError = 'Could not read ${file.name}.');
+        return;
+      }
+
+      // .mxl is zipped MusicXML rather than a separate format.
+      final isCompressed = name.endsWith('.mxl');
+      final result = isCompressed
+          ? _musicXml.importCompressed(bytes)
+          : _musicXml.importXml(utf8.decode(bytes, allowMalformed: true));
+
+      _accept(_PendingImport(
+        verses: result.verses,
+        notation: result.notation,
+        title: result.title,
+        key: result.key,
+        timeSignature: result.timeSignature,
+        warnings: result.warnings,
+        sourceLabel: file.name,
+      ));
+    } on MusicXmlImportException catch (e) {
+      setState(() => _fileError = e.message);
+    } catch (e) {
+      // A malformed file must not take the screen down with it — the user
+      // still has a pasted draft in progress they would otherwise lose.
+      setState(() => _fileError = 'Could not import that file: $e');
+    } finally {
+      if (mounted) setState(() => _picking = false);
+    }
+  }
+
+  /// The key, guessed from the first chord when the source declares none.
+  String? _firstChord(List<Verse> verses) {
+    for (final verse in verses) {
       for (final line in verse.lines) {
         if (line.chords.isNotEmpty) return line.chords.first.chord;
       }
@@ -72,28 +178,43 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     return null;
   }
 
+  /// Whether [pending] carries anything worth saving.
+  ///
+  /// Verses OR notation. An engraved score commonly has no `<lyric>` elements
+  /// at all — its syllables hang off the individual beats — so requiring
+  /// verses rejected exactly the files the MusicXML path exists to import.
+  bool _hasContent(_PendingImport pending) =>
+      pending.verses.isNotEmpty || pending.notation != null;
+
   /// The draft as it will be stored. No id yet — the repository assigns one.
   Song? get _draft {
-    final parsed = _parsed;
-    if (parsed == null || parsed.verses.isEmpty) return null;
+    final pending = _pending;
+    if (pending == null || !_hasContent(pending)) return null;
     final title = _titleController.text.trim();
     if (title.isEmpty) return null;
     final book = _bookController.text.trim();
     return Song(
       number: int.tryParse(_numberController.text.trim()) ?? 0,
       title: title,
-      originalKey: _key ?? 'C',
-      verses: parsed.verses,
+      originalKey: _key ?? pending.notation?.originalKey ?? 'C',
+      timeSignature: pending.timeSignature,
+      notation: pending.notation,
+      verses: pending.verses,
       book: book.isEmpty ? null : book,
     );
   }
 
-  /// Reasons the draft cannot be saved yet, in the order they should be fixed.
   List<String> get _blockers {
-    final parsed = _parsed;
-    if (parsed == null) return const ['Paste a song, then tap Parse.'];
-    if (parsed.verses.isEmpty) return const ['No verses found in that text.'];
-    if (_titleController.text.trim().isEmpty) return const ['Give the song a title.'];
+    final pending = _pending;
+    if (pending == null) {
+      return const ['Paste a song or open a MusicXML file.'];
+    }
+    if (!_hasContent(pending)) {
+      return const ['No lyrics or notation found in that source.'];
+    }
+    if (_titleController.text.trim().isEmpty) {
+      return const ['Give the song a title.'];
+    }
     return const [];
   }
 
@@ -113,7 +234,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final parsed = _parsed;
+    final pending = _pending;
     final draft = _draft;
     final blockers = _blockers;
 
@@ -125,7 +246,8 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             onPressed: blockers.isEmpty && !_saving ? _save : null,
             child: _saving
                 ? const SizedBox(
-                    width: 16, height: 16,
+                    width: 16,
+                    height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Text('Save'),
           ),
@@ -153,22 +275,60 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             // Parse button's enabled state depends on this field being
             // non-empty, so skipping the rebuild left it greyed out after the
             // very first paste.
-            onChanged: (_) => setState(() => _parsed = null),
+            onChanged: (_) => setState(() => _pending = null),
           ),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.tonalIcon(
-              onPressed:
-                  _sheetController.text.trim().isEmpty ? null : _parse,
-              icon: const Icon(Icons.auto_fix_high),
-              label: const Text('Parse'),
-            ),
+          Row(
+            children: [
+              // The only path that yields real notation, and the lyrics come
+              // free from <lyric> elements.
+              OutlinedButton.icon(
+                onPressed: _picking ? null : _pickMusicXmlFile,
+                icon: _picking
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.piano_outlined),
+                label: const Text('MusicXML file'),
+              ),
+              const Spacer(),
+              FilledButton.tonalIcon(
+                onPressed:
+                    _sheetController.text.trim().isEmpty ? null : _parsePasted,
+                icon: const Icon(Icons.auto_fix_high),
+                label: const Text('Parse'),
+              ),
+            ],
           ),
 
-          if (parsed != null) ...[
+          if (_fileError != null) ...[
+            const SizedBox(height: 12),
+            _Notice(
+              text: _fileError!,
+              icon: Icons.error_outline,
+              background: theme.colorScheme.errorContainer,
+              foreground: theme.colorScheme.onErrorContainer,
+            ),
+          ],
+
+          if (pending != null) ...[
             const Divider(height: 32),
-            Text('DETAILS', style: _sectionStyle(theme)),
+            Row(
+              children: [
+                Text('DETAILS', style: _sectionStyle(theme)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'from ${pending.sourceLabel}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _titleController,
@@ -195,23 +355,29 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: _BookField(controller: _bookController,
-                    onChanged: () => setState(() {}))),
+                Expanded(
+                  child: _BookField(
+                    controller: _bookController,
+                    onChanged: () => setState(() {}),
+                  ),
+                ),
               ],
             ),
             if (_key != null) ...[
               const SizedBox(height: 8),
               Text(
-                'Key guessed as $_key from the first chord.',
+                pending.key != null
+                    ? 'Key $_key, from the file.'
+                    : 'Key guessed as $_key from the first chord.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
 
-            if (parsed.warnings.isNotEmpty) ...[
+            if (pending.warnings.isNotEmpty) ...[
               const SizedBox(height: 16),
-              _Warnings(warnings: parsed.warnings),
+              _Warnings(warnings: pending.warnings),
             ],
 
             const Divider(height: 32),
@@ -220,8 +386,13 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                 Text('PREVIEW', style: _sectionStyle(theme)),
                 const SizedBox(width: 8),
                 Text(
-                  '${parsed.verses.length} verse'
-                  '${parsed.verses.length == 1 ? '' : 's'}',
+                  [
+                    if (pending.verses.isNotEmpty)
+                      '${pending.verses.length} verse'
+                          '${pending.verses.length == 1 ? '' : 's'}',
+                    if (pending.notation != null)
+                      '${pending.notation!.verses.fold<int>(0, (n, v) => n + v.measures.length)} bars',
+                  ].join(' · '),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -230,11 +401,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             ),
             const SizedBox(height: 8),
             if (draft != null)
-              // Rendered with the real ChordView so this is not an
-              // approximation of the song view — it IS the song view.
+              // The real view widgets, chosen the same way the song view
+              // chooses them, so this is not an approximation that can drift.
               SizedBox(
-                height: 320,
-                child: ChordView(song: draft, transpose: 0),
+                height: 340,
+                child: draft.hasNotation
+                    ? SheetMusicView(
+                        song: draft, transpose: 0, showChords: true)
+                    : ChordView(song: draft, transpose: 0),
               )
             else
               Text(
@@ -341,9 +515,9 @@ class _BookFieldState extends ConsumerState<_BookField> {
   }
 }
 
-/// Parser warnings. Shown rather than swallowed: every one of them marks a
-/// place the parser guessed, and the guess is easier to correct here than
-/// after the song is saved.
+/// Importer warnings. Shown rather than swallowed: every one marks a place the
+/// importer guessed or dropped something, and that is far easier to judge here
+/// than after the song is saved.
 class _Warnings extends StatelessWidget {
   final List<String> warnings;
 
@@ -352,11 +526,41 @@ class _Warnings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    return _Notice(
+      icon: Icons.info_outline,
+      background: theme.colorScheme.secondaryContainer,
+      foreground: theme.colorScheme.onSecondaryContainer,
+      title: 'Check ${warnings.length == 1 ? 'this' : 'these'} '
+          '${warnings.length == 1 ? 'line' : 'lines'}',
+      text: warnings.map((w) => '• $w').join('\n'),
+    );
+  }
+}
+
+/// A coloured info/error block.
+class _Notice extends StatelessWidget {
+  final String text;
+  final String? title;
+  final IconData icon;
+  final Color background;
+  final Color foreground;
+
+  const _Notice({
+    required this.text,
+    required this.icon,
+    required this.background,
+    required this.foreground,
+    this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer,
+        color: background,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -364,28 +568,25 @@ class _Warnings extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline,
-                  size: 18, color: theme.colorScheme.onSecondaryContainer),
+              Icon(icon, size: 18, color: foreground),
               const SizedBox(width: 8),
-              Text(
-                'Check these ${warnings.length == 1 ? 'line' : 'lines'}',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onSecondaryContainer,
+              Expanded(
+                child: Text(
+                  title ?? text,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: foreground,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          for (final warning in warnings)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                '• $warning',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSecondaryContainer,
-                ),
-              ),
+          if (title != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(color: foreground),
             ),
+          ],
         ],
       ),
     );

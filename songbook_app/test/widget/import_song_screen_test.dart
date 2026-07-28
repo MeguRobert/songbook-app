@@ -95,7 +95,9 @@ void main() {
     // warns. That warning has to reach the user while it is still cheap to fix.
     await pasteAndParse(tester, 'A\nEgy sor szöveg');
 
-    expect(find.textContaining('Check these'), findsOneWidget);
+    // Wording adapts to the count ('this line' / 'these lines'), so match
+    // the invariant: the warning block is on screen.
+    expect(find.textContaining('Check'), findsWidgets);
   });
 
   testWidgets('Hungarian lyrics are not eaten as chords', (tester) async {

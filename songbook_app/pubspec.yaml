@@ -38,6 +38,10 @@ dependencies:
   xml: ^6.5.0
   archive: ^3.6.1
 
+  # Choosing a MusicXML file to import. Works on web too (HTML file input),
+  # which is the platform this is deployed on.
+  file_picker: ^10.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
