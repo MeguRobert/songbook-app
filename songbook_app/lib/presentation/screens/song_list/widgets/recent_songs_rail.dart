@@ -62,7 +62,7 @@ class RecentSongsRail extends ConsumerWidget {
                     title: song.title,
                     isContinue: isContinue,
                     onTap: () =>
-                        context.push(AppRoutes.songPath(song.number)),
+                        context.push(AppRoutes.songPath(song.id)),
                   );
                 },
               ),

@@ -1,6 +1,8 @@
 import '../datasources/local/local_datasource.dart';
 import '../models/song.dart';
 import '../models/song_id.dart';
+import '../models/view_config.dart';
+import 'settings_repository.dart';
 
 /// Songs the user added themselves, stored on the device.
 ///
@@ -15,8 +17,9 @@ import '../models/song_id.dart';
 /// number shared with a hymnal cannot collide.
 class UserSongRepository {
   final LocalDataSource _localDataSource;
+  final SettingsRepository _settings;
 
-  UserSongRepository(this._localDataSource);
+  UserSongRepository(this._localDataSource, this._settings);
 
   /// All user songs, in the order they were added.
   List<Song> getAll() => _localDataSource.getUserSongs();
@@ -39,6 +42,16 @@ class UserSongRepository {
         ? song.copyWith(explicitId: SongId.newUserSong())
         : song;
     await _localDataSource.upsertUserSong(stored);
+
+    // Give it a per-song view it can actually honour. The global default is
+    // sheet music, and an imported song has none — without this every one
+    // opened on the "no sheet music available" placeholder and had to be
+    // switched by hand, every time. Written as a per-song override rather than
+    // patched in at render time so the controls sheet agrees with the screen
+    // instead of highlighting a preset that is not in effect.
+    if (!stored.hasNotation && !stored.hasSheetMusic) {
+      await _settings.setSongViewConfig(stored.id, const ViewConfig.chords());
+    }
     return stored;
   }
 

@@ -1,3 +1,4 @@
+import '../../data/models/song_id.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'providers.dart';
@@ -34,15 +35,15 @@ class AutoScrollState {
 /// so the persisted per-song speed is restored, and the cursor starts paused.
 class AutoScrollNotifier extends StateNotifier<AutoScrollState> {
   final Ref _ref;
-  int? _songNumber;
+  SongId? _songId;
 
   AutoScrollNotifier(this._ref) : super(const AutoScrollState());
 
-  /// Loads the persisted speed for [songNumber] and resets to a paused state.
-  void init(int songNumber) {
-    _songNumber = songNumber;
+  /// Loads the persisted speed for [songId] and resets to a paused state.
+  void init(SongId songId) {
+    _songId = songId;
     final repo = _ref.read(settingsRepositoryProvider);
-    final saved = repo.getAutoScrollSpeed(songNumber).toDouble();
+    final saved = repo.getAutoScrollSpeed(songId).toDouble();
     state = AutoScrollState(isPlaying: false, speed: saved);
   }
 
@@ -69,7 +70,7 @@ class AutoScrollNotifier extends StateNotifier<AutoScrollState> {
   /// remembered next time. Call this when the slider drag ends.
   void commitSpeed([double? pixelsPerSecond]) {
     if (pixelsPerSecond != null) setSpeed(pixelsPerSecond);
-    final song = _songNumber;
+    final song = _songId;
     if (song != null) {
       _ref
           .read(settingsRepositoryProvider)

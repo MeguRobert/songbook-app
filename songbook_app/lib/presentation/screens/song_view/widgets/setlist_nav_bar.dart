@@ -17,15 +17,15 @@ import '../../../providers/setlist_provider.dart';
 ///  * the setlist has since been deleted, which would leave a stale name.
 class SetlistNavBar extends ConsumerWidget {
   /// The song currently on screen, used to scope the bar to setlist members.
-  final int songNumber;
+  final SongId songId;
 
-  const SetlistNavBar({required this.songNumber, super.key});
+  const SetlistNavBar({required this.songId, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playback = ref.watch(setlistPlaybackProvider);
     if (playback == null) return const SizedBox.shrink();
-    if (!playback.songIds.contains(SongId.hymnal(songNumber))) {
+    if (!playback.songIds.contains(songId)) {
       return const SizedBox.shrink();
     }
     if (ref.watch(setlistByIdProvider(playback.setlistId)) == null) {
@@ -43,7 +43,7 @@ class SetlistNavBar extends ConsumerWidget {
             tooltip: 'Previous song',
             onPressed: playback.hasPrevious
                 ? () {
-                    final n = notifier.previous()?.hymnalNumber;
+                    final n = notifier.previous();
                     if (n != null) {
                       context.pushReplacement(AppRoutes.songPath(n));
                     }
@@ -72,7 +72,7 @@ class SetlistNavBar extends ConsumerWidget {
             tooltip: 'Next song',
             onPressed: playback.hasNext
                 ? () {
-                    final n = notifier.next()?.hymnalNumber;
+                    final n = notifier.next();
                     if (n != null) {
                       context.pushReplacement(AppRoutes.songPath(n));
                     }

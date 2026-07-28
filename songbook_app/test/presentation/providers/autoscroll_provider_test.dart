@@ -1,3 +1,4 @@
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,7 +45,7 @@ void main() {
       final container = await makeContainer();
       addTearDown(container.dispose);
       final notifier = container.read(autoScrollProvider.notifier);
-      notifier.init(1);
+      notifier.init(const SongId.hymnal(1));
 
       notifier.setSpeed(9999);
       expect(container.read(autoScrollProvider).speed, AutoScrollState.maxSpeed);
@@ -57,7 +58,7 @@ void main() {
       addTearDown(container.dispose);
       final notifier = container.read(autoScrollProvider.notifier);
 
-      notifier.init(42);
+      notifier.init(const SongId.hymnal(42));
       // setSpeed only updates live state (it runs on every slider frame);
       // commitSpeed is what writes to SharedPreferences, on drag end.
       notifier.setSpeed(90);
@@ -67,14 +68,14 @@ void main() {
       // A fresh notifier (same prefs) restores the persisted speed for song 42
       // but keeps the default for an untouched song.
       final repo = container.read(settingsRepositoryProvider);
-      expect(repo.getAutoScrollSpeed(42), 90);
-      expect(repo.getAutoScrollSpeed(7),
+      expect(repo.getAutoScrollSpeed(const SongId.hymnal(42)), 90);
+      expect(repo.getAutoScrollSpeed(const SongId.hymnal(7)),
           SettingsRepository.defaultAutoScrollSpeed);
 
-      notifier.init(7);
+      notifier.init(const SongId.hymnal(7));
       expect(container.read(autoScrollProvider).speed,
           SettingsRepository.defaultAutoScrollSpeed.toDouble());
-      notifier.init(42);
+      notifier.init(const SongId.hymnal(42));
       expect(container.read(autoScrollProvider).speed, 90.0);
     });
 
@@ -84,7 +85,7 @@ void main() {
       final notifier = container.read(autoScrollProvider.notifier);
 
       notifier.play();
-      notifier.init(3);
+      notifier.init(const SongId.hymnal(3));
       expect(container.read(autoScrollProvider).isPlaying, isFalse);
     });
   });

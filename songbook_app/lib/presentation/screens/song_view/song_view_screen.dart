@@ -29,10 +29,10 @@ enum _SongMenuAction { presentation, editTags }
 
 /// Screen for viewing a single song
 class SongViewScreen extends ConsumerStatefulWidget {
-  final int songNumber;
+  final SongId songId;
 
   const SongViewScreen({
-    required this.songNumber,
+    required this.songId,
     super.key,
   });
 
@@ -45,11 +45,6 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     // tickers — the zoom AnimationController (04-05) and the auto-scroll
     // Ticker (POC 1). SingleTickerProviderStateMixin asserts on the second.
     with TickerProviderStateMixin {
-  /// This screen is still routed to by hymnal number; stored references
-  /// (favourites, recents, setlists, tags) are keyed by [SongId]. One
-  /// conversion point rather than a cast at every call site.
-  SongId get _songId => SongId.hymnal(widget.songNumber);
-
   double _baseScale = 1.0;
 
   // Smooth zoom for discrete Ctrl+wheel notches. A trackpad pinch streams many
@@ -74,7 +69,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     super.initState();
     _savedViewConfig = ref
         .read(settingsRepositoryProvider)
-        .getSongViewConfig(widget.songNumber);
+        .getSongViewConfig(widget.songId);
     _zoomController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 160),
@@ -95,28 +90,28 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   @override
   void didUpdateWidget(covariant SongViewScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.songNumber == widget.songNumber) return;
-    // GoRouter keys each `/song/N` page separately, so today a new song always
+    if (oldWidget.songId == widget.songId) return;
+    // GoRouter keys each `/song/<id>` page separately, so today a new song always
     // gets a fresh State and this never fires. Handle in-place reuse anyway:
     // without it the State would keep serving the previous song's saved preset
     // and would never open the provider for the new number at all.
     _savedViewConfig = ref
         .read(settingsRepositoryProvider)
-        .getSongViewConfig(widget.songNumber);
+        .getSongViewConfig(widget.songId);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _openCurrentSong();
     });
   }
 
-  /// Points every per-song provider at [SongViewScreen.songNumber].
+  /// Points every per-song provider at [SongViewScreen.songId].
   ///
   /// Must run after the frame: these all mutate provider state, which Riverpod
   /// forbids during build.
   void _openCurrentSong() {
-    ref.read(songViewProvider.notifier).openSong(widget.songNumber);
+    ref.read(songViewProvider.notifier).openSong(widget.songId);
     // Record this song as recently viewed (powers the Home "Recent" rail).
-    ref.read(recentsProvider.notifier).record(_songId);
-    ref.read(autoScrollProvider.notifier).init(widget.songNumber);
+    ref.read(recentsProvider.notifier).record(widget.songId);
+    ref.read(autoScrollProvider.notifier).init(widget.songId);
     _syncSetlistPosition();
   }
 
@@ -187,7 +182,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   void _syncSetlistPosition() {
     final playback = ref.read(setlistPlaybackProvider);
     if (playback == null) return;
-    final index = playback.songIds.indexOf(_songId);
+    final index = playback.songIds.indexOf(widget.songId);
     if (index != -1) {
       ref.read(setlistPlaybackProvider.notifier).jumpTo(index);
     }
@@ -206,7 +201,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
       context: context,
       isScrollControlled: true,
       builder: (context) => TagEditorSheet(
-        songNumber: widget.songNumber,
+        songId: widget.songId,
         currentTags: currentTags,
       ),
     );
@@ -277,7 +272,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
           ),
           onPressed: () => ref
               .read(favoritesProvider.notifier)
-              .toggleFavorite(_songId),
+              .toggleFavorite(widget.songId),
           tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
         ),
         PopupMenuButton<_SongMenuAction>(
@@ -286,7 +281,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
           onSelected: (action) {
             switch (action) {
               case _SongMenuAction.presentation:
-                context.push(AppRoutes.presentationPath(widget.songNumber));
+                context.push(AppRoutes.presentationPath(widget.songId));
               case _SongMenuAction.editTags:
                 _showTagEditor(context, song.tags);
             }
@@ -316,8 +311,8 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
 
   @override
   Widget build(BuildContext context) {
-    final songAsync = ref.watch(songByNumberProvider(widget.songNumber));
-    final isFavorite = ref.watch(isFavoriteProvider(_songId));
+    final songAsync = ref.watch(songByIdProvider(widget.songId));
+    final isFavorite = ref.watch(isFavoriteProvider(widget.songId));
     // Deliberately NOT watching autoScrollProvider. The play control lives in
     // the controls sheet, which watches it itself; watching here rebuilt the
     // whole screen on every frame of a speed-slider drag. The ticker is driven
@@ -332,7 +327,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     // transpose/zoom.
     final songView = ref.watch(songViewProvider);
     final globalViewConfig = ref.watch(viewConfigProvider);
-    final isCurrentSong = songView?.songNumber == widget.songNumber;
+    final isCurrentSong = songView?.songId == widget.songId;
 
     final viewConfig = isCurrentSong
         ? (songView!.activeViewConfig ?? globalViewConfig)
@@ -447,7 +442,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
             tooltip: 'Song controls',
             child: const Icon(Icons.tune),
           ),
-          bottomNavigationBar: SetlistNavBar(songNumber: widget.songNumber),
+          bottomNavigationBar: SetlistNavBar(songId: widget.songId),
         );
       },
       loading: () => Scaffold(

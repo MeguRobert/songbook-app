@@ -1,3 +1,4 @@
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
 import 'package:songbook_app/presentation/screens/presentation/presentation_screen.dart';
@@ -9,10 +10,10 @@ void main() {
     final song = makeTestSong();
     await pumpScreen(
       tester,
-      const PresentationScreen(songNumber: 42),
+      PresentationScreen(songId: const SongId.hymnal(42)),
       overrides: [
-        songByNumberProvider.overrideWith(
-            (ref, number) async => number == 42 ? song : null),
+        songByIdProvider.overrideWith(
+            (ref, id) async => id == const SongId.hymnal(42) ? song : null),
       ],
     );
     // Let the song future resolve and the auto-hide timer (3s) elapse.
@@ -29,9 +30,9 @@ void main() {
   testWidgets('unknown song renders without crashing', (tester) async {
     await pumpScreen(
       tester,
-      const PresentationScreen(songNumber: 999),
+      PresentationScreen(songId: const SongId.hymnal(999)),
       overrides: [
-        songByNumberProvider.overrideWith((ref, number) async => null),
+        songByIdProvider.overrideWith((ref, number) async => null),
       ],
     );
     await tester.pump();

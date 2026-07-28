@@ -123,10 +123,7 @@ class SetlistDetailScreen extends ConsumerWidget {
 
   void _play(BuildContext context, WidgetRef ref, Setlist setlist) {
     ref.read(setlistPlaybackProvider.notifier).start(setlist);
-    // Routes still carry a hymnal number; nothing user-authored can be in
-    // a setlist yet, so there is no id here without one.
-    final first = setlist.songIds.first.hymnalNumber;
-    if (first != null) context.push(AppRoutes.songPath(first));
+    context.push(AppRoutes.songPath(setlist.songIds.first));
   }
 
   /// Opens a bottom sheet listing all songs; tapping toggles membership.

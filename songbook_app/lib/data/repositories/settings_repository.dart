@@ -1,5 +1,6 @@
 import '../../core/theme/app_theme.dart';
 import '../datasources/local/local_datasource.dart';
+import '../models/song_id.dart';
 import '../models/view_config.dart';
 
 /// Keys for settings storage
@@ -72,21 +73,52 @@ class SettingsRepository {
 
   // --- Per-Song View Config ---
 
-  ViewConfig? getSongViewConfig(int songNumber) {
-    final key = 'song_view_config_$songNumber';
-    final value = _localDataSource.getStringSetting(key);
+  /// Per-song settings are keyed by [SongId], not by number: a user song
+  /// numbered 42 and hymnal 42 are different songs and must not share a
+  /// preference.
+  ///
+  /// [legacyKey] is the pre-[SongId] key, a bare number. It is read as a
+  /// fallback so a per-song preference set by an earlier build is not orphaned
+  /// by the rename. Only hymnal songs can have one — nothing else existed.
+  String _songKey(String prefix, SongId songId) => '${prefix}_${songId.value}';
+
+  String? _legacySongKey(String prefix, SongId songId) {
+    final number = songId.hymnalNumber;
+    return number == null ? null : '${prefix}_$number';
+  }
+
+  String? _readSongSetting(String prefix, SongId songId) {
+    final current =
+        _localDataSource.getStringSetting(_songKey(prefix, songId));
+    if (current != null) return current;
+    final legacy = _legacySongKey(prefix, songId);
+    return legacy == null ? null : _localDataSource.getStringSetting(legacy);
+  }
+
+  ViewConfig? getSongViewConfig(SongId songId) {
+    final value = _readSongSetting('song_view_config', songId);
     if (value == null) return null;
     return ViewConfig.fromStorageString(value);
   }
 
-  Future<bool> setSongViewConfig(int songNumber, ViewConfig config) {
-    final key = 'song_view_config_$songNumber';
-    return _localDataSource.setStringSetting(key, config.toStorageString());
+  Future<bool> setSongViewConfig(SongId songId, ViewConfig config) {
+    return _localDataSource.setStringSetting(
+      _songKey('song_view_config', songId),
+      config.toStorageString(),
+    );
   }
 
-  Future<bool> clearSongViewConfig(int songNumber) {
-    final key = 'song_view_config_$songNumber';
-    return _localDataSource.removeStringSetting(key);
+  /// Clears the override, including any left under the pre-[SongId] key.
+  ///
+  /// Removing only the current key would let [getSongViewConfig]'s legacy
+  /// fallback resurrect an override the user just cleared.
+  Future<bool> clearSongViewConfig(SongId songId) async {
+    final removed = await _localDataSource
+        .removeStringSetting(_songKey('song_view_config', songId));
+    final legacy = _legacySongKey('song_view_config', songId);
+    if (legacy == null) return removed;
+    final legacyRemoved = await _localDataSource.removeStringSetting(legacy);
+    return removed || legacyRemoved;
   }
 
   // --- Projection Mode ---
@@ -123,16 +155,21 @@ class SettingsRepository {
   /// Default auto-scroll speed in logical pixels per second.
   static const defaultAutoScrollSpeed = 40;
 
-  /// Returns the saved auto-scroll speed (logical px/s) for [songNumber],
+  /// Returns the saved auto-scroll speed (logical px/s) for [songId],
   /// falling back to [defaultAutoScrollSpeed] when none has been set.
-  int getAutoScrollSpeed(int songNumber) {
-    final key = 'autoscroll_speed_$songNumber';
-    return _localDataSource.getIntSetting(key) ?? defaultAutoScrollSpeed;
+  int getAutoScrollSpeed(SongId songId) {
+    final current =
+        _localDataSource.getIntSetting(_songKey('autoscroll_speed', songId));
+    if (current != null) return current;
+    final legacy = _legacySongKey('autoscroll_speed', songId);
+    final fromLegacy =
+        legacy == null ? null : _localDataSource.getIntSetting(legacy);
+    return fromLegacy ?? defaultAutoScrollSpeed;
   }
 
-  /// Persists the auto-scroll speed (logical px/s) for [songNumber].
-  Future<bool> setAutoScrollSpeed(int songNumber, int pixelsPerSecond) {
-    final key = 'autoscroll_speed_$songNumber';
-    return _localDataSource.setIntSetting(key, pixelsPerSecond);
+  /// Persists the auto-scroll speed (logical px/s) for [songId].
+  Future<bool> setAutoScrollSpeed(SongId songId, int pixelsPerSecond) {
+    return _localDataSource.setIntSetting(
+        _songKey('autoscroll_speed', songId), pixelsPerSecond);
   }
 }

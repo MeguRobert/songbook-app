@@ -104,14 +104,10 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     final stored = await ref.read(userSongsProvider.notifier).add(draft);
     if (!mounted) return;
     setState(() => _saving = false);
-    // Straight into the song it just created: the point of importing is to use
-    // it, and this also proves the round-trip worked.
-    final number = stored.number;
-    if (number > 0) {
-      context.pushReplacement(AppRoutes.songPath(number));
-    } else {
-      context.pop();
-    }
+    // Straight into the song it just created: the point of importing is to
+    // use it, and this also proves the round-trip worked. By id, so it opens
+    // THIS song even when a hymnal song shares its number.
+    context.pushReplacement(AppRoutes.songPath(stored.id));
   }
 
   @override

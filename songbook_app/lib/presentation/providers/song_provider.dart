@@ -111,13 +111,13 @@ final songCountProvider = FutureProvider<int>((ref) async {
 
 /// State class for current song view
 class SongViewState {
-  final int songNumber;
+  final SongId songId;
   final int transposeAmount;
   final double textScale;
   final ViewConfig? activeViewConfig;
 
   const SongViewState({
-    required this.songNumber,
+    required this.songId,
     this.transposeAmount = 0,
     this.textScale = 1.0,
     this.activeViewConfig,
@@ -128,14 +128,14 @@ class SongViewState {
   /// keeps the old value. Without this flag `clearViewConfigForSong` was a
   /// silent no-op.
   SongViewState copyWith({
-    int? songNumber,
+    SongId? songId,
     int? transposeAmount,
     double? textScale,
     ViewConfig? activeViewConfig,
     bool clearActiveViewConfig = false,
   }) {
     return SongViewState(
-      songNumber: songNumber ?? this.songNumber,
+      songId: songId ?? this.songId,
       transposeAmount: transposeAmount ?? this.transposeAmount,
       textScale: textScale ?? this.textScale,
       activeViewConfig: clearActiveViewConfig
@@ -151,13 +151,13 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
 
   SongViewNotifier(this._ref) : super(null);
 
-  void openSong(int songNumber) {
+  void openSong(SongId songId) {
     // Check for per-song view config override
     final repository = _ref.read(settingsRepositoryProvider);
-    final songViewConfig = repository.getSongViewConfig(songNumber);
+    final songViewConfig = repository.getSongViewConfig(songId);
 
     state = SongViewState(
-      songNumber: songNumber,
+      songId: songId,
       activeViewConfig: songViewConfig,
     );
   }
@@ -268,7 +268,7 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
     if (state?.activeViewConfig != null) {
       final repository = _ref.read(settingsRepositoryProvider);
       await repository.setSongViewConfig(
-        state!.songNumber,
+        state!.songId,
         state!.activeViewConfig!,
       );
     }
@@ -278,7 +278,7 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
   Future<void> clearViewConfigForSong() async {
     if (state != null) {
       final repository = _ref.read(settingsRepositoryProvider);
-      await repository.clearSongViewConfig(state!.songNumber);
+      await repository.clearSongViewConfig(state!.songId);
       state = state!.copyWith(clearActiveViewConfig: true);
     }
   }

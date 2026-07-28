@@ -7,6 +7,8 @@ import 'package:songbook_app/data/models/lyric_line.dart';
 import 'package:songbook_app/data/models/song.dart';
 import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/data/models/verse.dart';
+import 'package:songbook_app/data/models/view_config.dart';
+import 'package:songbook_app/data/repositories/settings_repository.dart';
 import 'package:songbook_app/data/repositories/user_song_repository.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
@@ -42,9 +44,8 @@ Future<UserSongRepository> makeRepository([
   Map<String, Object> prefs = const {},
 ]) async {
   SharedPreferences.setMockInitialValues(prefs);
-  return UserSongRepository(
-    LocalDataSource(await SharedPreferences.getInstance()),
-  );
+  final dataSource = LocalDataSource(await SharedPreferences.getInstance());
+  return UserSongRepository(dataSource, SettingsRepository(dataSource));
 }
 
 void main() {
@@ -180,6 +181,25 @@ void main() {
       await notifier.remove(stored.id);
       expect((await container.read(songsProvider.future)).map((s) => s.id),
           isNot(contains(stored.id)));
+    });
+  });
+
+  group('view preference', () {
+    test('an imported song opens in chord view, not on the sheet-music '
+        'placeholder', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final dataSource = LocalDataSource(prefs);
+      final settings = SettingsRepository(dataSource);
+      final repo = UserSongRepository(dataSource, settings);
+
+      final stored = await repo.add(draft());
+
+      // The global default is sheet music and an imported song has none, so
+      // without a per-song override every one lands on "no sheet music
+      // available". Stored as an override, so the controls sheet reflects it
+      // too rather than highlighting a preset that is not in effect.
+      expect(settings.getSongViewConfig(stored.id), const ViewConfig.chords());
     });
   });
 }

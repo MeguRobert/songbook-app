@@ -1,3 +1,4 @@
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,12 +33,12 @@ void main() {
     final song = makeTestSong();
     await pumpScreen(
       tester,
-      const SongViewScreen(songNumber: 42),
+      SongViewScreen(songId: const SongId.hymnal(42)),
       // Global config without notation -> ChordView (no sheet music assets).
       prefs: {'settings_view_config': 'false:true'},
       overrides: [
-        songByNumberProvider.overrideWith(
-            (ref, number) async => number == 42 ? song : null),
+        songByIdProvider.overrideWith(
+            (ref, id) async => id == const SongId.hymnal(42) ? song : null),
       ],
     );
     await tester.pumpAndSettle();
@@ -57,11 +58,11 @@ void main() {
     final song = makeTestSong();
     await pumpScreen(
       tester,
-      const SongViewScreen(songNumber: 42),
+      SongViewScreen(songId: const SongId.hymnal(42)),
       prefs: {'settings_view_config': 'false:true'},
       overrides: [
-        songByNumberProvider.overrideWith(
-            (ref, number) async => number == 42 ? song : null),
+        songByIdProvider.overrideWith(
+            (ref, id) async => id == const SongId.hymnal(42) ? song : null),
       ],
     );
     await tester.pumpAndSettle();
@@ -76,10 +77,10 @@ void main() {
   testWidgets('shows not-found for an unknown song number', (tester) async {
     await pumpScreen(
       tester,
-      const SongViewScreen(songNumber: 999),
+      SongViewScreen(songId: const SongId.hymnal(999)),
       prefs: {'settings_view_config': 'false:true'},
       overrides: [
-        songByNumberProvider.overrideWith((ref, number) async => null),
+        songByIdProvider.overrideWith((ref, number) async => null),
       ],
     );
     await tester.pumpAndSettle();
@@ -96,11 +97,11 @@ void main() {
     final song = makeTestSong();
     await pumpScreen(
       tester,
-      const SongViewScreen(songNumber: 42),
+      SongViewScreen(songId: const SongId.hymnal(42)),
       prefs: {'settings_view_config': 'false:true'},
       overrides: [
-        songByNumberProvider
-            .overrideWith((ref, number) async => number == 42 ? song : null),
+        songByIdProvider
+            .overrideWith((ref, id) async => id == const SongId.hymnal(42) ? song : null),
       ],
     );
     await tester.pumpAndSettle();
@@ -128,11 +129,11 @@ void main() {
     final song = makeTestSong();
     await pumpScreen(
       tester,
-      const SongViewScreen(songNumber: 42),
+      SongViewScreen(songId: const SongId.hymnal(42)),
       prefs: {'settings_view_config': 'false:true'},
       overrides: [
-        songByNumberProvider
-            .overrideWith((ref, number) async => number == 42 ? song : null),
+        songByIdProvider
+            .overrideWith((ref, id) async => id == const SongId.hymnal(42) ? song : null),
       ],
     );
     await tester.pumpAndSettle();
@@ -173,11 +174,11 @@ void main() {
       final song = makeScrollableSong();
       await pumpScreen(
         tester,
-        const SongViewScreen(songNumber: 42),
+        SongViewScreen(songId: const SongId.hymnal(42)),
         prefs: {'settings_view_config': 'false:true'},
         overrides: [
-          songByNumberProvider
-              .overrideWith((ref, number) async => number == 42 ? song : null),
+          songByIdProvider
+              .overrideWith((ref, id) async => id == const SongId.hymnal(42) ? song : null),
         ],
       );
       await tester.pumpAndSettle();
@@ -224,9 +225,9 @@ void main() {
   group('first frame of a newly opened song', () {
     late ProviderContainer container;
 
-    Widget appFor(int songNumber) => UncontrolledProviderScope(
+    Widget appFor(SongId songId) => UncontrolledProviderScope(
           container: container,
-          child: MaterialApp(home: SongViewScreen(songNumber: songNumber)),
+          child: MaterialApp(home: SongViewScreen(songId: songId)),
         );
 
     Future<void> setUpContainer({
@@ -237,8 +238,8 @@ void main() {
       container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-          songByNumberProvider.overrideWith(
-            (ref, number) async => makeTestSong(number: number),
+          songByIdProvider.overrideWith(
+            (ref, id) async => makeTestSong(number: id.hymnalNumber ?? 0),
           ),
         ],
       );
@@ -249,7 +250,7 @@ void main() {
         (tester) async {
       await setUpContainer();
 
-      await tester.pumpWidget(appFor(42));
+      await tester.pumpWidget(appFor(const SongId.hymnal(42)));
       await tester.pumpAndSettle();
 
       container.read(songViewProvider.notifier).setTranspose(3);
@@ -259,7 +260,7 @@ void main() {
 
       // Exactly one frame: openSong() for song 43 has been scheduled but its
       // state change cannot land until the frame after this one.
-      await tester.pumpWidget(appFor(43));
+      await tester.pumpWidget(appFor(const SongId.hymnal(43)));
       await tester.pump();
 
       final firstFrame = tester.widget<ChordView>(find.byType(ChordView));
@@ -275,12 +276,12 @@ void main() {
         'settings_song_view_config_42': 'false:false',
       });
 
-      await tester.pumpWidget(appFor(42));
+      await tester.pumpWidget(appFor(const SongId.hymnal(42)));
       await tester.pumpAndSettle();
       expect(tester.widget<ChordView>(find.byType(ChordView)).showChords,
           isFalse);
 
-      await tester.pumpWidget(appFor(43));
+      await tester.pumpWidget(appFor(const SongId.hymnal(43)));
       await tester.pump();
 
       // Song 43 has no override, so it must open on the global Sheet Music
@@ -296,10 +297,10 @@ void main() {
         'settings_song_view_config_43': 'false:true',
       });
 
-      await tester.pumpWidget(appFor(42));
+      await tester.pumpWidget(appFor(const SongId.hymnal(42)));
       await tester.pumpAndSettle();
 
-      await tester.pumpWidget(appFor(43));
+      await tester.pumpWidget(appFor(const SongId.hymnal(43)));
       await tester.pump();
 
       final firstFrame = tester.widget<ChordView>(find.byType(ChordView));

@@ -1,3 +1,4 @@
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,11 +35,11 @@ void main() {
 
     test('openSong initializes state with defaults', () async {
       final container = await makeContainer();
-      container.read(songViewProvider.notifier).openSong(42);
+      container.read(songViewProvider.notifier).openSong(const SongId.hymnal(42));
 
       final state = container.read(songViewProvider);
       expect(state, isNotNull);
-      expect(state!.songNumber, 42);
+      expect(state!.songId, const SongId.hymnal(42));
       expect(state.transposeAmount, 0);
       expect(state.textScale, 1.0);
       expect(state.activeViewConfig, isNull);
@@ -48,7 +49,7 @@ void main() {
         () async {
       final container = await makeContainer(
           prefs: {'settings_song_view_config_42': 'false:true'});
-      container.read(songViewProvider.notifier).openSong(42);
+      container.read(songViewProvider.notifier).openSong(const SongId.hymnal(42));
 
       expect(container.read(songViewProvider)!.activeViewConfig,
           const ViewConfig.chords());
@@ -57,7 +58,7 @@ void main() {
     test('closeSong resets state to null', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(42);
+      notifier.openSong(const SongId.hymnal(42));
       notifier.closeSong();
       expect(container.read(songViewProvider), isNull);
     });
@@ -67,7 +68,7 @@ void main() {
     test('setTranspose sets the amount', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.setTranspose(3);
       expect(container.read(songViewProvider)!.transposeAmount, 3);
       expect(container.read(transposeProvider), 3);
@@ -76,7 +77,7 @@ void main() {
     test('transposeUp increments by one', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.transposeUp();
       notifier.transposeUp();
       expect(container.read(songViewProvider)!.transposeAmount, 2);
@@ -85,7 +86,7 @@ void main() {
     test('transposeUp wraps from +5 to -6', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.setTranspose(5);
       notifier.transposeUp();
       expect(container.read(songViewProvider)!.transposeAmount, -6);
@@ -94,7 +95,7 @@ void main() {
     test('transposeDown decrements by one', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.transposeDown();
       expect(container.read(songViewProvider)!.transposeAmount, -1);
     });
@@ -102,7 +103,7 @@ void main() {
     test('transposeDown wraps from -6 to +5', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.setTranspose(-6);
       notifier.transposeDown();
       expect(container.read(songViewProvider)!.transposeAmount, 5);
@@ -111,7 +112,7 @@ void main() {
     test('a full 12-step up cycle returns to the starting amount', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       for (var i = 0; i < 12; i++) {
         notifier.transposeUp();
       }
@@ -121,7 +122,7 @@ void main() {
     test('resetTranspose returns to 0', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.setTranspose(-4);
       notifier.resetTranspose();
       expect(container.read(songViewProvider)!.transposeAmount, 0);
@@ -146,7 +147,7 @@ void main() {
     test('increase and decrease step by 0.1', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
 
       notifier.increaseTextScale();
       expect(container.read(songViewProvider)!.textScale, closeTo(1.1, 1e-9));
@@ -159,7 +160,7 @@ void main() {
     test('clamps at the 2.0 upper bound', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.setTextScale(2.0);
       notifier.increaseTextScale();
       expect(container.read(songViewProvider)!.textScale, 2.0);
@@ -168,7 +169,7 @@ void main() {
     test('clamps at the 0.5 lower bound', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.setTextScale(0.5);
       notifier.decreaseTextScale();
       expect(container.read(songViewProvider)!.textScale, 0.5);
@@ -177,7 +178,7 @@ void main() {
     test('setTextScale clamps arbitrary values into 0.5..2.0', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.setTextScale(9.9);
       expect(container.read(songViewProvider)!.textScale, 2.0);
       notifier.setTextScale(0.01);
@@ -187,7 +188,7 @@ void main() {
     test('resetTextScale returns to 1.0', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
       notifier.setTextScale(1.7);
       notifier.resetTextScale();
       expect(container.read(songViewProvider)!.textScale, 1.0);
@@ -199,7 +200,7 @@ void main() {
       final container =
           await makeContainer(prefs: {'settings_view_config': 'false:true'});
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
 
       expect(notifier.getEffectiveConfig(), const ViewConfig.chords());
       expect(container.read(effectiveViewConfigProvider),
@@ -212,7 +213,7 @@ void main() {
         'settings_song_view_config_1': 'true:false',
       });
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
 
       // The per-song entry is notation-without-chords ('true:false'), which is
       // preserved verbatim now that the "Chords above staff" switch can produce
@@ -226,7 +227,7 @@ void main() {
     test('setPreset applies a temporary override', () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(1);
+      notifier.openSong(const SongId.hymnal(1));
 
       notifier.setPreset(const ViewConfig.lyricsOnly());
       expect(container.read(songViewProvider)!.activeViewConfig,
@@ -237,42 +238,42 @@ void main() {
         () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(7);
+      notifier.openSong(const SongId.hymnal(7));
       notifier.setPreset(const ViewConfig.chords());
 
       await notifier.saveViewConfigForSong();
 
       final prefs = container.read(sharedPreferencesProvider);
-      expect(prefs.getString('settings_song_view_config_7'), 'false:true');
+      expect(prefs.getString('settings_song_view_config_hymnal:7'), 'false:true');
     });
 
     test('saveViewConfigForSong without an override persists nothing',
         () async {
       final container = await makeContainer();
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(7);
+      notifier.openSong(const SongId.hymnal(7));
 
       await notifier.saveViewConfigForSong();
 
       final prefs = container.read(sharedPreferencesProvider);
-      expect(prefs.getString('settings_song_view_config_7'), isNull);
+      expect(prefs.getString('settings_song_view_config_hymnal:7'), isNull);
     });
 
     test('clearViewConfigForSong removes the persisted override', () async {
       final container = await makeContainer(
           prefs: {'settings_song_view_config_7': 'false:true'});
       final notifier = container.read(songViewProvider.notifier);
-      notifier.openSong(7);
+      notifier.openSong(const SongId.hymnal(7));
 
       await notifier.clearViewConfigForSong();
 
       final prefs = container.read(sharedPreferencesProvider);
-      expect(prefs.getString('settings_song_view_config_7'), isNull);
+      expect(prefs.getString('settings_song_view_config_hymnal:7'), isNull);
       // NOTE: the in-memory activeViewConfig is NOT cleared, because
       // SongViewState.copyWith(activeViewConfig: null) keeps the previous
       // value (?? fallback). A fresh openSong reflects the cleared state.
       // If in-place reset is intended, copyWith needs a sentinel for null.
-      notifier.openSong(7);
+      notifier.openSong(const SongId.hymnal(7));
       expect(container.read(songViewProvider)!.activeViewConfig, isNull);
     });
   });
@@ -307,9 +308,9 @@ void main() {
 
   group('SongViewState.copyWith', () {
     test('overrides fields independently', () {
-      const state = SongViewState(songNumber: 1);
+      const state = SongViewState(songId: SongId.hymnal(1));
       expect(state.copyWith(transposeAmount: 4).transposeAmount, 4);
-      expect(state.copyWith(transposeAmount: 4).songNumber, 1);
+      expect(state.copyWith(transposeAmount: 4).songId, const SongId.hymnal(1));
       expect(state.copyWith(textScale: 1.5).textScale, 1.5);
       expect(
           state

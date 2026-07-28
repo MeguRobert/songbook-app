@@ -82,7 +82,7 @@ class FavoritesScreen extends ConsumerWidget {
                   Expanded(
                     child: SongListTile(
                       song: song,
-                      onTap: () => context.push(AppRoutes.songPath(song.number)),
+                      onTap: () => context.push(AppRoutes.songPath(song.id)),
                     ),
                   ),
                 ],

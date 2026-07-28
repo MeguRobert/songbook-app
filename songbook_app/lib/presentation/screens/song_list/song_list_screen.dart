@@ -177,7 +177,7 @@ class _BrowseList extends ConsumerWidget {
                 itemBuilder: (context, index) => SongListTile(
                   song: songs[index],
                   onTap: () => context.push(
-                    AppRoutes.songPath(songs[index].number),
+                    AppRoutes.songPath(songs[index].id),
                   ),
                 ),
               ),
@@ -274,7 +274,7 @@ class _SearchResults extends ConsumerWidget {
               return SongListTile(
                 song: song,
                 lyricSnippet: state.lyricSnippets[song.number],
-                onTap: () => context.push(AppRoutes.songPath(song.number)),
+                onTap: () => context.push(AppRoutes.songPath(song.id)),
               );
             },
           ),

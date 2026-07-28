@@ -1,3 +1,4 @@
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:songbook_app/core/theme/app_theme.dart';
@@ -109,7 +110,7 @@ void main() {
     test('null when no override is stored (null semantics preserved)', () {
       when(() => dataSource.getStringSetting('song_view_config_42'))
           .thenReturn(null);
-      expect(repository.getSongViewConfig(42), isNull);
+      expect(repository.getSongViewConfig(const SongId.hymnal(42)), isNull);
     });
 
     test('reads a stored override for the right song key', () {
@@ -118,26 +119,69 @@ void main() {
       // 'true:false' is notation-without-chords — a real state again, set by
       // the "Chords above staff" switch, so it is read back verbatim.
       expect(
-        repository.getSongViewConfig(42),
+        repository.getSongViewConfig(const SongId.hymnal(42)),
         const ViewConfig(showNotation: true, showChords: false),
       );
     });
 
-    test('setSongViewConfig writes under the per-song key', () async {
+    test('setSongViewConfig writes under the song-id key', () async {
+      // Keyed by SongId, not number: a user song numbered 7 and hymnal 7 are
+      // different songs and must not share a per-song preference.
       when(() => dataSource.setStringSetting(
-              'song_view_config_7', 'false:true'))
+              'song_view_config_hymnal:7', 'false:true'))
           .thenAnswer((_) async => true);
-      await repository.setSongViewConfig(7, const ViewConfig.chords());
+      await repository.setSongViewConfig(
+          const SongId.hymnal(7), const ViewConfig.chords());
       verify(() => dataSource.setStringSetting(
-          'song_view_config_7', 'false:true')).called(1);
+          'song_view_config_hymnal:7', 'false:true')).called(1);
     });
 
-    test('clearSongViewConfig removes the per-song key', () async {
-      when(() => dataSource.removeStringSetting('song_view_config_7'))
+    test("a user song does not share a hymnal song's preference", () async {
+      when(() => dataSource.setStringSetting(any(), any()))
           .thenAnswer((_) async => true);
-      await repository.clearSongViewConfig(7);
+      await repository.setSongViewConfig(
+          const SongId.user('abc'), const ViewConfig.chords());
+      verify(() => dataSource.setStringSetting(
+          'song_view_config_user:abc', 'false:true')).called(1);
+      verifyNever(() => dataSource.setStringSetting(
+          'song_view_config_hymnal:7', any()));
+    });
+
+    test('clearSongViewConfig removes both the current and legacy keys',
+        () async {
+      // Removing only the current key would let the legacy fallback in
+      // getSongViewConfig resurrect an override the user just cleared.
+      when(() => dataSource.removeStringSetting(any()))
+          .thenAnswer((_) async => true);
+      await repository.clearSongViewConfig(const SongId.hymnal(7));
+      verify(() => dataSource.removeStringSetting('song_view_config_hymnal:7'))
+          .called(1);
       verify(() => dataSource.removeStringSetting('song_view_config_7'))
           .called(1);
+    });
+
+    test('falls back to the pre-SongId key so preferences survive', () {
+      // Renaming the key would otherwise orphan every per-song preference an
+      // earlier build wrote. Only hymnal songs can have one.
+      when(() => dataSource.getStringSetting('song_view_config_hymnal:42'))
+          .thenReturn(null);
+      when(() => dataSource.getStringSetting('song_view_config_42'))
+          .thenReturn('false:true');
+
+      expect(repository.getSongViewConfig(const SongId.hymnal(42)),
+          const ViewConfig.chords());
+    });
+
+    test('the current key wins over the legacy one', () {
+      when(() => dataSource.getStringSetting('song_view_config_hymnal:42'))
+          .thenReturn('true:false');
+      when(() => dataSource.getStringSetting('song_view_config_42'))
+          .thenReturn('false:true');
+
+      expect(
+        repository.getSongViewConfig(const SongId.hymnal(42)),
+        const ViewConfig(showNotation: true, showChords: false),
+      );
     });
   });
 

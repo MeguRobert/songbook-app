@@ -56,7 +56,10 @@ final tagRepositoryProvider = Provider<TagRepository>((ref) {
 /// Songs the user added themselves. Merged into the catalogue by
 /// `songsProvider`; see [userSongsProvider] for the reactive view.
 final userSongRepositoryProvider = Provider<UserSongRepository>((ref) {
-  return UserSongRepository(ref.watch(localDataSourceProvider));
+  return UserSongRepository(
+    ref.watch(localDataSourceProvider),
+    ref.watch(settingsRepositoryProvider),
+  );
 });
 
 final recentsRepositoryProvider = Provider<RecentsRepository>((ref) {

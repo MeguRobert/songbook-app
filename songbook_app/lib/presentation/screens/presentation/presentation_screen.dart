@@ -1,3 +1,4 @@
+import '../../../data/models/song_id.dart';
 import 'dart:async';
 import 'dart:math' show sqrt, min;
 import 'package:flutter/material.dart';
@@ -11,10 +12,10 @@ import '../../providers/song_provider.dart';
 
 /// Full-screen immersive presentation mode for displaying song lyrics verse-by-verse
 class PresentationScreen extends ConsumerStatefulWidget {
-  final int songNumber;
+  final SongId songId;
 
   const PresentationScreen({
-    required this.songNumber,
+    required this.songId,
     super.key,
   });
 
@@ -236,7 +237,7 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final songAsync = ref.watch(songByNumberProvider(widget.songNumber));
+    final songAsync = ref.watch(songByIdProvider(widget.songId));
     final theme = Theme.of(context);
     final isDarkTheme = theme.brightness == Brightness.dark;
 

@@ -1,3 +1,4 @@
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,11 +23,11 @@ void main() {
     final song = makeTestSong(); // originalKey Bb
     await pumpScreen(
       tester,
-      const SongViewScreen(songNumber: 42),
+      SongViewScreen(songId: const SongId.hymnal(42)),
       prefs: {'settings_view_config': viewConfig},
       overrides: [
-        songByNumberProvider.overrideWith(
-            (ref, number) async => number == 42 ? song : null),
+        songByIdProvider.overrideWith(
+            (ref, id) async => id == const SongId.hymnal(42) ? song : null),
       ],
     );
     await tester.pumpAndSettle();

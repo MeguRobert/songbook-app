@@ -9,11 +9,11 @@ import '../../../providers/tag_provider.dart';
 ///
 /// Keeps a local working copy for snappy editing; commits on "Save".
 class TagEditorSheet extends ConsumerStatefulWidget {
-  final int songNumber;
+  final SongId songId;
   final List<String> currentTags;
 
   const TagEditorSheet({
-    required this.songNumber,
+    required this.songId,
     required this.currentTags,
     super.key,
   });
@@ -56,14 +56,14 @@ class _TagEditorSheetState extends ConsumerState<TagEditorSheet> {
   Future<void> _save() async {
     await ref
         .read(tagOverridesProvider.notifier)
-        .setTags(SongId.hymnal(widget.songNumber), _tags);
+        .setTags(widget.songId, _tags);
     if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _resetToDefault() async {
     await ref
         .read(tagOverridesProvider.notifier)
-        .clearOverride(SongId.hymnal(widget.songNumber));
+        .clearOverride(widget.songId);
     if (mounted) Navigator.of(context).pop();
   }
 

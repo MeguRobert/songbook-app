@@ -1,3 +1,4 @@
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/data/models/song.dart';
@@ -34,12 +35,12 @@ Song makeLongTitledSong() => const Song(
 Future<void> pumpSongView(WidgetTester tester, Song song) async {
   await pumpScreen(
     tester,
-    SongViewScreen(songNumber: song.number),
+    SongViewScreen(songId: song.id),
     // No notation -> ChordView, so the test needs no sheet-music assets.
     prefs: const {'settings_view_config': 'false:true'},
     overrides: [
-      songByNumberProvider.overrideWith(
-          (ref, number) async => number == song.number ? song : null),
+      songByIdProvider.overrideWith(
+          (ref, id) async => id == song.id ? song : null),
     ],
   );
   await tester.pumpAndSettle();
@@ -131,13 +132,13 @@ void main() {
         tester,
         const MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(2.0)),
-          child: SongViewScreen(songNumber: 151),
+          child: SongViewScreen(songId: SongId.hymnal(151)),
         ),
         prefs: const {'settings_view_config': 'false:true'},
         overrides: [
-          songByNumberProvider.overrideWith(
-              (ref, number) => Future.value(
-                  number == 151 ? makeLongTitledSong() : null)),
+          songByIdProvider.overrideWith(
+              (ref, id) => Future.value(
+                  id == const SongId.hymnal(151) ? makeLongTitledSong() : null)),
         ],
       );
       await tester.pumpAndSettle();

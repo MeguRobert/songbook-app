@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../data/models/song_id.dart';
 
 import '../presentation/screens/song_list/song_list_screen.dart';
 import '../presentation/screens/song_view/song_view_screen.dart';
@@ -31,8 +32,8 @@ class AppRoutes {
   /// `?tag=` deep link land somewhere sensible instead of the error page.
   static const search = '/search';
 
-  static String songPath(int id) => '/song/$id';
-  static String presentationPath(int id) => '/presentation/$id';
+  static String songPath(SongId id) => '/song/${id.value}';
+  static String presentationPath(SongId id) => '/presentation/${id.value}';
   static String setlistDetailPath(String id) => '/setlists/$id';
 }
 
@@ -102,9 +103,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.song,
         name: 'song',
         builder: (context, state) {
-          final idParam = state.pathParameters['id'];
-          final id = int.tryParse(idParam ?? '') ?? 1;
-          return SongViewScreen(songNumber: id);
+          // tryParse accepts a bare number as a hymnal id, so links and
+          // bookmarks written when routes carried numbers still resolve.
+          final id = SongId.tryParse(state.pathParameters['id'] ?? '');
+          return SongViewScreen(songId: id ?? const SongId.hymnal(1));
         },
       ),
       // Presentation mode route (outside shell for full-screen)
@@ -112,9 +114,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.presentation,
         name: 'presentation',
         builder: (context, state) {
-          final idParam = state.pathParameters['id'];
-          final id = int.tryParse(idParam ?? '') ?? 1;
-          return PresentationScreen(songNumber: id);
+          final id = SongId.tryParse(state.pathParameters['id'] ?? '');
+          return PresentationScreen(songId: id ?? const SongId.hymnal(1));
         },
       ),
       // Legacy search/browse locations. Search and the tag browser were merged
