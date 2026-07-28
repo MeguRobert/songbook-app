@@ -4,7 +4,15 @@ on:
   push:
     branches:
       - master
-      - claude/phase-9-tags-search
+    # A push that changes only prose changes nothing about the site, but it still
+    # ran the whole pipeline, consumed a build number (which is the commit count)
+    # and tagged a commit that is byte-identical to the live build. `paths-ignore`
+    # only skips when EVERY changed file matches, so a commit touching both docs
+    # and code still deploys.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.planning/**'
   workflow_dispatch:
 
 permissions:
@@ -125,9 +133,10 @@ jobs:
   # reached the live site would be a lie.
   tag:
     needs: [build, deploy]
-    # Only the branch that actually serves the site. `deploy-pages.yml` also
-    # triggers on a stale feature branch, and tagging those would attach
-    # build numbers to commits that are not what production is running.
+    # Only the branch that actually serves the site. Kept now that the stale
+    # `claude/phase-9-tags-search` trigger is gone, because `workflow_dispatch`
+    # can still be fired from any branch — and a build number tagged onto a
+    # commit that is not what production is running would be a lie.
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
