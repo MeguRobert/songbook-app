@@ -218,9 +218,12 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
       for (var m = 0; m < verse.measures.length; m++) {
         final measure = verse.measures[m];
         rows.add(_MeasureHeader(
-          number: measureNumber++,
+          // An anacrusis is not counted, the way a printed score does not count
+          // it: the first FULL bar is bar 1.
+          number: measure.isPickup ? null : measureNumber++,
           total: measure.totalBeats,
           expected: expected,
+          isPickup: measure.isPickup,
         ));
         for (var b = 0; b < measure.beats.length; b++) {
           final address = BeatAddress(verse: v, measure: m, beat: b);
@@ -261,14 +264,21 @@ class _VerseHeader extends StatelessWidget {
 
 /// Measure number and what its beats add up to against the time signature.
 class _MeasureHeader extends StatelessWidget {
-  final int number;
+  /// Null for a pickup bar, which a score does not number.
+  final int? number;
   final double total;
   final int expected;
+
+  /// A bar the source declared deliberately short. It gets neither the
+  /// arithmetic nor the warning: it is *supposed* not to add up, and flagging it
+  /// would train the warning away on exactly the hymns that open on an upbeat.
+  final bool isPickup;
 
   const _MeasureHeader({
     required this.number,
     required this.total,
     required this.expected,
+    this.isPickup = false,
   });
 
   /// `4`, not `4.0`; `3.5` where it matters.
@@ -291,16 +301,25 @@ class _MeasureHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
-          Text('Measure $number', style: theme.textTheme.labelLarge),
+          Text(isPickup ? 'Pickup' : 'Measure $number',
+              style: theme.textTheme.labelLarge),
           const Spacer(),
-          if (short) ...[
-            Icon(Icons.warning_amber_rounded, size: 16, color: colour),
-            const SizedBox(width: 4),
+          if (isPickup)
+            Text(
+              '${format(total)} ${total == 1 ? 'beat' : 'beats'} before bar 1',
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            )
+          else ...[
+            if (short) ...[
+              Icon(Icons.warning_amber_rounded, size: 16, color: colour),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              '${format(total)} / $expected beats',
+              style: theme.textTheme.labelMedium?.copyWith(color: colour),
+            ),
           ],
-          Text(
-            '${format(total)} / $expected beats',
-            style: theme.textTheme.labelMedium?.copyWith(color: colour),
-          ),
         ],
       ),
     );
@@ -330,12 +349,14 @@ class _EmptyMeasureRow extends StatelessWidget {
   }
 }
 
-/// Pickup beats are stored but nothing renders them.
+/// Beats sitting in the superseded `SongNotation.pickup` list.
 ///
-/// `SongNotation.pickup` is read by no part of `lib/` — not the renderer, not
-/// the layout engine — so an imported anacrusis silently does not appear. On a
-/// screen whose whole job is "is this right?", omitting them without a word
-/// would be the worst of both.
+/// An anacrusis does not need that field: a pickup bar *is* a measure with fewer
+/// beats, the layout engine spaces measures from their content so it already
+/// engraves narrow, and `NotatedMeasure.isPickup` carries the "deliberately
+/// short" answer. `SongNotation.pickup` is written by no importer and read by no
+/// renderer, so anything in it is invisible — which is worth saying out loud on
+/// a screen whose whole job is "is this right?".
 class _PickupNotice extends StatelessWidget {
   final int count;
 
@@ -355,9 +376,10 @@ class _PickupNotice extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$count pickup ${count == 1 ? 'beat is' : 'beats are'} stored for '
-              'this song, but the renderer does not draw an anacrusis yet, so '
-              '${count == 1 ? 'it is' : 'they are'} not shown above or below.',
+              '$count ${count == 1 ? 'beat sits' : 'beats sit'} in this song’s '
+              'old separate pickup list, which nothing reads, so '
+              '${count == 1 ? 'it is' : 'they are'} not shown above or below. An '
+              'upbeat belongs in a leading measure instead.',
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSecondaryContainer),
             ),

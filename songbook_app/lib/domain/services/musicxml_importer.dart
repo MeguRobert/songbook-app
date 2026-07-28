@@ -304,11 +304,15 @@ class MusicXmlImporter {
 
     final streams = <String, _Stream>{};
     final systemBreaks = <int, Set<int>>{};
+    // Measure ordinals the file declared `implicit="yes"`. Kept per part, like
+    // the system breaks, because only the melody part's answer is used.
+    final implicitMeasures = <int, Set<int>>{};
 
     for (var partIndex = 0; partIndex < parts.length; partIndex++) {
       final part = parts[partIndex];
       final partId = part.getAttribute('id') ?? 'P${partIndex + 1}';
       final breaks = systemBreaks[partIndex] = <int>{};
+      final implicit = implicitMeasures[partIndex] = <int>{};
 
       var measures = part.findElements('measure', namespace: '*').toList();
       if (measures.isEmpty) {
@@ -317,6 +321,12 @@ class MusicXmlImporter {
 
       var divisions = 1.0;
       for (var ordinal = 0; ordinal < measures.length; ordinal++) {
+        // `implicit="yes"` is the file saying this bar is deliberately not a
+        // full one — nearly always the opening anacrusis. Dropping it left a
+        // short bar indistinguishable from one the transcription damaged.
+        if (measures[ordinal].getAttribute('implicit') == 'yes') {
+          implicit.add(ordinal);
+        }
         divisions = _readMeasure(
           measure: measures[ordinal],
           ordinal: ordinal,
@@ -344,7 +354,10 @@ class MusicXmlImporter {
     final melodyMeasures = melody == null
         ? <NotatedMeasure>[]
         : _applyLineBreaks(
-            melody.toMeasures(lyricNumbers),
+            _markPickups(
+              melody.toMeasures(lyricNumbers),
+              implicitMeasures[melody.partIndex] ?? const <int>{},
+            ),
             systemBreaks[melody.partIndex] ?? const <int>{},
             measuresPerLine,
           );
@@ -719,6 +732,27 @@ class MusicXmlImporter {
   // Layout and lyrics
   // ---------------------------------------------------------------------------
 
+  /// Flags the measures the file declared `implicit="yes"`.
+  ///
+  /// Carries the source's own answer rather than inferring one from the beat
+  /// count. A bar short of the time signature is either a deliberate upbeat or a
+  /// bar the transcription damaged, the two want opposite treatment, and only the
+  /// file knows which — guessing would have made the correction editor either
+  /// flag every upbeat hymn or excuse every dropped note.
+  List<NotatedMeasure> _markPickups(
+    List<NotatedMeasure> measures,
+    Set<int> implicitOrdinals,
+  ) {
+    if (implicitOrdinals.isEmpty) return measures;
+    return [
+      for (var i = 0; i < measures.length; i++)
+        if (implicitOrdinals.contains(i))
+          measures[i].copyWith(isPickup: true)
+        else
+          measures[i],
+    ];
+  }
+
   /// Ported from `add_line_breaks()`, with the file's own system breaks winning
   /// when it has any.
   ///
@@ -751,13 +785,11 @@ class MusicXmlImporter {
 
     return [
       for (var i = 0; i < measures.length; i++)
+        // copyWith, not a fresh NotatedMeasure: this pass changes exactly one
+        // flag, and spelling out the others made every field added to the model
+        // a field this pass would silently drop. `isPickup` was lost that way.
         if (breakAfter.contains(i) && i < measures.length - 1)
-          NotatedMeasure(
-            beats: measures[i].beats,
-            repeatStart: measures[i].repeatStart,
-            repeatEnd: measures[i].repeatEnd,
-            lineBreakAfter: true,
-          )
+          measures[i].copyWith(lineBreakAfter: true)
         else
           measures[i],
     ];

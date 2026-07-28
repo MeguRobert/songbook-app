@@ -186,6 +186,55 @@ void main() {
       expect(find.text('3 / 4 beats'), findsOneWidget);
     });
 
+    testWidgets('labels a declared upbeat and does not flag it as short',
+        (tester) async {
+      // The bar is 1 beat of 4, which for any other measure is the editor's
+      // loudest signal that the transcription lost a note. An anacrusis is short
+      // on purpose, and flagging it would train the warning away on exactly the
+      // hymns that open on one.
+      await pumpEditor(
+        tester,
+        notatedUserSong(
+          notation: const SongNotation(
+            originalKey: 'C',
+            timeSignature: '4/4',
+            verses: [
+              NotatedVerse(number: 1, measures: [
+                NotatedMeasure(
+                  isPickup: true,
+                  beats: [
+                    NotatedBeat(
+                        pitch: 'G3',
+                        duration: NoteDuration.quarter,
+                        syllable: 'Te'),
+                  ],
+                ),
+                NotatedMeasure(beats: [
+                  NotatedBeat(pitch: 'C4', duration: NoteDuration.whole),
+                ]),
+              ]),
+            ],
+          ),
+        ),
+      );
+
+      expect(find.text('Pickup'), findsOneWidget);
+      expect(find.text('1 / 4 beats'), findsNothing);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+      // The first FULL bar is Measure 1, the way a score numbers it.
+      expect(find.text('Measure 1'), findsOneWidget);
+      expect(find.text('Measure 2'), findsNothing);
+    });
+
+    testWidgets('still flags a short bar that was never declared a pickup',
+        (tester) async {
+      await pumpEditor(tester, notatedUserSong());
+
+      expect(find.text('Pickup'), findsNothing);
+      expect(find.text('3 / 4 beats'), findsOneWidget);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+    });
+
     testWidgets('says so when stored pickup beats are not being rendered',
         (tester) async {
       // SongNotation.pickup is read by nothing in lib/ — not the renderer, not

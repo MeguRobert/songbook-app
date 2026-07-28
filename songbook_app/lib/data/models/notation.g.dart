@@ -47,6 +47,7 @@ NotatedMeasure _$NotatedMeasureFromJson(Map<String, dynamic> json) =>
       repeatStart: json['repeatStart'] as bool? ?? false,
       repeatEnd: json['repeatEnd'] as bool? ?? false,
       lineBreakAfter: json['lineBreakAfter'] as bool? ?? false,
+      isPickup: json['isPickup'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$NotatedMeasureToJson(NotatedMeasure instance) =>
@@ -55,6 +56,7 @@ Map<String, dynamic> _$NotatedMeasureToJson(NotatedMeasure instance) =>
       'repeatStart': instance.repeatStart,
       'repeatEnd': instance.repeatEnd,
       'lineBreakAfter': instance.lineBreakAfter,
+      'isPickup': instance.isPickup,
     };
 
 NotatedVerse _$NotatedVerseFromJson(Map<String, dynamic> json) => NotatedVerse(

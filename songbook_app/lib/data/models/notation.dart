@@ -198,11 +198,25 @@ class NotatedMeasure {
   @JsonKey(defaultValue: false)
   final bool lineBreakAfter;
 
+  /// Whether this bar is an anacrusis — a pickup/upbeat, deliberately shorter
+  /// than the time signature.
+  ///
+  /// The renderer needs nothing from this: measures are spaced from their
+  /// content, so a short bar already engraves narrow. It exists because a short
+  /// bar is otherwise ambiguous — it is either a legitimate upbeat or a bar
+  /// where the transcription lost a beat, and those want opposite treatment.
+  /// The correction editor flags the second in red, and would flag every upbeat
+  /// hymn with it. MusicXML states which it is (`implicit="yes"`); this carries
+  /// that answer instead of guessing from the beat count.
+  @JsonKey(defaultValue: false)
+  final bool isPickup;
+
   const NotatedMeasure({
     required this.beats,
     this.repeatStart = false,
     this.repeatEnd = false,
     this.lineBreakAfter = false,
+    this.isPickup = false,
   });
 
   factory NotatedMeasure.fromJson(Map<String, dynamic> json) =>
@@ -213,6 +227,28 @@ class NotatedMeasure {
   /// Total beats in this measure
   double get totalBeats => beats.fold(0.0, (sum, beat) => sum + beat.actualBeats);
 
+  /// Exists so the passes that rebuild a measure to change one thing cannot
+  /// silently drop the rest.
+  ///
+  /// The MusicXML importer's line-break pass rebuilt measures field by field,
+  /// which meant every field added here was one that pass would lose — and
+  /// [isPickup] was lost exactly that way before this existed.
+  NotatedMeasure copyWith({
+    List<NotatedBeat>? beats,
+    bool? repeatStart,
+    bool? repeatEnd,
+    bool? lineBreakAfter,
+    bool? isPickup,
+  }) {
+    return NotatedMeasure(
+      beats: beats ?? this.beats,
+      repeatStart: repeatStart ?? this.repeatStart,
+      repeatEnd: repeatEnd ?? this.repeatEnd,
+      lineBreakAfter: lineBreakAfter ?? this.lineBreakAfter,
+      isPickup: isPickup ?? this.isPickup,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -221,7 +257,8 @@ class NotatedMeasure {
           const ListEquality<NotatedBeat>().equals(beats, other.beats) &&
           repeatStart == other.repeatStart &&
           repeatEnd == other.repeatEnd &&
-          lineBreakAfter == other.lineBreakAfter;
+          lineBreakAfter == other.lineBreakAfter &&
+          isPickup == other.isPickup;
 
   @override
   int get hashCode => Object.hash(
@@ -229,6 +266,7 @@ class NotatedMeasure {
         repeatStart,
         repeatEnd,
         lineBreakAfter,
+        isPickup,
       );
 }
 
@@ -283,7 +321,17 @@ class SongNotation {
   /// Notated verses (usually just verse 1 with full notation)
   final List<NotatedVerse> verses;
 
-  /// Pickup measure (anacrusis) beats before first full measure
+  /// Pickup measure (anacrusis) beats before the first full measure.
+  ///
+  /// **Superseded, and never populated by anything.** No importer writes it, no
+  /// bundled song declares it, and neither the renderer nor the layout engine
+  /// reads it — verified across `lib/`, `songs.json` and `tools/`.
+  ///
+  /// It is redundant by construction: an anacrusis *is* a measure with fewer
+  /// beats, measures are spaced from their content so a short one already
+  /// engraves narrow, and [NotatedMeasure.isPickup] carries the only thing a
+  /// short bar cannot say for itself — whether it is short on purpose. Kept
+  /// solely so a payload that somehow contains the key still decodes.
   final List<NotatedBeat>? pickup;
 
   const SongNotation({
