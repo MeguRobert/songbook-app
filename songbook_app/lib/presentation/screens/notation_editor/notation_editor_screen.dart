@@ -474,9 +474,15 @@ class _BeatFieldsSheet extends StatefulWidget {
 class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
   static const _letters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
-  /// Display glyph to stored accidental. The stored form is what MusicXML and
-  /// the transposer already use; the glyphs are for reading on a phone.
-  static const _accidentals = {'♮': '', '♯': '#', '♭': 'b'};
+  /// Label to stored accidental. The stored form is what MusicXML and the
+  /// transposer already use.
+  ///
+  /// Named rather than shown as ♮/♯/♭. In the release build in a browser, ♮
+  /// rendered as an unreadable mark sitting below the baseline in Roboto, which
+  /// left the selected accidental indistinguishable from the other two — on the
+  /// one control here that most needs to be unambiguous, since a wrong
+  /// accidental is both a common OMR error and invisible once saved.
+  static const _accidentals = {'natural': '', 'sharp': '#', 'flat': 'b'};
 
   late bool _isRest;
   late String _letter;

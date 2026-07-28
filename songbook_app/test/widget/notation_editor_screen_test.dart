@@ -233,12 +233,28 @@ void main() {
       await openBeat(tester, 'D4');
 
       await selectFromDropdown(tester, 'beat-note', 'F');
-      await selectFromDropdown(tester, 'beat-accidental', '♯');
+      // Named, not the ♯/♭/♮ glyphs. Driving the release build in a browser,
+      // ♮ rendered as an unreadable mark below the baseline in Roboto, so the
+      // selected accidental could not be told apart from the other two — on the
+      // one control in this screen that most needs to be unambiguous.
+      await selectFromDropdown(tester, 'beat-accidental', 'sharp');
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
 
       expect(find.text('F#4'), findsOneWidget);
       expect(find.text('D4'), findsNothing);
+    });
+
+    testWidgets('names the accidentals rather than relying on a glyph',
+        (tester) async {
+      await pumpEditor(tester, notatedUserSong());
+      await openBeat(tester, 'D4');
+      await tester.tap(find.byKey(const Key('beat-accidental')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('natural'), findsWidgets);
+      expect(find.text('sharp'), findsWidgets);
+      expect(find.text('flat'), findsWidgets);
     });
 
     testWidgets('a corrected duration re-does the measure arithmetic',
