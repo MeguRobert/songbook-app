@@ -28,6 +28,31 @@ void main() {
       expect(all.length, 1);
       expect(all.first.id, created.id);
     });
+
+    test('two setlists created back to back are separately addressable',
+        () async {
+      // The id was `sl_<microsecondsSinceEpoch>` alone. `DateTime.now()` has
+      // roughly millisecond resolution on Windows, so two creates a few
+      // microseconds apart landed on the SAME id 94 times out of 100 — and
+      // every mutator resolves by `indexWhere`, so the second setlist was
+      // unreachable: renaming it, adding to it or deleting it all hit the first.
+      final morning = await repo.createSetlist('Morning');
+      final evening = await repo.createSetlist('Evening');
+      expect(morning.id, isNot(evening.id));
+
+      await repo.addSong(evening.id, const SongId.hymnal(151));
+
+      expect(repo.getById(morning.id)!.songIds, isEmpty);
+      expect(repo.getById(evening.id)!.songIds, [const SongId.hymnal(151)]);
+    });
+
+    test('a hundred setlists created in a loop all get distinct ids', () async {
+      for (var i = 0; i < 100; i++) {
+        await repo.createSetlist('Service $i');
+      }
+      final ids = repo.getSetlists().map((s) => s.id).toSet();
+      expect(ids, hasLength(100));
+    });
   });
 
   group('addSong', () {

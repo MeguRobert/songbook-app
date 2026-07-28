@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../datasources/local/local_datasource.dart';
 import '../models/song_id.dart';
 import '../models/setlist.dart';
@@ -27,11 +29,33 @@ class SetlistRepository {
     }
   }
 
+  /// Upper bound for the random half of a setlist id.
+  ///
+  /// `1 << 30`, not `1 << 32`: dart2js masks integer shifts to 32 bits, so a
+  /// larger bound is not the number it looks like there and `nextInt` rejects
+  /// it — in the browser only, with every VM test passing. Same constraint, and
+  /// same reason, as `SongId.newUserSong`.
+  static const _randomBound = 1 << 30;
+
+  static final _random = Random();
+
   /// Creates a new empty setlist with the given name and returns it.
+  ///
+  /// The id is a timestamp *plus randomness*. The timestamp alone was not
+  /// unique: `DateTime.now()` has roughly millisecond resolution on Windows, so
+  /// two setlists created a few microseconds apart shared an id 94 times out of
+  /// 100 — and since every mutator resolves by `indexWhere`, the second one was
+  /// simply unreachable. Renaming it, adding a song to it or deleting it all
+  /// operated on the first, and `deleteSetlist` removed both.
+  ///
+  /// Ids are opaque strings that nothing parses, so lengthening the format
+  /// leaves already-stored setlists addressable exactly as before.
   Future<Setlist> createSetlist(String name) async {
     final now = DateTime.now();
+    final suffix =
+        _random.nextInt(_randomBound).toRadixString(36).padLeft(6, '0');
     final setlist = Setlist(
-      id: 'sl_${now.microsecondsSinceEpoch}',
+      id: 'sl_${now.microsecondsSinceEpoch}_$suffix',
       name: name,
       songIds: const [],
       createdAt: now,
