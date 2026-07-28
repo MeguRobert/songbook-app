@@ -70,6 +70,41 @@ For overnight runs, keep entries **self-contained** so an agent doesn't stall mi
     *Unverified:* Audiveris has a `-batch` mode but is a JVM GUI app; a headless runner may
     need `xvfb`. Spike that before committing to (a).
 
+  **Where it could run, costed.** Money is NOT the blocker — an earlier note in this repo said
+  it was, wrongly. Lambda and Azure Functions both have perpetual free tiers of ~1M invocations
+  + 400,000 GB-s/month, which a few photos a week never approaches; Lambda even supports 10 GB
+  container images, so PyTorch + a JVM fit, and the only charge is ECR storage at ~$0.10/GB/mo
+  (~$0.30/mo for a 3 GB image). The real costs are **cold start** (10–30 s for a large image)
+  and **maintaining a Docker build pipeline**.
+
+  | Option | Monthly | Notes |
+  |---|---|---|
+  | Robert's old always-on x86 PC | ~€1 electricity (10 W × 24 h) | Best fit. x86 means the Audiveris installer and Tesseract just work |
+  | Oracle Cloud Always Free (4 ARM cores, 24 GB) | $0 | A real always-on box, but ARM — see the Pi caveat. Capacity is famously hard to obtain |
+  | Hugging Face Spaces, free CPU (2 vCPU, 16 GB) | $0 | Docker Spaces allow Java. Sleeps when idle. Best zero-cost cloud option |
+  | GitHub Actions `workflow_dispatch` | $0 | Free for this public repo; minutes of latency, fine for one-off digitisation |
+  | Hetzner CX22 (2 vCPU, 4 GB) | ~€4 | Cheapest paid always-on |
+  | AWS t4g.micro / Azure B1s | ~$6 / ~$8–10 | No advantage over the above |
+
+  **Raspberry Pi is the wrong host**, despite looking ideal. Audiveris is Java, so it seems
+  portable, but it drives native Tesseract through JNI and official builds are x86-first —
+  expect to build from source on ARM64. EasyOCR runs on ARM but slowly (~30–60 s/page, 2 GB+
+  RAM). A Pi is fine for the tiny vision proxy; an old i5 with 8 GB is a better pipeline host.
+
+  **Power/network is a real single point of failure, and that is acceptable.** With the server
+  down, photo OCR is unavailable and *everything else still works* — this is a PWA with local
+  storage, so catalogue, favourites, setlists, paste import and MusicXML import are fully
+  offline. Only this one feature degrades.
+
+  **Hosting guesses answered:** GitHub **Pages** cannot do this at all (static files, no
+  execution, no secrets) — but GitHub **Actions** can, and is free here. **Supabase** Edge
+  Functions are Deno/TypeScript: ideal for the key-holding vision proxy (~500 K invocations/mo
+  free), useless for Audiveris or PyTorch. **Firebase** Functions 2nd-gen is Cloud Run
+  underneath, so a large Python container is possible with a generous free tier, same cold-start
+  tax as Lambda.
+
+  *Free tiers and prices shift — reconfirm before committing.*
+
   **Rejected:** putting the Python pipeline itself in Azure Functions / Lambda. EasyOCR pulls
   PyTorch (~500 MB with models) and Audiveris needs a JVM, so both exceed Lambda's 250 MB
   unzipped limit and force container images — a Docker build pipeline to maintain, slow cold
