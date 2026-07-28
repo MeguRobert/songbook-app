@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:songbook_app/data/datasources/local/local_datasource.dart';
 import 'package:songbook_app/data/models/lyric_line.dart';
 import 'package:songbook_app/data/models/song.dart';
 import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/data/models/verse.dart';
-import 'package:songbook_app/data/repositories/song_repository.dart';
-import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
 import 'package:songbook_app/presentation/screens/import/import_song_screen.dart';
 import 'package:songbook_app/presentation/screens/song_view/song_view_screen.dart';
@@ -43,20 +39,6 @@ Song userSong({
       tags: const ['bizalom'],
     );
 
-/// The bundled catalogue with the asset read taken out.
-///
-/// `rootBundle.loadString` never completes inside `testWidgets` — the fake-async
-/// zone does not pump the message loop the asset bundle waits on — so a widget
-/// test that lets `songsProvider` reach the real asset hangs in `pumpAndSettle`
-/// with a spinner on screen. Overriding here and nowhere else keeps every seam
-/// that matters live: notifier -> storage -> catalogue merge -> lookup by id.
-class _EmptyBundledCatalogue extends SongRepository {
-  _EmptyBundledCatalogue(super.dataSource);
-
-  @override
-  Future<List<Song>> getAllSongs() async => const [];
-}
-
 Future<void> pumpSongView(WidgetTester tester, Song song) async {
   await pumpScreen(
     tester,
@@ -76,15 +58,8 @@ Future<ProviderContainer> pumpRoutedSongView(
   WidgetTester tester,
   Song song,
 ) async {
-  SharedPreferences.setMockInitialValues(
-      {'settings_view_config': 'false:true'});
-  final prefs = await SharedPreferences.getInstance();
-  final container = ProviderContainer(overrides: [
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    songRepositoryProvider
-        .overrideWithValue(_EmptyBundledCatalogue(LocalDataSource(prefs))),
-  ]);
-  addTearDown(container.dispose);
+  final container = await makeAppContainer(
+      prefs: const {'settings_view_config': 'false:true'});
   await container.read(userSongsProvider.notifier).add(song);
 
   // The real path constants and the real screens, so a route that is never

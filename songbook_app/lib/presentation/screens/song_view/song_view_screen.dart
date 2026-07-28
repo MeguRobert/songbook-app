@@ -27,7 +27,13 @@ import 'widgets/tag_editor_sheet.dart';
 /// The first two were app-bar icons until the Phase 0 declutter; see
 /// [_buildAppBar]. The last two apply to user songs only — `songs.json` is a
 /// read-only asset, so a bundled hymn has nothing to write back to.
-enum _SongMenuAction { presentation, editTags, editSong, deleteSong }
+enum _SongMenuAction {
+  presentation,
+  editTags,
+  editSong,
+  editNotation,
+  deleteSong
+}
 
 /// Screen for viewing a single song
 class SongViewScreen extends ConsumerStatefulWidget {
@@ -333,6 +339,8 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                 _showTagEditor(context, song.tags);
               case _SongMenuAction.editSong:
                 context.push(AppRoutes.editSongPath(widget.songId));
+              case _SongMenuAction.editNotation:
+                context.push(AppRoutes.editNotationPath(widget.songId));
               case _SongMenuAction.deleteSong:
                 _confirmDelete(song);
             }
@@ -366,6 +374,18 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                   title: Text('Edit song'),
                 ),
               ),
+              // Only when there is an engraving to correct. On a song with no
+              // notation this would open a blank staff — which is the score
+              // writer the editor is deliberately not.
+              if (song.hasNotation)
+                const PopupMenuItem(
+                  value: _SongMenuAction.editNotation,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.music_note_outlined),
+                    title: Text('Correct the notation'),
+                  ),
+                ),
               PopupMenuItem(
                 value: _SongMenuAction.deleteSong,
                 child: ListTile(

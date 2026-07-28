@@ -10,6 +10,7 @@ import '../presentation/screens/settings/settings_screen.dart';
 import '../presentation/screens/setlists/setlists_screen.dart';
 import '../presentation/screens/setlists/setlist_detail_screen.dart';
 import '../presentation/screens/import/import_song_screen.dart';
+import '../presentation/screens/notation_editor/notation_editor_screen.dart';
 import '../presentation/screens/presentation/presentation_screen.dart';
 import '../presentation/widgets/scaffold_with_nav_bar.dart';
 
@@ -33,12 +34,18 @@ class AppRoutes {
   /// the URL is what makes the edit target unambiguous.
   static const editSong = '/song/:id/edit';
 
+  /// Beat-level correction of an imported score. Separate from [editSong]
+  /// because it edits a different thing — the engraving, not the words — and
+  /// because it only applies to a song that has notation at all.
+  static const editNotation = '/song/:id/notation';
+
   /// Retired: search is now part of [home]. Kept so bookmarks and the old
   /// `?tag=` deep link land somewhere sensible instead of the error page.
   static const search = '/search';
 
   static String songPath(SongId id) => '/song/${id.value}';
   static String editSongPath(SongId id) => '/song/${id.value}/edit';
+  static String editNotationPath(SongId id) => '/song/${id.value}/notation';
   static String presentationPath(SongId id) => '/presentation/${id.value}';
   static String setlistDetailPath(String id) => '/setlists/$id';
 }
@@ -122,6 +129,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'editSong',
         builder: (context, state) => ImportSongScreen(
           editingId: SongId.tryParse(state.pathParameters['id'] ?? ''),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.editNotation,
+        name: 'editNotation',
+        builder: (context, state) => NotationEditorScreen(
+          songId: SongId.tryParse(state.pathParameters['id'] ?? '') ??
+              const SongId.hymnal(1),
         ),
       ),
       // Presentation mode route (outside shell for full-screen)
