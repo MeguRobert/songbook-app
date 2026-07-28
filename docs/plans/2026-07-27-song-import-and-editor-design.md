@@ -85,6 +85,31 @@ The second is the dangerous one for this work. `verse.copyWith(lines: …)` retu
 compares **equal** to the original, so any widget or provider diffing verses will not see an edit.
 An editor mutates verses constantly. Fix both before writing anything against them.
 
+**Done** — `da0b1cf` (equality), `91a0532` (`SongId`), `c1ca2a4` (propagation, 38 files).
+
+**Boundary that landed:** stored references (favourites, recents, setlists, tags) are `SongId`;
+routes and screen widgets still take an `int` hymnal number, converted at one point (`_songId` in
+`SongViewScreen`). Nothing user-authored exists yet, so nothing needs routing to — when it does,
+that is a contained change instead of another sweep.
+
+**Six bugs surfaced by the migration**, none of which existed as failing tests beforehand:
+
+| Bug | Why it hid |
+|---|---|
+| `LyricLine.hashCode` used List identity | equal objects hashed differently — broken contract |
+| 3× `SongId` looked up in an int-keyed map | `contains`/`containsKey` take `Object?`, so analyzer said *info*, not error |
+| `?? <int>{}` widened a set to `Set<Object>` | analyzer could not flag it at all; checkbox silently never ticked |
+| **Favourites destroyed on upgrade** | field rename renamed the JSON key; `as Object` threw, `_decodeRecords` dropped every record, next save persisted `[]` |
+| **Setlists loaded empty on upgrade** | same rename; `null` fell through to `defaultValue: []` — survived by name, lost every song |
+
+The last two were real data loss for anyone with the app installed. Both models now read the legacy
+key via `JsonKey.readValue`. Recents and tag overrides were already safe — their keys did not change
+and `SongId.fromJson` reads a bare int as a hymnal id.
+
+Verified by simulating a full upgrade (legacy storage → read → mutate → save → re-read, including
+the write-back that made the loss permanent), and in a browser: favourites and the recents rail both
+populate correctly.
+
 *Depends on: nothing. Medium.*
 
 ---
