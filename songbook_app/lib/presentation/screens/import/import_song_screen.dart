@@ -7,10 +7,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
+import '../../../data/models/song_id.dart';
 import '../../../data/models/verse.dart';
 import '../../../domain/services/chord_sheet_parser.dart';
 import '../../../domain/services/musicxml_importer.dart';
 import '../../providers/book_provider.dart';
+import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 import '../../../router/app_router.dart';
 import '../song_view/widgets/chord_view.dart';
@@ -45,7 +47,8 @@ class _PendingImport {
   });
 }
 
-/// Adds a song by pasting a chord sheet or opening a MusicXML file.
+/// Adds a song by pasting a chord sheet or opening a MusicXML file — or
+/// corrects one that was already saved, when [editingId] names it.
 ///
 /// The songs being added are overwhelmingly ones that already exist — from a
 /// chord site, a MuseScore file, or a book that was never digitised — so
@@ -53,8 +56,19 @@ class _PendingImport {
 /// shown immediately, rendered with the same widgets the real song view uses
 /// ([SheetMusicView] when there is notation, [ChordView] otherwise): what is
 /// approved here is exactly what will be displayed later.
+///
+/// Editing is the same screen rather than a second one because it is the same
+/// question — *is this right?* — asked about content that happens to be stored
+/// already. Every import is a transcription and every transcription is lossy,
+/// so the correction surface is where a wrong title, a mis-numbered song or a
+/// chord line the parser mangled all get fixed. A separate "edit details" form
+/// would have covered the first two and left the third, the one that actually
+/// needs the preview, with nowhere to go.
 class ImportSongScreen extends ConsumerStatefulWidget {
-  const ImportSongScreen({super.key});
+  /// The user song being corrected, or null when adding a new one.
+  final SongId? editingId;
+
+  const ImportSongScreen({super.key, this.editingId});
 
   @override
   ConsumerState<ImportSongScreen> createState() => _ImportSongScreenState();
@@ -75,10 +89,49 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   bool _picking = false;
   String? _fileError;
 
+  /// The song being corrected, read once when the screen opens. Null when
+  /// adding, and also when [ImportSongScreen.editingId] names a song that is no
+  /// longer stored (deleted from another route since the link was made).
+  Song? _editing;
+
+  /// [_editing]'s content as an import result, so the shared review surface
+  /// below needs no special case for "already saved".
+  _PendingImport? _savedPending;
+
   /// Once the title has been touched, re-importing must not overwrite it: an
   /// importer's guess is a starting point, and silently reverting a correction
   /// is worse than not guessing at all.
   bool _titleEdited = false;
+
+  bool get _isEditing => widget.editingId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.editingId;
+    if (id == null) return;
+    // Synchronous on purpose: user songs live in local storage, so the whole
+    // form can be prefilled on the first frame instead of flashing empty.
+    final existing = ref.read(userSongRepositoryProvider).getById(id);
+    if (existing == null) return; // reported by _blockers
+    _editing = existing;
+    _savedPending = _PendingImport(
+      verses: existing.verses,
+      notation: existing.notation,
+      title: existing.title,
+      key: existing.originalKey,
+      timeSignature: existing.timeSignature,
+      sourceLabel: 'the saved song',
+    );
+    _pending = _savedPending;
+    _key = existing.originalKey;
+    _titleController.text = existing.title;
+    // The saved title is the user's, not a guess, so a later re-parse must not
+    // overwrite it.
+    _titleEdited = true;
+    _numberController.text = existing.number == 0 ? '' : '${existing.number}';
+    _bookController.text = existing.book ?? '';
+  }
 
   @override
   void dispose() {
@@ -186,13 +239,21 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   bool _hasContent(_PendingImport pending) =>
       pending.verses.isNotEmpty || pending.notation != null;
 
-  /// The draft as it will be stored. No id yet — the repository assigns one.
+  /// The draft as it will be stored. When adding there is no id yet — the
+  /// repository assigns one.
+  ///
+  /// Built afresh from the form rather than `_editing.copyWith(...)`, because
+  /// `copyWith` cannot express *clearing* a field: `book: null` falls through
+  /// the `??` and keeps the old value, so emptying the songbook box would
+  /// silently do nothing. The cost of building afresh is that anything the form
+  /// does not show has to be carried over explicitly — see below.
   Song? get _draft {
     final pending = _pending;
     if (pending == null || !_hasContent(pending)) return null;
     final title = _titleController.text.trim();
     if (title.isEmpty) return null;
     final book = _bookController.text.trim();
+    final editing = _editing;
     return Song(
       number: int.tryParse(_numberController.text.trim()) ?? 0,
       title: title,
@@ -201,10 +262,24 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       notation: pending.notation,
       verses: pending.verses,
       book: book.isEmpty ? null : book,
+      // Carried over, not re-derived. The id above all: reassigning it would
+      // orphan every favourite, setlist entry, tag override and per-song
+      // setting pointing at this song. Tags are edited in the song view's tag
+      // sheet and have no field here, so rebuilding without them would wipe
+      // them on every correction.
+      explicitId: editing?.explicitId,
+      tags: editing?.tags ?? const [],
+      reference: editing?.reference,
+      origin: editing?.origin,
+      tune: editing?.tune,
+      sheetMusic: editing?.sheetMusic,
     );
   }
 
   List<String> get _blockers {
+    if (_isEditing && _editing == null) {
+      return const ['That song is no longer stored on this device.'];
+    }
     final pending = _pending;
     if (pending == null) {
       return const ['Paste a song or open a MusicXML file.'];
@@ -222,6 +297,17 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     final draft = _draft;
     if (draft == null) return;
     setState(() => _saving = true);
+
+    if (_isEditing) {
+      await ref.read(userSongsProvider.notifier).update(draft);
+      if (!mounted) return;
+      setState(() => _saving = false);
+      // Back to the song being corrected. Pushing it instead would stack a
+      // second copy of the same song on top of the one we came from.
+      context.pop();
+      return;
+    }
+
     final stored = await ref.read(userSongsProvider.notifier).add(draft);
     if (!mounted) return;
     setState(() => _saving = false);
@@ -240,7 +326,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add a song'),
+        title: Text(_isEditing ? 'Edit song' : 'Add a song'),
         actions: [
           TextButton(
             onPressed: blockers.isEmpty && !_saving ? _save : null,
@@ -256,7 +342,8 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('PASTE THE SONG', style: _sectionStyle(theme)),
+          Text(_isEditing ? 'REPLACE THE WORDS AND CHORDS' : 'PASTE THE SONG',
+              style: _sectionStyle(theme)),
           const SizedBox(height: 8),
           TextField(
             controller: _sheetController,
@@ -275,7 +362,12 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             // Parse button's enabled state depends on this field being
             // non-empty, so skipping the rebuild left it greyed out after the
             // very first paste.
-            onChanged: (_) => setState(() => _pending = null),
+            //
+            // Falls back to the saved content when editing, not to nothing:
+            // typing here is an *offer* to replace, and until Parse is pressed
+            // the song still has its stored words. Resetting to null would have
+            // blanked the preview and disabled Save on the first keystroke.
+            onChanged: (_) => setState(() => _pending = _savedPending),
           ),
           const SizedBox(height: 8),
           Row(

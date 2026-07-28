@@ -28,11 +28,17 @@ class AppRoutes {
   static const setlists = '/setlists';
   static const importSong = '/import';
 
+  /// Correcting a song the user added. Deliberately a separate path rather than
+  /// a mode on [importSong]: it is reachable from the song itself, and the id in
+  /// the URL is what makes the edit target unambiguous.
+  static const editSong = '/song/:id/edit';
+
   /// Retired: search is now part of [home]. Kept so bookmarks and the old
   /// `?tag=` deep link land somewhere sensible instead of the error page.
   static const search = '/search';
 
   static String songPath(SongId id) => '/song/${id.value}';
+  static String editSongPath(SongId id) => '/song/${id.value}/edit';
   static String presentationPath(SongId id) => '/presentation/${id.value}';
   static String setlistDetailPath(String id) => '/setlists/$id';
 }
@@ -108,6 +114,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = SongId.tryParse(state.pathParameters['id'] ?? '');
           return SongViewScreen(songId: id ?? const SongId.hymnal(1));
         },
+      ),
+      // Correcting a saved user song. Three segments, so it cannot collide with
+      // the two-segment song route above.
+      GoRoute(
+        path: AppRoutes.editSong,
+        name: 'editSong',
+        builder: (context, state) => ImportSongScreen(
+          editingId: SongId.tryParse(state.pathParameters['id'] ?? ''),
+        ),
       ),
       // Presentation mode route (outside shell for full-screen)
       GoRoute(

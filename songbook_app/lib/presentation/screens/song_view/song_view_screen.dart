@@ -24,8 +24,10 @@ import 'widgets/tag_editor_sheet.dart';
 
 /// Actions behind the song-view overflow menu.
 ///
-/// These were app-bar icons until the Phase 0 declutter; see [_buildAppBar].
-enum _SongMenuAction { presentation, editTags }
+/// The first two were app-bar icons until the Phase 0 declutter; see
+/// [_buildAppBar]. The last two apply to user songs only — `songs.json` is a
+/// read-only asset, so a bundled hymn has nothing to write back to.
+enum _SongMenuAction { presentation, editTags, editSong, deleteSong }
 
 /// Screen for viewing a single song
 class SongViewScreen extends ConsumerStatefulWidget {
@@ -207,6 +209,51 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     );
   }
 
+  /// Deletes this user song, after asking.
+  ///
+  /// Confirmed because it cannot be undone: a user song exists only in this
+  /// device's local storage, with no copy in the bundled catalogue to fall back
+  /// on and no server holding a second one.
+  Future<void> _confirmDelete(Song song) async {
+    final theme = Theme.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete song?'),
+        content: Text(
+          '"${song.title}" is stored only on this device. '
+          'Deleting it cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    await ref.read(userSongsProvider.notifier).remove(widget.songId);
+    if (!mounted) return;
+    // Leaving is not optional: this screen now describes a song that no longer
+    // exists, and staying would repaint it as "Song not found". Navigating
+    // rather than popping unconditionally, because a deep link straight to the
+    // song has nothing beneath it to pop to.
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.home);
+    }
+  }
+
   /// The song-view app bar.
   ///
   /// This bar used to carry back + `"151. Title"` + four actions (tags,
@@ -284,10 +331,14 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                 context.push(AppRoutes.presentationPath(widget.songId));
               case _SongMenuAction.editTags:
                 _showTagEditor(context, song.tags);
+              case _SongMenuAction.editSong:
+                context.push(AppRoutes.editSongPath(widget.songId));
+              case _SongMenuAction.deleteSong:
+                _confirmDelete(song);
             }
           },
-          itemBuilder: (context) => const [
-            PopupMenuItem(
+          itemBuilder: (context) => [
+            const PopupMenuItem(
               value: _SongMenuAction.presentation,
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -295,7 +346,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                 title: Text('Presentation mode'),
               ),
             ),
-            PopupMenuItem(
+            const PopupMenuItem(
               value: _SongMenuAction.editTags,
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -303,6 +354,29 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                 title: Text('Edit tags'),
               ),
             ),
+            // Only the user's own songs can be written back to. Offering these
+            // for a bundled hymn would be a control that cannot work.
+            if (song.id.isUserSong) ...[
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: _SongMenuAction.editSong,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.edit_outlined),
+                  title: Text('Edit song'),
+                ),
+              ),
+              PopupMenuItem(
+                value: _SongMenuAction.deleteSong,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.delete_outline,
+                      color: theme.colorScheme.error),
+                  title: Text('Delete song',
+                      style: TextStyle(color: theme.colorScheme.error)),
+                ),
+              ),
+            ],
           ],
         ),
       ],
