@@ -8,6 +8,7 @@ import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
 import '../../../data/models/view_config.dart';
 import '../../providers/autoscroll_provider.dart';
+import '../../providers/book_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/providers.dart';
 import '../../providers/recents_provider.dart';
@@ -249,7 +250,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            song.displayNumber,
+            ref.read(bookServiceProvider).qualifiedNumber(song),
             style: numberStyle?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,

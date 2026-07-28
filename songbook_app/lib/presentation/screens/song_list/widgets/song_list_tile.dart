@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/models/song.dart';
+import '../../../providers/book_provider.dart';
 import '../../../providers/favorites_provider.dart';
 
 /// A list tile for displaying a song in the song list
@@ -24,18 +25,27 @@ class SongListTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isFavorite = ref.watch(isFavoriteProvider(song.id));
+    // Book-qualified so a user songbook's #1 and a hymnal's #1 stay
+    // distinguishable in an unfiltered list without inventing fake numbers.
+    final label = ref.watch(bookServiceProvider).qualifiedNumber(song);
+    // The abbreviation exists to fit a narrow column; a screen reader has no
+    // such constraint and would announce "Zsolt dash one". Give it the book's
+    // real name instead.
+    final semanticLabel = song.hasBook
+        ? 'Song ${song.displayNumber}, ${song.book}'
+        : 'Song ${song.displayNumber}';
     final theme = Theme.of(context);
 
     if (lyricSnippet != null) {
       return ListTile(
         leading: SizedBox(
-          width: 48,
+          width: 68,
           child: Semantics(
-            label: 'Song ${song.number}',
+            label: semanticLabel,
             excludeSemantics: true,
             child: Text(
-              song.number.toString(),
-              style: theme.textTheme.titleMedium?.copyWith(
+              label,
+              style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.primary,
               ),
@@ -87,13 +97,13 @@ class SongListTile extends ConsumerWidget {
 
     return ListTile(
       leading: SizedBox(
-        width: 48,
+        width: 68,
         child: Semantics(
-          label: 'Song ${song.number}',
+          label: semanticLabel,
           excludeSemantics: true,
           child: Text(
-            song.number.toString(),
-            style: theme.textTheme.titleMedium?.copyWith(
+            label,
+            style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.primary,
             ),
