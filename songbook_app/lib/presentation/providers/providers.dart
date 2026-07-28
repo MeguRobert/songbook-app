@@ -8,6 +8,7 @@ import '../../data/repositories/settings_repository.dart';
 import '../../data/repositories/setlist_repository.dart';
 import '../../data/repositories/tag_repository.dart';
 import '../../data/repositories/recents_repository.dart';
+import '../../data/repositories/user_song_repository.dart';
 import '../../domain/services/transposition_service.dart';
 import '../../domain/services/search_service.dart';
 import '../../domain/services/capo_service.dart';
@@ -52,6 +53,12 @@ final tagRepositoryProvider = Provider<TagRepository>((ref) {
 });
 
 /// Recently-viewed songs repository provider
+/// Songs the user added themselves. Merged into the catalogue by
+/// `songsProvider`; see [userSongsProvider] for the reactive view.
+final userSongRepositoryProvider = Provider<UserSongRepository>((ref) {
+  return UserSongRepository(ref.watch(localDataSourceProvider));
+});
+
 final recentsRepositoryProvider = Provider<RecentsRepository>((ref) {
   return RecentsRepository(ref.watch(localDataSourceProvider));
 });

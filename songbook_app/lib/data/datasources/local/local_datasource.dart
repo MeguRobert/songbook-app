@@ -13,6 +13,7 @@ class LocalDataSource {
   static const _setlistsKey = 'setlists';
   static const _tagOverridesKey = 'song_tag_overrides';
   static const _recentsKey = 'recent_songs';
+  static const _userSongsKey = 'user_songs';
   static const _settingsPrefix = 'settings_';
 
   /// Maximum number of recently-viewed songs retained.
@@ -217,6 +218,47 @@ class LocalDataSource {
 
   /// Clears the recently-viewed list.
   Future<bool> clearRecentSongs() => _prefs.remove(_recentsKey);
+
+  // --- User songs ---
+
+  /// Songs the user imported or wrote, in insertion order.
+  ///
+  /// These live alongside the bundled catalogue rather than inside it:
+  /// `songs.json` is a read-only asset, so anything the user adds has to be
+  /// stored separately and merged at read time. Unreadable records are skipped
+  /// one at a time, never taking the whole collection with them
+  /// (see [_decodeRecords]).
+  List<Song> getUserSongs() => _decodeRecords(_userSongsKey, Song.fromJson);
+
+  /// Replaces the whole user-song collection.
+  Future<bool> saveUserSongs(List<Song> songs) {
+    final jsonString = json.encode(songs.map((s) => s.toJson()).toList());
+    return _prefs.setString(_userSongsKey, jsonString);
+  }
+
+  /// Inserts [song], or replaces the existing one with the same [Song.id].
+  ///
+  /// Keyed by id, not by number: two user songs may legitimately share a
+  /// number when they sit in different songbooks.
+  Future<bool> upsertUserSong(Song song) {
+    final songs = getUserSongs();
+    final index = songs.indexWhere((s) => s.id == song.id);
+    if (index == -1) {
+      songs.add(song);
+    } else {
+      songs[index] = song;
+    }
+    return saveUserSongs(songs);
+  }
+
+  /// Removes the user song with [songId]. Returns false if it was not there.
+  Future<bool> deleteUserSong(SongId songId) async {
+    final songs = getUserSongs();
+    final before = songs.length;
+    songs.removeWhere((s) => s.id == songId);
+    if (songs.length == before) return false;
+    return saveUserSongs(songs);
+  }
 
   // --- Settings ---
 

@@ -1,22 +1,86 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/song.dart';
+import '../../data/models/song_id.dart';
 import '../../data/models/view_config.dart';
+import '../../data/repositories/user_song_repository.dart';
 import 'providers.dart';
 import 'settings_provider.dart';
 import 'tag_provider.dart';
 
-/// Provider for all songs, with user tag overrides applied.
+/// The user's own songs.
 ///
-/// Single source of truth: by merging persisted tag overrides here, the song
-/// list, search, favorites, and the tag browser all observe edited tags.
-/// With no overrides the merge returns the bundled list unchanged.
+/// A StateNotifier rather than a plain read, because storage is not reactive:
+/// after adding a song the state has to be republished or [songsProvider]
+/// keeps serving the catalogue from before the import — the song saves, and
+/// simply never appears.
+class UserSongsNotifier extends StateNotifier<List<Song>> {
+  final Ref _ref;
+
+  UserSongsNotifier(this._ref)
+      : super(_ref.read(userSongRepositoryProvider).getAll());
+
+  UserSongRepository get _repository => _ref.read(userSongRepositoryProvider);
+
+  /// Stores [song], assigning an id if it has none, and returns the stored
+  /// version — its id is how every later reference will address it.
+  Future<Song> add(Song song) async {
+    final stored = await _repository.add(song);
+    state = _repository.getAll();
+    return stored;
+  }
+
+  /// Replaces an existing user song.
+  Future<void> update(Song song) async {
+    await _repository.update(song);
+    state = _repository.getAll();
+  }
+
+  /// Deletes a user song.
+  Future<void> remove(SongId songId) async {
+    await _repository.delete(songId);
+    state = _repository.getAll();
+  }
+
+  /// Re-reads storage (used after an external write).
+  void refresh() => state = _repository.getAll();
+}
+
+final userSongsProvider =
+    StateNotifierProvider<UserSongsNotifier, List<Song>>((ref) {
+  return UserSongsNotifier(ref);
+});
+
+/// Provider for all songs — bundled catalogue plus the user's own — with tag
+/// overrides applied.
+///
+/// Single source of truth: by merging here, the song list, search, favourites,
+/// books, setlists and the tag browser all observe the same catalogue. A user
+/// song that were merged anywhere further downstream would be missing from
+/// whichever of those did not repeat the merge.
+///
+/// User songs sort after the bundled ones. Sorting by number would interleave
+/// them by coincidence — a song the user numbered 42 in their own book is not
+/// adjacent to hymnal 42 in any meaningful sense.
 final songsProvider = FutureProvider<List<Song>>((ref) async {
   final repository = ref.watch(songRepositoryProvider);
-  final songs = await repository.getAllSongs();
+  final bundled = await repository.getAllSongs();
+  final userSongs = ref.watch(userSongsProvider);
   final overrides = ref.watch(tagOverridesProvider);
   final searchService = ref.watch(searchServiceProvider);
-  return searchService.applyTagOverrides(songs, overrides);
+  return searchService.applyTagOverrides([...bundled, ...userSongs], overrides);
+});
+
+/// A single song by [SongId], covering both the bundled catalogue and user
+/// songs. Prefer this over [songByNumberProvider]: a number alone cannot
+/// address a user song, since their books number independently.
+final songByIdProvider =
+    FutureProvider.autoDispose.family<Song?, SongId>((ref, id) async {
+  final songs = await ref.watch(songsProvider.future);
+  for (final song in songs) {
+    if (song.id == id) return song;
+  }
+  return null;
 });
 
 /// Provider for a single song by number, with user tag overrides applied.

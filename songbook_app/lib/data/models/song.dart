@@ -135,6 +135,17 @@ class Song {
   /// Null when the song has not been assigned to a book.
   final String? book;
 
+  /// Stored identity, present only for songs that are not from a bundled
+  /// hymnal. Null for everything in `songs.json`, which derives its id from
+  /// [number]. See [id].
+  /// Explicit fromJson/toJson rather than [SongIdConverter]: the field is
+  /// nullable (absent for every bundled song) and the converter is declared
+  /// over the non-nullable type.
+  @JsonKey(name: 'id', fromJson: SongId.fromJson, toJson: _explicitIdToJson)
+  final SongId? explicitId;
+
+  static Object? _explicitIdToJson(SongId? id) => id?.value;
+
   const Song({
     required this.number,
     required this.title,
@@ -148,6 +159,7 @@ class Song {
     required this.verses,
     this.tags = const [],
     this.book,
+    this.explicitId,
   });
 
   factory Song.fromJson(Map<String, dynamic> json) => _$SongFromJson(json);
@@ -156,12 +168,11 @@ class Song {
 
   /// How everything else in the app refers to this song.
   ///
-  /// Every song in the catalogue today comes from a bundled hymnal, so its
-  /// identity is derived from [number]. When locally authored songs land this
-  /// becomes a stored field defaulting to the same thing — the point of routing
-  /// all references through [SongId] now is that nothing downstream has to
-  /// change when it does.
-  SongId get id => SongId.hymnal(number);
+  /// Bundled hymnal songs carry no `id` in `songs.json` and derive one from
+  /// [number], which is authoritative within the hymnal. Imported songs have
+  /// no such guarantee — two people can both add a song numbered 1 to their
+  /// own songbook — so they store an explicit [explicitId] instead.
+  SongId get id => explicitId ?? SongId.hymnal(number);
 
   /// Gets the first verse (typically has notation)
   Verse? get firstVerse => verses.isNotEmpty ? verses.first : null;
@@ -199,6 +210,7 @@ class Song {
     List<Verse>? verses,
     List<String>? tags,
     String? book,
+    SongId? explicitId,
   }) {
     return Song(
       number: number ?? this.number,
@@ -213,6 +225,7 @@ class Song {
       verses: verses ?? this.verses,
       tags: tags ?? this.tags,
       book: book ?? this.book,
+      explicitId: explicitId ?? this.explicitId,
     );
   }
 
@@ -241,6 +254,7 @@ class Song {
           sheetMusic == other.sheetMusic &&
           notation == other.notation &&
           book == other.book &&
+          explicitId == other.explicitId &&
           const ListEquality<Verse>().equals(verses, other.verses) &&
           const ListEquality<String>().equals(tags, other.tags);
 
@@ -256,6 +270,7 @@ class Song {
         sheetMusic,
         notation,
         book,
+        explicitId,
         Object.hashAll(verses),
         Object.hashAll(tags),
       );
