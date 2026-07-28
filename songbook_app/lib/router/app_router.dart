@@ -8,6 +8,7 @@ import '../presentation/screens/favorites/favorites_screen.dart';
 import '../presentation/screens/settings/settings_screen.dart';
 import '../presentation/screens/setlists/setlists_screen.dart';
 import '../presentation/screens/setlists/setlist_detail_screen.dart';
+import '../presentation/screens/import/import_song_screen.dart';
 import '../presentation/screens/presentation/presentation_screen.dart';
 import '../presentation/widgets/scaffold_with_nav_bar.dart';
 
@@ -24,6 +25,7 @@ class AppRoutes {
   static const favorites = '/favorites';
   static const settings = '/settings';
   static const setlists = '/setlists';
+  static const importSong = '/import';
 
   /// Retired: search is now part of [home]. Kept so bookmarks and the old
   /// `?tag=` deep link land somewhere sensible instead of the error page.
@@ -87,6 +89,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
+      ),
+      // Import lives outside the shell: it is a focused task with its own
+      // Save action, not a destination to switch tabs away from mid-edit.
+      GoRoute(
+        path: AppRoutes.importSong,
+        name: 'importSong',
+        builder: (context, state) => const ImportSongScreen(),
       ),
       // Song view route (outside shell for full-screen)
       GoRoute(

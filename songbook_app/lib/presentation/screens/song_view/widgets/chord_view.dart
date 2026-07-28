@@ -117,8 +117,18 @@ class ChordView extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
 
-        // Verse content
-        if (verse.hasNotation && verse.lines.isNotEmpty)
+        // Verse content.
+        //
+        // Gated on having structured lines, NOT on [Verse.hasNotation]. Those
+        // two coincide for every bundled song — verse 1 carries both engraved
+        // notation and chord-positioned lines — which hid the conflation.
+        // An imported song has chords and no notation, and the old condition
+        // could not express that: it fell through to a plain-text branch and
+        // silently dropped every chord.
+        //
+        // [_buildLine] already renders a chordless line as plain text, so it
+        // is the right destination for structured lines either way.
+        if (verse.lines.isNotEmpty)
           ...verse.lines.map((line) => _buildLine(
                 context,
                 ref,
@@ -131,15 +141,7 @@ class ChordView extends ConsumerWidget {
           Text(
             verse.plainText!,
             style: TextStyle(fontSize: fontSize, height: 1.6),
-          )
-        else
-          ...verse.lines.map((line) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  line.text,
-                  style: TextStyle(fontSize: fontSize, height: 1.6),
-                ),
-              )),
+          ),
       ],
     );
   }

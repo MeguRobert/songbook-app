@@ -89,6 +89,14 @@ class _SongListScreenState extends ConsumerState<SongListScreen> {
           ),
         ],
       ),
+      // A FAB rather than another app-bar action: the bar is already at its
+      // limit (Phase 0), and adding a song is a create action, which is what
+      // a FAB is for.
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push(AppRoutes.importSong),
+        tooltip: 'Add a song',
+        child: const Icon(Icons.add),
+      ),
       body: Column(
         children: [
           if (searchState.hasTags) const _ActiveTagChips(),

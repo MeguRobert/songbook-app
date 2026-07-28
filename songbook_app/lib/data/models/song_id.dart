@@ -66,10 +66,19 @@ class SongId implements Comparable<SongId> {
   /// same millisecond the only case randomness has to cover. There is no server
   /// to allocate from, and a max+1 counter would collide as soon as songs are
   /// ever merged between devices.
+  /// Upper bound for the random suffix.
+  ///
+  /// `1 << 30`, not `1 << 32`: on dart2js integer shifts are masked to 32 bits,
+  /// so `1 << 32` does not evaluate to 4294967296 there and `nextInt` was
+  /// handed a bound it rejects. That threw only in the browser — every VM test
+  /// passed — and the failure surfaced as a save that hung with no song
+  /// written. Anything below 2^31 is safe on both.
+  static const _randomBound = 1 << 30;
+
   factory SongId.newUserSong({DateTime? now, Random? random}) {
     final stamp = (now ?? DateTime.now()).millisecondsSinceEpoch;
     final rng = random ?? Random();
-    final suffix = rng.nextInt(1 << 32).toRadixString(36).padLeft(7, '0');
+    final suffix = rng.nextInt(_randomBound).toRadixString(36).padLeft(6, '0');
     return SongId.user('${stamp.toRadixString(36)}$suffix');
   }
 
