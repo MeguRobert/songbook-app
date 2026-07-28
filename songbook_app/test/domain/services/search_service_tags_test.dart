@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/data/models/song.dart';
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/domain/services/search_service.dart';
 
 Song song(int number, {List<String> tags = const []}) => Song(
@@ -89,7 +90,7 @@ void main() {
 
     test('overridden song gets new tags; others unchanged', () {
       final result = service.applyTagOverrides(songs, {
-        1: ['communion', 'evening'],
+        const SongId.hymnal(1): ['communion', 'evening'],
       });
 
       expect(result.firstWhere((s) => s.number == 1).tags,

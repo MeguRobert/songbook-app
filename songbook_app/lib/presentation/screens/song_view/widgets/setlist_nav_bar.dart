@@ -1,3 +1,4 @@
+import '../../../../data/models/song_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,7 +25,7 @@ class SetlistNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final playback = ref.watch(setlistPlaybackProvider);
     if (playback == null) return const SizedBox.shrink();
-    if (!playback.songNumbers.contains(songNumber)) {
+    if (!playback.songIds.contains(SongId.hymnal(songNumber))) {
       return const SizedBox.shrink();
     }
     if (ref.watch(setlistByIdProvider(playback.setlistId)) == null) {
@@ -42,7 +43,7 @@ class SetlistNavBar extends ConsumerWidget {
             tooltip: 'Previous song',
             onPressed: playback.hasPrevious
                 ? () {
-                    final n = notifier.previous();
+                    final n = notifier.previous()?.hymnalNumber;
                     if (n != null) {
                       context.pushReplacement(AppRoutes.songPath(n));
                     }
@@ -71,7 +72,7 @@ class SetlistNavBar extends ConsumerWidget {
             tooltip: 'Next song',
             onPressed: playback.hasNext
                 ? () {
-                    final n = notifier.next();
+                    final n = notifier.next()?.hymnalNumber;
                     if (n != null) {
                       context.pushReplacement(AppRoutes.songPath(n));
                     }

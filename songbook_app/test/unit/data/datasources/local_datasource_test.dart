@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songbook_app/data/datasources/local/local_datasource.dart';
 import 'package:songbook_app/data/models/favorite.dart';
+import 'package:songbook_app/data/models/song_id.dart';
 
 Future<LocalDataSource> makeDataSource(
     [Map<String, Object> initialValues = const {}]) async {
@@ -70,64 +71,68 @@ void main() {
 
     test('addFavorite persists and getFavorites reads it back', () async {
       final ds = await makeDataSource();
-      expect(await ds.addFavorite(42), isTrue);
+      expect(await ds.addFavorite(const SongId.hymnal(42)), isTrue);
       final favorites = ds.getFavorites();
-      expect(favorites.map((f) => f.songNumber), [42]);
-      expect(ds.isFavorite(42), isTrue);
-      expect(ds.isFavorite(43), isFalse);
+      expect(favorites.map((f) => f.songId), const [SongId.hymnal(42)]);
+      expect(ds.isFavorite(const SongId.hymnal(42)), isTrue);
+      expect(ds.isFavorite(const SongId.hymnal(43)), isFalse);
     });
 
     test('addFavorite is a no-op for an existing favorite', () async {
       final ds = await makeDataSource();
-      await ds.addFavorite(42);
-      expect(await ds.addFavorite(42), isTrue);
+      await ds.addFavorite(const SongId.hymnal(42));
+      expect(await ds.addFavorite(const SongId.hymnal(42)), isTrue);
       expect(ds.getFavorites(), hasLength(1));
     });
 
     test('addFavorite assigns increasing sortOrder', () async {
       final ds = await makeDataSource();
-      await ds.addFavorite(1);
-      await ds.addFavorite(2);
-      await ds.addFavorite(3);
+      await ds.addFavorite(const SongId.hymnal(1));
+      await ds.addFavorite(const SongId.hymnal(2));
+      await ds.addFavorite(const SongId.hymnal(3));
       final orders = ds.getFavorites().map((f) => f.sortOrder).toList();
       expect(orders, [1, 2, 3]);
     });
 
     test('removeFavorite deletes only the given song', () async {
       final ds = await makeDataSource();
-      await ds.addFavorite(1);
-      await ds.addFavorite(2);
-      await ds.removeFavorite(1);
-      expect(ds.getFavorites().map((f) => f.songNumber), [2]);
-      expect(ds.isFavorite(1), isFalse);
+      await ds.addFavorite(const SongId.hymnal(1));
+      await ds.addFavorite(const SongId.hymnal(2));
+      await ds.removeFavorite(const SongId.hymnal(1));
+      expect(ds.getFavorites().map((f) => f.songId), const [SongId.hymnal(2)]);
+      expect(ds.isFavorite(const SongId.hymnal(1)), isFalse);
     });
 
     test('removeFavorite on a non-favorite leaves the list intact', () async {
       final ds = await makeDataSource();
-      await ds.addFavorite(1);
-      await ds.removeFavorite(99);
-      expect(ds.getFavorites().map((f) => f.songNumber), [1]);
+      await ds.addFavorite(const SongId.hymnal(1));
+      await ds.removeFavorite(const SongId.hymnal(99));
+      expect(ds.getFavorites().map((f) => f.songId), const [SongId.hymnal(1)]);
     });
 
     test('saveFavorites overwrites the stored list', () async {
       final ds = await makeDataSource();
-      await ds.addFavorite(1);
+      await ds.addFavorite(const SongId.hymnal(1));
       await ds.saveFavorites([
-        Favorite(songNumber: 7, addedAt: DateTime(2026), sortOrder: 0),
+        Favorite(
+          songId: const SongId.hymnal(7),
+          addedAt: DateTime(2026),
+          sortOrder: 0,
+        ),
       ]);
-      expect(ds.getFavorites().map((f) => f.songNumber), [7]);
+      expect(ds.getFavorites().map((f) => f.songId), const [SongId.hymnal(7)]);
     });
 
     test('favorites survive as JSON in shared preferences', () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final ds = LocalDataSource(prefs);
-      await ds.addFavorite(5);
+      await ds.addFavorite(const SongId.hymnal(5));
 
       final raw = prefs.getString('favorites');
       expect(raw, isNotNull);
       final decoded = json.decode(raw!) as List<dynamic>;
-      expect(decoded.single['songNumber'], 5);
+      expect(decoded.single['songId'], 'hymnal:5');
     });
   });
 
@@ -141,20 +146,21 @@ void main() {
       final ds = await makeDataSource({
         'favorites': json.encode([
           {
-            'songNumber': 1,
+            'songId': 'hymnal:1',
             'addedAt': '2026-01-01T00:00:00.000',
             'sortOrder': 0,
           },
-          {'songNumber': 'not-a-number', 'addedAt': 'not-a-date'},
+          {'songId': 'not-a-number', 'addedAt': 'not-a-date'},
           {
-            'songNumber': 3,
+            'songId': 'hymnal:3',
             'addedAt': '2026-01-03T00:00:00.000',
             'sortOrder': 2,
           },
         ]),
       });
 
-      expect(ds.getFavorites().map((f) => f.songNumber), [1, 3]);
+      expect(ds.getFavorites().map((f) => f.songId),
+          const [SongId.hymnal(1), SongId.hymnal(3)]);
     });
 
     test('getFavorites skips an entry that is not an object at all', () async {
@@ -162,14 +168,14 @@ void main() {
         'favorites': json.encode([
           'garbage',
           {
-            'songNumber': 9,
+            'songId': 'hymnal:9',
             'addedAt': '2026-01-01T00:00:00.000',
             'sortOrder': 0,
           },
         ]),
       });
 
-      expect(ds.getFavorites().map((f) => f.songNumber), [9]);
+      expect(ds.getFavorites().map((f) => f.songId), const [SongId.hymnal(9)]);
     });
 
     test('getSetlists keeps the readable entries and skips the bad one',
@@ -177,7 +183,7 @@ void main() {
       Map<String, Object?> setlist(String id, String name) => {
             'id': id,
             'name': name,
-            'songNumbers': [1, 2],
+            'songIds': ['hymnal:1', 'hymnal:2'],
             'createdAt': '2026-01-01T00:00:00.000',
             'updatedAt': '2026-01-01T00:00:00.000',
           };
@@ -203,7 +209,8 @@ void main() {
         ]),
       });
 
-      expect(ds.getRecentSongs().map((r) => r.songNumber), [1, 3]);
+      expect(ds.getRecentSongs().map((r) => r.songId),
+          const [SongId.hymnal(1), SongId.hymnal(3)]);
     });
 
     test('a wholly unreadable blob still yields an empty collection', () async {
@@ -216,6 +223,100 @@ void main() {
       expect(ds.getFavorites(), isEmpty);
       expect(ds.getSetlists(), isEmpty);
       expect(ds.getRecentSongs(), isEmpty);
+    });
+  });
+
+  // Everything the shipped (pre-SongId) build persisted stores the song as a
+  // bare int. SongId.fromJson/tryParse read an int as a hymnal number
+  // precisely so that data survives the upgrade, so these seed the REAL
+  // legacy blobs and check the songs come back as hymnal ids.
+  group('legacy payloads written before SongId existed', () {
+    test('favourites stored as {"songNumber": 42} still load', () async {
+      final ds = await makeDataSource({
+        'favorites': json.encode([
+          {
+            'songNumber': 42,
+            'addedAt': '2026-01-01T00:00:00.000',
+            'sortOrder': 0,
+          },
+          {
+            'songNumber': 7,
+            'addedAt': '2026-01-02T00:00:00.000',
+            'sortOrder': 1,
+          },
+        ]),
+      });
+
+      expect(ds.getFavorites().map((f) => f.songId),
+          const [SongId.hymnal(42), SongId.hymnal(7)]);
+      expect(ds.isFavorite(const SongId.hymnal(42)), isTrue);
+    });
+
+    test('setlists stored with "songNumbers": [1, 42] still load', () async {
+      final ds = await makeDataSource({
+        'setlists': json.encode([
+          {
+            'id': 'sl_1',
+            'name': 'Service',
+            'songNumbers': [1, 42],
+            'createdAt': '2026-01-01T00:00:00.000',
+            'updatedAt': '2026-01-01T00:00:00.000',
+          },
+        ]),
+      });
+
+      expect(ds.getSetlists().single.songIds,
+          const [SongId.hymnal(1), SongId.hymnal(42)]);
+    });
+
+    test('recents stored as {"n": 42} load as hymnal ids', () async {
+      final ds = await makeDataSource({
+        'recent_songs': json.encode([
+          {'n': 42, 't': 2000},
+          {'n': 1, 't': 1000},
+        ]),
+      });
+
+      expect(ds.getRecentSongs().map((r) => r.songId),
+          const [SongId.hymnal(42), SongId.hymnal(1)]);
+    });
+
+    test('tag overrides keyed by bare song number load as hymnal ids',
+        () async {
+      final ds = await makeDataSource({
+        'song_tag_overrides': json.encode({
+          '42': ['advent'],
+          '7': ['praise', 'morning'],
+        }),
+      });
+
+      expect(ds.getTagOverrides(), {
+        const SongId.hymnal(42): ['advent'],
+        const SongId.hymnal(7): ['praise', 'morning'],
+      });
+    });
+
+    test('rewriting legacy tag overrides persists them under canonical keys',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        'song_tag_overrides': json.encode({
+          '42': ['advent'],
+        }),
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final ds = LocalDataSource(prefs);
+
+      await ds.setSongTags(const SongId.hymnal(7), ['praise']);
+
+      // The untouched legacy entry is rewritten in canonical form too, so the
+      // upgrade is one-way rather than re-parsing bare numbers forever.
+      expect(
+        json.decode(prefs.getString('song_tag_overrides')!),
+        {
+          'hymnal:42': ['advent'],
+          'hymnal:7': ['praise'],
+        },
+      );
     });
   });
 

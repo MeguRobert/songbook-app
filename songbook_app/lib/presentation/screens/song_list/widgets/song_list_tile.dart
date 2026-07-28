@@ -23,7 +23,7 @@ class SongListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isFavorite = ref.watch(isFavoriteProvider(song.number));
+    final isFavorite = ref.watch(isFavoriteProvider(song.id));
     final theme = Theme.of(context);
 
     if (lyricSnippet != null) {
@@ -77,7 +77,7 @@ class SongListTile extends ConsumerWidget {
             color: isFavorite ? Colors.red : null,
           ),
           onPressed: () {
-            ref.read(favoritesProvider.notifier).toggleFavorite(song.number);
+            ref.read(favoritesProvider.notifier).toggleFavorite(song.id);
           },
           tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
         ),
@@ -117,7 +117,7 @@ class SongListTile extends ConsumerWidget {
           color: isFavorite ? Colors.red : null,
         ),
         onPressed: () {
-          ref.read(favoritesProvider.notifier).toggleFavorite(song.number);
+          ref.read(favoritesProvider.notifier).toggleFavorite(song.id);
         },
         tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
       ),

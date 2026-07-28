@@ -1,4 +1,5 @@
 import '../datasources/local/local_datasource.dart';
+import '../models/song_id.dart';
 import '../models/setlist.dart';
 
 /// Repository for managing setlists (named, ordered song lists).
@@ -32,7 +33,7 @@ class SetlistRepository {
     final setlist = Setlist(
       id: 'sl_${now.microsecondsSinceEpoch}',
       name: name,
-      songNumbers: const [],
+      songIds: const [],
       createdAt: now,
       updatedAt: now,
     );
@@ -57,28 +58,28 @@ class SetlistRepository {
   }
 
   /// Appends a song to a setlist if not already present (idempotent).
-  Future<bool> addSong(String id, int songNumber) {
+  Future<bool> addSong(String id, SongId songId) {
     return _update(id, (s) {
-      if (s.songNumbers.contains(songNumber)) return s;
-      return s.copyWith(songNumbers: [...s.songNumbers, songNumber]);
+      if (s.songIds.contains(songId)) return s;
+      return s.copyWith(songIds: [...s.songIds, songId]);
     });
   }
 
   /// Removes a song from a setlist (no-op if not present).
-  Future<bool> removeSong(String id, int songNumber) {
+  Future<bool> removeSong(String id, SongId songId) {
     return _update(
       id,
       (s) => s.copyWith(
-        songNumbers: s.songNumbers.where((n) => n != songNumber).toList(),
+        songIds: s.songIds.where((n) => n != songId).toList(),
       ),
     );
   }
 
   /// Replaces the song order with the provided ordered list.
-  Future<bool> reorderSongs(String id, List<int> orderedSongNumbers) {
+  Future<bool> reorderSongs(String id, List<SongId> orderedSongIds) {
     return _update(
       id,
-      (s) => s.copyWith(songNumbers: List<int>.from(orderedSongNumbers)),
+      (s) => s.copyWith(songIds: List<SongId>.from(orderedSongIds)),
     );
   }
 

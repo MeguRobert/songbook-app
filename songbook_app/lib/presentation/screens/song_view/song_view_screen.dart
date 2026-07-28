@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/models/song.dart';
+import '../../../data/models/song_id.dart';
 import '../../../data/models/view_config.dart';
 import '../../providers/autoscroll_provider.dart';
 import '../../providers/favorites_provider.dart';
@@ -43,6 +44,11 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     // tickers — the zoom AnimationController (04-05) and the auto-scroll
     // Ticker (POC 1). SingleTickerProviderStateMixin asserts on the second.
     with TickerProviderStateMixin {
+  /// This screen is still routed to by hymnal number; stored references
+  /// (favourites, recents, setlists, tags) are keyed by [SongId]. One
+  /// conversion point rather than a cast at every call site.
+  SongId get _songId => SongId.hymnal(widget.songNumber);
+
   double _baseScale = 1.0;
 
   // Smooth zoom for discrete Ctrl+wheel notches. A trackpad pinch streams many
@@ -108,7 +114,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   void _openCurrentSong() {
     ref.read(songViewProvider.notifier).openSong(widget.songNumber);
     // Record this song as recently viewed (powers the Home "Recent" rail).
-    ref.read(recentsProvider.notifier).record(widget.songNumber);
+    ref.read(recentsProvider.notifier).record(_songId);
     ref.read(autoScrollProvider.notifier).init(widget.songNumber);
     _syncSetlistPosition();
   }
@@ -180,7 +186,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   void _syncSetlistPosition() {
     final playback = ref.read(setlistPlaybackProvider);
     if (playback == null) return;
-    final index = playback.songNumbers.indexOf(widget.songNumber);
+    final index = playback.songIds.indexOf(_songId);
     if (index != -1) {
       ref.read(setlistPlaybackProvider.notifier).jumpTo(index);
     }
@@ -270,7 +276,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
           ),
           onPressed: () => ref
               .read(favoritesProvider.notifier)
-              .toggleFavorite(widget.songNumber),
+              .toggleFavorite(_songId),
           tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
         ),
         PopupMenuButton<_SongMenuAction>(
@@ -310,7 +316,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   @override
   Widget build(BuildContext context) {
     final songAsync = ref.watch(songByNumberProvider(widget.songNumber));
-    final isFavorite = ref.watch(isFavoriteProvider(widget.songNumber));
+    final isFavorite = ref.watch(isFavoriteProvider(_songId));
     // Deliberately NOT watching autoScrollProvider. The play control lives in
     // the controls sheet, which watches it itself; watching here rebuilt the
     // whole screen on every frame of a speed-slider drag. The ticker is driven

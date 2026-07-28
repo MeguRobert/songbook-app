@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../data/models/setlist.dart';
 import '../../../data/models/song.dart';
+import '../../../data/models/song_id.dart';
 import '../../../router/app_router.dart';
 import '../../providers/setlist_provider.dart';
 import '../../providers/song_provider.dart';
@@ -42,11 +43,11 @@ class SetlistDetailScreen extends ConsumerWidget {
       ),
       body: songsAsync.when(
         data: (allSongs) {
-          final byNumber = {for (final s in allSongs) s.number: s};
-          // Preserve setlist order; skip numbers that are not in songs.json.
-          final songs = setlist.songNumbers
-              .where(byNumber.containsKey)
-              .map((n) => byNumber[n]!)
+          final byId = {for (final s in allSongs) s.id: s};
+          // Preserve setlist order; skip songs that are not in songs.json.
+          final songs = setlist.songIds
+              .where(byId.containsKey)
+              .map((id) => byId[id]!)
               .toList();
 
           if (songs.isEmpty) {
@@ -68,14 +69,14 @@ class SetlistDetailScreen extends ConsumerWidget {
               // full stored list. Writing `songs` directly would persist only
               // the catalog-filtered subset, permanently deleting any setlist
               // entry whose song is missing from songs.json.
-              final visible = songs.map((s) => s.number).toList();
+              final visible = songs.map((s) => s.id).toList();
               final reordered = [...visible];
               reordered.insert(newIndex, reordered.removeAt(oldIndex));
 
-              final visibleNumbers = visible.toSet();
+              final visibleIds = visible.toSet();
               var next = 0;
-              final full = setlist.songNumbers
-                  .map((n) => visibleNumbers.contains(n) ? reordered[next++] : n)
+              final full = setlist.songIds
+                  .map((n) => visibleIds.contains(n) ? reordered[next++] : n)
                   .toList();
 
               ref.read(setlistsProvider.notifier).reorder(setlist.id, full);
@@ -98,7 +99,7 @@ class SetlistDetailScreen extends ConsumerWidget {
                   tooltip: 'Remove from setlist',
                   onPressed: () => ref
                       .read(setlistsProvider.notifier)
-                      .removeSong(setlist.id, song.number),
+                      .removeSong(setlist.id, song.id),
                 ),
               );
             },
@@ -122,7 +123,10 @@ class SetlistDetailScreen extends ConsumerWidget {
 
   void _play(BuildContext context, WidgetRef ref, Setlist setlist) {
     ref.read(setlistPlaybackProvider.notifier).start(setlist);
-    context.push(AppRoutes.songPath(setlist.songNumbers.first));
+    // Routes still carry a hymnal number; nothing user-authored can be in
+    // a setlist yet, so there is no id here without one.
+    final first = setlist.songIds.first.hymnalNumber;
+    if (first != null) context.push(AppRoutes.songPath(first));
   }
 
   /// Opens a bottom sheet listing all songs; tapping toggles membership.
@@ -154,7 +158,10 @@ class _AddSongsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setlist = ref.watch(setlistByIdProvider(setlistId));
-    final included = setlist?.songNumbers.toSet() ?? <int>{};
+    // Explicitly Set<SongId>. A `<int>{}` fallback widened this to Set<Object>,
+    // which made the `contains` below compile while never matching — the
+    // checkbox would silently never show as ticked.
+    final included = setlist?.songIds.toSet() ?? <SongId>{};
 
     return DraggableScrollableSheet(
       expand: false,
@@ -177,16 +184,16 @@ class _AddSongsSheet extends ConsumerWidget {
                 itemCount: allSongs.length,
                 itemBuilder: (context, index) {
                   final song = allSongs[index];
-                  final isIn = included.contains(song.number);
+                  final isIn = included.contains(song.id);
                   return CheckboxListTile(
                     value: isIn,
                     title: Text('${song.number}. ${song.title}'),
                     onChanged: (checked) {
                       final notifier = ref.read(setlistsProvider.notifier);
                       if (checked == true) {
-                        notifier.addSong(setlistId, song.number);
+                        notifier.addSong(setlistId, song.id);
                       } else {
-                        notifier.removeSong(setlistId, song.number);
+                        notifier.removeSong(setlistId, song.id);
                       }
                     },
                   );

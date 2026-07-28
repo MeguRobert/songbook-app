@@ -1,31 +1,35 @@
+import 'song_id.dart';
+
 /// A song the user has opened, with the timestamp of the most recent view.
 ///
 /// Stored as part of the recents list in SharedPreferences. Uses hand-written
 /// JSON (no codegen) to keep the POC dependency-free — the shape is trivial.
 class RecentSong {
-  final int songNumber;
+  final SongId songId;
   final DateTime viewedAt;
 
   const RecentSong({
-    required this.songNumber,
+    required this.songId,
     required this.viewedAt,
   });
 
   factory RecentSong.fromJson(Map<String, dynamic> json) {
     return RecentSong(
-      songNumber: json['n'] as int,
+      // Accepts a bare int: that is how every recent written before
+      // song ids existed is stored.
+      songId: SongId.fromJson(json['n'])!,
       viewedAt: DateTime.fromMillisecondsSinceEpoch(json['t'] as int),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'n': songNumber,
+        'n': songId.value,
         't': viewedAt.millisecondsSinceEpoch,
       };
 
-  RecentSong copyWith({int? songNumber, DateTime? viewedAt}) {
+  RecentSong copyWith({SongId? songId, DateTime? viewedAt}) {
     return RecentSong(
-      songNumber: songNumber ?? this.songNumber,
+      songId: songId ?? this.songId,
       viewedAt: viewedAt ?? this.viewedAt,
     );
   }
@@ -39,12 +43,12 @@ class RecentSong {
       identical(this, other) ||
       other is RecentSong &&
           runtimeType == other.runtimeType &&
-          songNumber == other.songNumber &&
+          songId == other.songId &&
           viewedAt == other.viewedAt;
 
   @override
-  int get hashCode => Object.hash(songNumber, viewedAt);
+  int get hashCode => Object.hash(songId, viewedAt);
 
   @override
-  String toString() => 'RecentSong(songNumber: $songNumber, viewedAt: $viewedAt)';
+  String toString() => 'RecentSong(songId: $songId, viewedAt: $viewedAt)';
 }

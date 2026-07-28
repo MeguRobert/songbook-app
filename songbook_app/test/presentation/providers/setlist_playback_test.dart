@@ -1,13 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/data/models/setlist.dart';
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/presentation/providers/setlist_provider.dart';
 
-Setlist setlist({List<int> songNumbers = const [1, 42, 151]}) {
+Setlist setlist({
+  List<SongId> songIds = const [
+    SongId.hymnal(1),
+    SongId.hymnal(42),
+    SongId.hymnal(151),
+  ],
+}) {
   final t = DateTime.utc(2026, 1, 1);
   return Setlist(
     id: 'sl_1',
     name: 'Service',
-    songNumbers: songNumbers,
+    songIds: songIds,
     createdAt: t,
     updatedAt: t,
   );
@@ -24,7 +31,7 @@ void main() {
 
       expect(notifier.state, isNotNull);
       expect(notifier.state!.currentIndex, 0);
-      expect(notifier.state!.currentSongNumber, 1);
+      expect(notifier.state!.currentSongId, const SongId.hymnal(1));
       expect(notifier.state!.position, 1);
       expect(notifier.state!.total, 3);
       expect(notifier.state!.hasPrevious, isFalse);
@@ -32,7 +39,7 @@ void main() {
     });
 
     test('ignores an empty setlist (stays not playing)', () {
-      notifier.start(setlist(songNumbers: const []));
+      notifier.start(setlist(songIds: const []));
 
       expect(notifier.state, isNull);
     });
@@ -41,7 +48,7 @@ void main() {
       notifier.start(setlist(), index: 99);
 
       expect(notifier.state!.currentIndex, 2);
-      expect(notifier.state!.currentSongNumber, 151);
+      expect(notifier.state!.currentSongId, const SongId.hymnal(151));
     });
   });
 
@@ -49,8 +56,8 @@ void main() {
     test('next walks forward and returns the new song number', () {
       notifier.start(setlist());
 
-      expect(notifier.next(), 42);
-      expect(notifier.next(), 151);
+      expect(notifier.next(), const SongId.hymnal(42));
+      expect(notifier.next(), const SongId.hymnal(151));
       expect(notifier.state!.hasNext, isFalse);
       expect(notifier.next(), isNull); // no wrap at the end
       expect(notifier.state!.currentIndex, 2);
@@ -59,8 +66,8 @@ void main() {
     test('previous walks back and returns null at the start', () {
       notifier.start(setlist(), index: 2);
 
-      expect(notifier.previous(), 42);
-      expect(notifier.previous(), 1);
+      expect(notifier.previous(), const SongId.hymnal(42));
+      expect(notifier.previous(), const SongId.hymnal(1));
       expect(notifier.state!.hasPrevious, isFalse);
       expect(notifier.previous(), isNull);
       expect(notifier.state!.currentIndex, 0);
@@ -72,7 +79,7 @@ void main() {
       notifier.start(setlist());
 
       notifier.jumpTo(2);
-      expect(notifier.state!.currentSongNumber, 151);
+      expect(notifier.state!.currentSongId, const SongId.hymnal(151));
 
       notifier.jumpTo(99);
       expect(notifier.state!.currentIndex, 2);

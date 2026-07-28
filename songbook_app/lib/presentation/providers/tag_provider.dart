@@ -1,3 +1,4 @@
+import '../../data/models/song_id.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/tag.dart';
@@ -9,29 +10,29 @@ import 'song_provider.dart';
 /// Seeded from [TagRepository] so edits survive restarts. Every mutation
 /// persists then replaces the state map, which [songsProvider] watches — so an
 /// edit anywhere propagates to the song list, search, and the tag browser.
-class TagOverridesNotifier extends StateNotifier<Map<int, List<String>>> {
+class TagOverridesNotifier extends StateNotifier<Map<SongId, List<String>>> {
   final Ref _ref;
 
   TagOverridesNotifier(this._ref)
       : super(_ref.read(tagRepositoryProvider).getOverrides());
 
-  /// Replaces the tags for [songNumber].
+  /// Replaces the tags for [songId].
   ///
   /// An empty list persists an EMPTY override, which is deliberately distinct
   /// from having no override: it means "this song has no tags". Routing empty
   /// to [clearOverride] instead made bundled tags reappear, so a user could
   /// never remove a song's last tag. Reverting to the bundled tags is the
   /// separate, explicit [clearOverride] ("Reset to default" in the editor).
-  Future<void> setTags(int songNumber, List<String> tags) async {
+  Future<void> setTags(SongId songId, List<String> tags) async {
     final repository = _ref.read(tagRepositoryProvider);
-    await repository.setTags(songNumber, tags);
-    state = {...state, songNumber: List<String>.from(tags)};
+    await repository.setTags(songId, tags);
+    state = {...state, songId: List<String>.from(tags)};
   }
 
-  /// Adds [tag] to [currentTags] for [songNumber] (trimmed; blank and
+  /// Adds [tag] to [currentTags] for [songId] (trimmed; blank and
   /// case-insensitive duplicates are ignored).
   Future<void> addTag(
-    int songNumber,
+    SongId songId,
     String tag,
     List<String> currentTags,
   ) async {
@@ -40,33 +41,33 @@ class TagOverridesNotifier extends StateNotifier<Map<int, List<String>>> {
     final exists =
         currentTags.any((t) => t.toLowerCase() == trimmed.toLowerCase());
     if (exists) return;
-    await setTags(songNumber, [...currentTags, trimmed]);
+    await setTags(songId, [...currentTags, trimmed]);
   }
 
-  /// Removes [tag] (case-insensitive) from [currentTags] for [songNumber].
+  /// Removes [tag] (case-insensitive) from [currentTags] for [songId].
   Future<void> removeTag(
-    int songNumber,
+    SongId songId,
     String tag,
     List<String> currentTags,
   ) async {
     final next = currentTags
         .where((t) => t.toLowerCase() != tag.toLowerCase())
         .toList();
-    await setTags(songNumber, next);
+    await setTags(songId, next);
   }
 
-  /// Clears the override for [songNumber], reverting to bundled tags.
-  Future<void> clearOverride(int songNumber) async {
+  /// Clears the override for [songId], reverting to bundled tags.
+  Future<void> clearOverride(SongId songId) async {
     final repository = _ref.read(tagRepositoryProvider);
-    await repository.clearOverride(songNumber);
-    final next = {...state}..remove(songNumber);
+    await repository.clearOverride(songId);
+    final next = {...state}..remove(songId);
     state = next;
   }
 }
 
 /// Provider for per-song tag overrides (keyed by song number).
 final tagOverridesProvider =
-    StateNotifierProvider<TagOverridesNotifier, Map<int, List<String>>>((ref) {
+    StateNotifierProvider<TagOverridesNotifier, Map<SongId, List<String>>>((ref) {
   return TagOverridesNotifier(ref);
 });
 

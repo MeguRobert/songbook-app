@@ -1,5 +1,6 @@
 import '../../core/extensions/string_extensions.dart';
 import '../../data/models/song.dart';
+import '../../data/models/song_id.dart';
 import '../../data/models/tag.dart';
 
 /// A song found by scanning verse text, with the line that matched.
@@ -225,12 +226,12 @@ class SearchService {
   /// An empty [overrides] map returns the SAME list reference (fast path).
   List<Song> applyTagOverrides(
     List<Song> songs,
-    Map<int, List<String>> overrides,
+    Map<SongId, List<String>> overrides,
   ) {
     if (overrides.isEmpty) return songs;
 
     return songs.map((song) {
-      final override = overrides[song.number];
+      final override = overrides[song.id];
       if (override == null) return song;
       return song.copyWith(tags: override);
     }).toList();

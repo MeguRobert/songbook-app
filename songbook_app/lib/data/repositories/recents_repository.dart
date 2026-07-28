@@ -1,4 +1,5 @@
 import '../datasources/local/local_datasource.dart';
+import '../models/song_id.dart';
 import '../models/recent_song.dart';
 
 /// Repository for the recently-viewed songs list.
@@ -10,19 +11,19 @@ class RecentsRepository {
   /// Recently-viewed songs, most-recent first.
   List<RecentSong> getRecentSongs() => _localDataSource.getRecentSongs();
 
-  /// Recently-viewed song numbers, most-recent first.
-  List<int> getRecentSongNumbers() =>
-      getRecentSongs().map((r) => r.songNumber).toList();
+  /// Recently-viewed song ids, most-recent first.
+  List<SongId> getRecentSongIds() =>
+      getRecentSongs().map((r) => r.songId).toList();
 
-  /// The most recently viewed song number, or null if none.
-  int? get lastViewed {
+  /// The most recently viewed song, or null if none.
+  SongId? get lastViewed {
     final recents = getRecentSongs();
-    return recents.isEmpty ? null : recents.first.songNumber;
+    return recents.isEmpty ? null : recents.first.songId;
   }
 
-  /// Records [songNumber] as the most recently viewed.
-  Future<bool> record(int songNumber, {DateTime? now}) =>
-      _localDataSource.recordRecentSong(songNumber, now: now);
+  /// Records [songId] as the most recently viewed.
+  Future<bool> record(SongId songId, {DateTime? now}) =>
+      _localDataSource.recordRecentSong(songId, now: now);
 
   /// Clears the recently-viewed list.
   Future<bool> clear() => _localDataSource.clearRecentSongs();

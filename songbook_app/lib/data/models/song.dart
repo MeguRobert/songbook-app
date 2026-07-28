@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'notation.dart';
+import 'song_id.dart';
 import 'verse.dart';
 
 part 'song.g.dart';
@@ -152,6 +153,15 @@ class Song {
   factory Song.fromJson(Map<String, dynamic> json) => _$SongFromJson(json);
 
   Map<String, dynamic> toJson() => _$SongToJson(this);
+
+  /// How everything else in the app refers to this song.
+  ///
+  /// Every song in the catalogue today comes from a bundled hymnal, so its
+  /// identity is derived from [number]. When locally authored songs land this
+  /// becomes a stored field defaulting to the same thing — the point of routing
+  /// all references through [SongId] now is that nothing downstream has to
+  /// change when it does.
+  SongId get id => SongId.hymnal(number);
 
   /// Gets the first verse (typically has notation)
   Verse? get firstVerse => verses.isNotEmpty ? verses.first : null;

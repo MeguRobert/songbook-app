@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songbook_app/data/models/song.dart';
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/presentation/providers/favorites_provider.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
@@ -11,7 +12,7 @@ import 'package:songbook_app/presentation/providers/song_provider.dart';
 String favoritesJson(List<int> numbers) => json.encode([
       for (var i = 0; i < numbers.length; i++)
         {
-          'songNumber': numbers[i],
+          'songId': SongId.hymnal(numbers[i]).value,
           'addedAt': '2026-01-01T00:00:00.000',
           'sortOrder': i,
         },
@@ -41,7 +42,7 @@ void main() {
     test('starts empty when nothing is stored', () async {
       final container = await makeContainer();
       final state = container.read(favoritesProvider);
-      expect(state.favoriteSongNumbers, isEmpty);
+      expect(state.favoriteSongIds, isEmpty);
       expect(state.count, 0);
       expect(state.isLoading, isFalse);
     });
@@ -50,37 +51,48 @@ void main() {
       final container = await makeContainer(
           prefs: {'favorites': favoritesJson([42, 7])});
       final state = container.read(favoritesProvider);
-      expect(state.favoriteSongNumbers, {42, 7});
-      expect(state.isFavorite(42), isTrue);
-      expect(state.isFavorite(1), isFalse);
+      expect(state.favoriteSongIds,
+          {const SongId.hymnal(42), const SongId.hymnal(7)});
+      expect(state.isFavorite(const SongId.hymnal(42)), isTrue);
+      expect(state.isFavorite(const SongId.hymnal(1)), isFalse);
     });
   });
 
   group('toggleFavorite', () {
     test('adds a non-favorite and persists it', () async {
       final container = await makeContainer();
-      await container.read(favoritesProvider.notifier).toggleFavorite(5);
+      await container
+          .read(favoritesProvider.notifier)
+          .toggleFavorite(const SongId.hymnal(5));
 
-      expect(container.read(favoritesProvider).isFavorite(5), isTrue);
+      expect(
+          container.read(favoritesProvider).isFavorite(const SongId.hymnal(5)),
+          isTrue);
       final raw =
           container.read(sharedPreferencesProvider).getString('favorites');
-      expect(raw, contains('"songNumber":5'));
+      expect(raw, contains('"songId":"hymnal:5"'));
     });
 
     test('removes an existing favorite and persists the removal', () async {
       final container =
           await makeContainer(prefs: {'favorites': favoritesJson([5])});
-      await container.read(favoritesProvider.notifier).toggleFavorite(5);
+      await container
+          .read(favoritesProvider.notifier)
+          .toggleFavorite(const SongId.hymnal(5));
 
-      expect(container.read(favoritesProvider).isFavorite(5), isFalse);
+      expect(
+          container.read(favoritesProvider).isFavorite(const SongId.hymnal(5)),
+          isFalse);
       final raw =
           container.read(sharedPreferencesProvider).getString('favorites');
-      expect(raw, isNot(contains('"songNumber":5')));
+      expect(raw, isNot(contains('"songId":"hymnal:5"')));
     });
 
     test('clears isLoading when done', () async {
       final container = await makeContainer();
-      await container.read(favoritesProvider.notifier).toggleFavorite(5);
+      await container
+          .read(favoritesProvider.notifier)
+          .toggleFavorite(const SongId.hymnal(5));
       expect(container.read(favoritesProvider).isLoading, isFalse);
     });
   });
@@ -88,15 +100,21 @@ void main() {
   group('addFavorite', () {
     test('adds and persists', () async {
       final container = await makeContainer();
-      await container.read(favoritesProvider.notifier).addFavorite(9);
-      expect(container.read(favoritesProvider).favoriteSongNumbers, {9});
+      await container
+          .read(favoritesProvider.notifier)
+          .addFavorite(const SongId.hymnal(9));
+      expect(container.read(favoritesProvider).favoriteSongIds,
+          {const SongId.hymnal(9)});
     });
 
     test('is a no-op when already a favorite', () async {
       final container =
           await makeContainer(prefs: {'favorites': favoritesJson([9])});
-      await container.read(favoritesProvider.notifier).addFavorite(9);
-      expect(container.read(favoritesProvider).favoriteSongNumbers, {9});
+      await container
+          .read(favoritesProvider.notifier)
+          .addFavorite(const SongId.hymnal(9));
+      expect(container.read(favoritesProvider).favoriteSongIds,
+          {const SongId.hymnal(9)});
       expect(container.read(favoritesProvider).count, 1);
     });
   });
@@ -105,15 +123,21 @@ void main() {
     test('removes and persists', () async {
       final container =
           await makeContainer(prefs: {'favorites': favoritesJson([9, 10])});
-      await container.read(favoritesProvider.notifier).removeFavorite(9);
-      expect(container.read(favoritesProvider).favoriteSongNumbers, {10});
+      await container
+          .read(favoritesProvider.notifier)
+          .removeFavorite(const SongId.hymnal(9));
+      expect(container.read(favoritesProvider).favoriteSongIds,
+          {const SongId.hymnal(10)});
     });
 
     test('is a no-op when not a favorite', () async {
       final container =
           await makeContainer(prefs: {'favorites': favoritesJson([10])});
-      await container.read(favoritesProvider.notifier).removeFavorite(9);
-      expect(container.read(favoritesProvider).favoriteSongNumbers, {10});
+      await container
+          .read(favoritesProvider.notifier)
+          .removeFavorite(const SongId.hymnal(9));
+      expect(container.read(favoritesProvider).favoriteSongIds,
+          {const SongId.hymnal(10)});
     });
   });
 
@@ -121,16 +145,22 @@ void main() {
     test('reloads state from the repository', () async {
       final container = await makeContainer();
       // Instantiate the notifier first (providers are created lazily).
-      expect(container.read(favoritesProvider).isFavorite(77), isFalse);
+      expect(
+          container.read(favoritesProvider).isFavorite(const SongId.hymnal(77)),
+          isFalse);
 
       // Write directly through the datasource, bypassing the notifier.
       final dataSource = container.read(localDataSourceProvider);
-      await dataSource.addFavorite(77);
-      expect(container.read(favoritesProvider).isFavorite(77), isFalse,
+      await dataSource.addFavorite(const SongId.hymnal(77));
+      expect(
+          container.read(favoritesProvider).isFavorite(const SongId.hymnal(77)),
+          isFalse,
           reason: 'notifier state is stale until refresh');
 
       container.read(favoritesProvider.notifier).refresh();
-      expect(container.read(favoritesProvider).isFavorite(77), isTrue);
+      expect(
+          container.read(favoritesProvider).isFavorite(const SongId.hymnal(77)),
+          isTrue);
     });
   });
 
@@ -138,11 +168,16 @@ void main() {
     test('isFavoriteProvider reflects membership per song', () async {
       final container =
           await makeContainer(prefs: {'favorites': favoritesJson([3])});
-      expect(container.read(isFavoriteProvider(3)), isTrue);
-      expect(container.read(isFavoriteProvider(4)), isFalse);
+      expect(
+          container.read(isFavoriteProvider(const SongId.hymnal(3))), isTrue);
+      expect(
+          container.read(isFavoriteProvider(const SongId.hymnal(4))), isFalse);
 
-      await container.read(favoritesProvider.notifier).addFavorite(4);
-      expect(container.read(isFavoriteProvider(4)), isTrue);
+      await container
+          .read(favoritesProvider.notifier)
+          .addFavorite(const SongId.hymnal(4));
+      expect(
+          container.read(isFavoriteProvider(const SongId.hymnal(4))), isTrue);
     });
 
     test('favoriteSongsProvider filters the song list', () async {
@@ -159,10 +194,17 @@ void main() {
 
   group('FavoritesState', () {
     test('copyWith overrides fields independently', () {
-      const state = FavoritesState(favoriteSongNumbers: {1});
+      // Built at runtime, not `const`: a const set may not hold values that
+      // override `==`, which SongId does.
+      final state = FavoritesState(favoriteSongIds: {const SongId.hymnal(1)});
       expect(state.copyWith(isLoading: true).isLoading, isTrue);
-      expect(state.copyWith(isLoading: true).favoriteSongNumbers, {1});
-      expect(state.copyWith(favoriteSongNumbers: {2}).favoriteSongNumbers, {2});
+      expect(state.copyWith(isLoading: true).favoriteSongIds,
+          {const SongId.hymnal(1)});
+      expect(
+          state
+              .copyWith(favoriteSongIds: {const SongId.hymnal(2)})
+              .favoriteSongIds,
+          {const SongId.hymnal(2)});
     });
   });
 
@@ -172,7 +214,9 @@ void main() {
     final container = ProviderContainer(overrides: [
       sharedPreferencesProvider.overrideWithValue(sharedPreferences),
     ]);
-    await container.read(favoritesProvider.notifier).toggleFavorite(1);
+    await container
+        .read(favoritesProvider.notifier)
+        .toggleFavorite(const SongId.hymnal(1));
     expect(container.dispose, returnsNormally);
   });
 
@@ -186,17 +230,28 @@ void main() {
           await makeContainer(prefs: {'favorites': favoritesJson([42, 7])});
       final notifier = container.read(favoritesProvider.notifier);
 
-      expect(container.read(favoritesProvider).orderedSongNumbers, [42, 7]);
+      expect(container.read(favoritesProvider).orderedSongIds,
+          const [SongId.hymnal(42), SongId.hymnal(7)]);
 
-      await notifier.toggleFavorite(1);
+      await notifier.toggleFavorite(const SongId.hymnal(1));
       final afterAdd = container.read(favoritesProvider);
-      expect(afterAdd.favoriteSongNumbers, {42, 7, 1});
-      expect(afterAdd.orderedSongNumbers.toSet(), {42, 7, 1});
+      expect(afterAdd.favoriteSongIds, {
+        const SongId.hymnal(42),
+        const SongId.hymnal(7),
+        const SongId.hymnal(1),
+      });
+      expect(afterAdd.orderedSongIds.toSet(), {
+        const SongId.hymnal(42),
+        const SongId.hymnal(7),
+        const SongId.hymnal(1),
+      });
 
-      await notifier.toggleFavorite(7);
+      await notifier.toggleFavorite(const SongId.hymnal(7));
       final afterRemove = container.read(favoritesProvider);
-      expect(afterRemove.favoriteSongNumbers, {42, 1});
-      expect(afterRemove.orderedSongNumbers.toSet(), {42, 1});
+      expect(afterRemove.favoriteSongIds,
+          {const SongId.hymnal(42), const SongId.hymnal(1)});
+      expect(afterRemove.orderedSongIds.toSet(),
+          {const SongId.hymnal(42), const SongId.hymnal(1)});
     });
 
     test('reorder persists the new order', () async {
@@ -204,12 +259,16 @@ void main() {
           await makeContainer(prefs: {'favorites': favoritesJson([42, 7, 1])});
       final notifier = container.read(favoritesProvider.notifier);
 
-      await notifier.reorder([1, 42, 7]);
-      expect(container.read(favoritesProvider).orderedSongNumbers, [1, 42, 7]);
+      await notifier.reorder(
+        const [SongId.hymnal(1), SongId.hymnal(42), SongId.hymnal(7)],
+      );
+      expect(container.read(favoritesProvider).orderedSongIds,
+          const [SongId.hymnal(1), SongId.hymnal(42), SongId.hymnal(7)]);
 
       // Survives a fresh notifier reading the same storage.
       final reread = container.read(favoritesRepositoryProvider);
-      expect(reread.getFavoriteSongNumbers(), [1, 42, 7]);
+      expect(reread.getFavoriteSongIds(),
+          const [SongId.hymnal(1), SongId.hymnal(42), SongId.hymnal(7)]);
     });
   });
 }

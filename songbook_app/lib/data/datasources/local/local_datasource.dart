@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/song.dart';
+import '../../models/song_id.dart';
 import '../../models/favorite.dart';
 import '../../models/setlist.dart';
 import '../../models/recent_song.dart';
@@ -100,9 +101,9 @@ class LocalDataSource {
   }
 
   /// Adds a song to favorites
-  Future<bool> addFavorite(int songNumber) async {
+  Future<bool> addFavorite(SongId songId) async {
     final favorites = getFavorites();
-    if (favorites.any((f) => f.songNumber == songNumber)) {
+    if (favorites.any((f) => f.songId == songId)) {
       return true; // Already a favorite
     }
 
@@ -111,7 +112,7 @@ class LocalDataSource {
         : favorites.map((f) => f.sortOrder).reduce((a, b) => a > b ? a : b);
 
     favorites.add(Favorite(
-      songNumber: songNumber,
+      songId: songId,
       addedAt: DateTime.now(),
       sortOrder: maxSortOrder + 1,
     ));
@@ -120,15 +121,15 @@ class LocalDataSource {
   }
 
   /// Removes a song from favorites
-  Future<bool> removeFavorite(int songNumber) async {
+  Future<bool> removeFavorite(SongId songId) async {
     final favorites = getFavorites();
-    favorites.removeWhere((f) => f.songNumber == songNumber);
+    favorites.removeWhere((f) => f.songId == songId);
     return saveFavorites(favorites);
   }
 
   /// Checks if a song is a favorite
-  bool isFavorite(int songNumber) {
-    return getFavorites().any((f) => f.songNumber == songNumber);
+  bool isFavorite(SongId songId) {
+    return getFavorites().any((f) => f.songId == songId);
   }
 
   // --- Setlists ---
@@ -145,21 +146,26 @@ class LocalDataSource {
 
   // --- Tag Overrides ---
 
-  /// Gets per-song tag overrides keyed by song number.
+  /// Gets per-song tag overrides keyed by song.
   ///
   /// An override REPLACES the bundled tags for that song (uniformly handles
   /// add and remove). Returns an empty map if none stored or on decode error.
-  Map<int, List<String>> getTagOverrides() {
+  ///
+  /// Keys were bare song numbers before song ids existed. [SongId.tryParse]
+  /// reads those as hymnal ids, so overrides stored by an older build survive
+  /// the upgrade untouched; unparseable keys are dropped rather than failing
+  /// the whole read, matching how [_decodeRecords] treats a bad record.
+  Map<SongId, List<String>> getTagOverrides() {
     final jsonString = _prefs.getString(_tagOverridesKey);
     if (jsonString == null) return {};
 
     try {
       final Map<String, dynamic> decoded = json.decode(jsonString);
-      final result = <int, List<String>>{};
+      final result = <SongId, List<String>>{};
       decoded.forEach((key, value) {
-        final number = int.tryParse(key);
-        if (number == null || value is! List) return;
-        result[number] = value.map((e) => e.toString()).toList();
+        final songId = SongId.tryParse(key);
+        if (songId == null || value is! List) return;
+        result[songId] = value.map((e) => e.toString()).toList();
       });
       return result;
     } catch (_) {
@@ -168,23 +174,23 @@ class LocalDataSource {
   }
 
   /// Saves all per-song tag overrides as a single JSON blob.
-  Future<bool> saveTagOverrides(Map<int, List<String>> overrides) async {
+  Future<bool> saveTagOverrides(Map<SongId, List<String>> overrides) async {
     final encodable =
-        overrides.map((key, value) => MapEntry(key.toString(), value));
+        overrides.map((key, value) => MapEntry(key.value, value));
     return _prefs.setString(_tagOverridesKey, json.encode(encodable));
   }
 
   /// Sets the tag override for a single song.
-  Future<bool> setSongTags(int songNumber, List<String> tags) async {
+  Future<bool> setSongTags(SongId songId, List<String> tags) async {
     final overrides = getTagOverrides();
-    overrides[songNumber] = tags;
+    overrides[songId] = tags;
     return saveTagOverrides(overrides);
   }
 
   /// Clears the tag override for a single song (reverting to bundled tags).
-  Future<bool> clearSongTags(int songNumber) async {
+  Future<bool> clearSongTags(SongId songId) async {
     final overrides = getTagOverrides();
-    overrides.remove(songNumber);
+    overrides.remove(songId);
     return saveTagOverrides(overrides);
   }
   // --- Recently viewed ---
@@ -194,16 +200,16 @@ class LocalDataSource {
   List<RecentSong> getRecentSongs() =>
       _decodeRecords(_recentsKey, RecentSong.fromJson);
 
-  /// Records [songNumber] as the most recently viewed.
+  /// Records [songId] as the most recently viewed.
   ///
   /// De-duplicates (an existing entry is moved to the front with a refreshed
   /// timestamp) and caps the list at [recentsLimit]. [now] is injectable for
   /// deterministic tests.
-  Future<bool> recordRecentSong(int songNumber, {DateTime? now}) async {
+  Future<bool> recordRecentSong(SongId songId, {DateTime? now}) async {
     final timestamp = now ?? DateTime.now();
     final recents = getRecentSongs()
-      ..removeWhere((r) => r.songNumber == songNumber);
-    recents.insert(0, RecentSong(songNumber: songNumber, viewedAt: timestamp));
+      ..removeWhere((r) => r.songId == songId);
+    recents.insert(0, RecentSong(songId: songId, viewedAt: timestamp));
     final capped = recents.take(recentsLimit).toList();
     final jsonString = json.encode(capped.map((r) => r.toJson()).toList());
     return _prefs.setString(_recentsKey, jsonString);

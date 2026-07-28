@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songbook_app/data/datasources/local/local_datasource.dart';
 import 'package:songbook_app/data/models/lyric_line.dart';
 import 'package:songbook_app/data/models/song.dart';
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/data/models/verse.dart';
 import 'package:songbook_app/data/repositories/song_repository.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
@@ -148,7 +149,7 @@ void main() {
 
       await container
           .read(tagOverridesProvider.notifier)
-          .setTags(3, ['communion', 'praise']);
+          .setTags(const SongId.hymnal(3), ['communion', 'praise']);
       await settle(container);
 
       expect(container.read(searchProvider).results.map((s) => s.number),
@@ -163,7 +164,9 @@ void main() {
       expect(container.read(searchProvider).results.map((s) => s.number),
           equals([1, 2]));
 
-      await container.read(tagOverridesProvider.notifier).setTags(2, []);
+      await container
+          .read(tagOverridesProvider.notifier)
+          .setTags(const SongId.hymnal(2), []);
       await settle(container);
 
       expect(container.read(searchProvider).results.map((s) => s.number),
@@ -180,7 +183,7 @@ void main() {
 
       await container
           .read(tagOverridesProvider.notifier)
-          .setTags(1, ['renamed']);
+          .setTags(const SongId.hymnal(1), ['renamed']);
       await settle(container);
 
       // Song 1 still matches on its title ("Advent Praise") — it just carries

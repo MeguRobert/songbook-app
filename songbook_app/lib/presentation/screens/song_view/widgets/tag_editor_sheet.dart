@@ -1,3 +1,4 @@
+import '../../../../data/models/song_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -55,14 +56,14 @@ class _TagEditorSheetState extends ConsumerState<TagEditorSheet> {
   Future<void> _save() async {
     await ref
         .read(tagOverridesProvider.notifier)
-        .setTags(widget.songNumber, _tags);
+        .setTags(SongId.hymnal(widget.songNumber), _tags);
     if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _resetToDefault() async {
     await ref
         .read(tagOverridesProvider.notifier)
-        .clearOverride(widget.songNumber);
+        .clearOverride(SongId.hymnal(widget.songNumber));
     if (mounted) Navigator.of(context).pop();
   }
 

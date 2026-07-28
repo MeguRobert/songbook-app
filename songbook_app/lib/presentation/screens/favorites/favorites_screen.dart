@@ -63,9 +63,9 @@ class FavoritesScreen extends ConsumerWidget {
             buildDefaultDragHandles: false,
             onReorder: (oldIndex, newIndex) {
               if (newIndex > oldIndex) newIndex--;
-              final songNumbers = songs.map((s) => s.number).toList();
-              songNumbers.insert(newIndex, songNumbers.removeAt(oldIndex));
-              ref.read(favoritesProvider.notifier).reorder(songNumbers);
+              final songIds = songs.map((s) => s.id).toList();
+              songIds.insert(newIndex, songIds.removeAt(oldIndex));
+              ref.read(favoritesProvider.notifier).reorder(songIds);
             },
             itemBuilder: (context, index) {
               final song = songs[index];

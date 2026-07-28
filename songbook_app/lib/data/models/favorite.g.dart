@@ -7,13 +7,15 @@ part of 'favorite.dart';
 // **************************************************************************
 
 Favorite _$FavoriteFromJson(Map<String, dynamic> json) => Favorite(
-  songNumber: (json['songNumber'] as num).toInt(),
+  songId: const SongIdConverter().fromJson(
+    Favorite._readSongId(json, 'songId') as Object,
+  ),
   addedAt: DateTime.parse(json['addedAt'] as String),
   sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$FavoriteToJson(Favorite instance) => <String, dynamic>{
-  'songNumber': instance.songNumber,
+  'songId': const SongIdConverter().toJson(instance.songId),
   'addedAt': instance.addedAt.toIso8601String(),
   'sortOrder': instance.sortOrder,
 };

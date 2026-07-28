@@ -3,12 +3,16 @@ import 'package:mocktail/mocktail.dart';
 import 'package:songbook_app/data/datasources/local/local_datasource.dart';
 import 'package:songbook_app/data/models/favorite.dart';
 import 'package:songbook_app/data/models/song.dart';
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/data/repositories/favorites_repository.dart';
 
 class MockLocalDataSource extends Mock implements LocalDataSource {}
 
-Favorite fav(int number, {int sortOrder = 0}) =>
-    Favorite(songNumber: number, addedAt: DateTime(2026), sortOrder: sortOrder);
+Favorite fav(int number, {int sortOrder = 0}) => Favorite(
+      songId: SongId.hymnal(number),
+      addedAt: DateTime(2026),
+      sortOrder: sortOrder,
+    );
 
 Song song(int number) =>
     Song(number: number, title: 'Song $number', originalKey: 'C', verses: const []);
@@ -24,65 +28,77 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(<Favorite>[]);
+    registerFallbackValue(const SongId.hymnal(0));
   });
 
-  group('getFavorites / getFavoriteSongNumbers / favoriteCount', () {
+  group('getFavorites / getFavoriteSongIds / favoriteCount', () {
     test('delegate to the data source', () {
       final favorites = [fav(1), fav(2, sortOrder: 1)];
       when(() => dataSource.getFavorites()).thenReturn(favorites);
 
       expect(repository.getFavorites(), favorites);
-      expect(repository.getFavoriteSongNumbers(), [1, 2]);
+      expect(repository.getFavoriteSongIds(),
+          const [SongId.hymnal(1), SongId.hymnal(2)]);
       expect(repository.favoriteCount, 2);
     });
 
     test('empty data source yields empty results', () {
       when(() => dataSource.getFavorites()).thenReturn([]);
       expect(repository.getFavorites(), isEmpty);
-      expect(repository.getFavoriteSongNumbers(), isEmpty);
+      expect(repository.getFavoriteSongIds(), isEmpty);
       expect(repository.favoriteCount, 0);
     });
   });
 
   group('add / remove / isFavorite', () {
     test('addFavorite delegates', () async {
-      when(() => dataSource.addFavorite(5)).thenAnswer((_) async => true);
-      expect(await repository.addFavorite(5), isTrue);
-      verify(() => dataSource.addFavorite(5)).called(1);
+      when(() => dataSource.addFavorite(const SongId.hymnal(5)))
+          .thenAnswer((_) async => true);
+      expect(await repository.addFavorite(const SongId.hymnal(5)), isTrue);
+      verify(() => dataSource.addFavorite(const SongId.hymnal(5))).called(1);
     });
 
     test('removeFavorite delegates', () async {
-      when(() => dataSource.removeFavorite(5)).thenAnswer((_) async => true);
-      expect(await repository.removeFavorite(5), isTrue);
-      verify(() => dataSource.removeFavorite(5)).called(1);
+      when(() => dataSource.removeFavorite(const SongId.hymnal(5)))
+          .thenAnswer((_) async => true);
+      expect(await repository.removeFavorite(const SongId.hymnal(5)), isTrue);
+      verify(() => dataSource.removeFavorite(const SongId.hymnal(5)))
+          .called(1);
     });
 
     test('isFavorite delegates', () {
-      when(() => dataSource.isFavorite(5)).thenReturn(true);
-      when(() => dataSource.isFavorite(6)).thenReturn(false);
-      expect(repository.isFavorite(5), isTrue);
-      expect(repository.isFavorite(6), isFalse);
+      when(() => dataSource.isFavorite(const SongId.hymnal(5)))
+          .thenReturn(true);
+      when(() => dataSource.isFavorite(const SongId.hymnal(6)))
+          .thenReturn(false);
+      expect(repository.isFavorite(const SongId.hymnal(5)), isTrue);
+      expect(repository.isFavorite(const SongId.hymnal(6)), isFalse);
     });
   });
 
   group('toggleFavorite', () {
     test('removes when already a favorite', () async {
-      when(() => dataSource.isFavorite(5)).thenReturn(true);
-      when(() => dataSource.removeFavorite(5)).thenAnswer((_) async => true);
+      when(() => dataSource.isFavorite(const SongId.hymnal(5)))
+          .thenReturn(true);
+      when(() => dataSource.removeFavorite(const SongId.hymnal(5)))
+          .thenAnswer((_) async => true);
 
-      await repository.toggleFavorite(5);
+      await repository.toggleFavorite(const SongId.hymnal(5));
 
-      verify(() => dataSource.removeFavorite(5)).called(1);
+      verify(() => dataSource.removeFavorite(const SongId.hymnal(5)))
+          .called(1);
       verifyNever(() => dataSource.addFavorite(any()));
     });
 
     test('adds when not a favorite', () async {
-      when(() => dataSource.isFavorite(5)).thenReturn(false);
-      when(() => dataSource.addFavorite(5)).thenAnswer((_) async => true);
+      when(() => dataSource.isFavorite(const SongId.hymnal(5)))
+          .thenReturn(false);
+      when(() => dataSource.addFavorite(const SongId.hymnal(5)))
+          .thenAnswer((_) async => true);
 
-      await repository.toggleFavorite(5);
+      await repository.toggleFavorite(const SongId.hymnal(5));
 
-      verify(() => dataSource.addFavorite(5)).called(1);
+      verify(() => dataSource.addFavorite(const SongId.hymnal(5))).called(1);
       verifyNever(() => dataSource.removeFavorite(any()));
     });
   });
@@ -93,11 +109,14 @@ void main() {
           .thenReturn([fav(1, sortOrder: 0), fav(2, sortOrder: 1), fav(3, sortOrder: 2)]);
       when(() => dataSource.saveFavorites(any())).thenAnswer((_) async => true);
 
-      await repository.reorderFavorites([3, 1, 2]);
+      await repository.reorderFavorites(
+        const [SongId.hymnal(3), SongId.hymnal(1), SongId.hymnal(2)],
+      );
 
       final saved = verify(() => dataSource.saveFavorites(captureAny()))
           .captured.single as List<Favorite>;
-      expect(saved.map((f) => f.songNumber), [3, 1, 2]);
+      expect(saved.map((f) => f.songId),
+          const [SongId.hymnal(3), SongId.hymnal(1), SongId.hymnal(2)]);
       expect(saved.map((f) => f.sortOrder), [0, 1, 2]);
     });
 
@@ -105,11 +124,14 @@ void main() {
       when(() => dataSource.getFavorites()).thenReturn([fav(1)]);
       when(() => dataSource.saveFavorites(any())).thenAnswer((_) async => true);
 
-      await repository.reorderFavorites([1, 99]);
+      await repository.reorderFavorites(
+        const [SongId.hymnal(1), SongId.hymnal(99)],
+      );
 
       final saved = verify(() => dataSource.saveFavorites(captureAny()))
           .captured.single as List<Favorite>;
-      expect(saved.map((f) => f.songNumber), [1, 99]);
+      expect(saved.map((f) => f.songId),
+          const [SongId.hymnal(1), SongId.hymnal(99)]);
       expect(saved.map((f) => f.sortOrder), [0, 1]);
     });
   });
@@ -122,9 +144,10 @@ void main() {
         fav(30, sortOrder: 1),
       ]);
 
-      final result = await repository.getFavoriteSongs((numbers) async {
+      final result = await repository.getFavoriteSongs((ids) async {
         // Loader returns songs out of order and misses 30.
-        expect(numbers, [20, 30, 10]);
+        expect(ids,
+            const [SongId.hymnal(20), SongId.hymnal(30), SongId.hymnal(10)]);
         return [song(10), song(20)];
       });
 
@@ -136,7 +159,7 @@ void main() {
       when(() => dataSource.getFavorites()).thenReturn([]);
       var loaderCalled = false;
 
-      final result = await repository.getFavoriteSongs((numbers) async {
+      final result = await repository.getFavoriteSongs((ids) async {
         loaderCalled = true;
         return [];
       });

@@ -1,4 +1,5 @@
 import '../datasources/local/local_datasource.dart';
+import '../models/song_id.dart';
 import '../models/favorite.dart';
 import '../models/song.dart';
 
@@ -12,59 +13,59 @@ class FavoritesRepository {
   ///
   /// Sorted by [Favorite.sortOrder] so a reorder actually shows up; the stored
   /// blob is in insertion order. Ties (e.g. entries written before reordering
-  /// existed, all sortOrder 0) fall back to song number for a stable result.
+  /// existed, all sortOrder 0) fall back to song id for a stable result.
   List<Favorite> getFavorites() {
     final favorites = _localDataSource.getFavorites();
     favorites.sort((a, b) {
       final byOrder = a.sortOrder.compareTo(b.sortOrder);
-      return byOrder != 0 ? byOrder : a.songNumber.compareTo(b.songNumber);
+      return byOrder != 0 ? byOrder : a.songId.compareTo(b.songId);
     });
     return favorites;
   }
 
-  /// Gets favorite song numbers
-  List<int> getFavoriteSongNumbers() {
-    return getFavorites().map((f) => f.songNumber).toList();
+  /// Gets favorite song ids
+  List<SongId> getFavoriteSongIds() {
+    return getFavorites().map((f) => f.songId).toList();
   }
 
   /// Adds a song to favorites
-  Future<bool> addFavorite(int songNumber) {
-    return _localDataSource.addFavorite(songNumber);
+  Future<bool> addFavorite(SongId songId) {
+    return _localDataSource.addFavorite(songId);
   }
 
   /// Removes a song from favorites
-  Future<bool> removeFavorite(int songNumber) {
-    return _localDataSource.removeFavorite(songNumber);
+  Future<bool> removeFavorite(SongId songId) {
+    return _localDataSource.removeFavorite(songId);
   }
 
   /// Toggles the favorite status of a song
-  Future<bool> toggleFavorite(int songNumber) async {
-    if (isFavorite(songNumber)) {
-      return removeFavorite(songNumber);
+  Future<bool> toggleFavorite(SongId songId) async {
+    if (isFavorite(songId)) {
+      return removeFavorite(songId);
     } else {
-      return addFavorite(songNumber);
+      return addFavorite(songId);
     }
   }
 
   /// Checks if a song is a favorite
-  bool isFavorite(int songNumber) {
-    return _localDataSource.isFavorite(songNumber);
+  bool isFavorite(SongId songId) {
+    return _localDataSource.isFavorite(songId);
   }
 
   /// Gets the number of favorites
   int get favoriteCount => getFavorites().length;
 
   /// Reorders favorites
-  Future<bool> reorderFavorites(List<int> orderedSongNumbers) async {
+  Future<bool> reorderFavorites(List<SongId> orderedSongIds) async {
     final favorites = getFavorites();
     final updatedFavorites = <Favorite>[];
 
-    for (int i = 0; i < orderedSongNumbers.length; i++) {
-      final songNumber = orderedSongNumbers[i];
+    for (int i = 0; i < orderedSongIds.length; i++) {
+      final songId = orderedSongIds[i];
       final existing = favorites.firstWhere(
-        (f) => f.songNumber == songNumber,
+        (f) => f.songId == songId,
         orElse: () => Favorite(
-          songNumber: songNumber,
+          songId: songId,
           addedAt: DateTime.now(),
         ),
       );
@@ -76,22 +77,22 @@ class FavoritesRepository {
 
   /// Gets favorite songs sorted by order
   Future<List<Song>> getFavoriteSongs(
-    Future<List<Song>> Function(List<int>) songLoader,
+    Future<List<Song>> Function(List<SongId>) songLoader,
   ) async {
     final favorites = getFavorites();
     if (favorites.isEmpty) return [];
 
     // Sort by sortOrder
     favorites.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-    final songNumbers = favorites.map((f) => f.songNumber).toList();
+    final songIds = favorites.map((f) => f.songId).toList();
 
-    final songs = await songLoader(songNumbers);
+    final songs = await songLoader(songIds);
 
     // Maintain the favorite order
-    final songMap = {for (var s in songs) s.number: s};
-    return songNumbers
-        .where((n) => songMap.containsKey(n))
-        .map((n) => songMap[n]!)
+    final songMap = {for (var s in songs) s.id: s};
+    return songIds
+        .where(songMap.containsKey)
+        .map((id) => songMap[id]!)
         .toList();
   }
 }

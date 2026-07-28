@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:json_annotation/json_annotation.dart';
+
 /// Where a song came from, and therefore who guarantees its identity.
 enum SongSource {
   /// A song from a bundled hymnal (`assets/data/songs.json`). Its reference is
@@ -154,4 +156,23 @@ class SongId implements Comparable<SongId> {
 
   @override
   String toString() => value;
+}
+
+/// Lets `json_serializable` models carry a [SongId] field.
+///
+/// Reads the canonical string and, because [SongId.fromJson] accepts one, a
+/// bare `int` from any payload written before song ids existed. That is what
+/// makes stored favourites, setlists and recents survive the upgrade.
+class SongIdConverter implements JsonConverter<SongId, Object> {
+  const SongIdConverter();
+
+  @override
+  SongId fromJson(Object json) {
+    final parsed = SongId.fromJson(json);
+    if (parsed == null) throw FormatException('Not a song id: "$json"');
+    return parsed;
+  }
+
+  @override
+  Object toJson(SongId object) => object.value;
 }

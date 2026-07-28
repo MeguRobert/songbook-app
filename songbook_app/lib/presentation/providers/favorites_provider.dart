@@ -1,3 +1,4 @@
+import '../../data/models/song_id.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/song.dart';
@@ -6,35 +7,35 @@ import 'song_provider.dart';
 
 /// State for favorites
 class FavoritesState {
-  final Set<int> favoriteSongNumbers;
+  final Set<SongId> favoriteSongIds;
 
   /// Favorites in user-defined display order (by `Favorite.sortOrder`).
   /// The Set above answers "is this a favorite?"; it cannot carry order, so
   /// reordering needs this list.
-  final List<int> orderedSongNumbers;
+  final List<SongId> orderedSongIds;
   final bool isLoading;
 
   const FavoritesState({
-    this.favoriteSongNumbers = const {},
-    this.orderedSongNumbers = const [],
+    this.favoriteSongIds = const {},
+    this.orderedSongIds = const [],
     this.isLoading = false,
   });
 
   FavoritesState copyWith({
-    Set<int>? favoriteSongNumbers,
-    List<int>? orderedSongNumbers,
+    Set<SongId>? favoriteSongIds,
+    List<SongId>? orderedSongIds,
     bool? isLoading,
   }) {
     return FavoritesState(
-      favoriteSongNumbers: favoriteSongNumbers ?? this.favoriteSongNumbers,
-      orderedSongNumbers: orderedSongNumbers ?? this.orderedSongNumbers,
+      favoriteSongIds: favoriteSongIds ?? this.favoriteSongIds,
+      orderedSongIds: orderedSongIds ?? this.orderedSongIds,
       isLoading: isLoading ?? this.isLoading,
     );
   }
 
-  bool isFavorite(int songNumber) => favoriteSongNumbers.contains(songNumber);
+  bool isFavorite(SongId songId) => favoriteSongIds.contains(songId);
 
-  int get count => favoriteSongNumbers.length;
+  int get count => favoriteSongIds.length;
 }
 
 /// Notifier for managing favorites
@@ -47,26 +48,26 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
 
   void _loadFavorites() {
     final repository = _ref.read(favoritesRepositoryProvider);
-    final favorites = repository.getFavoriteSongNumbers();
+    final favorites = repository.getFavoriteSongIds();
     state = state.copyWith(
-      favoriteSongNumbers: favorites.toSet(),
-      orderedSongNumbers: favorites,
+      favoriteSongIds: favorites.toSet(),
+      orderedSongIds: favorites,
     );
   }
 
   /// Persists a new display order and refreshes state from storage.
-  Future<void> reorder(List<int> orderedSongNumbers) async {
+  Future<void> reorder(List<SongId> orderedSongIds) async {
     await _ref
         .read(favoritesRepositoryProvider)
-        .reorderFavorites(orderedSongNumbers);
+        .reorderFavorites(orderedSongIds);
     _loadFavorites();
   }
 
-  Future<void> toggleFavorite(int songNumber) async {
+  Future<void> toggleFavorite(SongId songId) async {
     state = state.copyWith(isLoading: true);
 
     final repository = _ref.read(favoritesRepositoryProvider);
-    await repository.toggleFavorite(songNumber);
+    await repository.toggleFavorite(songId);
 
     // Reload from storage rather than patching the Set by hand: the ordered
     // list has to stay in step with it, and storage is the source of truth for
@@ -75,28 +76,28 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
     state = state.copyWith(isLoading: false);
   }
 
-  Future<void> addFavorite(int songNumber) async {
-    if (state.isFavorite(songNumber)) return;
+  Future<void> addFavorite(SongId songId) async {
+    if (state.isFavorite(songId)) return;
 
     state = state.copyWith(isLoading: true);
 
     final repository = _ref.read(favoritesRepositoryProvider);
-    await repository.addFavorite(songNumber);
+    await repository.addFavorite(songId);
 
-    // Reload so favoriteSongNumbers and orderedSongNumbers stay in step.
+    // Reload so favoriteSongIds and orderedSongIds stay in step.
     _loadFavorites();
     state = state.copyWith(isLoading: false);
   }
 
-  Future<void> removeFavorite(int songNumber) async {
-    if (!state.isFavorite(songNumber)) return;
+  Future<void> removeFavorite(SongId songId) async {
+    if (!state.isFavorite(songId)) return;
 
     state = state.copyWith(isLoading: true);
 
     final repository = _ref.read(favoritesRepositoryProvider);
-    await repository.removeFavorite(songNumber);
+    await repository.removeFavorite(songId);
 
-    // Reload so favoriteSongNumbers and orderedSongNumbers stay in step.
+    // Reload so favoriteSongIds and orderedSongIds stay in step.
     _loadFavorites();
     state = state.copyWith(isLoading: false);
   }
@@ -113,22 +114,22 @@ final favoritesProvider =
 });
 
 /// Provider to check if a specific song is a favorite
-final isFavoriteProvider = Provider.family<bool, int>((ref, songNumber) {
-  return ref.watch(favoritesProvider).isFavorite(songNumber);
+final isFavoriteProvider = Provider.family<bool, SongId>((ref, songId) {
+  return ref.watch(favoritesProvider).isFavorite(songId);
 });
 
 /// Provider for favorite songs, in the user's chosen order.
 ///
-/// Iterates `orderedSongNumbers` rather than filtering the catalog, so the list
+/// Iterates `orderedSongIds` rather than filtering the catalog, so the list
 /// follows `Favorite.sortOrder`. Filtering `songs` instead returned catalog
 /// (song-number) order and silently ignored any reorder.
 final favoriteSongsProvider = FutureProvider<List<Song>>((ref) async {
   final favoritesState = ref.watch(favoritesProvider);
   final songs = await ref.watch(songsProvider.future);
 
-  final byNumber = {for (final s in songs) s.number: s};
-  return favoritesState.orderedSongNumbers
-      .where(byNumber.containsKey)
-      .map((n) => byNumber[n]!)
+  final byId = {for (final s in songs) s.id: s};
+  return favoritesState.orderedSongIds
+      .where(byId.containsKey)
+      .map((id) => byId[id]!)
       .toList();
 });

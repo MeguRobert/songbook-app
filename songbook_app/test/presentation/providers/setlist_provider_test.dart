@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/setlist_provider.dart';
 
@@ -36,14 +37,18 @@ void main() {
 
       final notifier = container.read(setlistsProvider.notifier);
       final created = await notifier.create('S');
-      await notifier.addSong(created.id, 1);
-      await notifier.addSong(created.id, 42);
-      await notifier.addSong(created.id, 151);
-      await notifier.reorder(created.id, [151, 1, 42]);
-      await notifier.removeSong(created.id, 1);
+      await notifier.addSong(created.id, const SongId.hymnal(1));
+      await notifier.addSong(created.id, const SongId.hymnal(42));
+      await notifier.addSong(created.id, const SongId.hymnal(151));
+      await notifier.reorder(
+        created.id,
+        const [SongId.hymnal(151), SongId.hymnal(1), SongId.hymnal(42)],
+      );
+      await notifier.removeSong(created.id, const SongId.hymnal(1));
 
       final setlist = container.read(setlistByIdProvider(created.id));
-      expect(setlist!.songNumbers, equals([151, 42]));
+      expect(setlist!.songIds,
+          equals(const [SongId.hymnal(151), SongId.hymnal(42)]));
     });
 
     test('delete removes the setlist; setlistByIdProvider returns null',
@@ -68,8 +73,12 @@ void main() {
         overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       );
       final created = await c1.read(setlistsProvider.notifier).create('Service');
-      await c1.read(setlistsProvider.notifier).addSong(created.id, 42);
-      await c1.read(setlistsProvider.notifier).addSong(created.id, 1);
+      await c1
+          .read(setlistsProvider.notifier)
+          .addSong(created.id, const SongId.hymnal(42));
+      await c1
+          .read(setlistsProvider.notifier)
+          .addSong(created.id, const SongId.hymnal(1));
       c1.dispose();
 
       // New container = simulated restart; same backing prefs.
@@ -81,7 +90,8 @@ void main() {
       final restored = c2.read(setlistsProvider);
       expect(restored.length, 1);
       expect(restored.first.name, 'Service');
-      expect(restored.first.songNumbers, equals([42, 1]));
+      expect(restored.first.songIds,
+          equals(const [SongId.hymnal(42), SongId.hymnal(1)]));
     });
   });
 }

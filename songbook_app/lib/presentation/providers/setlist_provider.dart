@@ -1,3 +1,4 @@
+import '../../data/models/song_id.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/setlist.dart';
@@ -39,20 +40,20 @@ class SetlistsNotifier extends StateNotifier<List<Setlist>> {
     _load();
   }
 
-  Future<void> addSong(String id, int songNumber) async {
-    await _ref.read(setlistRepositoryProvider).addSong(id, songNumber);
+  Future<void> addSong(String id, SongId songId) async {
+    await _ref.read(setlistRepositoryProvider).addSong(id, songId);
     _load();
   }
 
-  Future<void> removeSong(String id, int songNumber) async {
-    await _ref.read(setlistRepositoryProvider).removeSong(id, songNumber);
+  Future<void> removeSong(String id, SongId songId) async {
+    await _ref.read(setlistRepositoryProvider).removeSong(id, songId);
     _load();
   }
 
-  Future<void> reorder(String id, List<int> orderedSongNumbers) async {
+  Future<void> reorder(String id, List<SongId> orderedSongIds) async {
     await _ref
         .read(setlistRepositoryProvider)
-        .reorderSongs(id, orderedSongNumbers);
+        .reorderSongs(id, orderedSongIds);
     _load();
   }
 }
@@ -78,28 +79,28 @@ final setlistByIdProvider = Provider.family<Setlist?, String>((ref, id) {
 class SetlistPlaybackState {
   final String setlistId;
   final String name;
-  final List<int> songNumbers;
+  final List<SongId> songIds;
   final int currentIndex;
 
   const SetlistPlaybackState({
     required this.setlistId,
     required this.name,
-    required this.songNumbers,
+    required this.songIds,
     required this.currentIndex,
   });
 
-  /// The song number at the current position, or null if the list is empty.
-  int? get currentSongNumber =>
-      (currentIndex >= 0 && currentIndex < songNumbers.length)
-          ? songNumbers[currentIndex]
+  /// The song at the current position, or null if the list is empty.
+  SongId? get currentSongId =>
+      (currentIndex >= 0 && currentIndex < songIds.length)
+          ? songIds[currentIndex]
           : null;
 
-  bool get hasNext => currentIndex < songNumbers.length - 1;
+  bool get hasNext => currentIndex < songIds.length - 1;
 
   bool get hasPrevious => currentIndex > 0;
 
   /// Total number of songs in the setlist.
-  int get total => songNumbers.length;
+  int get total => songIds.length;
 
   /// 1-based position for display (e.g., "2 / 5").
   int get position => currentIndex + 1;
@@ -108,7 +109,7 @@ class SetlistPlaybackState {
     return SetlistPlaybackState(
       setlistId: setlistId,
       name: name,
-      songNumbers: songNumbers,
+      songIds: songIds,
       currentIndex: currentIndex ?? this.currentIndex,
     );
   }
@@ -124,40 +125,40 @@ class SetlistPlaybackNotifier extends StateNotifier<SetlistPlaybackState?> {
   /// Starts playback of [setlist] at [index]. Empty setlists are ignored
   /// (state stays null). The index is clamped to a valid range.
   void start(Setlist setlist, {int index = 0}) {
-    if (setlist.songNumbers.isEmpty) return;
-    final clamped = index.clamp(0, setlist.songNumbers.length - 1);
+    if (setlist.songIds.isEmpty) return;
+    final clamped = index.clamp(0, setlist.songIds.length - 1);
     state = SetlistPlaybackState(
       setlistId: setlist.id,
       name: setlist.name,
-      songNumbers: List<int>.from(setlist.songNumbers),
+      songIds: List<SongId>.from(setlist.songIds),
       currentIndex: clamped,
     );
   }
 
   /// Advances to the next song; returns its number, or null if at the end.
-  int? next() {
+  SongId? next() {
     final current = state;
     if (current == null || !current.hasNext) return null;
     final updated = current.copyWith(currentIndex: current.currentIndex + 1);
     state = updated;
-    return updated.currentSongNumber;
+    return updated.currentSongId;
   }
 
   /// Steps back to the previous song; returns its number, or null if at start.
-  int? previous() {
+  SongId? previous() {
     final current = state;
     if (current == null || !current.hasPrevious) return null;
     final updated = current.copyWith(currentIndex: current.currentIndex - 1);
     state = updated;
-    return updated.currentSongNumber;
+    return updated.currentSongId;
   }
 
   /// Jumps to [index] (clamped). Used to keep the cursor in sync when the song
   /// view opens a specific song. No-op if not playing.
   void jumpTo(int index) {
     final current = state;
-    if (current == null || current.songNumbers.isEmpty) return;
-    final clamped = index.clamp(0, current.songNumbers.length - 1);
+    if (current == null || current.songIds.isEmpty) return;
+    final clamped = index.clamp(0, current.songIds.length - 1);
     if (clamped != current.currentIndex) {
       state = current.copyWith(currentIndex: clamped);
     }

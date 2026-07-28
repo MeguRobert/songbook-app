@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songbook_app/data/datasources/local/local_datasource.dart';
 import 'package:songbook_app/data/models/song.dart';
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/data/repositories/song_repository.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
@@ -62,9 +63,9 @@ void main() {
 
       await container
           .read(tagOverridesProvider.notifier)
-          .setTags(3, ['evening', 'communion']);
+          .setTags(const SongId.hymnal(3), ['evening', 'communion']);
 
-      expect(container.read(tagOverridesProvider)[3],
+      expect(container.read(tagOverridesProvider)[const SongId.hymnal(3)],
           equals(['evening', 'communion']));
 
       final songs = await container.read(songsProvider.future);
@@ -77,14 +78,25 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(tagOverridesProvider.notifier);
-      await notifier.addTag(2, '  ', ['praise']); // blank
-      expect(container.read(tagOverridesProvider).containsKey(2), isFalse);
+      await notifier
+          .addTag(const SongId.hymnal(2), '  ', ['praise']); // blank
+      expect(
+          container
+              .read(tagOverridesProvider)
+              .containsKey(const SongId.hymnal(2)),
+          isFalse);
 
-      await notifier.addTag(2, 'PRAISE', ['praise']); // dup
-      expect(container.read(tagOverridesProvider).containsKey(2), isFalse);
+      await notifier
+          .addTag(const SongId.hymnal(2), 'PRAISE', ['praise']); // dup
+      expect(
+          container
+              .read(tagOverridesProvider)
+              .containsKey(const SongId.hymnal(2)),
+          isFalse);
 
-      await notifier.addTag(2, 'morning', ['praise']);
-      expect(container.read(tagOverridesProvider)[2], equals(['praise', 'morning']));
+      await notifier.addTag(const SongId.hymnal(2), 'morning', ['praise']);
+      expect(container.read(tagOverridesProvider)[const SongId.hymnal(2)],
+          equals(['praise', 'morning']));
     });
 
     test('removeTag drops the tag (case-insensitive)', () async {
@@ -93,9 +105,10 @@ void main() {
 
       await container
           .read(tagOverridesProvider.notifier)
-          .removeTag(1, 'ADVENT', ['praise', 'advent']);
+          .removeTag(const SongId.hymnal(1), 'ADVENT', ['praise', 'advent']);
 
-      expect(container.read(tagOverridesProvider)[1], equals(['praise']));
+      expect(container.read(tagOverridesProvider)[const SongId.hymnal(1)],
+          equals(['praise']));
     });
 
     // setTags([]) means "this song has no tags" and must persist as an EMPTY
@@ -108,12 +121,21 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(tagOverridesProvider.notifier);
-      await notifier.setTags(1, ['x']);
-      expect(container.read(tagOverridesProvider).containsKey(1), isTrue);
+      await notifier.setTags(const SongId.hymnal(1), ['x']);
+      expect(
+          container
+              .read(tagOverridesProvider)
+              .containsKey(const SongId.hymnal(1)),
+          isTrue);
 
-      await notifier.setTags(1, []);
-      expect(container.read(tagOverridesProvider).containsKey(1), isTrue);
-      expect(container.read(tagOverridesProvider)[1], isEmpty);
+      await notifier.setTags(const SongId.hymnal(1), []);
+      expect(
+          container
+              .read(tagOverridesProvider)
+              .containsKey(const SongId.hymnal(1)),
+          isTrue);
+      expect(container.read(tagOverridesProvider)[const SongId.hymnal(1)],
+          isEmpty);
     });
 
     test('clearOverride reverts to the bundled tags', () async {
@@ -121,21 +143,57 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(tagOverridesProvider.notifier);
-      await notifier.setTags(1, ['x']);
-      expect(container.read(tagOverridesProvider).containsKey(1), isTrue);
+      await notifier.setTags(const SongId.hymnal(1), ['x']);
+      expect(
+          container
+              .read(tagOverridesProvider)
+              .containsKey(const SongId.hymnal(1)),
+          isTrue);
 
-      await notifier.clearOverride(1);
-      expect(container.read(tagOverridesProvider).containsKey(1), isFalse);
+      await notifier.clearOverride(const SongId.hymnal(1));
+      expect(
+          container
+              .read(tagOverridesProvider)
+              .containsKey(const SongId.hymnal(1)),
+          isFalse);
     });
 
     test('overrides seed from persistence on construction', () async {
       SharedPreferences.setMockInitialValues({
-        'song_tag_overrides': '{"5":["seeded"]}',
+        'song_tag_overrides': '{"hymnal:5":["seeded"]}',
       });
       final container = await makeContainer();
       addTearDown(container.dispose);
 
-      expect(container.read(tagOverridesProvider)[5], equals(['seeded']));
+      expect(container.read(tagOverridesProvider)[const SongId.hymnal(5)],
+          equals(['seeded']));
+    });
+
+    // Upgrade path. Overrides written before song ids existed are keyed by a
+    // bare song number; SongId.tryParse reads those as hymnal ids, so the
+    // edits keep applying to the same songs after the upgrade.
+    test('overrides stored under bare-number keys still apply to the song',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        'song_tag_overrides': '{"42":["advent"]}',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final catalog = [...fixtureSongs, song(42, tags: ['praise'])];
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          songRepositoryProvider.overrideWith(
+            (ref) => _FakeSongRepository(LocalDataSource(prefs), catalog),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      expect(container.read(tagOverridesProvider),
+          {const SongId.hymnal(42): ['advent']});
+
+      final songs = await container.read(songsProvider.future);
+      expect(songs.firstWhere((s) => s.number == 42).tags, equals(['advent']));
     });
   });
 }

@@ -1,32 +1,33 @@
 import '../datasources/local/local_datasource.dart';
+import '../models/song_id.dart';
 
 /// Repository for user-editable per-song tag overrides.
 ///
 /// Bundled tags live on [Song.tags] (read-only assets); this repository stores
-/// the user's edits as overrides keyed by song number. A thin wrapper over
+/// the user's edits as overrides keyed by song id. A thin wrapper over
 /// [LocalDataSource] (mirrors [FavoritesRepository]).
 class TagRepository {
   final LocalDataSource _localDataSource;
 
   TagRepository(this._localDataSource);
 
-  /// All per-song tag overrides keyed by song number.
-  Map<int, List<String>> getOverrides() {
+  /// All per-song tag overrides keyed by song id.
+  Map<SongId, List<String>> getOverrides() {
     return _localDataSource.getTagOverrides();
   }
 
-  /// Replaces the tags for [songNumber] with [tags].
-  Future<bool> setTags(int songNumber, List<String> tags) {
-    return _localDataSource.setSongTags(songNumber, tags);
+  /// Replaces the tags for [songId] with [tags].
+  Future<bool> setTags(SongId songId, List<String> tags) {
+    return _localDataSource.setSongTags(songId, tags);
   }
 
-  /// Clears the override for [songNumber] (reverting to bundled tags).
-  Future<bool> clearOverride(int songNumber) {
-    return _localDataSource.clearSongTags(songNumber);
+  /// Clears the override for [songId] (reverting to bundled tags).
+  Future<bool> clearOverride(SongId songId) {
+    return _localDataSource.clearSongTags(songId);
   }
 
-  /// Whether [songNumber] has a user override.
-  bool hasOverride(int songNumber) {
-    return getOverrides().containsKey(songNumber);
+  /// Whether [songId] has a user override.
+  bool hasOverride(SongId songId) {
+    return getOverrides().containsKey(songId);
   }
 }

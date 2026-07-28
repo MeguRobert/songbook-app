@@ -9,9 +9,9 @@ part of 'setlist.dart';
 Setlist _$SetlistFromJson(Map<String, dynamic> json) => Setlist(
   id: json['id'] as String,
   name: json['name'] as String,
-  songNumbers:
-      (json['songNumbers'] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
+  songIds:
+      (Setlist._readSongIds(json, 'songIds') as List<dynamic>?)
+          ?.map((e) => const SongIdConverter().fromJson(e as Object))
           .toList() ??
       [],
   createdAt: DateTime.parse(json['createdAt'] as String),
@@ -21,7 +21,7 @@ Setlist _$SetlistFromJson(Map<String, dynamic> json) => Setlist(
 Map<String, dynamic> _$SetlistToJson(Setlist instance) => <String, dynamic>{
   'id': instance.id,
   'name': instance.name,
-  'songNumbers': instance.songNumbers,
+  'songIds': instance.songIds.map(const SongIdConverter().toJson).toList(),
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt.toIso8601String(),
 };

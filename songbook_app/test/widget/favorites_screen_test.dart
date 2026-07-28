@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
 import 'package:songbook_app/presentation/screens/favorites/favorites_screen.dart';
 
@@ -10,7 +11,7 @@ import 'helpers.dart';
 String favoritesJson(List<int> numbers) => json.encode([
       for (var i = 0; i < numbers.length; i++)
         {
-          'songNumber': numbers[i],
+          'songId': SongId.hymnal(numbers[i]).value,
           'addedAt': '2026-01-01T00:00:00.000',
           'sortOrder': i,
         },
