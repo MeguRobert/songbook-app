@@ -32,6 +32,12 @@ class SearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// which is how an invisible query silently narrowed results before.
   final VoidCallback onSearchClosed;
 
+  /// Fired when the field expands. The caller needs this to know that the list
+  /// area should offer recent searches rather than the whole catalogue: an empty
+  /// query while browsing and an empty query while searching are different
+  /// states, and only this widget knows which one is in effect.
+  final VoidCallback? onSearchOpened;
+
   final String hintText;
 
   const SearchableAppBar({
@@ -39,6 +45,7 @@ class SearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.query,
     required this.onQueryChanged,
     required this.onSearchClosed,
+    this.onSearchOpened,
     this.leading,
     this.actions = const [],
     this.hintText = 'Search title, number, reference or lyrics…',
@@ -100,6 +107,7 @@ class SearchableAppBarState extends State<SearchableAppBar>
     if (_isOpen) return;
     setState(() => _isOpen = true);
     _controller.forward();
+    widget.onSearchOpened?.call();
     // After the frame, not during it: the field does not exist until the
     // setState above has been built, so focusing here synchronously silently
     // does nothing — you had to tap the field before you could type, and on
@@ -112,6 +120,16 @@ class SearchableAppBarState extends State<SearchableAppBar>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
     });
+  }
+
+  /// Puts [query] in the field, for a query chosen rather than typed — tapping a
+  /// remembered search. The caller still owns the query; this only makes the field
+  /// agree with it, and leaves the caret at the end so the query can be edited.
+  void setQuery(String query) {
+    _fieldController.value = TextEditingValue(
+      text: query,
+      selection: TextSelection.collapsed(offset: query.length),
+    );
   }
 
   void close() {

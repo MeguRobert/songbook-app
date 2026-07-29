@@ -13,6 +13,7 @@ class LocalDataSource {
   static const _setlistsKey = 'setlists';
   static const _tagOverridesKey = 'song_tag_overrides';
   static const _recentsKey = 'recent_songs';
+  static const _recentSearchesKey = 'recent_searches';
   static const _userSongsKey = 'user_songs';
   static const _settingsPrefix = 'settings_';
 
@@ -218,6 +219,51 @@ class LocalDataSource {
 
   /// Clears the recently-viewed list.
   Future<bool> clearRecentSongs() => _prefs.remove(_recentsKey);
+
+  // --- Recently searched ---
+
+  /// Maximum number of remembered search queries.
+  ///
+  /// Short on purpose: this is shown in the space where a search field has just
+  /// opened, and a long list there is another thing to read instead of the one
+  /// thing you came to do.
+  static const recentSearchesLimit = 8;
+
+  /// Remembered search queries, most recent first.
+  List<String> getRecentSearches() {
+    final jsonString = _prefs.getString(_recentSearchesKey);
+    if (jsonString == null) return [];
+    try {
+      final decoded = json.decode(jsonString) as List<dynamic>;
+      return [
+        for (final entry in decoded)
+          if (entry is String && entry.trim().isNotEmpty) entry,
+      ];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Records [query] as the most recent search.
+  ///
+  /// De-duplicates case-insensitively — searching "Szarvas" after "szarvas"
+  /// should move the one entry, not add a second that looks identical — and caps
+  /// the list at [recentSearchesLimit].
+  Future<bool> recordRecentSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return false;
+    final lower = trimmed.toLowerCase();
+    final kept = getRecentSearches()
+        .where((q) => q.toLowerCase() != lower)
+        .toList()
+      ..insert(0, trimmed);
+    return _prefs.setString(
+      _recentSearchesKey,
+      json.encode(kept.take(recentSearchesLimit).toList()),
+    );
+  }
+
+  Future<bool> clearRecentSearches() => _prefs.remove(_recentSearchesKey);
 
   // --- User songs ---
 

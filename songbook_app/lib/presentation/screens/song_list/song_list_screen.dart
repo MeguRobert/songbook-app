@@ -7,7 +7,8 @@ import '../../providers/book_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../providers/song_provider.dart';
 import 'widgets/filter_sheets.dart';
-import 'widgets/recent_songs_rail.dart';
+import '../../providers/recent_searches_provider.dart';
+import 'widgets/recent_searches_list.dart';
 import 'widgets/searchable_app_bar.dart';
 import 'widgets/song_list_tile.dart';
 
@@ -50,6 +51,13 @@ class _SongListScreenState extends ConsumerState<SongListScreen> {
     }
   }
 
+  /// Whether the search field is expanded.
+  ///
+  /// An empty query while browsing and an empty query while searching are
+  /// different states: the first wants the catalogue, the second wants the
+  /// queries you have used before. Only the app bar knows which is in effect.
+  bool _searchOpen = false;
+
   @override
   Widget build(BuildContext context) {
     final selectedBook = ref.watch(selectedBookProvider);
@@ -61,7 +69,11 @@ class _SongListScreenState extends ConsumerState<SongListScreen> {
         title: selectedBook ?? 'Songbook',
         query: searchState.query,
         onQueryChanged: (q) => ref.read(searchProvider.notifier).search(q),
-        onSearchClosed: () => ref.read(searchProvider.notifier).search(''),
+        onSearchOpened: () => setState(() => _searchOpen = true),
+        onSearchClosed: () {
+          ref.read(searchProvider.notifier).search('');
+          setState(() => _searchOpen = false);
+        },
         // One tap out of a book filter, from anywhere in the list. Reaching
         // "All Songs" used to mean opening the Books screen and picking it.
         leading: selectedBook != null
@@ -101,9 +113,20 @@ class _SongListScreenState extends ConsumerState<SongListScreen> {
         children: [
           if (searchState.hasTags) const _ActiveTagChips(),
           Expanded(
+            // With the field open and empty, previous queries are the useful
+            // thing to offer — but only if there are any. Otherwise the list,
+            // because clearing the field with the X and being left staring at a
+            // blank screen is worse than never having offered anything.
             child: searchState.isFiltering
                 ? _SearchResults(state: searchState)
-                : const _BrowseList(),
+                : (_searchOpen && ref.watch(recentSearchesProvider).isNotEmpty)
+                    ? RecentSearchesList(
+                        onSelected: (query) {
+                          _appBarKey.currentState?.setQuery(query);
+                          ref.read(searchProvider.notifier).search(query);
+                        },
+                      )
+                    : const _BrowseList(),
           ),
         ],
       ),
@@ -155,7 +178,7 @@ class _ActiveTagChips extends ConsumerWidget {
   }
 }
 
-/// The full song list for the selected book, with the recents rail on top.
+/// The full song list for the selected book.
 class _BrowseList extends ConsumerWidget {
   const _BrowseList();
 
@@ -168,21 +191,12 @@ class _BrowseList extends ConsumerWidget {
       data: (songs) {
         if (songs.isEmpty) return _EmptyState(selectedBook: selectedBook);
 
-        return Column(
-          children: [
-            const RecentSongsRail(),
-            Expanded(
-              child: ListView.builder(
-                itemCount: songs.length,
-                itemBuilder: (context, index) => SongListTile(
-                  song: songs[index],
-                  onTap: () => context.push(
-                    AppRoutes.songPath(songs[index].id),
-                  ),
-                ),
-              ),
-            ),
-          ],
+        return ListView.builder(
+          itemCount: songs.length,
+          itemBuilder: (context, index) => SongListTile(
+            song: songs[index],
+            onTap: () => context.push(AppRoutes.songPath(songs[index].id)),
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -274,7 +288,16 @@ class _SearchResults extends ConsumerWidget {
               return SongListTile(
                 song: song,
                 lyricSnippet: state.lyricSnippets[song.number],
-                onTap: () => context.push(AppRoutes.songPath(song.id)),
+                onTap: () {
+                  // Recorded here rather than on every keystroke: the field
+                  // searches as you type, so keystroke-recording would fill the
+                  // history with prefixes of one word. Opening a result is the
+                  // signal that the query was the one the user meant.
+                  ref
+                      .read(recentSearchesProvider.notifier)
+                      .record(state.query);
+                  context.push(AppRoutes.songPath(song.id));
+                },
               );
             },
           ),
