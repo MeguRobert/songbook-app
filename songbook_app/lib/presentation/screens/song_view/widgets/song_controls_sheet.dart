@@ -157,6 +157,13 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                         runSpacing: 8,
                         children: [
                           ChoiceChip(
+                            // No checkmark: it appears only on the selected chip,
+                            // so the row's width changed with every switch, and
+                            // it cost the horizontal space that made three
+                            // labelled chips wrap to two lines on a phone. The
+                            // chip's own fill already says which is selected.
+                            showCheckmark: false,
+                            visualDensity: VisualDensity.compact,
                             label: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -164,7 +171,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                 // notation and chords, not between instruments.
                                 Icon(Icons.music_note, size: 18),
                                 SizedBox(width: 6),
-                                Text('Sheet Music'),
+                                Text('Sheet'),
                               ],
                             ),
                             selected: viewConfig.isSheetMusicPreset,
@@ -175,6 +182,13 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                 : null,
                           ),
                           ChoiceChip(
+                            // No checkmark: it appears only on the selected chip,
+                            // so the row's width changed with every switch, and
+                            // it cost the horizontal space that made three
+                            // labelled chips wrap to two lines on a phone. The
+                            // chip's own fill already says which is selected.
+                            showCheckmark: false,
+                            visualDensity: VisualDensity.compact,
                             label: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -194,6 +208,13 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                             ),
                           ),
                           ChoiceChip(
+                            // No checkmark: it appears only on the selected chip,
+                            // so the row's width changed with every switch, and
+                            // it cost the horizontal space that made three
+                            // labelled chips wrap to two lines on a phone. The
+                            // chip's own fill already says which is selected.
+                            showCheckmark: false,
+                            visualDensity: VisualDensity.compact,
                             label: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -407,7 +428,19 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                         : Icons.play_arrow,
                                   ),
                                   onPressed: canAutoScroll
-                                      ? autoScrollNotifier.toggle
+                                      ? () {
+                                          final wasPlaying =
+                                              autoScroll.isPlaying;
+                                          autoScrollNotifier.toggle();
+                                          // Starting scrolls the text this sheet
+                                          // is sitting on top of, so get out of
+                                          // the way. Pausing does not: that is
+                                          // the moment the speed slider is most
+                                          // likely wanted.
+                                          if (!wasPlaying) {
+                                            Navigator.of(context).maybePop();
+                                          }
+                                        }
                                       : null,
                                   tooltip: autoScroll.isPlaying
                                       ? 'Stop auto-scroll'

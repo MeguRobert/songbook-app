@@ -43,7 +43,7 @@ void main() {
     expect(find.text('VIEW'), findsOneWidget);
     expect(find.text('TRANSPOSE'), findsOneWidget);
     expect(find.text('TEXT SIZE'), findsOneWidget);
-    expect(find.text('Sheet Music'), findsOneWidget);
+    expect(find.text('Sheet'), findsOneWidget);
     expect(find.text('Chords'), findsOneWidget);
     expect(find.text('Lyrics'), findsOneWidget);
   });
@@ -218,7 +218,7 @@ void main() {
         (tester) async {
       await openControlsSheet(tester, viewConfig: 'false:true');
       final lyricsChip = tester.getTopLeft(find.text('Lyrics'));
-      final sheetMusicChip = tester.getTopLeft(find.text('Sheet Music'));
+      final sheetMusicChip = tester.getTopLeft(find.text('Sheet'));
       final textSize = headerY(tester, 'TEXT SIZE');
 
       await tester.tap(find.text('Lyrics'));
@@ -227,7 +227,7 @@ void main() {
       // Tapping Lyrics must leave the chip under the finger, and Sheet Music
       // still where it was, so the next switch needs no re-aiming.
       expect(tester.getTopLeft(find.text('Lyrics')), lyricsChip);
-      expect(tester.getTopLeft(find.text('Sheet Music')), sheetMusicChip);
+      expect(tester.getTopLeft(find.text('Sheet')), sheetMusicChip);
       expect(headerY(tester, 'TEXT SIZE'), textSize);
     });
 

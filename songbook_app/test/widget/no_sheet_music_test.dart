@@ -98,7 +98,7 @@ void main() {
       // Present but inert, not removed: a control that vanishes per song makes
       // the sheet a different shape every time it opens.
       final chip = tester.widget<ChoiceChip>(
-          find.widgetWithText(ChoiceChip, 'Sheet Music'));
+          find.widgetWithText(ChoiceChip, 'Sheet'));
       expect(chip.onSelected, isNull);
       expect(find.textContaining('no sheet music for this song'), findsOneWidget);
     });
@@ -123,7 +123,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final chip = tester.widget<ChoiceChip>(
-          find.widgetWithText(ChoiceChip, 'Sheet Music'));
+          find.widgetWithText(ChoiceChip, 'Sheet'));
       expect(chip.onSelected, isNotNull);
     });
   });

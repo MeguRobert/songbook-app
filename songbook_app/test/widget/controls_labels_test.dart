@@ -37,7 +37,7 @@ void main() {
 
       expect(sheetMusic, findsOneWidget);
       expect(chords, findsOneWidget);
-      expect(find.descendant(of: sheetMusic, matching: find.text('Sheet Music')),
+      expect(find.descendant(of: sheetMusic, matching: find.text('Sheet')),
           findsOneWidget);
       expect(find.descendant(of: chords, matching: find.text('Chords')),
           findsOneWidget);

@@ -30,8 +30,17 @@ class ViewConfig {
 
   // --- Preset Checks ---
 
-  /// Returns true if this config matches the sheet music preset
-  bool get isSheetMusicPreset => showNotation && showChords;
+  /// Returns true if this config matches the sheet music preset.
+  ///
+  /// Keyed on [showNotation] ALONE. `showChords` is a modifier *within* this
+  /// preset — the "Chords above staff" switch — not part of its identity. When it
+  /// also had to be true, turning that switch off produced
+  /// `(notation: true, chords: false)`, a perfectly valid state that matched none
+  /// of the three presets: every chip in the controls sheet went unselected and
+  /// the sheet stopped saying which view you were in.
+  ///
+  /// With this, the three presets partition all four states exactly.
+  bool get isSheetMusicPreset => showNotation;
 
   /// Returns true if this config matches the chords preset
   bool get isChordsPreset => !showNotation && showChords;
