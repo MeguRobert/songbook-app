@@ -156,7 +156,26 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
         // Lay out once at the viewport width — NOT divided by textScale — so the
         // music never re-wraps as it zooms. Zoom is a pure visual scale below.
         final layout = _layoutFor(constraints.maxWidth);
-        final scaledWidth = layout.totalWidth * widget.textScale;
+
+        // Then scale the result down to actually fit.
+        //
+        // The engine spaces measures to a minimum practical width and puts 2–4
+        // of them on a system, so the width it returns is what the music NEEDS,
+        // not what the screen HAS: on a 360 px phone a four-measure system came
+        // out 547 px, and the sheet opened overflowing and had to be pinched
+        // *out* before it could be read.
+        //
+        // Only ever downwards. Blowing a narrow sheet up to fill a tablet would
+        // make the staff enormous for no reason, and this is a fit, not a
+        // justification.
+        final fit = layout.totalWidth <= 0
+            ? 1.0
+            : (constraints.maxWidth / layout.totalWidth).clamp(0.0, 1.0);
+
+        // Fit decides where zoom starts from; it does not cap it. Pinching out
+        // still enlarges past the viewport and scrolls horizontally as before.
+        final scale = fit * widget.textScale;
+        final scaledWidth = layout.totalWidth * scale;
 
         return Scrollbar(
           controller: _vScrollController,
@@ -198,7 +217,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
                             child: RepaintBoundary(
                               child: SizedBox(
                                 width: scaledWidth,
-                                height: layout.totalHeight * widget.textScale,
+                                height: layout.totalHeight * scale,
                                 child: CustomPaint(
                                   painter: SheetMusicPainter(
                                     layout: layout,
@@ -208,7 +227,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
                                     chordColor: palette.chord,
                                     headerColor: palette.header,
                                     showChords: widget.showChords,
-                                    textScale: widget.textScale,
+                                    textScale: scale,
                                   ),
                                 ),
                               ),
