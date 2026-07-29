@@ -36,7 +36,14 @@ class ChordView extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return SingleChildScrollView(
+    // Every line here is a plain Text, which paints characters and offers no
+    // selection at all — so there was no way to get a verse out of the app and
+    // into a message. SelectionArea makes all of its descendants selectable AND
+    // spans them, so one drag can take a whole verse rather than a line at a
+    // time. A vertical drag still scrolls; selection begins with a long press,
+    // which is also what keeps auto-scroll usable.
+    return SelectionArea(
+      child: SingleChildScrollView(
       controller: scrollController,
       padding: const EdgeInsets.all(16),
       child: Center(
@@ -91,6 +98,7 @@ class ChordView extends ConsumerWidget {
           ),
         ),
       ),
+    ),
     );
   }
 

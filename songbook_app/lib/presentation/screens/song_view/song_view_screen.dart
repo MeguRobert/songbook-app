@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
 import '../../../data/models/view_config.dart';
+import '../../../domain/services/chord_sheet_exporter.dart';
 import '../../providers/autoscroll_provider.dart';
 import '../../providers/book_provider.dart';
 import '../../providers/favorites_provider.dart';
@@ -30,6 +32,7 @@ import 'widgets/tag_editor_sheet.dart';
 enum _SongMenuAction {
   presentation,
   editTags,
+  copyText,
   editSong,
   editNotation,
   deleteSong
@@ -252,6 +255,23 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     );
   }
 
+  /// Puts the whole song on the clipboard as ChordPro.
+  ///
+  /// The lines are selectable too, but dragging a selection across every verse of
+  /// a hymn on a phone is not a realistic way to copy a song. ChordPro because
+  /// the paste importer already reads it: what comes out can go straight back in.
+  Future<void> _copySongText(Song song) async {
+    final text = const ChordSheetExporter().toChordPro(song);
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Song text copied.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   /// Deletes this user song, after asking.
   ///
   /// Confirmed because it cannot be undone: a user song exists only in this
@@ -374,6 +394,8 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                 context.push(AppRoutes.presentationPath(widget.songId));
               case _SongMenuAction.editTags:
                 _showTagEditor(context, song.tags);
+              case _SongMenuAction.copyText:
+                _copySongText(song);
               case _SongMenuAction.editSong:
                 context.push(AppRoutes.editSongPath(widget.songId));
               case _SongMenuAction.editNotation:
@@ -400,6 +422,14 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.label_outline),
                 title: Text('Edit tags'),
+              ),
+            ),
+            const PopupMenuItem(
+              value: _SongMenuAction.copyText,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.copy_outlined),
+                title: Text('Copy song text'),
               ),
             ),
             // Only the user's own songs can be written back to. Offering these
