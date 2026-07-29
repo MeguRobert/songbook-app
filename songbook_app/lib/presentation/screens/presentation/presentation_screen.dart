@@ -238,18 +238,16 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
   @override
   Widget build(BuildContext context) {
     final songAsync = ref.watch(songByIdProvider(widget.songId));
-    final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
 
-    final Color bgColor;
-    final Color textColor;
-    if (_projectionMode) {
-      bgColor = Colors.black;
-      textColor = Colors.white;
-    } else {
-      bgColor = theme.scaffoldBackgroundColor;
-      textColor = theme.textTheme.bodyLarge?.color ?? (isDarkTheme ? Colors.white : Colors.black);
-    }
+    // Presentation colours are the presentation's own, NOT the app theme's.
+    //
+    // The light half used to fall back to `theme.scaffoldBackgroundColor`, so in
+    // a dark app theme "switch to light" produced a 7%-grey screen — the sun
+    // button appeared to do nothing at all. Which of the two is wanted depends
+    // on the room and the projector, and has nothing to do with how the person
+    // holding the phone likes to read a song list.
+    final bgColor = _projectionMode ? Colors.black : Colors.white;
+    final textColor = _projectionMode ? Colors.white : Colors.black;
 
     return songAsync.when(
       data: (song) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:songbook_app/core/theme/app_theme.dart';
 import 'package:songbook_app/data/datasources/local/local_datasource.dart';
 import 'package:songbook_app/data/models/chord_position.dart';
 import 'package:songbook_app/data/models/lyric_line.dart';
@@ -73,11 +74,14 @@ Future<ProviderContainer> makeAppContainer({
 
 /// Pumps [child] inside a ProviderScope + MaterialApp with a mocked
 /// SharedPreferences (seeded with [prefs]) and any extra [overrides].
+/// [themeMode] mounts the app's REAL light/dark themes rather than Material's
+/// defaults, for the screens whose colours are derived from them.
 Future<void> pumpScreen(
   WidgetTester tester,
   Widget child, {
   Map<String, Object> prefs = const {},
   List<Override> overrides = const [],
+  ThemeMode? themeMode,
 }) async {
   SharedPreferences.setMockInitialValues(prefs);
   final sharedPreferences = await SharedPreferences.getInstance();
@@ -88,7 +92,14 @@ Future<void> pumpScreen(
         sharedPreferencesProvider.overrideWithValue(sharedPreferences),
         ...overrides,
       ],
-      child: MaterialApp(home: child),
+      child: themeMode == null
+          ? MaterialApp(home: child)
+          : MaterialApp(
+              theme: createLightTheme(),
+              darkTheme: createDarkTheme(),
+              themeMode: themeMode,
+              home: child,
+            ),
     ),
   );
 }
