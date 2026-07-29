@@ -8,7 +8,6 @@ import 'package:songbook_app/data/models/verse.dart';
 import 'package:songbook_app/data/models/view_config.dart';
 import 'package:songbook_app/presentation/providers/favorites_provider.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
-import 'package:songbook_app/presentation/providers/recents_provider.dart';
 import 'package:songbook_app/presentation/providers/setlist_provider.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
 import 'package:songbook_app/presentation/providers/tag_provider.dart';
@@ -17,10 +16,9 @@ import 'package:songbook_app/presentation/providers/tag_provider.dart';
 ///
 /// A user song's [SongId] carries a timestamp and six random digits, so it is
 /// never reissued. Every reference left behind therefore points at something
-/// that can never resolve again: favourites, recents, setlists and the tag
-/// browser all skip ids they cannot find, so the leftovers are invisible — and
-/// permanent. The per-song view config is the sharpest case, because `add`
-/// writes it itself.
+/// that can never resolve again: favourites, setlists and the tag browser all
+/// skip ids they cannot find, so the leftovers are invisible — and permanent.
+/// The per-song view config is the sharpest case, because `add` writes it itself.
 ///
 /// In-memory state matters as much as storage here. Each of these collections is
 /// a notifier that loaded once at startup; clearing the stored record without
@@ -114,19 +112,6 @@ void main() {
 
     expect(container.read(tagRepositoryProvider).getOverrides(), isEmpty);
     expect(container.read(tagOverridesProvider), isEmpty);
-  });
-
-  test('drops it from the recently-viewed list', () async {
-    final container = await makeContainer();
-    final stored = await container.read(userSongsProvider.notifier).add(draft());
-    await container.read(recentsProvider.notifier).record(stored.id);
-    await container
-        .read(recentsProvider.notifier)
-        .record(const SongId.hymnal(151));
-
-    await container.read(userSongsProvider.notifier).remove(stored.id);
-
-    expect(container.read(recentsProvider), [const SongId.hymnal(151)]);
   });
 
   test('leaves another user song and its references alone', () async {

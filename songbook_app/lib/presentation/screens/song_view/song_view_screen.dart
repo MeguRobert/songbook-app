@@ -13,7 +13,6 @@ import '../../providers/autoscroll_provider.dart';
 import '../../providers/book_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/providers.dart';
-import '../../providers/recents_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/song_provider.dart';
 import '../../providers/setlist_provider.dart';
@@ -120,8 +119,6 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   /// forbids during build.
   void _openCurrentSong() {
     ref.read(songViewProvider.notifier).openSong(widget.songId);
-    // Record this song as recently viewed (powers the Home "Recent" rail).
-    ref.read(recentsProvider.notifier).record(widget.songId);
     ref.read(autoScrollProvider.notifier).init(widget.songId);
     _syncSetlistPosition();
   }

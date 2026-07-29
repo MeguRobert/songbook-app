@@ -6,7 +6,6 @@ import '../../data/models/view_config.dart';
 import '../../data/repositories/user_song_repository.dart';
 import 'favorites_provider.dart';
 import 'providers.dart';
-import 'recents_provider.dart';
 import 'setlist_provider.dart';
 import 'settings_provider.dart';
 import 'tag_provider.dart';
@@ -42,16 +41,15 @@ class UserSongsNotifier extends StateNotifier<List<Song>> {
   /// Deletes a user song, and drops every reference to it.
   ///
   /// The repository clears the *stored* references; these four lines clear the
-  /// *loaded* ones. Favourites, setlists, recents and tag overrides are each a
-  /// notifier that read storage once at startup and has held its own copy since,
-  /// so without this the favourite heart stays filled and the setlist keeps
-  /// listing a song that no longer exists.
+  /// *loaded* ones. Favourites, setlists and tag overrides are each a notifier
+  /// that read storage once at startup and has held its own copy since, so
+  /// without this the favourite heart stays filled and the setlist keeps listing
+  /// a song that no longer exists.
   Future<void> remove(SongId songId) async {
     await _repository.delete(songId);
     state = _repository.getAll();
     _ref.read(favoritesProvider.notifier).refresh();
     _ref.invalidate(setlistsProvider);
-    _ref.invalidate(recentsProvider);
     _ref.invalidate(tagOverridesProvider);
   }
 

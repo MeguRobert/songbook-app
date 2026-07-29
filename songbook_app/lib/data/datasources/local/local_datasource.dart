@@ -5,20 +5,15 @@ import '../../models/song.dart';
 import '../../models/song_id.dart';
 import '../../models/favorite.dart';
 import '../../models/setlist.dart';
-import '../../models/recent_song.dart';
 
 /// Local data source for songs and favorites
 class LocalDataSource {
   static const _favoritesKey = 'favorites';
   static const _setlistsKey = 'setlists';
   static const _tagOverridesKey = 'song_tag_overrides';
-  static const _recentsKey = 'recent_songs';
   static const _recentSearchesKey = 'recent_searches';
   static const _userSongsKey = 'user_songs';
   static const _settingsPrefix = 'settings_';
-
-  /// Maximum number of recently-viewed songs retained.
-  static const recentsLimit = 20;
 
   final SharedPreferences _prefs;
   List<Song>? _cachedSongs;
@@ -195,31 +190,6 @@ class LocalDataSource {
     overrides.remove(songId);
     return saveTagOverrides(overrides);
   }
-  // --- Recently viewed ---
-
-  /// Gets recently-viewed songs, most-recent first (unreadable records are
-  /// skipped, see [_decodeRecords]).
-  List<RecentSong> getRecentSongs() =>
-      _decodeRecords(_recentsKey, RecentSong.fromJson);
-
-  /// Records [songId] as the most recently viewed.
-  ///
-  /// De-duplicates (an existing entry is moved to the front with a refreshed
-  /// timestamp) and caps the list at [recentsLimit]. [now] is injectable for
-  /// deterministic tests.
-  Future<bool> recordRecentSong(SongId songId, {DateTime? now}) async {
-    final timestamp = now ?? DateTime.now();
-    final recents = getRecentSongs()
-      ..removeWhere((r) => r.songId == songId);
-    recents.insert(0, RecentSong(songId: songId, viewedAt: timestamp));
-    final capped = recents.take(recentsLimit).toList();
-    final jsonString = json.encode(capped.map((r) => r.toJson()).toList());
-    return _prefs.setString(_recentsKey, jsonString);
-  }
-
-  /// Clears the recently-viewed list.
-  Future<bool> clearRecentSongs() => _prefs.remove(_recentsKey);
-
   // --- Recently searched ---
 
   /// Maximum number of remembered search queries.
@@ -309,7 +279,7 @@ class LocalDataSource {
   // --- Cross-collection cleanup ---
 
   /// Removes every stored reference to [songId] from the collections that point
-  /// at songs: favourites, setlists, tag overrides and recents.
+  /// at songs: favourites, setlists and tag overrides.
   ///
   /// Nothing here fails loudly if a reference is absent — the whole thing is
   /// idempotent, which is what makes it safe to run after a delete that found
@@ -338,14 +308,6 @@ class LocalDataSource {
     }
     if (setlistsChanged) await saveSetlists(setlists);
 
-    final recents = getRecentSongs();
-    if (recents.any((r) => r.songId == songId)) {
-      final kept = recents.where((r) => r.songId != songId).toList();
-      await _prefs.setString(
-        _recentsKey,
-        json.encode(kept.map((r) => r.toJson()).toList()),
-      );
-    }
   }
 
   // --- Settings ---

@@ -199,30 +199,14 @@ void main() {
       expect(ds.getSetlists().map((s) => s.id), ['a', 'c']);
     });
 
-    test('getRecentSongs keeps the readable entries and skips the bad one',
-        () async {
-      final ds = await makeDataSource({
-        'recent_songs': json.encode([
-          {'n': 1, 't': 1000},
-          {'n': 'oops'},
-          {'n': 3, 't': 3000},
-        ]),
-      });
-
-      expect(ds.getRecentSongs().map((r) => r.songId),
-          const [SongId.hymnal(1), SongId.hymnal(3)]);
-    });
-
     test('a wholly unreadable blob still yields an empty collection', () async {
       final ds = await makeDataSource({
         'favorites': 'not json',
         'setlists': 'not json',
-        'recent_songs': 'not json',
       });
 
       expect(ds.getFavorites(), isEmpty);
       expect(ds.getSetlists(), isEmpty);
-      expect(ds.getRecentSongs(), isEmpty);
     });
   });
 
@@ -267,18 +251,6 @@ void main() {
 
       expect(ds.getSetlists().single.songIds,
           const [SongId.hymnal(1), SongId.hymnal(42)]);
-    });
-
-    test('recents stored as {"n": 42} load as hymnal ids', () async {
-      final ds = await makeDataSource({
-        'recent_songs': json.encode([
-          {'n': 42, 't': 2000},
-          {'n': 1, 't': 1000},
-        ]),
-      });
-
-      expect(ds.getRecentSongs().map((r) => r.songId),
-          const [SongId.hymnal(42), SongId.hymnal(1)]);
     });
 
     test('tag overrides keyed by bare song number load as hymnal ids',
