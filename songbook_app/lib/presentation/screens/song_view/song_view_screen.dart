@@ -350,7 +350,10 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
               value: _SongMenuAction.presentation,
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.fullscreen),
+                // A screen with a play button says "start presenting". The
+                // fullscreen arrows say "make this bigger", which is a
+                // different promise than the one this action keeps.
+                leading: Icon(Icons.slideshow),
                 title: Text('Presentation mode'),
               ),
             ),

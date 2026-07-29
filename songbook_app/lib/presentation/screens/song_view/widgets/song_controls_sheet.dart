@@ -32,6 +32,26 @@ class SongControlsSheet extends ConsumerStatefulWidget {
 
   const SongControlsSheet({required this.originalKey, super.key});
 
+  /// Names the auto-scroll speed instead of quoting it.
+  ///
+  /// The slider used to report `40 px/s` — the unit the ticker happens to count
+  /// in, which tells a singer nothing: the pixels a hymn takes depend on the
+  /// text size, the phone and whether chords are showing. What the control is
+  /// actually for is "a bit faster than that", so the label says only that, and
+  /// the two ends are pinned so the extremes are recognisable.
+  ///
+  /// Named rather than shown as a percentage for the same reason: 63% of a range
+  /// nobody can see is still a number standing in for a feeling.
+  static String speedLabel(double speed) {
+    const names = ['Slowest', 'Slow', 'Gentle', 'Steady', 'Brisk', 'Fast',
+        'Fastest'];
+    const min = AutoScrollState.minSpeed;
+    const max = AutoScrollState.maxSpeed;
+    final fraction = ((speed - min) / (max - min)).clamp(0.0, 1.0);
+    final index = (fraction * (names.length - 1)).round();
+    return names[index];
+  }
+
   @override
   ConsumerState<SongControlsSheet> createState() => _SongControlsSheetState();
 }
@@ -130,7 +150,9 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                             label: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.piano, size: 18),
+                                // A note, not a piano: the choice is between
+                                // notation and chords, not between instruments.
+                                Icon(Icons.music_note, size: 18),
                                 SizedBox(width: 6),
                                 Text('Sheet Music'),
                               ],
@@ -144,7 +166,12 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                             label: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.music_note, size: 18),
+                                // Chord letters, because that is literally what
+                                // this view draws above the lyric. A guitar
+                                // would read faster but promise less: these
+                                // songs are played on organ and piano too, and
+                                // stock Material has no guitar glyph anyway.
+                                Icon(Icons.abc, size: 18),
                                 SizedBox(width: 6),
                                 Text('Chords'),
                               ],
@@ -371,7 +398,9 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                     min: AutoScrollState.minSpeed,
                                     max: AutoScrollState.maxSpeed,
                                     divisions: 18,
-                                    label: '${autoScroll.speed.round()} px/s',
+                                    label:
+                                        SongControlsSheet.speedLabel(
+                                            autoScroll.speed),
                                     // Live update while dragging; persist once on
                                     // release rather than on every frame.
                                     onChanged: canAutoScroll
