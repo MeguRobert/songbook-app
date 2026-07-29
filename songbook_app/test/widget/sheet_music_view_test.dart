@@ -88,12 +88,17 @@ void main() {
   });
 
   testWidgets(
-      'falls back to the no-sheet-music notice when the song has neither '
-      'notation nor legacy sheet music', (tester) async {
+      'a song with neither notation nor legacy sheet music falls through to '
+      'the chords', (tester) async {
+    // This used to land on a "No sheet music available for this song"
+    // placeholder whose second line told the user to switch to chord view
+    // themselves — a dead end, and the only text on screen that ignored the
+    // text-size setting. The screen now does the switch and says why.
     final song = makeTestSong(); // no notation, no sheetMusic
     await pumpScreen(
       tester,
       SongViewScreen(songId: const SongId.hymnal(42)),
+      prefs: const {'settings_view_config': 'true:true'},
       overrides: [
         songByIdProvider.overrideWith(
             (ref, id) async => id == const SongId.hymnal(42) ? song : null),
@@ -102,8 +107,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('No sheet music available for this song'), findsOneWidget);
-    // Legacy view shows plain verses; second verse text should appear.
+    expect(find.text('No sheet music available for this song'), findsNothing);
+    expect(find.textContaining('No sheet music'), findsOneWidget); // the notice
     expect(find.textContaining('Second verse plain text'), findsWidgets);
   });
 }

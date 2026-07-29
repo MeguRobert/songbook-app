@@ -196,11 +196,48 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     }
   }
 
-  void _showControlsSheet(BuildContext context, String originalKey) {
+  /// Whether [song] has anything to engrave.
+  ///
+  /// Structured notation or a legacy SVG. A pasted chord sheet has neither, and
+  /// the sheet-music view for one of those used to be a placeholder telling the
+  /// user to switch views by hand.
+  static bool _canShowSheetMusic(Song song) =>
+      song.hasNotation || song.hasSheetMusic;
+
+  /// Guards the fall-through notice so it is shown once per song, not on every
+  /// rebuild — and this screen rebuilds on every frame of a zoom gesture.
+  bool _noSheetMusicNoticeShown = false;
+
+  /// Tells the user why they are looking at chords when they asked for a staff.
+  ///
+  /// Swapping the view silently would leave the controls sheet and the screen
+  /// disagreeing with nothing on screen to explain which one won.
+  void _noticeNoSheetMusic() {
+    if (_noSheetMusicNoticeShown) return;
+    _noSheetMusicNoticeShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No sheet music for this song — showing chords.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    });
+  }
+
+  void _showControlsSheet(
+    BuildContext context,
+    String originalKey, {
+    required bool canShowSheetMusic,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => SongControlsSheet(originalKey: originalKey),
+      builder: (context) => SongControlsSheet(
+        originalKey: originalKey,
+        canShowSheetMusic: canShowSheetMusic,
+      ),
     );
   }
 
@@ -459,6 +496,16 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
           );
         }
 
+        // Asking for a staff a song does not have used to land on a placeholder
+        // that told the user to switch views themselves — a dead end, and the one
+        // piece of text on screen that ignored the text-size setting. Fall
+        // through to the chords instead and say so.
+        final canShowSheetMusic = _canShowSheetMusic(song);
+        final showsNotation = viewConfig.showNotation && canShowSheetMusic;
+        if (viewConfig.showNotation && !canShowSheetMusic) {
+          _noticeNoSheetMusic();
+        }
+
         return Scaffold(
           appBar: _buildAppBar(context, song, isFavorite),
           // Two gesture sources feed the same text-scale setting:
@@ -507,7 +554,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
             child: Stack(
               children: [
                 // Main content - render based on ViewConfig
-                if (viewConfig.showNotation)
+                if (showsNotation)
                   SheetMusicView(
                     song: song,
                     transpose: transpose,
@@ -535,7 +582,11 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
           ),
           ),
           floatingActionButton: FloatingActionButton.small(
-            onPressed: () => _showControlsSheet(context, song.originalKey),
+            onPressed: () => _showControlsSheet(
+              context,
+              song.originalKey,
+              canShowSheetMusic: canShowSheetMusic,
+            ),
             tooltip: 'Song controls',
             child: const Icon(Icons.tune),
           ),

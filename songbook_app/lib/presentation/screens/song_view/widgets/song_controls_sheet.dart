@@ -30,7 +30,17 @@ import '../../../providers/song_provider.dart';
 class SongControlsSheet extends ConsumerStatefulWidget {
   final String originalKey;
 
-  const SongControlsSheet({required this.originalKey, super.key});
+  /// Whether this song has anything to engrave — structured notation or a legacy
+  /// SVG. When it does not, the Sheet Music preset is shown disabled rather than
+  /// removed: a section that changes shape per song makes the sheet a different
+  /// object every time it opens.
+  final bool canShowSheetMusic;
+
+  const SongControlsSheet({
+    required this.originalKey,
+    this.canShowSheetMusic = true,
+    super.key,
+  });
 
   /// Names the auto-scroll speed instead of quoting it.
   ///
@@ -158,9 +168,11 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                               ],
                             ),
                             selected: viewConfig.isSheetMusicPreset,
-                            onSelected: (_) => songViewNotifier.setPreset(
-                              const ViewConfig.sheetMusic(),
-                            ),
+                            onSelected: widget.canShowSheetMusic
+                                ? (_) => songViewNotifier.setPreset(
+                                      const ViewConfig.sheetMusic(),
+                                    )
+                                : null,
                           ),
                           ChoiceChip(
                             label: const Row(
@@ -197,6 +209,17 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                           ),
                         ],
                       ),
+
+                      if (!widget.canShowSheetMusic) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'There is no sheet music for this song, so it opens '
+                          'in Chords.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
 
                       // "Chords above staff" only means anything with a staff on
                       // screen, but it must not change the sheet's height, so it

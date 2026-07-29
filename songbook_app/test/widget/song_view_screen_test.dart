@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:songbook_app/data/models/notation.dart';
 import 'package:songbook_app/data/models/song.dart';
 import 'package:songbook_app/data/models/verse.dart';
 import 'package:songbook_app/presentation/providers/autoscroll_provider.dart';
@@ -16,6 +17,26 @@ import 'package:songbook_app/presentation/screens/song_view/widgets/sheet_music_
 import 'helpers.dart';
 
 /// A song long enough that the chord view actually scrolls in a test viewport.
+/// A song that CAN render sheet music, for the cases that need the Sheet Music
+/// preset to be observable rather than falling through to the chords.
+Song makeNotatedSong({int number = 42}) => Song(
+      number: number,
+      title: 'Engraved',
+      originalKey: 'C',
+      notation: const SongNotation(
+        originalKey: 'C',
+        timeSignature: '4/4',
+        verses: [
+          NotatedVerse(number: 1, measures: [
+            NotatedMeasure(beats: [
+              NotatedBeat(pitch: 'C4', duration: NoteDuration.whole),
+            ]),
+          ]),
+        ],
+      ),
+      verses: const [Verse(number: 1, plainText: 'Egy sor szöveg')],
+    );
+
 Song makeScrollableSong() => Song(
       number: 42,
       title: 'Mint a szép híves patakra',
@@ -239,7 +260,11 @@ void main() {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
           songByIdProvider.overrideWith(
-            (ref, id) async => makeTestSong(number: id.hymnalNumber ?? 0),
+            // WITH notation: the Sheet Music preset is only observable on a song
+            // that has something to engrave. A song without one now falls
+            // through to the chords, which would make both songs here render
+            // ChordView and the assertion below vacuous.
+            (ref, id) async => makeNotatedSong(number: id.hymnalNumber ?? 0),
           ),
         ],
       );
