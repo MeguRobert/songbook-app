@@ -66,6 +66,67 @@ void main() {
       expect(parser.isChordLine('Bb'), isTrue);
       expect(parser.isChordLine('A E'), isTrue);
     });
+
+    test('separators between chords do not disqualify the line', () {
+      // Real chord sheets punctuate. Every one of these was read as lyrics,
+      // which is why an imported song could not be transposed: the chords were
+      // never chords, they were words.
+      expect(parser.isChordLine('C - D'), isTrue);
+      expect(parser.isChordLine('C – D'), isTrue); // en dash
+      expect(parser.isChordLine('Am — F'), isTrue); // em dash
+      expect(parser.isChordLine('| C | G | Am | F |'), isTrue);
+      expect(parser.isChordLine('|: C  G :|'), isTrue);
+      expect(parser.isChordLine('C  G  x2'), isTrue);
+      expect(parser.isChordLine('C  G  2x'), isTrue);
+    });
+
+    test('a chord in parentheses is still a chord', () {
+      expect(parser.isChordLine('C  (Em)  F'), isTrue);
+      expect(parser.isChordLine('(C)'), isTrue);
+    });
+
+    test('separators alone are not a chord line', () {
+      // A row of dashes is a rule drawn under a heading, not music.
+      expect(parser.isChordLine('- - -'), isFalse);
+      expect(parser.isChordLine('|'), isFalse);
+      expect(parser.isChordLine('---'), isFalse);
+      expect(parser.isChordLine('x2'), isFalse);
+    });
+
+    test('a separator does not rescue a line that has real words', () {
+      expect(parser.isChordLine('C - grace'), isFalse);
+      // Still ambiguous once the filler is discounted, so still lyrics.
+      expect(parser.isChordLine('A -'), isFalse);
+    });
+  });
+
+  group('ChordSheetParser.parse — punctuated chord rows', () {
+    test('stores the chord without its parentheses', () {
+      // The stored symbol is what the transposer is handed, and it parses a
+      // root plus quality — "(Em)" is neither.
+      final result = parser.parse('C  (Em)\nAz Úrra bízom');
+      final chords = result.verses.single.lines.single.chords;
+
+      expect(chords.map((c) => c.chord), ['C', 'Em']);
+    });
+
+    test('positions survive the separators around them', () {
+      // Columns are character indexes into the lyric below, so a dash between
+      // two chords must not shift either of them.
+      final result = parser.parse('C   -   G\nAz Úrra bízom életem');
+      final chords = result.verses.single.lines.single.chords;
+
+      expect(chords.map((c) => c.chord), ['C', 'G']);
+      expect(chords.map((c) => c.position), [0, 8]);
+    });
+
+    test('a bar-line row parses as chords over the lyric', () {
+      final result = parser.parse('| C | G |\nAz Úrra bízom életem');
+      final line = result.verses.single.lines.single;
+
+      expect(line.text, 'Az Úrra bízom életem');
+      expect(line.chords.map((c) => c.chord), ['C', 'G']);
+    });
   });
 
   group('ChordSheetParser.parse — inline brackets', () {

@@ -94,6 +94,29 @@ class ChordSheetParser {
   /// a line of words is not.
   static final RegExp _bareRoot = RegExp(r'^[A-G]$');
 
+  /// Punctuation a chord row may carry that is not itself a chord.
+  ///
+  /// Real chord sheets are punctuated — `C - D`, `| C | G |`, `|: C G :|`,
+  /// `C G x2` — and requiring *every* token to be a chord classified all of
+  /// those as lyrics. The consequence was not cosmetic: the chords were stored
+  /// as words, so the imported song had no chords to transpose at all.
+  ///
+  /// Deliberately excludes `/`. A lone slash means "another beat of the same
+  /// chord" in real charts (`C / / /`), and treating it as filler would make a
+  /// row of slashes indistinguishable from punctuation.
+  static final RegExp _separator = RegExp(
+    r'^(?:[-–—]+|\|+|:\||\|:|\|\||[xX]\d+|\d+[xX])$',
+  );
+
+  /// A chord wrapped in brackets — `(Em)` — which real sheets use for a passing
+  /// or optional chord. The stored symbol is the chord itself: the transposer is
+  /// handed a root plus quality, and `(Em)` is neither.
+  static final RegExp _parenthesised = RegExp(r'^\((.+)\)$');
+
+  /// [token] with any surrounding parentheses removed.
+  static String _unwrap(String token) =>
+      _parenthesised.firstMatch(token)?.group(1) ?? token;
+
   /// `{name}` or `{name: value}` occupying a whole line.
   static final RegExp _directive =
       RegExp(r'^\{\s*([^:}]+?)\s*(?::\s*(.*?)\s*)?\}$');
@@ -104,22 +127,39 @@ class ChordSheetParser {
 
   /// Returns true when [token] is unambiguously a chord symbol.
   ///
-  /// Whitespace is not tolerated: callers split lines into tokens first.
-  bool isChordToken(String token) => _chordToken.hasMatch(token);
+  /// Surrounding parentheses are tolerated, so `(Em)` is a chord.
+  /// Whitespace is not: callers split lines into tokens first.
+  bool isChordToken(String token) => _chordToken.hasMatch(_unwrap(token));
 
   /// Returns true when [line] should be read as a row of chords.
   ///
-  /// The rule is all-or-nothing: EVERY whitespace-separated token must be a
-  /// chord. One ordinary word is enough to make the line lyrics, which is what
-  /// keeps a line like `Csak Egy Az` intact even though each of its words
-  /// starts with a note letter.
+  /// Every token must be either a chord or bar-line/dash/repeat punctuation
+  /// ([_separator]), and at least one must be a real chord. One ordinary word is
+  /// still enough to make the whole line lyrics, which is what keeps a line like
+  /// `Csak Egy Az` intact even though each of its words starts with a note
+  /// letter — that all-or-nothing property is the reason this regex is not
+  /// `ChordTransposer`'s.
   ///
-  /// A single bare root (`A`) returns false by design; see [_bareRoot].
+  /// A line whose only chord is a bare root (`A`, `A -`) returns false by
+  /// design; see [_bareRoot].
   bool isChordLine(String line) {
     final tokens = _token.allMatches(line).map((m) => m.group(0)!).toList();
     if (tokens.isEmpty) return false;
-    if (tokens.length == 1 && _bareRoot.hasMatch(tokens.first)) return false;
-    return tokens.every(isChordToken);
+
+    final chords = <String>[];
+    for (final token in tokens) {
+      if (_separator.hasMatch(token)) continue;
+      if (!isChordToken(token)) return false;
+      chords.add(token);
+    }
+
+    // Punctuation on its own is a rule drawn under a heading, not music.
+    if (chords.isEmpty) return false;
+    // Tested against the token as written, not unwrapped: `A` is ambiguous with
+    // the Hungarian definite article, and `(A)` is not — the brackets are
+    // themselves the evidence that this is a chord.
+    if (chords.length == 1 && _bareRoot.hasMatch(chords.first)) return false;
+    return true;
   }
 
   /// Parses [input] into verses plus whatever metadata it carried.
@@ -271,11 +311,19 @@ class ChordSheetParser {
   /// Maps each chord token's column in [chordLine] onto the text of
   /// [lyricLine]. Leading whitespace is preserved on both so the columns stay
   /// aligned; only trailing whitespace is dropped.
+  /// Punctuation is dropped rather than stored: a bar line is not a chord, and
+  /// `ChordView` would print it above the lyric as if it were one. The columns
+  /// of the chords around it are untouched, because each chord's position is its
+  /// own match offset and never a running total.
   LyricLine _parseChordsOverLyrics(String chordLine, String lyricLine) {
-    final chords = _token
-        .allMatches(chordLine)
-        .map((m) => ChordPosition(chord: m.group(0)!, position: m.start))
-        .toList();
+    final chords = <ChordPosition>[];
+    for (final match in _token.allMatches(chordLine)) {
+      final token = match.group(0)!;
+      if (_separator.hasMatch(token)) continue;
+      chords.add(
+        ChordPosition(chord: _unwrap(token), position: match.start),
+      );
+    }
     return LyricLine(text: lyricLine.trimRight(), chords: chords);
   }
 }
