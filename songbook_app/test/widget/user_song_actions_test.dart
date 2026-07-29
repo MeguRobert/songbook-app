@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -186,6 +188,25 @@ void main() {
               .controller!
               .text,
           'Ifjúsági');
+    });
+
+    testWidgets('prefills the words and chords as editable ChordPro',
+        (tester) async {
+      // The box used to open empty, so correcting a lyric meant selecting the
+      // song out of the preview and pasting it back — which arrives as one
+      // unbroken line, since a cross-widget selection carries no line breaks.
+      await pumpRoutedSongView(tester, userSong());
+      await tapMenuItem(tester, 'Edit song');
+
+      final pasted = tester
+          .widget<TextField>(find.byType(TextField).first)
+          .controller!
+          .text;
+
+      expect(pasted, contains('{title: Az Úrra bízom életem}'));
+      expect(pasted, contains('Az Úrra bízom életem'));
+      // Real line breaks, not one run-together line.
+      expect(const LineSplitter().convert(pasted).length, greaterThan(2));
     });
 
     testWidgets('saving replaces the song instead of adding a second one',

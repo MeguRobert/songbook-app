@@ -9,6 +9,7 @@ import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
 import '../../../data/models/verse.dart';
+import '../../../domain/services/chord_sheet_exporter.dart';
 import '../../../domain/services/chord_sheet_parser.dart';
 import '../../../domain/services/musicxml_importer.dart';
 import '../../providers/book_provider.dart';
@@ -131,6 +132,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     _titleEdited = true;
     _numberController.text = existing.number == 0 ? '' : '${existing.number}';
     _bookController.text = existing.book ?? '';
+    // The words and chords, as editable text.
+    //
+    // This box used to open empty when editing, so correcting a lyric meant
+    // selecting the song out of the preview below and pasting it back — which
+    // arrives as one unbroken line, because a cross-widget selection carries no
+    // line breaks. ChordPro is what the parser below already reads, so the round
+    // trip is exact: change a word, press Parse, and the preview updates.
+    _sheetController.text = const ChordSheetExporter().toChordPro(existing);
   }
 
   @override
