@@ -196,6 +196,32 @@ class StaffSystem {
   double get staffBottom => y + EngravingConstants.staffHeight;
   double get lyricY => staffBottom + EngravingConstants.lyricBelowStaff;
   double get chordY => staffTop - EngravingConstants.chordAboveStaff;
+
+  /// How many stacked lyric rows this system actually draws.
+  ///
+  /// Derived from the syllables rather than from the notation, because that is
+  /// the question the spacing needs answered: a verse can declare three lyric
+  /// lines and a given system still carry none of them.
+  int get lyricLineCount => syllables.isEmpty
+      ? 0
+      : syllables.map((s) => s.lineIndex).reduce(math.max) + 1;
+
+  /// The bottom of everything this system occupies, lyrics included.
+  ///
+  /// This is what the next system is placed below. It used to be a fixed sum
+  /// that assumed exactly one lyric row — too much for an engraved score with no
+  /// `<lyric>` elements at all, which is most imported ones, and too little for
+  /// a hymn with three verses stacked under the notes.
+  double get contentBottom {
+    final lines = lyricLineCount;
+    if (lines == 0) {
+      return staffBottom + EngravingConstants.staffOnlyBelowStaff;
+    }
+    return staffBottom +
+        EngravingConstants.lyricBelowStaff +
+        (lines - 1) * EngravingConstants.lyricLineSpacing +
+        EngravingConstants.lyricRowHeight;
+  }
 }
 
 /// Layout result containing all positioned elements
@@ -257,18 +283,15 @@ class SheetMusicLayoutEngine {
       systems.addAll(verseSystems);
 
       if (verseSystems.isNotEmpty) {
-        currentY = verseSystems.last.staffBottom +
-            EngravingConstants.lyricBelowStaff +
-            30 +
-            EngravingConstants.systemSpacing;
+        currentY =
+            verseSystems.last.contentBottom + EngravingConstants.systemSpacing;
       }
     }
 
     final totalHeight = systems.isEmpty
         ? 200.0
-        : systems.last.staffBottom +
-            EngravingConstants.lyricBelowStaff +
-            50;
+        // A trailing margin rather than another full system gap: nothing follows.
+        : systems.last.contentBottom + EngravingConstants.staffLineSpacing * 2;
 
     // Calculate actual content width from widest system
     final maxSystemWidth = systems.isEmpty
@@ -389,10 +412,7 @@ class SheetMusicLayoutEngine {
       systems.add(system);
 
       measureIndex = endIndex;
-      currentY = system.staffBottom +
-          EngravingConstants.lyricBelowStaff +
-          30 +
-          EngravingConstants.systemSpacing;
+      currentY = system.contentBottom + EngravingConstants.systemSpacing;
     }
 
     return systems;
@@ -658,10 +678,10 @@ class SheetMusicLayoutEngine {
             EngravingConstants.lyricStyle,
           );
 
-          // Stack lyrics vertically (18px apart for each line)
-          final lyricLineSpacing = 18.0;
-          final lyricY = staffBottom + EngravingConstants.lyricBelowStaff +
-                        (lineIdx * lyricLineSpacing);
+          // Stack lyrics vertically, one row per verse on the note.
+          final lyricY = staffBottom +
+              EngravingConstants.lyricBelowStaff +
+              (lineIdx * EngravingConstants.lyricLineSpacing);
 
           syllables.add(PositionedSyllable(
             text: displayText,

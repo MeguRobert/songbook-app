@@ -126,6 +126,22 @@ class EngravingConstants {
   /// Space below staff for lyrics
   static double get lyricBelowStaff => staffSpace * 2.8;
 
+  /// Vertical pitch between stacked lyric rows, when a note carries a syllable
+  /// per verse.
+  static const double lyricLineSpacing = 18.0;
+
+  /// Allowance below the baseline of the lowest lyric row, for descenders and
+  /// breathing room before the next system.
+  static const double lyricRowHeight = 30.0;
+
+  /// Room kept under the staff of a system with no lyrics at all, for down
+  /// stems and ledger lines.
+  ///
+  /// An engraved score commonly has no `<lyric>` elements — its syllables hang
+  /// off the beats and there are none — and reserving a full lyric row for every
+  /// such system is what made imported notation render with large gaps.
+  static double get staffOnlyBelowStaff => staffSpace * 2.5;
+
   // ============ NOTE HEAD DIMENSIONS ============
   // Based on typical music font proportions
 
