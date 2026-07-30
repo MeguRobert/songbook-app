@@ -1372,5 +1372,9 @@
   "commonCancel": "Cancel",
   "@commonCancel": {
     "description": "Generic dismiss button in a settings dialog"
+},
+  "voiceAll": "All",
+  "@voiceAll": {
+    "description": "Voice picker option: engrave every voice at once, one staff each, rather than choosing one line to read. Must stay short — the chip row has to fit one line at 360px."
   }
 }

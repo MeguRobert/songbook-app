@@ -1034,4 +1034,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get commonCancel => 'Mégse';
+
+  @override
+  String get voiceAll => 'Mind';
 }

@@ -285,5 +285,6 @@
   "importPhotoSignIn": "Conectează-te mai întâi: partitura este citită de un serviciu comun, nu de dispozitivul tău.",
   "importPhotoNoReader": "Fotografiile pot fi citite doar în versiunea de browser a aplicației Songbook.",
   "commonSave": "Salvează",
-  "commonCancel": "Anulează"
+  "commonCancel": "Anulează",
+  "voiceAll": "Toate"
 }

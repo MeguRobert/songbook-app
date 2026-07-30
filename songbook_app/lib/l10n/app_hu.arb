@@ -285,5 +285,6 @@
   "importPhotoSignIn": "Előbb jelentkezz be: a kottát közös szolgáltatás olvassa be, nem az eszközöd.",
   "importPhotoNoReader": "Fényképet csak a Songbook böngészős változata tud beolvasni.",
   "commonSave": "Mentés",
-  "commonCancel": "Mégse"
+  "commonCancel": "Mégse",
+  "voiceAll": "Mind"
 }

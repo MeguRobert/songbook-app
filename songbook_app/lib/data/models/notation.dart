@@ -401,6 +401,14 @@ class SongNotation {
     this.voices,
   });
 
+  /// The voice selection meaning "engrave them all at once, one staff each".
+  ///
+  /// Negative so it cannot collide with a real index however many voices a score
+  /// grows, and so a stored 0 keeps meaning the melody. It is not a voice, and
+  /// [engravedAs] deliberately does nothing with it: a grand staff needs the score
+  /// as stored, with `verses` still the top line and `voices` still the rest.
+  static const int allVoices = -1;
+
   /// Every voice this score holds, engraved one first.
   ///
   /// The engraved stream has no name of its own — it is whatever the importer

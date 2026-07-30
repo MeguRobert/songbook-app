@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../data/models/notation.dart';
 import '../../../../data/models/view_config.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../domain/services/capo_service.dart';
 import '../../../providers/autoscroll_provider.dart';
 import '../../../providers/providers.dart';
 import '../../../providers/song_provider.dart';
+import '../../../widgets/voice_names.dart';
 
 /// Bottom sheet containing every song control.
 ///
@@ -52,21 +54,6 @@ class SongControlsSheet extends ConsumerStatefulWidget {
     this.voiceNames = const [],
     super.key,
   });
-
-  /// The four well-known voice names in the reader's language.
-  ///
-  /// The stored names come from the importer, which writes English so the JSON
-  /// stays one thing whatever language the app is in. Anything the importer could
-  /// not identify - `P1 staff 2 voice 6` - passes through, because a label taken
-  /// from the file is not a word to translate.
-  static String voiceLabel(AppLocalizations l10n, String stored) =>
-      switch (stored) {
-        'Melody' => l10n.voiceMelody,
-        'Alto' => l10n.voiceAlto,
-        'Tenor' => l10n.voiceTenor,
-        'Bass' => l10n.voiceBass,
-        _ => stored,
-      };
 
   /// Names the auto-scroll speed instead of quoting it.
   ///
@@ -468,7 +455,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                   // row's width changed with every switch.
                                   showCheckmark: false,
                                   visualDensity: VisualDensity.compact,
-                                  label: Text(SongControlsSheet.voiceLabel(
+                                  label: Text(localisedVoiceName(
                                       l10n, widget.voiceNames[i])),
                                   selected: engravedVoice == i,
                                   onSelected: viewConfig.showNotation
@@ -476,6 +463,22 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                           songViewNotifier.setVoice(i)
                                       : null,
                                 ),
+                              // Last, because it is the odd one out: the others
+                              // choose a line to read INSTEAD of the melody,
+                              // this one asks for a different score altogether —
+                              // every part on its own staff, which is what a
+                              // director reads rather than a singer.
+                              ChoiceChip(
+                                showCheckmark: false,
+                                visualDensity: VisualDensity.compact,
+                                label: Text(l10n.voiceAll),
+                                selected:
+                                    engravedVoice == SongNotation.allVoices,
+                                onSelected: viewConfig.showNotation
+                                    ? (_) => songViewNotifier
+                                        .setVoice(SongNotation.allVoices)
+                                    : null,
+                              ),
                             ],
                           ),
                         ),

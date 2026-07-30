@@ -1037,4 +1037,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get commonCancel => 'Anulează';
+
+  @override
+  String get voiceAll => 'Toate';
 }

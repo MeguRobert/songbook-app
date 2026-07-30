@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
 import '../../../domain/services/transposition_service.dart';
 import '../../../l10n/app_localizations.dart';
+import '../voice_names.dart';
 import 'notation_palette.dart';
 import 'sheet_music_layout.dart';
 import 'sheet_music_painter.dart';
@@ -28,6 +30,15 @@ class SheetMusicRenderer extends StatefulWidget {
   /// Scale factor applied to the rendered notation (A+/A-, pinch, etc.)
   final double textScale;
 
+  /// Engrave every voice of a multi-voice score at once, on stacked staves,
+  /// instead of one line on one staff.
+  ///
+  /// Expects [notation] to be the STORED score — the grand staff reads `verses`
+  /// as the top line and `voices` as the rest, so a score with one voice already
+  /// projected into `verses` would engrave that voice twice. Ignored for a
+  /// single-voice score, which has nothing to stack.
+  final bool grandStaff;
+
   const SheetMusicRenderer({
     super.key,
     required this.song,
@@ -36,6 +47,7 @@ class SheetMusicRenderer extends StatefulWidget {
     this.showChords = true,
     this.fallback,
     this.textScale = 1.0,
+    this.grandStaff = false,
   });
 
   @override
@@ -57,6 +69,8 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
   SongNotation? _layoutNotation;
   int? _layoutTranspose;
   bool? _layoutShowChords;
+  bool? _layoutGrandStaff;
+  List<String>? _layoutVoiceLabels;
 
   @override
   void dispose() {
@@ -65,23 +79,36 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
     super.dispose();
   }
 
-  SheetMusicLayout _layoutFor(double width) {
+  SheetMusicLayout _layoutFor(double width, List<String> voiceLabels) {
     if (_layout == null ||
         _layoutWidth != width ||
         _layoutNotation != widget.notation ||
         _layoutTranspose != widget.transpose ||
-        _layoutShowChords != widget.showChords) {
+        _layoutShowChords != widget.showChords ||
+        _layoutGrandStaff != widget.grandStaff ||
+        !listEquals(_layoutVoiceLabels, voiceLabels)) {
       final engine = SheetMusicLayoutEngine(
         availableWidth: width,
         transposePitch: _transposePitch,
         transposeChord: _transposeChord,
         showChords: widget.showChords,
       );
-      _layout = engine.calculateLayout(widget.notation, widget.transpose);
+      _layout = widget.grandStaff
+          ? engine.calculateGrandStaffLayout(
+              widget.notation,
+              widget.transpose,
+              voiceLabels: voiceLabels,
+            )
+          : engine.calculateLayout(widget.notation, widget.transpose);
       _layoutWidth = width;
       _layoutNotation = widget.notation;
       _layoutTranspose = widget.transpose;
       _layoutShowChords = widget.showChords;
+      _layoutGrandStaff = widget.grandStaff;
+      // The labels are localised, so switching language has to invalidate the
+      // cached layout: they are measured to reserve the inset at the left, and a
+      // stale reservation would clip or float them.
+      _layoutVoiceLabels = voiceLabels;
     }
     return _layout!;
   }
@@ -152,11 +179,20 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
     final theme = Theme.of(context);
     final palette = NotationPalette.of(theme);
 
+    // Resolved here rather than in the engine, which has no BuildContext. Only a
+    // grand staff draws them, so a single-voice score does not pay for the work.
+    final voiceLabels = widget.grandStaff
+        ? [
+            for (final name in widget.notation.voiceNames)
+              localisedVoiceName(AppLocalizations.of(context), name),
+          ]
+        : const <String>[];
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Lay out once at the viewport width — NOT divided by textScale — so the
         // music never re-wraps as it zooms. Zoom is a pure visual scale below.
-        final layout = _layoutFor(constraints.maxWidth);
+        final layout = _layoutFor(constraints.maxWidth, voiceLabels);
 
         // Then scale the result down to actually fit.
         //

@@ -19,11 +19,19 @@ class SheetMusicViewWidget extends ConsumerWidget {
   final bool showChords;
   final double textScale;
 
+  /// Engrave every voice of a four-part score at once, on stacked staves.
+  ///
+  /// Requires [song] to carry its notation as STORED — see
+  /// [SheetMusicRenderer.grandStaff]. The legacy SVG path ignores this: a
+  /// pre-rendered image is whatever it is.
+  final bool grandStaff;
+
   const SheetMusicViewWidget({
     required this.song,
     required this.transpose,
     this.showChords = true,
     this.textScale = 1.0,
+    this.grandStaff = false,
     super.key,
   });
 
@@ -53,6 +61,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
       transpose: transpose,
       showChords: showChords,
       textScale: textScale,
+      grandStaff: grandStaff,
     );
 
     // Add debug badge in debug mode
