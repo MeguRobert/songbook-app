@@ -102,4 +102,81 @@ void main() {
 
     expect(find.text('Lyrics Only'), findsOneWidget); // now the subtitle
   });
+
+  // The dialogs used RadioListTile, whose radio showed which option was
+  // active. They now use ListTile + a tick, matching the language dialog,
+  // because the Radio API is deprecated. The behaviour tests above pass either
+  // way — they only tap and check the result — so these pin the part that
+  // actually changed: the tick has to be on the CURRENT option and nowhere
+  // else, or the dialog silently stops saying what is selected.
+  Finder tickOnRowWith(String label) => find.descendant(
+        of: find.widgetWithText(ListTile, label),
+        matching: find.byIcon(Icons.check),
+      );
+
+  testWidgets('theme dialog ticks the active mode only', (tester) async {
+    await pumpScreen(tester, const SettingsScreen());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Theme'));
+    await tester.pumpAndSettle();
+
+    // Default is System default.
+    expect(tickOnRowWith('System default'), findsOneWidget);
+    expect(find.byIcon(Icons.check), findsOneWidget, reason: 'exactly one tick');
+
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+
+    // Reopen: the tick has moved with the choice.
+    await tester.tap(find.text('Theme'));
+    await tester.pumpAndSettle();
+    expect(tickOnRowWith('Dark'), findsOneWidget);
+    expect(find.byIcon(Icons.check), findsOneWidget);
+  });
+
+  testWidgets('default view dialog ticks the active preset only',
+      (tester) async {
+    await pumpScreen(tester, const SettingsScreen());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Default View'));
+    await tester.pumpAndSettle();
+    expect(tickOnRowWith('Sheet Music'), findsOneWidget);
+    expect(find.byIcon(Icons.check), findsOneWidget);
+
+    await tester.tap(find.text('Chords'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Default View'));
+    await tester.pumpAndSettle();
+    expect(tickOnRowWith('Chords'), findsOneWidget);
+    expect(find.byIcon(Icons.check), findsOneWidget);
+  });
+
+  testWidgets('each default-view option keeps its own hint', (tester) async {
+    // The old dialog hardcoded a preset per branch and ignored its own `value`,
+    // so a row could show one option's hint while applying another. The rows
+    // are data-driven now; this pins hint-to-option pairing.
+    await pumpScreen(tester, const SettingsScreen());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Default View'));
+    await tester.pumpAndSettle();
+
+    for (final label in ['Sheet Music', 'Chords', 'Lyrics Only']) {
+      // Scoped to the dialog: the settings row behind it shows the current
+      // preset as its own subtitle, so an unscoped finder matches twice.
+      final row = find.descendant(
+        of: find.byType(SimpleDialog),
+        matching: find.widgetWithText(ListTile, label),
+      );
+      expect(row, findsOneWidget, reason: label);
+      // Every row carries a subtitle, and no two rows share one.
+      expect(
+        find.descendant(of: row, matching: find.byType(Text)),
+        findsNWidgets(2),
+        reason: '$label should have a title and its own hint',
+      );
+    }
+  });
 }

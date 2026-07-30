@@ -282,15 +282,17 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => SimpleDialog(
         title: Text(l10n.settingsTheme),
+        // ListTile + a tick, matching the language dialog above. The Radio
+        // API these dialogs used is deprecated, and the decision recorded
+        // there was to stop adding to that debt — this is the same dialog
+        // asking the same kind of question, so it gets the same treatment
+        // rather than a second pattern living beside it.
         children: AppThemeMode.values.map((mode) {
-          return RadioListTile<AppThemeMode>(
+          return ListTile(
             title: Text(_getThemeModeLabel(l10n, mode)),
-            value: mode,
-            groupValue: current,
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(themeModeProvider.notifier).setThemeMode(value);
-              }
+            trailing: mode == current ? const Icon(Icons.check) : null,
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode(mode);
               Navigator.pop(context);
             },
           );
@@ -305,40 +307,41 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => SimpleDialog(
         title: Text(l10n.settingsDefaultView),
+        // Same ListTile + tick pattern as the theme and language dialogs.
+        //
+        // The three presets are described by data rather than three near
+        // identical widgets: the previous shape repeated groupValue and the
+        // Navigator.pop on every branch, which is how the middle one ended up
+        // discarding its own `value` and relying on position instead.
         children: [
-          RadioListTile<String>(
-            title: Text(l10n.settingsViewSheetMusic),
-            subtitle: Text(l10n.settingsViewSheetMusicHint),
-            value: 'sheet',
-            groupValue: _getPresetKey(current),
-            onChanged: (value) {
-              ref.read(settingsProvider.notifier).setPreset(const ViewConfig.sheetMusic());
-              Navigator.pop(context);
-            },
-          ),
-          RadioListTile<String>(
-            title: Text(l10n.settingsViewChords),
-            subtitle: Text(l10n.settingsViewChordsHint),
-            value: 'chords',
-            groupValue: _getPresetKey(current),
-            onChanged: (value) {
-              ref.read(settingsProvider.notifier).setPreset(const ViewConfig.chords());
-              Navigator.pop(context);
-            },
-          ),
-          RadioListTile<String>(
-            title: Text(l10n.settingsViewLyricsOnly),
-            subtitle: Text(l10n.settingsViewLyricsOnlyHint),
-            value: 'lyrics',
-            groupValue: _getPresetKey(current),
-            onChanged: (value) {
-              ref.read(settingsProvider.notifier).setPreset(const ViewConfig.lyricsOnly());
-              Navigator.pop(context);
-            },
-          ),
+          for (final preset in const [
+            (key: 'sheet', config: ViewConfig.sheetMusic()),
+            (key: 'chords', config: ViewConfig.chords()),
+            (key: 'lyrics', config: ViewConfig.lyricsOnly()),
+          ])
+            ListTile(
+              title: Text(_getViewConfigLabel(l10n, preset.config)),
+              subtitle: Text(_viewConfigHint(l10n, preset.key)),
+              trailing: preset.key == _getPresetKey(current)
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                ref.read(settingsProvider.notifier).setPreset(preset.config);
+                Navigator.pop(context);
+              },
+            ),
         ],
       ),
     );
+  }
+
+  /// The explanatory line under each default-view option.
+  String _viewConfigHint(AppLocalizations l10n, String presetKey) {
+    return switch (presetKey) {
+      'chords' => l10n.settingsViewChordsHint,
+      'lyrics' => l10n.settingsViewLyricsOnlyHint,
+      _ => l10n.settingsViewSheetMusicHint,
+    };
   }
 
   String _getPresetKey(ViewConfig config) {
