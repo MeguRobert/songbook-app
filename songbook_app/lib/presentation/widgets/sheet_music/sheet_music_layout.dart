@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/engraving_constants.dart';
 import '../../../data/models/notation.dart';
 
+// Part of this library's own vocabulary — StaffSystem.clef is typed as one — so a
+// caller reading a layout should not have to reach into the constants file for
+// the name of the thing it just read.
+export '../../../core/constants/engraving_constants.dart' show StaffClef;
+
 /// Positioned element on the sheet music
 class PositionedElement {
   final double x;

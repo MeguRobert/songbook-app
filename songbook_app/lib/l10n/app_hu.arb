@@ -227,5 +227,6 @@
   "voiceMelody": "Dallam",
   "voiceAlto": "Alt",
   "voiceTenor": "Tenor",
-  "voiceBass": "Basszus"
+  "voiceBass": "Basszus",
+  "voiceAll": "Mind"
 }

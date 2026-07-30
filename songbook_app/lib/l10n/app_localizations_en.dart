@@ -836,4 +836,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceBass => 'Bass';
+
+  @override
+  String get voiceAll => 'All';
 }

@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
 import '../../../data/models/view_config.dart';
@@ -543,7 +544,12 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
         // which is all of the bundled ones.
         final voiceIndex = isCurrentSong ? songView!.voiceIndex : 0;
         final notation = song.notation;
-        final engravedSong = notation == null || voiceIndex == 0
+        // "All voices" is not a projection: the grand staff reads `verses` as the
+        // top line and `voices` as the rest, so it needs the score as stored.
+        // engravedAs already returns `this` for a negative index, but going
+        // through it at all would be misleading here.
+        final grandStaff = voiceIndex == SongNotation.allVoices;
+        final engravedSong = notation == null || voiceIndex <= 0
             ? song
             : song.copyWith(notation: notation.engravedAs(voiceIndex));
 
@@ -605,6 +611,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                     transpose: transpose,
                     showChords: viewConfig.showChords,
                     textScale: textScale,
+                    grandStaff: grandStaff,
                   )
                 else if (viewConfig.showChords)
                   ChordView(

@@ -227,5 +227,6 @@
   "voiceMelody": "Melodie",
   "voiceAlto": "Alto",
   "voiceTenor": "Tenor",
-  "voiceBass": "Bas"
+  "voiceBass": "Bas",
+  "voiceAll": "Toate"
 }

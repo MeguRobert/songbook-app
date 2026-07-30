@@ -1467,6 +1467,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bass'**
   String get voiceBass;
+
+  /// Voice picker option: engrave every voice at once, one staff each, rather than choosing one line to read. Must stay short — the chip row has to fit one line at 360px.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get voiceAll;
 }
 
 class _AppLocalizationsDelegate

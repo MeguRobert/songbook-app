@@ -840,4 +840,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get voiceBass => 'Basszus';
+
+  @override
+  String get voiceAll => 'Mind';
 }

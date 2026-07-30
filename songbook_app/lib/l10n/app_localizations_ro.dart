@@ -842,4 +842,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get voiceBass => 'Bas';
+
+  @override
+  String get voiceAll => 'Toate';
 }
