@@ -1,5 +1,58 @@
 import 'package:flutter/material.dart';
 
+/// Which clef a staff is read in.
+///
+/// The two differ by a constant: a staff position means a diatonic step either
+/// way, and the bottom line reads as E4 in the treble clef and G2 in the bass —
+/// twelve steps apart. So one offset converts a treble-relative position into a
+/// bass-relative one, and nothing else about the pitch arithmetic changes.
+///
+/// [keyPositionOffset] is the same idea for key-signature accidentals, which are
+/// placed relative to the middle line rather than to a pitch. Bass-clef
+/// accidentals sit one step lower than their treble counterparts — F# on the
+/// fourth line rather than the top one — which is two half-positions.
+enum StaffClef {
+  // SMuFL gClef U+E050 and fClef U+E062.
+  treble(
+    positionOffset: 0,
+    keyPositionOffset: 0,
+    glyph: '',
+    anchorLineFromTop: 3,
+  ),
+  bass(
+    positionOffset: 12,
+    keyPositionOffset: -2,
+    glyph: '',
+    anchorLineFromTop: 1,
+  );
+
+  const StaffClef({
+    required this.positionOffset,
+    required this.keyPositionOffset,
+    required this.glyph,
+    required this.anchorLineFromTop,
+  });
+
+  /// Added to a pitch's treble-relative staff position.
+  final int positionOffset;
+
+  /// Added to a key-signature accidental's position relative to the middle line.
+  final int keyPositionOffset;
+
+  /// The SMuFL code point to draw.
+  final String glyph;
+
+  /// The staff line this clef's baseline sits on, counted from the top (0 is the
+  /// top line).
+  ///
+  /// A music font puts a clef's reference line on its own baseline, so this plus
+  /// the font's ascent is the whole positioning problem: the G clef curls around
+  /// its G line, second from the bottom, and the F clef's dots straddle its F
+  /// line, fourth from the bottom. One formula therefore serves both, and no
+  /// per-glyph fudge factor is needed.
+  final int anchorLineFromTop;
+}
+
 /// Constants for music engraving and sheet music rendering
 /// Based on SMuFL (Standard Music Font Layout) engraving defaults
 /// All proportional measurements are in staff spaces (1 space = staffLineSpacing)
@@ -120,6 +173,16 @@ class EngravingConstants {
   /// Space between staff systems (lines of music)
   static double get systemSpacing => staffSpace * 10.0;
 
+  /// Space between two staves of the SAME line of music, in a grand staff.
+  ///
+  /// Deliberately much tighter than [systemSpacing]: the staves of one line have
+  /// to read as a group, and at a system's spacing four voices would look like
+  /// four unrelated lines of music.
+  static double get grandStaffSpacing => staffSpace * 3.0;
+
+  /// Gap between a staff's voice label and the clef that follows it.
+  static double get staffLabelToClefSpace => staffSpace * 0.8;
+
   /// Space above staff for chord symbols
   static double get chordAboveStaff => staffSpace * 2.5;
 
@@ -223,6 +286,17 @@ class EngravingConstants {
     height: 1.2,
   );
 
+  /// The voice name at the left of a staff in a grand staff.
+  ///
+  /// Smaller than the lyrics and italic, because it is a label on the music
+  /// rather than part of it. The colour is replaced by the painter's themed ink.
+  static TextStyle get staffLabelStyle => TextStyle(
+    fontSize: staffSpace * 1.15,
+    fontStyle: FontStyle.italic,
+    color: const Color(0xFF333333),
+    fontFamily: 'Georgia',
+  );
+
   /// Time signature style
   static TextStyle get timeSigStyle => TextStyle(
     fontSize: timeSigFontSize,
@@ -263,7 +337,14 @@ class EngravingConstants {
 
   /// Calculate Y position for a pitch relative to staff bottom
   /// Higher position number = higher on staff = smaller Y value
-  static double getYPositionForPitch(String pitch, double staffBottom) {
+  ///
+  /// [clef] shifts the whole mapping by a constant — see [StaffClef]. It
+  /// defaults to treble because every single-staff caller reads one.
+  static double getYPositionForPitch(
+    String pitch,
+    double staffBottom, {
+    StaffClef clef = StaffClef.treble,
+  }) {
     final match = RegExp(r'^([A-Ga-g])([#b]?)(\d)$').firstMatch(pitch);
     if (match == null) return staffBottom;
 
@@ -285,7 +366,7 @@ class EngravingConstants {
     final noteOffset = noteIndex - 2; // E = 2, so E offset = 0
 
     // Total position (positive = up on staff)
-    final position = octaveOffset + noteOffset;
+    final position = octaveOffset + noteOffset + clef.positionOffset;
 
     // Convert to Y coordinate
     // Position 0 (E4) = staffBottom (bottom line)
