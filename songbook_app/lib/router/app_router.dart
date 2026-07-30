@@ -52,9 +52,31 @@ class AppRoutes {
 }
 
 /// Router provider
-final routerProvider = Provider<GoRouter>((ref) {
+final routerProvider = Provider<GoRouter>((ref) => createAppRouter());
+
+/// Builds the app's router.
+///
+/// [initialLocation] exists for tests: on web the browser's URL always wins, so
+/// this is the only way to exercise "somebody pasted that link into a fresh
+/// tab" against the real route table.
+GoRouter createAppRouter({String initialLocation = AppRoutes.home}) {
+  // Make an imperative `push` show up in the address bar.
+  //
+  // Every destination that is not a bottom-bar tab is reached with `push`
+  // rather than `go`, because a song has to be poppable back to the list it was
+  // opened from. go_router excludes imperative navigation from the reported
+  // location by default, so the URL sat on `/` for the entire life of the app
+  // while `#/settings` — a `go` from the nav bar — worked fine. That mismatch is
+  // the whole of the "URLs never change" bug; no URL *strategy* was involved.
+  //
+  // go_router advises against this flag because the top-most route's URL is not
+  // always deep-linkable. Here it always is: every pushed location is a
+  // registered path that resolves from a cold load, which the tests in
+  // `router_urls_test.dart` pin one by one.
+  GoRouter.optionURLReflectsImperativeAPIs = true;
+
   return GoRouter(
-    initialLocation: AppRoutes.home,
+    initialLocation: initialLocation,
     debugLogDiagnostics: false,
     routes: [
       // Shell route for bottom navigation. Every top-level destination lives
@@ -187,4 +209,4 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ),
   );
-});
+}
