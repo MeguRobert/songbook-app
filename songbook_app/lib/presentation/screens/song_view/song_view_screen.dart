@@ -316,6 +316,24 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     }
   }
 
+  /// The way out of a song that was opened from a link rather than from the
+  /// list.
+  ///
+  /// A pasted URL has nothing beneath it to pop to, so [AppBar] implies no back
+  /// arrow, and this screen sits outside the navigation shell so there is no
+  /// bottom bar either: a shared song was a one-way trip. Worst for a shared
+  /// *user* song, whose id means nothing on another device — the reader lands on
+  /// "song not found" with no control on screen at all.
+  ///
+  /// Null whenever there *is* something to pop, so the ordinary back arrow is
+  /// left exactly as it was, and null without a router at all because several
+  /// widget tests mount this screen straight under `MaterialApp.home`.
+  Widget? _leadingWayOut(BuildContext context) {
+    final router = GoRouter.maybeOf(context);
+    if (router == null || router.canPop()) return null;
+    return BackButton(onPressed: () => context.go(AppRoutes.home));
+  }
+
   /// The song-view app bar.
   ///
   /// This bar used to carry back + `"151. Title"` + four actions (tags,
@@ -350,6 +368,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
 
     return AppBar(
       toolbarHeight: toolbarHeight,
+      leading: _leadingWayOut(context),
       title: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +541,10 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
       data: (song) {
         if (song == null) {
           return Scaffold(
-            appBar: AppBar(title: Text(l10n.songNotFound)),
+            appBar: AppBar(
+              leading: _leadingWayOut(context),
+              title: Text(l10n.songNotFound),
+            ),
             body: Center(child: Text(l10n.songNotFound)),
           );
         }
@@ -640,11 +662,17 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
         );
       },
       loading: () => Scaffold(
-        appBar: AppBar(title: Text(l10n.loading)),
+        appBar: AppBar(
+          leading: _leadingWayOut(context),
+          title: Text(l10n.loading),
+        ),
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (error, stack) => Scaffold(
-        appBar: AppBar(title: Text(l10n.errorGeneric)),
+        appBar: AppBar(
+          leading: _leadingWayOut(context),
+          title: Text(l10n.errorGeneric),
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

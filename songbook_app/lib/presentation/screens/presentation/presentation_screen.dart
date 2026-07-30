@@ -4,10 +4,12 @@ import 'dart:math' show sqrt, min;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../data/models/song.dart';
 import '../../../data/models/verse.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../router/app_router.dart';
 import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 
@@ -164,7 +166,7 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
       _previousPage();
       return KeyEventResult.handled;
     } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-      Navigator.of(context).pop();
+      _exit();
       return KeyEventResult.handled;
     } else if (event.logicalKey == LogicalKeyboardKey.home) {
       _goToPage(0);
@@ -175,6 +177,24 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
     }
 
     return KeyEventResult.ignored;
+  }
+
+  /// Leaves presentation mode.
+  ///
+  /// Popping is right when this screen was pushed from a song, but a bookmarked
+  /// or shared `/presentation/...` link is the whole stack — and popping that
+  /// emptied the router's match list, which is not a black screen but an
+  /// exception on the next frame. Falls back to the song list instead.
+  ///
+  /// Tolerates having no router at all, because the widget tests mount this
+  /// screen straight under `MaterialApp.home`.
+  void _exit() {
+    final router = GoRouter.maybeOf(context);
+    if (router != null && !router.canPop()) {
+      router.go(AppRoutes.home);
+      return;
+    }
+    Navigator.of(context).pop();
   }
 
   int? _totalPages;
@@ -370,7 +390,7 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: _exit,
                   tooltip: AppLocalizations.of(context).presentationExit,
                 ),
                 Expanded(
