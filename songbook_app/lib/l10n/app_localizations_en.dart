@@ -836,4 +836,125 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceBass => 'Bass';
+
+  @override
+  String importNoticeUnknownDirective(int line, String text) {
+    return 'Line $line: ignored the unknown directive \"$text\".';
+  }
+
+  @override
+  String importNoticeAmbiguousBareRoot(int line, String text) {
+    return 'Line $line: \"$text\" could be a one-chord line or a lyric; kept as a lyric.';
+  }
+
+  @override
+  String importNoticeBracketNotAChord(int line, String text) {
+    return 'Line $line: \"[$text]\" is not a chord; kept as lyric text.';
+  }
+
+  @override
+  String get importNoticeTimewiseScore =>
+      'This file is score-timewise, so its measures may be grouped incorrectly. Export it as score-partwise for a clean import.';
+
+  @override
+  String get importNoticeNoNotes => 'No notes were found in the file.';
+
+  @override
+  String importNoticeExtraVoicesKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count voices beyond the melody were kept — only the melody is engraved. Switch voices in the song controls.',
+      one:
+          '1 voice beyond the melody was kept — only the melody is engraved. Switch voices in the song controls.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeGraceNotesSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count grace notes were skipped: the notation has no grace-note beat.',
+      one: '1 grace note was skipped: the notation has no grace-note beat.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeChordsReduced(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count chords were reduced to their top notes; the lower notes were kept as extra voices.',
+      one:
+          '1 chord was reduced to its top note; the lower notes were kept as extra voices.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeDoubleAccidentals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count double accidentals were approximated to a single sharp or flat, which is all the notation stores.',
+      one:
+          '1 double accidental was approximated to a single sharp or flat, which is all the notation stores.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeDoubleDots(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count double-dotted notes were imported as single-dotted.',
+      one: '1 double-dotted note was imported as single-dotted.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeUnsupportedNoteValues(int count, String text) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The note values $text cannot be drawn, so they were approximated to the nearest ones that can.',
+      one:
+          'The note value $text cannot be drawn, so it was approximated to the nearest one that can.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNoticeEmptyXmlInput => 'The MusicXML input is empty.';
+
+  @override
+  String importNoticeInvalidXml(String text) {
+    return 'This file is not valid XML: $text';
+  }
+
+  @override
+  String get importNoticeContainerManifest =>
+      'This is the container index from inside an .mxl file, not a score. Open the .mxl file itself.';
+
+  @override
+  String get importNoticeEmptyMxlInput => 'The .mxl input is empty.';
+
+  @override
+  String importNoticeUnreadableArchive(String text) {
+    return 'This is not a readable .mxl archive: $text';
+  }
+
+  @override
+  String get importNoticeNoScoreInArchive =>
+      'The .mxl archive contains no MusicXML score.';
 }

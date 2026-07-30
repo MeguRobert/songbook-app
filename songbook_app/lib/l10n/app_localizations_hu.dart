@@ -840,4 +840,125 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get voiceBass => 'Basszus';
+
+  @override
+  String importNoticeUnknownDirective(int line, String text) {
+    return '$line. sor: a „$text” ismeretlen utasítást kihagytam.';
+  }
+
+  @override
+  String importNoticeAmbiguousBareRoot(int line, String text) {
+    return '$line. sor: a „$text” lehet egyetlen akkordot tartalmazó sor vagy szöveg is; szövegként hagytam meg.';
+  }
+
+  @override
+  String importNoticeBracketNotAChord(int line, String text) {
+    return '$line. sor: a „[$text]” nem akkord; szövegként hagytam meg.';
+  }
+
+  @override
+  String get importNoticeTimewiseScore =>
+      'Ez a fájl score-timewise felépítésű, ezért az ütemek csoportosítása hibás lehet. A tiszta importáláshoz mentsd score-partwise formátumban.';
+
+  @override
+  String get importNoticeNoNotes => 'A fájlban nem találtam hangokat.';
+
+  @override
+  String importNoticeExtraVoicesKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'A dallam mellett $count szólamot megtartottam — csak a dallam van lekottázva. A szólamot az ének beállításaiban választhatod ki.',
+      one:
+          'A dallam mellett 1 szólamot megtartottam — csak a dallam van lekottázva. A szólamot az ének beállításaiban választhatod ki.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeGraceNotesSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count díszítőhangot kihagytam: a kotta nem ismer díszítőhangot.',
+      one: '1 díszítőhangot kihagytam: a kotta nem ismer díszítőhangot.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeChordsReduced(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count akkordot a legfelső hangjára egyszerűsítettem; az alsó hangokat külön szólamként megtartottam.',
+      one:
+          '1 akkordot a legfelső hangjára egyszerűsítettem; az alsó hangokat külön szólamként megtartottam.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeDoubleAccidentals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count kettős módosítójelet egyetlen keresztre vagy bére közelítettem — a kotta csak egyet tárol.',
+      one:
+          '1 kettős módosítójelet egyetlen keresztre vagy bére közelítettem — a kotta csak egyet tárol.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeDoubleDots(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count kétszer pontozott hangot egyszer pontozottként importáltam.',
+      one: '1 kétszer pontozott hangot egyszer pontozottként importáltam.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeUnsupportedNoteValues(int count, String text) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'A(z) $text hangértékeket nem tudom kirajzolni, ezért a legközelebbi rajzolhatókra közelítettem.',
+      one:
+          'A(z) $text hangértéket nem tudom kirajzolni, ezért a legközelebbi rajzolhatóra közelítettem.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNoticeEmptyXmlInput => 'A MusicXML bemenet üres.';
+
+  @override
+  String importNoticeInvalidXml(String text) {
+    return 'Ez a fájl nem érvényes XML: $text';
+  }
+
+  @override
+  String get importNoticeContainerManifest =>
+      'Ez egy .mxl fájl belső tartalomjegyzéke, nem kotta. Magát az .mxl fájlt nyisd meg.';
+
+  @override
+  String get importNoticeEmptyMxlInput => 'Az .mxl bemenet üres.';
+
+  @override
+  String importNoticeUnreadableArchive(String text) {
+    return 'Ez nem olvasható .mxl archívum: $text';
+  }
+
+  @override
+  String get importNoticeNoScoreInArchive =>
+      'Az .mxl archívum nem tartalmaz MusicXML kottát.';
 }
