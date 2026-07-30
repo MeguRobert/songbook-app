@@ -303,4 +303,45 @@ void main() {
       expect(router.state.uri.path, AppRoutes.home);
     });
   });
+
+  /// A pasted link has nothing beneath it to pop to, so the affordance that
+  /// normally gets you out — the app bar's implied back arrow — is not there.
+  /// Without this the only way out of a shared song is to edit the URL, and a
+  /// shared *user* song, which lives only on the sender's device, strands the
+  /// reader on "Song not found".
+  group('a pasted song link is not a dead end', () {
+    testWidgets('the song offers a way back to the list', (tester) async {
+      final router = await pumpAppAt(tester, '/song/user:abc',
+          userSongs: [savedSong(ref: 'abc')]);
+      expect(router.canPop(), isFalse,
+          reason: 'a pasted link has nothing beneath it');
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(router.state.uri.path, AppRoutes.home);
+      expect(find.byType(SongListScreen), findsOneWidget);
+    });
+
+    testWidgets('a song that is not on this device offers one too',
+        (tester) async {
+      final router = await pumpAppAt(tester, '/song/user:gone');
+      expect(find.text('Song not found'), findsWidgets);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(router.state.uri.path, AppRoutes.home);
+    });
+
+    testWidgets('presentation mode can be closed', (tester) async {
+      final router = await pumpAppAt(tester, '/presentation/user:abc',
+          userSongs: [savedSong(ref: 'abc')]);
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(router.state.uri.path, AppRoutes.home);
+    });
+  });
 }
