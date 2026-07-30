@@ -54,6 +54,23 @@ final _slots = RegExp(
   r"""|(?:tooltip|label|title|hintText|labelText|semanticsLabel)\s*:\s*'((?:[^'\\]|\\.)*)'""",
 );
 
+/// A domain service handing a *sentence* to something that will be displayed.
+///
+/// The other direction again, for the half of the app the sweep above cannot
+/// see. `ChordSheetParser` and `MusicXmlImporter` reach the user too — their
+/// warnings and errors are printed on the import screen — but they are pure
+/// domain code with no `BuildContext`, so they used to build their own English.
+/// Nothing failed: `warnings.add('...')` is not a widget slot, so both guards
+/// above looked straight past it, which is how these outlasted every earlier
+/// extraction pass and stayed English while all 21 screens were translated.
+///
+/// They report `ImportNotice` codes now. This is what keeps it that way — and
+/// it sweeps `lib/` rather than a list, so a *third* service written the old way
+/// fails here instead of shipping.
+final _prose = RegExp(
+  r"""(?:warnings\.add|notices\.add|MusicXmlImportException)\(\s*'""",
+);
+
 /// Looks like interface prose rather than a key name, a font family or a symbol.
 bool _looksLikeSentence(String value) {
   final text = value.trim();
@@ -130,6 +147,36 @@ void main() {
       reason: 'either translate these and add the file to _localised, or — if '
           'the string is not interface text — add it to _allowed with a '
           'reason:\n${unclaimed.join('\n')}',
+    );
+  });
+
+  test('no importer or parser message is written as prose', () {
+    final offenders = <String>[];
+
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      final path = entity.path.replaceAll(r'\', '/');
+      if (path.startsWith('lib/l10n/')) continue;
+
+      final lines = entity.readAsLinesSync();
+      // Whole-file: the literal and the call routinely sit on separate lines.
+      final source = lines
+          .map((l) => l.trimLeft().startsWith('//') ? '' : l)
+          .join('\n');
+      for (final match in _prose.allMatches(source)) {
+        final line = source.substring(0, match.start).split('\n').length;
+        offenders.add('$path:$line  ${match.group(0)!.trim()}…');
+      }
+    }
+
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'a warning or an error a user will read must be an ImportNotice '
+          'code, not a String — the service raising it has no BuildContext, so '
+          'anything it writes is English on a Hungarian screen. Add a code to '
+          'ImportNoticeCode and a message to all three ARBs '
+          'instead:\n${offenders.join('\n')}',
     );
   });
 }

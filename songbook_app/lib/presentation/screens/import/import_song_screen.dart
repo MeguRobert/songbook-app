@@ -13,9 +13,11 @@ import '../../../data/models/verse.dart';
 import '../../../domain/services/chord_carry.dart';
 import '../../../domain/services/chord_sheet_exporter.dart';
 import '../../../domain/services/chord_sheet_parser.dart';
+import '../../../domain/services/import_notice.dart';
 import '../../../domain/services/musicxml_importer.dart';
 import '../../../domain/services/photo_import_service.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../l10n/import_notice_text.dart';
 import '../../providers/book_provider.dart';
 import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
@@ -46,7 +48,11 @@ class _PendingImport {
   final String? title;
   final String? key;
   final String? timeSignature;
-  final List<String> warnings;
+
+  /// What the importer or parser found, as codes. Turned into words at the point
+  /// of display, so they come out in the language the screen is being read in
+  /// now — the same reason [source] is a kind rather than a ready-made label.
+  final List<ImportNotice> warnings;
 
   /// Shown so it is obvious which source produced what is on screen.
   final _ImportSource source;
@@ -475,10 +481,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
         fileName: file.name,
       ));
     } on MusicXmlImportException catch (e) {
-      // Still English: the importer is a pure domain service and builds its own
-      // messages. Giving it translations means structured codes rather than
-      // prose, which is a bigger change than this pass. See the handoff.
-      setState(() => _fileError = e.message);
+      setState(() => _fileError = l10n.importNoticeText(e.notice));
     } catch (e) {
       // A malformed file must not take the screen down with it — the user
       // still has a pasted draft in progress they would otherwise lose.
@@ -1043,21 +1046,20 @@ class _BookFieldState extends ConsumerState<_BookField> {
 /// importer guessed or dropped something, and that is far easier to judge here
 /// than after the song is saved.
 class _Warnings extends StatelessWidget {
-  final List<String> warnings;
+  final List<ImportNotice> warnings;
 
   const _Warnings({required this.warnings});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return _Notice(
       icon: Icons.info_outline,
       background: theme.colorScheme.secondaryContainer,
       foreground: theme.colorScheme.onSecondaryContainer,
-      title: AppLocalizations.of(context).importWarningsTitle(warnings.length),
-      // The warnings themselves are still English: they are built by the pure
-      // parser/importer services, which have no access to a BuildContext.
-      text: warnings.map((w) => '• $w').join('\n'),
+      title: l10n.importWarningsTitle(warnings.length),
+      text: warnings.map((w) => '• ${l10n.importNoticeText(w)}').join('\n'),
     );
   }
 }

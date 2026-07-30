@@ -110,6 +110,16 @@ void main() {
     // Wording adapts to the count ('this line' / 'these lines'), so match
     // the invariant: the warning block is on screen.
     expect(find.textContaining('Check'), findsWidgets);
+
+    // And the warning itself, run through the localised formatter. The parser
+    // reports a CODE now, so a screen that forgot to format one would show
+    // nothing at all here rather than English — which the heading above cannot
+    // tell you, since it was already translated.
+    expect(
+      find.textContaining(
+          'Line 1: "A" could be a one-chord line or a lyric; kept as a lyric.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Hungarian lyrics are not eaten as chords', (tester) async {

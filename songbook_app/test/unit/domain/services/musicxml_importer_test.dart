@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/data/models/notation.dart';
+import 'package:songbook_app/domain/services/import_notice.dart';
 import 'package:songbook_app/domain/services/musicxml_importer.dart';
 
 /// Wraps [body] in the boilerplate every fixture needs, so each test only
@@ -278,7 +279,14 @@ void main() {
   </part>'''));
 
       expect(beatsOf(result.notation).single.duration, NoteDuration.sixteenth);
-      expect(result.warnings.join(), contains('32nd'));
+      // The MusicXML type name itself is carried as text, because it is what the
+      // reader has to go and look at in the source file. The sentence around it
+      // is the presentation layer's business.
+      expect(
+        result.warnings,
+        contains(const ImportNotice(ImportNoticeCode.unsupportedNoteValues,
+            count: 1, text: '32nd')),
+      );
     });
   });
 
@@ -422,9 +430,11 @@ void main() {
     test('a warning names how many extra voices were found', () {
       final warnings = importer.importXml(closedScore).warnings;
 
-      expect(warnings, isNotEmpty);
-      expect(warnings.first, contains('3 additional voices'));
-      expect(warnings.first, contains('additionalVoices'));
+      expect(
+        warnings,
+        contains(
+            const ImportNotice(ImportNoticeCode.extraVoicesKept, count: 3)),
+      );
     });
 
     test('four separate parts reduce to the first part', () {
@@ -488,7 +498,11 @@ void main() {
           ['E4', 'R'],
         ],
       );
-      expect(result.warnings.join(), contains('reduced to the top note'));
+      expect(
+        result.warnings,
+        contains(const ImportNotice(ImportNoticeCode.chordsReducedToTopNote,
+            count: 1)),
+      );
     });
 
     test('multiple lyric lines stack into syllables and separate Verses', () {
@@ -635,17 +649,22 @@ void main() {
       expect(
         () => importer.importCompressed(zip({'META-INF/container.xml': '<c/>'})),
         throwsA(isA<MusicXmlImportException>().having(
-          (e) => e.message,
-          'message',
-          contains('no MusicXML score entry'),
+          (e) => e.code,
+          'code',
+          ImportNoticeCode.noScoreInArchive,
         )),
       );
     });
 
     test('bytes that are not a zip report a clean error', () {
+      // The decoder's own complaint is the only clue to WHY a file will not
+      // open, so it survives as an argument on the notice rather than baked into
+      // a sentence — which is what makes the sentence translatable at all.
       expect(
         () => importer.importCompressed(utf8.encode('this is not a zip')),
-        throwsA(isA<MusicXmlImportException>()),
+        throwsA(isA<MusicXmlImportException>()
+            .having((e) => e.code, 'code', ImportNoticeCode.unreadableArchive)
+            .having((e) => e.notice.text, 'text', isNotEmpty)),
       );
     });
 
@@ -653,9 +672,9 @@ void main() {
       expect(
         () => importer.importCompressed(const []),
         throwsA(isA<MusicXmlImportException>().having(
-          (e) => e.message,
-          'message',
-          contains('empty'),
+          (e) => e.code,
+          'code',
+          ImportNoticeCode.emptyMxlInput,
         )),
       );
     });
@@ -666,9 +685,9 @@ void main() {
       expect(
         () => importer.importXml('   '),
         throwsA(isA<MusicXmlImportException>().having(
-          (e) => e.message,
-          'message',
-          contains('empty'),
+          (e) => e.code,
+          'code',
+          ImportNoticeCode.emptyXmlInput,
         )),
       );
     });
@@ -677,11 +696,9 @@ void main() {
         () {
       expect(
         () => importer.importXml('<score-partwise><part id="P1">'),
-        throwsA(isA<MusicXmlImportException>().having(
-          (e) => e.message,
-          'message',
-          contains('not valid XML'),
-        )),
+        throwsA(isA<MusicXmlImportException>()
+            .having((e) => e.code, 'code', ImportNoticeCode.invalidXml)
+            .having((e) => e.notice.text, 'text', isNotEmpty)),
       );
     });
 
@@ -691,7 +708,8 @@ void main() {
       expect(result.notation.verses.single.measures, isEmpty);
       expect(result.melody, isNull);
       expect(result.verses, isEmpty);
-      expect(result.warnings, contains('No notes were found in the file.'));
+      expect(result.warnings,
+          contains(const ImportNotice(ImportNoticeCode.noNotes)));
     });
 
     test('a score without key or time falls back but reports them as absent',
@@ -736,16 +754,20 @@ void main() {
   </part>'''));
 
       expect(beatsOf(result.notation).map((b) => b.pitch), ['G4']);
-      expect(result.warnings.join(), contains('grace note'));
+      expect(
+        result.warnings,
+        contains(
+            const ImportNotice(ImportNoticeCode.graceNotesSkipped, count: 1)),
+      );
     });
 
     test('an .mxl container manifest passed as a score is rejected clearly', () {
       expect(
         () => importer.importXml('<container><rootfiles/></container>'),
         throwsA(isA<MusicXmlImportException>().having(
-          (e) => e.message,
-          'message',
-          contains('importCompressed'),
+          (e) => e.code,
+          'code',
+          ImportNoticeCode.containerManifestNotScore,
         )),
       );
     });
