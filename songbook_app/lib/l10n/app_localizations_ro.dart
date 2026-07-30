@@ -176,7 +176,7 @@ class AppLocalizationsRo extends AppLocalizations {
   String get sectionCapo => 'CAPODASTRU';
 
   @override
-  String get sectionAutoScroll => 'DERULARE AUTOMATĂ';
+  String get sectionAutoScroll => 'DERULARE';
 
   @override
   String get presetSheetMusic => 'Partitură';
@@ -221,7 +221,7 @@ class AppLocalizationsRo extends AppLocalizations {
   String get autoScrollSpeedPerSong => 'Rețin viteza pentru fiecare cântec';
 
   @override
-  String get autoScrollNotInSheetMusic => 'nu în vizualizarea partiturii';
+  String get autoScrollNotInSheetMusic => 'doar cu acorduri';
 
   @override
   String get speedSlowest => 'Cea mai lentă';

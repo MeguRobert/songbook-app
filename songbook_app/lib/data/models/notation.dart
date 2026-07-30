@@ -434,6 +434,9 @@ class SongNotation {
     if (all == null || index < 1 || index > all.length) return this;
 
     final verse = verses.isEmpty ? null : verses.first;
+    final structure = verse?.measures ?? const <NotatedMeasure>[];
+    final chosen = all[index - 1].measures;
+
     return SongNotation(
       originalKey: originalKey,
       timeSignature: timeSignature,
@@ -441,7 +444,36 @@ class SongNotation {
       verses: [
         NotatedVerse(
           number: verse?.number ?? 1,
-          measures: all[index - 1].measures,
+          measures: [
+            for (var i = 0; i < chosen.length; i++)
+              // A repeat sign, a volta bracket and a system break belong to the
+              // BAR, not to the line singing it: every voice of a four-part
+              // score shares them. Only the engraved stream is given them by the
+              // importer, so without this the bass arrived with beats and
+              // nothing else — no repeats, no voltas, and systems broken
+              // somewhere different from the melody's.
+              //
+              // Built directly rather than with copyWith: the melody's bar has
+              // to WIN, and `copyWith(volta: null)` cannot clear a value — it
+              // falls through the `??` and keeps the old one. Every field of
+              // NotatedMeasure is spelled out here on purpose, so a field added
+              // to the model is a compile error in this list rather than one the
+              // projection silently drops.
+              if (i < structure.length)
+                NotatedMeasure(
+                  beats: chosen[i].beats,
+                  repeatStart: structure[i].repeatStart,
+                  repeatEnd: structure[i].repeatEnd,
+                  lineBreakAfter: structure[i].lineBreakAfter,
+                  isPickup: structure[i].isPickup,
+                  volta: structure[i].volta,
+                )
+              else
+                // A voice longer than the melody keeps its extra bars. The
+                // importer pads voices to match, but a hand-edited payload need
+                // not, and dropping bars would lose notes.
+                chosen[i],
+          ],
         ),
       ],
       pickup: pickup,

@@ -137,5 +137,54 @@ void main() {
       expect(satb().engravedAs(9), satb());
       expect(satb().engravedAs(-1), satb());
     });
+
+    test('the bar structure of the score comes with it', () {
+      // A repeat sign, a volta bracket and a system break belong to the BAR, not
+      // to the line singing it — every voice of a four-part score shares them.
+      // Only the engraved stream gets them from the importer, so a projected
+      // voice arrives with beats and nothing else: switching to the bass dropped
+      // the repeats and the voltas off the staff entirely, and re-broke the
+      // systems somewhere different from the melody's. Caught in a browser.
+      final stored = SongNotation(
+        originalKey: 'C',
+        timeSignature: '4/4',
+        verses: [
+          NotatedVerse(number: 1, measures: [
+            NotatedMeasure(beats: [
+              const NotatedBeat(pitch: 'C5', duration: NoteDuration.whole),
+            ], repeatStart: true),
+            NotatedMeasure(beats: [
+              const NotatedBeat(pitch: 'D5', duration: NoteDuration.whole),
+            ], volta: 1, repeatEnd: true, lineBreakAfter: true),
+          ]),
+        ],
+        voices: [
+          NotatedVoice(name: 'Bass', measures: [bar('C3'), bar('D3')]),
+        ],
+      );
+
+      final bass = stored.engravedAs(1).verses.single.measures;
+
+      expect(bass.map((m) => m.beats.single.pitch), ['C3', 'D3']);
+      expect(bass[0].repeatStart, isTrue);
+      expect(bass[1].repeatEnd, isTrue);
+      expect(bass[1].volta, 1);
+      expect(bass[1].lineBreakAfter, isTrue);
+    });
+
+    test('a voice with more bars than the melody keeps its extra ones', () {
+      // Defensive: the importer pads voices to the melody's length, but a
+      // hand-edited payload need not, and dropping bars would lose notes.
+      final stored = SongNotation(
+        originalKey: 'C',
+        timeSignature: '4/4',
+        verses: [NotatedVerse(number: 1, measures: [bar('C5')])],
+        voices: [
+          NotatedVoice(name: 'Bass', measures: [bar('C3'), bar('D3')]),
+        ],
+      );
+
+      expect(stored.engravedAs(1).verses.single.measures, hasLength(2));
+    });
   });
 }

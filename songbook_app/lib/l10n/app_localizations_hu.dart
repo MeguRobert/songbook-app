@@ -176,7 +176,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get sectionCapo => 'KAPODASZTER';
 
   @override
-  String get sectionAutoScroll => 'AUTOMATIKUS GÖRGETÉS';
+  String get sectionAutoScroll => 'GÖRGETÉS';
 
   @override
   String get presetSheetMusic => 'Kotta';
@@ -221,7 +221,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get autoScrollSpeedPerSong => 'A sebességet énekenként megjegyzem';
 
   @override
-  String get autoScrollNotInSheetMusic => 'a kotta nézetben nem működik';
+  String get autoScrollNotInSheetMusic => 'csak akkord nézetben';
 
   @override
   String get speedSlowest => 'Leglassabb';
