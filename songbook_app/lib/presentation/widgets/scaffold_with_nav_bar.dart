@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../router/app_router.dart';
 
 /// Scaffold with bottom navigation bar for main app screens
@@ -14,33 +15,35 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _calculateSelectedIndex(context),
         onDestinationSelected: (index) => _onItemTapped(index, context),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.library_music_outlined),
-            selectedIcon: Icon(Icons.library_music),
-            label: 'Songs',
+            icon: const Icon(Icons.library_music_outlined),
+            selectedIcon: const Icon(Icons.library_music),
+            label: l10n.navSongs,
           ),
           // Promoted from a cramped app-bar icon on the song list. Playing a
           // setlist is a core service workflow, not a detail of browsing.
           NavigationDestination(
-            icon: Icon(Icons.queue_music_outlined),
-            selectedIcon: Icon(Icons.queue_music),
-            label: 'Setlists',
+            icon: const Icon(Icons.queue_music_outlined),
+            selectedIcon: const Icon(Icons.queue_music),
+            label: l10n.navSetlists,
           ),
           NavigationDestination(
-            icon: Icon(Icons.favorite_outline),
-            selectedIcon: Icon(Icons.favorite),
-            label: 'Favorites',
+            icon: const Icon(Icons.favorite_outline),
+            selectedIcon: const Icon(Icons.favorite),
+            label: l10n.navFavorites,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l10n.navSettings,
           ),
         ],
       ),

@@ -1,0 +1,42 @@
+{
+  "@@locale": "ro",
+
+  "appTitle": "Carte de cântece",
+
+  "navSongs": "Cântece",
+  "navSetlists": "Liste de cântece",
+  "navFavorites": "Favorite",
+  "navSettings": "Setări",
+
+  "actionCancel": "Anulează",
+  "actionDelete": "Șterge",
+  "actionSave": "Salvează",
+  "actionClear": "Golește",
+  "actionRetry": "Reîncearcă",
+
+  "searchHint": "Caută după titlu, număr, referință sau versuri…",
+  "searchTooltip": "Căutare",
+  "searchClose": "Închide căutarea",
+  "searchRecent": "Căutări recente",
+  "searchNoResults": "Niciun cântec găsit",
+  "searchScope": "Am căutat în titluri, numere, referințe și versuri",
+  "searchLyricsFallback": "{count, plural, =1{Niciun titlu potrivit — găsit în versurile unui cântec} few{Niciun titlu potrivit — găsit în versurile a {count} cântece} other{Niciun titlu potrivit — găsit în versurile a {count} de cântece}}",
+  "searchNoTagMatch": "Niciun cântec nu corespunde etichetelor selectate și căutării",
+
+  "booksTooltip": "Cărți de cântece",
+  "tagsTooltip": "Etichete",
+  "addSong": "Adaugă un cântec",
+  "backToAllSongs": "Înapoi la toate cântecele",
+  "clearTags": "Șterge etichetele",
+
+  "settingsTitle": "Setări",
+  "settingsLanguage": "Limbă",
+  "settingsLanguageSystem": "Limba dispozitivului",
+  "languageHungarian": "Magyar",
+  "languageRomanian": "Română",
+  "languageEnglish": "English",
+
+  "songNotFound": "Cântecul nu a fost găsit",
+  "loading": "Se încarcă…",
+  "errorLoadingSongs": "Nu am putut încărca cântecele"
+}

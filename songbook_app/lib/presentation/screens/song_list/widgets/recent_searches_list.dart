@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../providers/recent_searches_provider.dart';
 
 /// Queries the user has searched before, offered while the search field is open
@@ -17,6 +18,7 @@ class RecentSearchesList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final searches = ref.watch(recentSearchesProvider);
     if (searches.isEmpty) return const SizedBox.shrink();
 
@@ -28,7 +30,7 @@ class RecentSearchesList extends ConsumerWidget {
           child: Row(
             children: [
               Text(
-                'Recent searches',
+                l10n.searchRecent,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -37,7 +39,7 @@ class RecentSearchesList extends ConsumerWidget {
               TextButton(
                 onPressed: () =>
                     ref.read(recentSearchesProvider.notifier).clear(),
-                child: const Text('Clear'),
+                child: Text(l10n.actionClear),
               ),
             ],
           ),

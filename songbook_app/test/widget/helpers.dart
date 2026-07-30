@@ -9,6 +9,7 @@ import 'package:songbook_app/data/models/lyric_line.dart';
 import 'package:songbook_app/data/models/song.dart';
 import 'package:songbook_app/data/models/verse.dart';
 import 'package:songbook_app/data/repositories/song_repository.dart';
+import 'package:songbook_app/l10n/app_localizations.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
 
 /// Builds a test song with one structured verse (with chords) and one
@@ -72,16 +73,50 @@ Future<ProviderContainer> makeAppContainer({
   return container;
 }
 
+/// Localisation wiring for the tests that build their own [MaterialApp] rather
+/// than going through [pumpScreen] — a real router, or a custom MediaQuery.
+///
+/// Without the delegates `AppLocalizations.of` throws, which is a failure about
+/// the harness rather than about anything under test.
+const localizationsForTest = (
+  delegates: AppLocalizations.localizationsDelegates,
+  locales: AppLocalizations.supportedLocales,
+  locale: Locale('en'),
+);
+
+/// A localised [MaterialApp.router], for tests that need real navigation.
+Widget localizedRouterApp(RouterConfig<Object> router) => MaterialApp.router(
+      routerConfig: router,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('en'),
+    );
+
+/// A localised [MaterialApp] around a single [home] widget.
+Widget localizedApp(Widget home) => MaterialApp(
+      home: home,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('en'),
+    );
+
 /// Pumps [child] inside a ProviderScope + MaterialApp with a mocked
 /// SharedPreferences (seeded with [prefs]) and any extra [overrides].
 /// [themeMode] mounts the app's REAL light/dark themes rather than Material's
 /// defaults, for the screens whose colours are derived from them.
+///
+/// [locale] defaults to English so the assertions in these tests can be written
+/// in one language; pass another to check a translation actually reaches the
+/// screen. Every pumped widget gets the localisation delegates either way —
+/// without them `AppLocalizations.of` throws, which is not a failure any test
+/// here is about.
 Future<void> pumpScreen(
   WidgetTester tester,
   Widget child, {
   Map<String, Object> prefs = const {},
   List<Override> overrides = const [],
   ThemeMode? themeMode,
+  Locale? locale = const Locale('en'),
 }) async {
   SharedPreferences.setMockInitialValues(prefs);
   final sharedPreferences = await SharedPreferences.getInstance();
@@ -93,11 +128,19 @@ Future<void> pumpScreen(
         ...overrides,
       ],
       child: themeMode == null
-          ? MaterialApp(home: child)
+          ? MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              locale: locale,
+              home: child,
+            )
           : MaterialApp(
               theme: createLightTheme(),
               darkTheme: createDarkTheme(),
               themeMode: themeMode,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              locale: locale,
               home: child,
             ),
     ),

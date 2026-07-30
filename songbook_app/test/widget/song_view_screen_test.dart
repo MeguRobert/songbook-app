@@ -248,7 +248,7 @@ void main() {
 
     Widget appFor(SongId songId) => UncontrolledProviderScope(
           container: container,
-          child: MaterialApp(home: SongViewScreen(songId: songId)),
+          child: localizedApp(SongViewScreen(songId: songId)),
         );
 
     Future<void> setUpContainer({

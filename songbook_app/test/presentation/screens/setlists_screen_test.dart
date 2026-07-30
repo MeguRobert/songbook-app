@@ -5,11 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/screens/setlists/setlists_screen.dart';
 
+import '../../widget/helpers.dart';
+
 Future<void> pumpScreen(WidgetTester tester, SharedPreferences prefs) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      child: const MaterialApp(home: SetlistsScreen()),
+      child: localizedApp(const SetlistsScreen()),
     ),
   );
   await tester.pumpAndSettle();

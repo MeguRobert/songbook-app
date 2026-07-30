@@ -1,0 +1,42 @@
+{
+  "@@locale": "hu",
+
+  "appTitle": "Énekeskönyv",
+
+  "navSongs": "Énekek",
+  "navSetlists": "Énekrendek",
+  "navFavorites": "Kedvencek",
+  "navSettings": "Beállítások",
+
+  "actionCancel": "Mégsem",
+  "actionDelete": "Törlés",
+  "actionSave": "Mentés",
+  "actionClear": "Törlés",
+  "actionRetry": "Újra",
+
+  "searchHint": "Keresés cím, szám, hivatkozás vagy szöveg szerint…",
+  "searchTooltip": "Keresés",
+  "searchClose": "Keresés bezárása",
+  "searchRecent": "Korábbi keresések",
+  "searchNoResults": "Nincs találat",
+  "searchScope": "A keresés a címekre, számokra, hivatkozásokra és a szövegre is kiterjedt",
+  "searchLyricsFallback": "{count, plural, =1{A címek között nincs találat — 1 ének szövegében megtaláltam} other{A címek között nincs találat — {count} ének szövegében megtaláltam}}",
+  "searchNoTagMatch": "Egy ének sem felel meg a kiválasztott címkéknek és a keresésnek",
+
+  "booksTooltip": "Énekeskönyvek",
+  "tagsTooltip": "Címkék",
+  "addSong": "Ének hozzáadása",
+  "backToAllSongs": "Vissza az összes énekhez",
+  "clearTags": "Címkék törlése",
+
+  "settingsTitle": "Beállítások",
+  "settingsLanguage": "Nyelv",
+  "settingsLanguageSystem": "A készülék nyelve",
+  "languageHungarian": "Magyar",
+  "languageRomanian": "Română",
+  "languageEnglish": "English",
+
+  "songNotFound": "Az ének nem található",
+  "loading": "Betöltés…",
+  "errorLoadingSongs": "Nem sikerült betölteni az énekeket"
+}

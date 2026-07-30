@@ -94,7 +94,7 @@ void main() {
 
       await tester.pumpWidget(UncontrolledProviderScope(
         container: container,
-        child: MaterialApp.router(routerConfig: router),
+        child: localizedRouterApp(router),
       ));
       await tester.pumpAndSettle();
 

@@ -15,6 +15,12 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # UI translated to Hungarian, Romanian and English. The songs are Hungarian;
+  # the interface was not, which is the mismatch this fixes.
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+
   cupertino_icons: ^1.0.8
 
   # State management
@@ -58,6 +64,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Generates AppLocalizations from lib/l10n/*.arb — see l10n.yaml.
+  generate: true
 
   assets:
     - assets/sheet_music/

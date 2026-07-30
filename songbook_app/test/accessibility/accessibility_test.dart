@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:songbook_app/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:songbook_app/data/models/song.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
@@ -44,6 +45,9 @@ Future<void> pumpScreen(
         songsProvider.overrideWith((ref) async => fixtureSongs),
       ],
       child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: MediaQuery(
           data: MediaQueryData(textScaler: textScaler),
           child: child,

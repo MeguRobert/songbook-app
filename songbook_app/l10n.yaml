@@ -1,0 +1,12 @@
+# Localisation codegen.
+#
+# `output-dir: lib/l10n` puts the generated AppLocalizations in lib/ as ordinary
+# source rather than a hidden package under .dart_tool. That matters here: the
+# analyzer sees it, CI needs no extra generate step before `flutter analyze`, and
+# the import is a normal relative one rather than magic.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-dir: lib/l10n
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

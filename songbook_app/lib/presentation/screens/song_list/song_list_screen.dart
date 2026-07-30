@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../router/app_router.dart';
 import '../../providers/book_provider.dart';
 import '../../providers/search_provider.dart';
@@ -60,13 +61,14 @@ class _SongListScreenState extends ConsumerState<SongListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final selectedBook = ref.watch(selectedBookProvider);
     final searchState = ref.watch(searchProvider);
 
     return Scaffold(
       appBar: SearchableAppBar(
         key: _appBarKey,
-        title: selectedBook ?? 'Songbook',
+        title: selectedBook ?? l10n.appTitle,
         query: searchState.query,
         onQueryChanged: (q) => ref.read(searchProvider.notifier).search(q),
         onSearchOpened: () => setState(() => _searchOpen = true),
@@ -81,7 +83,7 @@ class _SongListScreenState extends ConsumerState<SongListScreen> {
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () =>
                     ref.read(selectedBookProvider.notifier).clear(),
-                tooltip: 'Back to all songs',
+                tooltip: l10n.backToAllSongs,
               )
             : null,
         actions: [
@@ -90,14 +92,14 @@ class _SongListScreenState extends ConsumerState<SongListScreen> {
               selectedBook != null ? Icons.menu_book : Icons.menu_book_outlined,
             ),
             onPressed: () => showBookFilterSheet(context),
-            tooltip: 'Books',
+            tooltip: l10n.booksTooltip,
           ),
           IconButton(
             icon: Icon(
               searchState.hasTags ? Icons.sell : Icons.sell_outlined,
             ),
             onPressed: () => showTagFilterSheet(context),
-            tooltip: 'Tags',
+            tooltip: l10n.tagsTooltip,
           ),
         ],
       ),
@@ -106,7 +108,7 @@ class _SongListScreenState extends ConsumerState<SongListScreen> {
       // a FAB is for.
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push(AppRoutes.importSong),
-        tooltip: 'Add a song',
+        tooltip: l10n.addSong,
         child: const Icon(Icons.add),
       ),
       body: Column(
@@ -145,6 +147,7 @@ class _ActiveTagChips extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final tags = ref.watch(searchProvider).activeTags;
 
     return Container(
@@ -170,7 +173,7 @@ class _ActiveTagChips extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => ref.read(searchProvider.notifier).clearTags(),
-            child: const Text('Clear tags'),
+            child: Text(l10n.clearTags),
           ),
         ],
       ),
@@ -184,6 +187,7 @@ class _BrowseList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final songsAsync = ref.watch(filteredSongsProvider);
     final selectedBook = ref.watch(selectedBookProvider);
 
@@ -201,7 +205,7 @@ class _BrowseList extends ConsumerWidget {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => _ErrorState(
-        message: 'Error loading songs',
+        message: l10n.errorLoadingSongs,
         error: error,
         onRetry: () => ref.invalidate(songsProvider),
       ),
@@ -218,6 +222,7 @@ class _SearchResults extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     if (state.isSearching) {
       return const Center(child: CircularProgressIndicator());
@@ -231,15 +236,15 @@ class _SearchResults extends ConsumerWidget {
             Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'No songs found',
+              l10n.searchNoResults,
               style: theme.textTheme.titleMedium
                   ?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
               state.hasTags
-                  ? 'No songs match the selected tags and query'
-                  : 'Searched titles, numbers, references and lyrics',
+                  ? l10n.searchNoTagMatch
+                  : l10n.searchScope,
               style:
                   theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
               textAlign: TextAlign.center,
@@ -270,8 +275,7 @@ class _SearchResults extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'No title match — found in the lyrics of $resultCount '
-                    '${resultCount == 1 ? 'song' : 'songs'}',
+                    l10n.searchLyricsFallback(resultCount),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSecondaryContainer,
                     ),
@@ -385,7 +389,9 @@ class _ErrorState extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+          ElevatedButton(
+              onPressed: onRetry,
+              child: Text(AppLocalizations.of(context).actionRetry)),
         ],
       ),
     );

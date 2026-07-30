@@ -7,6 +7,8 @@ import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
 import 'package:songbook_app/presentation/screens/import/import_song_screen.dart';
 
+import 'helpers.dart';
+
 /// Saving, exercised through a REAL GoRouter.
 ///
 /// The plain widget harness has no router, so every earlier test stopped short
@@ -31,7 +33,7 @@ void main() {
 
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(routerConfig: router),
+      child: localizedRouterApp(router),
     ));
     await tester.pumpAndSettle();
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
+
 /// An [AppBar] whose title area morphs into a search field in place.
 ///
 /// Search used to be a separate pushed route, which meant leaving the song
@@ -38,7 +40,9 @@ class SearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// states, and only this widget knows which one is in effect.
   final VoidCallback? onSearchOpened;
 
-  final String hintText;
+  /// Nullable so the default can be a *translated* string: a const default in
+  /// the constructor cannot reach the localisations.
+  final String? hintText;
 
   const SearchableAppBar({
     required this.title,
@@ -48,7 +52,7 @@ class SearchableAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.onSearchOpened,
     this.leading,
     this.actions = const [],
-    this.hintText = 'Search title, number, reference or lyrics…',
+    this.hintText,
     super.key,
   });
 
@@ -151,7 +155,7 @@ class SearchableAppBarState extends State<SearchableAppBar>
           ? IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: close,
-              tooltip: 'Close search',
+              tooltip: AppLocalizations.of(context).searchClose,
             )
           : widget.leading,
       titleSpacing: _isOpen ? 0 : null,
@@ -179,7 +183,7 @@ class SearchableAppBarState extends State<SearchableAppBar>
                     widthFactor: t,
                     child: Opacity(
                       opacity: t,
-                      child: _buildField(theme),
+                      child: _buildField(context, theme),
                     ),
                   ),
                 ),
@@ -197,21 +201,21 @@ class SearchableAppBarState extends State<SearchableAppBar>
                     widget.onQueryChanged('');
                     _focusNode.requestFocus();
                   },
-                  tooltip: 'Clear',
+                  tooltip: AppLocalizations.of(context).actionClear,
                 ),
             ]
           : [
               IconButton(
                 icon: const Icon(Icons.search),
                 onPressed: open,
-                tooltip: 'Search',
+                tooltip: AppLocalizations.of(context).searchTooltip,
               ),
               ...widget.actions,
             ],
     );
   }
 
-  Widget _buildField(ThemeData theme) {
+  Widget _buildField(BuildContext context, ThemeData theme) {
     return TextField(
       controller: _fieldController,
       focusNode: _focusNode,
@@ -219,7 +223,7 @@ class SearchableAppBarState extends State<SearchableAppBar>
       textInputAction: TextInputAction.search,
       style: theme.textTheme.titleMedium,
       decoration: InputDecoration(
-        hintText: widget.hintText,
+        hintText: widget.hintText ?? AppLocalizations.of(context).searchHint,
         border: InputBorder.none,
         isCollapsed: true,
         hintStyle: theme.textTheme.titleMedium?.copyWith(

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/view_config.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../providers/app_info_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -13,15 +15,28 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final themeMode = ref.watch(themeModeProvider);
     final settings = ref.watch(settingsProvider);
+    final locale = ref.watch(localeProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(l10n.settingsTitle),
       ),
       body: ListView(
         children: [
+          // Language first: it changes every other label on this screen, so
+          // burying it under Appearance would mean hunting for it in a language
+          // you cannot read.
+          _buildSectionHeader(context, l10n.settingsLanguage),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(l10n.settingsLanguage),
+            subtitle: Text(_languageLabel(l10n, locale)),
+            onTap: () => _showLanguageDialog(context, ref, locale),
+          ),
+
           // Appearance section
           _buildSectionHeader(context, 'Appearance'),
           ListTile(
@@ -102,6 +117,51 @@ class SettingsScreen extends ConsumerWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
         ),
+      ),
+    );
+  }
+
+  /// The chosen language, named in its own language so it stays recognisable
+  /// even when the interface is currently in one the reader does not know.
+  static String _languageLabel(AppLocalizations l10n, Locale? locale) {
+    return switch (locale?.languageCode) {
+      'hu' => l10n.languageHungarian,
+      'ro' => l10n.languageRomanian,
+      'en' => l10n.languageEnglish,
+      _ => l10n.settingsLanguageSystem,
+    };
+  }
+
+  void _showLanguageDialog(
+      BuildContext context, WidgetRef ref, Locale? current) {
+    final l10n = AppLocalizations.of(context);
+    // null first: "follow the device" is the default, and the absence of a
+    // choice rather than a fourth language.
+    final options = <Locale?>[
+      null,
+      ...AppLocalizations.supportedLocales,
+    ];
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(l10n.settingsLanguage),
+        // ListTile rather than RadioListTile: the Radio API this file's other
+        // dialogs use is deprecated, and new code should not add to that debt.
+        // A tick on the current row says the same thing.
+        children: [
+          for (final option in options)
+            ListTile(
+              title: Text(_languageLabel(l10n, option)),
+              trailing: option?.languageCode == current?.languageCode
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                ref.read(localeProvider.notifier).setLocale(option);
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+        ],
       ),
     );
   }
