@@ -891,6 +891,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{duration}, dotted'**
   String durationDotted(String duration);
+
+  /// Settings section heading: theme and font size
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// Light, dark or follow the device
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get settingsTheme;
+
+  /// The app-wide base text size
+  ///
+  /// In en, this message translates to:
+  /// **'Font Size'**
+  String get settingsFontSize;
+
+  /// Tooltip on the minus button next to the font size
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease font size'**
+  String get fontSizeDecrease;
+
+  /// Tooltip on the plus button next to the font size
+  ///
+  /// In en, this message translates to:
+  /// **'Increase font size'**
+  String get fontSizeIncrease;
+
+  /// Settings section heading: how a song opens
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get settingsDisplay;
+
+  /// Which of the three view presets a song opens in
+  ///
+  /// In en, this message translates to:
+  /// **'Default View'**
+  String get settingsDefaultView;
+
+  /// Settings section heading: version and app name
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsAbout;
+
+  /// Row showing the installed build
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get settingsVersion;
+
+  /// Shown when the version cannot be read. Lower case: it stands in for a version string.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get settingsVersionUnknown;
+
+  /// One-line description under the app name in About
+  ///
+  /// In en, this message translates to:
+  /// **'Worship Songbook App'**
+  String get settingsTagline;
+
+  /// Theme option: always light
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// Theme option: always dark
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// Theme option: follow the device
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get themeSystem;
+
+  /// Default-view option. Spelled out in full here; the controls sheet's chip is the short `presetSheetMusic`, which has to stay narrow enough for three chips on one line at 360 px.
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet Music'**
+  String get settingsViewSheetMusic;
+
+  /// What the sheet-music default shows
+  ///
+  /// In en, this message translates to:
+  /// **'Notation with chords and lyrics'**
+  String get settingsViewSheetMusicHint;
+
+  /// Default-view option: chord symbols over the words
+  ///
+  /// In en, this message translates to:
+  /// **'Chords'**
+  String get settingsViewChords;
+
+  /// What the chords default shows
+  ///
+  /// In en, this message translates to:
+  /// **'Chords and lyrics only'**
+  String get settingsViewChordsHint;
+
+  /// Default-view option: words with nothing above them
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics Only'**
+  String get settingsViewLyricsOnly;
+
+  /// What the lyrics-only default shows
+  ///
+  /// In en, this message translates to:
+  /// **'Clean text without notation or chords'**
+  String get settingsViewLyricsOnlyHint;
 }
 
 class _AppLocalizationsDelegate

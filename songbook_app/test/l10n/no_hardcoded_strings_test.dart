@@ -30,6 +30,7 @@ const _localised = [
   'lib/presentation/screens/song_view/widgets/setlist_nav_bar.dart',
   'lib/presentation/screens/favorites/favorites_screen.dart',
   'lib/presentation/screens/notation_editor/notation_editor_screen.dart',
+  'lib/presentation/screens/settings/settings_screen.dart',
 ];
 
 /// Literals that are not interface text, with the reason each is here.

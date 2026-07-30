@@ -471,4 +471,65 @@ class AppLocalizationsRo extends AppLocalizations {
   String durationDotted(String duration) {
     return '$duration, cu punct';
   }
+
+  @override
+  String get settingsAppearance => 'Aspect';
+
+  @override
+  String get settingsTheme => 'Temă';
+
+  @override
+  String get settingsFontSize => 'Dimensiunea textului';
+
+  @override
+  String get fontSizeDecrease => 'Micșorează textul';
+
+  @override
+  String get fontSizeIncrease => 'Mărește textul';
+
+  @override
+  String get settingsDisplay => 'Afișarea cântecului';
+
+  @override
+  String get settingsDefaultView => 'Vizualizarea implicită';
+
+  @override
+  String get settingsAbout => 'Despre';
+
+  @override
+  String get settingsVersion => 'Versiune';
+
+  @override
+  String get settingsVersionUnknown => 'necunoscută';
+
+  @override
+  String get settingsTagline => 'Carte de cântece pentru închinare';
+
+  @override
+  String get themeLight => 'Luminoasă';
+
+  @override
+  String get themeDark => 'Întunecată';
+
+  @override
+  String get themeSystem => 'Ca sistemul';
+
+  @override
+  String get settingsViewSheetMusic => 'Partitură';
+
+  @override
+  String get settingsViewSheetMusicHint => 'Partitură cu acorduri și text';
+
+  @override
+  String get settingsViewChords => 'Acorduri';
+
+  @override
+  String get settingsViewChordsHint => 'Doar acorduri și text';
+
+  @override
+  String get settingsViewLyricsOnly => 'Doar text';
+
+  @override
+  String get settingsViewLyricsOnlyHint =>
+      'Text curat, fără partitură sau acorduri';
 }

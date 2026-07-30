@@ -469,4 +469,65 @@ class AppLocalizationsHu extends AppLocalizations {
   String durationDotted(String duration) {
     return '$duration, pontozott';
   }
+
+  @override
+  String get settingsAppearance => 'Megjelenés';
+
+  @override
+  String get settingsTheme => 'Téma';
+
+  @override
+  String get settingsFontSize => 'Betűméret';
+
+  @override
+  String get fontSizeDecrease => 'Betűméret csökkentése';
+
+  @override
+  String get fontSizeIncrease => 'Betűméret növelése';
+
+  @override
+  String get settingsDisplay => 'Ének megjelenítése';
+
+  @override
+  String get settingsDefaultView => 'Alapértelmezett nézet';
+
+  @override
+  String get settingsAbout => 'Névjegy';
+
+  @override
+  String get settingsVersion => 'Verzió';
+
+  @override
+  String get settingsVersionUnknown => 'ismeretlen';
+
+  @override
+  String get settingsTagline => 'Istentiszteleti énekeskönyv';
+
+  @override
+  String get themeLight => 'Világos';
+
+  @override
+  String get themeDark => 'Sötét';
+
+  @override
+  String get themeSystem => 'Rendszer szerinti';
+
+  @override
+  String get settingsViewSheetMusic => 'Kotta';
+
+  @override
+  String get settingsViewSheetMusicHint => 'Kotta akkordokkal és szöveggel';
+
+  @override
+  String get settingsViewChords => 'Akkordok';
+
+  @override
+  String get settingsViewChordsHint => 'Csak akkordok és szöveg';
+
+  @override
+  String get settingsViewLyricsOnly => 'Csak szöveg';
+
+  @override
+  String get settingsViewLyricsOnlyHint =>
+      'Tiszta szöveg kotta és akkordok nélkül';
 }

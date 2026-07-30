@@ -38,30 +38,30 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           // Appearance section
-          _buildSectionHeader(context, 'Appearance'),
+          _buildSectionHeader(context, l10n.settingsAppearance),
           ListTile(
             leading: const Icon(Icons.brightness_6),
-            title: const Text('Theme'),
-            subtitle: Text(_getThemeModeLabel(themeMode)),
+            title: Text(l10n.settingsTheme),
+            subtitle: Text(_getThemeModeLabel(l10n, themeMode)),
             onTap: () => _showThemeDialog(context, ref, themeMode),
           ),
           ListTile(
             leading: const Icon(Icons.text_fields),
-            title: const Text('Font Size'),
+            title: Text(l10n.settingsFontSize),
             subtitle: Text('${settings.fontSize.round()}'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.remove),
-                  tooltip: 'Decrease font size',
+                  tooltip: l10n.fontSizeDecrease,
                   onPressed: settings.fontSize > 12
                       ? () => ref.read(settingsProvider.notifier).decreaseFontSize()
                       : null,
                 ),
                 IconButton(
                   icon: const Icon(Icons.add),
-                  tooltip: 'Increase font size',
+                  tooltip: l10n.fontSizeIncrease,
                   onPressed: settings.fontSize < 32
                       ? () => ref.read(settingsProvider.notifier).increaseFontSize()
                       : null,
@@ -73,31 +73,31 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
 
           // Display section
-          _buildSectionHeader(context, 'Display'),
+          _buildSectionHeader(context, l10n.settingsDisplay),
           ListTile(
             leading: const Icon(Icons.view_agenda),
-            title: const Text('Default View'),
-            subtitle: Text(_getViewConfigLabel(settings.viewConfig)),
+            title: Text(l10n.settingsDefaultView),
+            subtitle: Text(_getViewConfigLabel(l10n, settings.viewConfig)),
             onTap: () => _showViewConfigDialog(context, ref, settings.viewConfig),
           ),
 
           const Divider(),
 
           // About section
-          _buildSectionHeader(context, 'About'),
+          _buildSectionHeader(context, l10n.settingsAbout),
           ListTile(
             leading: const Icon(Icons.info_outline),
-            title: const Text('Version'),
+            title: Text(l10n.settingsVersion),
             subtitle: ref.watch(appVersionProvider).when(
                   data: (version) => Text(version),
                   loading: () => const Text('…'),
-                  error: (_, __) => const Text('unknown'),
+                  error: (_, __) => Text(l10n.settingsVersionUnknown),
                 ),
           ),
           ListTile(
             leading: const Icon(Icons.library_books),
-            title: const Text('Songbook'),
-            subtitle: const Text('Worship Songbook App'),
+            title: Text(l10n.appTitle),
+            subtitle: Text(l10n.settingsTagline),
           ),
         ],
       ),
@@ -166,29 +166,31 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  String _getThemeModeLabel(AppThemeMode mode) {
+  String _getThemeModeLabel(AppLocalizations l10n, AppThemeMode mode) {
     return switch (mode) {
-      AppThemeMode.light => 'Light',
-      AppThemeMode.dark => 'Dark',
-      AppThemeMode.system => 'System default',
+      AppThemeMode.light => l10n.themeLight,
+      AppThemeMode.dark => l10n.themeDark,
+      AppThemeMode.system => l10n.themeSystem,
     };
   }
 
-  String _getViewConfigLabel(ViewConfig config) {
-    if (config.isSheetMusicPreset) return 'Sheet Music';
-    if (config.isChordsPreset) return 'Chords';
-    if (config.isLyricsOnlyPreset) return 'Lyrics Only';
-    return 'Sheet Music';
+  String _getViewConfigLabel(AppLocalizations l10n, ViewConfig config) {
+    if (config.isChordsPreset) return l10n.settingsViewChords;
+    if (config.isLyricsOnlyPreset) return l10n.settingsViewLyricsOnly;
+    // Sheet music is both the preset test and the fallback for a config that
+    // matches none of the three.
+    return l10n.settingsViewSheetMusic;
   }
 
   void _showThemeDialog(BuildContext context, WidgetRef ref, AppThemeMode current) {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Theme'),
+        title: Text(l10n.settingsTheme),
         children: AppThemeMode.values.map((mode) {
           return RadioListTile<AppThemeMode>(
-            title: Text(_getThemeModeLabel(mode)),
+            title: Text(_getThemeModeLabel(l10n, mode)),
             value: mode,
             groupValue: current,
             onChanged: (value) {
@@ -204,14 +206,15 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showViewConfigDialog(BuildContext context, WidgetRef ref, ViewConfig current) {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Default View'),
+        title: Text(l10n.settingsDefaultView),
         children: [
           RadioListTile<String>(
-            title: const Text('Sheet Music'),
-            subtitle: const Text('Notation with chords and lyrics'),
+            title: Text(l10n.settingsViewSheetMusic),
+            subtitle: Text(l10n.settingsViewSheetMusicHint),
             value: 'sheet',
             groupValue: _getPresetKey(current),
             onChanged: (value) {
@@ -220,8 +223,8 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           RadioListTile<String>(
-            title: const Text('Chords'),
-            subtitle: const Text('Chords and lyrics only'),
+            title: Text(l10n.settingsViewChords),
+            subtitle: Text(l10n.settingsViewChordsHint),
             value: 'chords',
             groupValue: _getPresetKey(current),
             onChanged: (value) {
@@ -230,8 +233,8 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           RadioListTile<String>(
-            title: const Text('Lyrics Only'),
-            subtitle: const Text('Clean text without notation or chords'),
+            title: Text(l10n.settingsViewLyricsOnly),
+            subtitle: Text(l10n.settingsViewLyricsOnlyHint),
             value: 'lyrics',
             groupValue: _getPresetKey(current),
             onChanged: (value) {

@@ -625,5 +625,85 @@
         "type": "String"
       }
     }
+  },
+  "settingsAppearance": "Appearance",
+  "@settingsAppearance": {
+    "description": "Settings section heading: theme and font size"
+  },
+  "settingsTheme": "Theme",
+  "@settingsTheme": {
+    "description": "Light, dark or follow the device"
+  },
+  "settingsFontSize": "Font Size",
+  "@settingsFontSize": {
+    "description": "The app-wide base text size"
+  },
+  "fontSizeDecrease": "Decrease font size",
+  "@fontSizeDecrease": {
+    "description": "Tooltip on the minus button next to the font size"
+  },
+  "fontSizeIncrease": "Increase font size",
+  "@fontSizeIncrease": {
+    "description": "Tooltip on the plus button next to the font size"
+  },
+  "settingsDisplay": "Display",
+  "@settingsDisplay": {
+    "description": "Settings section heading: how a song opens"
+  },
+  "settingsDefaultView": "Default View",
+  "@settingsDefaultView": {
+    "description": "Which of the three view presets a song opens in"
+  },
+  "settingsAbout": "About",
+  "@settingsAbout": {
+    "description": "Settings section heading: version and app name"
+  },
+  "settingsVersion": "Version",
+  "@settingsVersion": {
+    "description": "Row showing the installed build"
+  },
+  "settingsVersionUnknown": "unknown",
+  "@settingsVersionUnknown": {
+    "description": "Shown when the version cannot be read. Lower case: it stands in for a version string."
+  },
+  "settingsTagline": "Worship Songbook App",
+  "@settingsTagline": {
+    "description": "One-line description under the app name in About"
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Theme option: always light"
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Theme option: always dark"
+  },
+  "themeSystem": "System default",
+  "@themeSystem": {
+    "description": "Theme option: follow the device"
+  },
+  "settingsViewSheetMusic": "Sheet Music",
+  "@settingsViewSheetMusic": {
+    "description": "Default-view option. Spelled out in full here; the controls sheet's chip is the short `presetSheetMusic`, which has to stay narrow enough for three chips on one line at 360 px."
+  },
+  "settingsViewSheetMusicHint": "Notation with chords and lyrics",
+  "@settingsViewSheetMusicHint": {
+    "description": "What the sheet-music default shows"
+  },
+  "settingsViewChords": "Chords",
+  "@settingsViewChords": {
+    "description": "Default-view option: chord symbols over the words"
+  },
+  "settingsViewChordsHint": "Chords and lyrics only",
+  "@settingsViewChordsHint": {
+    "description": "What the chords default shows"
+  },
+  "settingsViewLyricsOnly": "Lyrics Only",
+  "@settingsViewLyricsOnly": {
+    "description": "Default-view option: words with nothing above them"
+  },
+  "settingsViewLyricsOnlyHint": "Clean text without notation or chords",
+  "@settingsViewLyricsOnlyHint": {
+    "description": "What the lyrics-only default shows"
   }
 }

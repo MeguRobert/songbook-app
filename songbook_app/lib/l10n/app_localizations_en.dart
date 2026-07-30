@@ -467,4 +467,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String durationDotted(String duration) {
     return '$duration, dotted';
   }
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsTheme => 'Theme';
+
+  @override
+  String get settingsFontSize => 'Font Size';
+
+  @override
+  String get fontSizeDecrease => 'Decrease font size';
+
+  @override
+  String get fontSizeIncrease => 'Increase font size';
+
+  @override
+  String get settingsDisplay => 'Display';
+
+  @override
+  String get settingsDefaultView => 'Default View';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get settingsVersion => 'Version';
+
+  @override
+  String get settingsVersionUnknown => 'unknown';
+
+  @override
+  String get settingsTagline => 'Worship Songbook App';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeSystem => 'System default';
+
+  @override
+  String get settingsViewSheetMusic => 'Sheet Music';
+
+  @override
+  String get settingsViewSheetMusicHint => 'Notation with chords and lyrics';
+
+  @override
+  String get settingsViewChords => 'Chords';
+
+  @override
+  String get settingsViewChordsHint => 'Chords and lyrics only';
+
+  @override
+  String get settingsViewLyricsOnly => 'Lyrics Only';
+
+  @override
+  String get settingsViewLyricsOnlyHint =>
+      'Clean text without notation or chords';
 }
