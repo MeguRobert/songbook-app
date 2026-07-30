@@ -222,5 +222,10 @@
   "sheetMissingForKey": "Nincs kotta {key} hangnemben. Az eredeti hangnem látszik ({original}).",
   "sheetNoneForSong": "Ehhez az énekhez nincs kotta",
   "routeNotFound": "Az oldal nem található",
-  "routeGoHome": "Vissza a kezdőlapra"
+  "routeGoHome": "Vissza a kezdőlapra",
+  "sectionVoice": "SZÓLAM",
+  "voiceMelody": "Dallam",
+  "voiceAlto": "Alt",
+  "voiceTenor": "Tenor",
+  "voiceBass": "Basszus"
 }

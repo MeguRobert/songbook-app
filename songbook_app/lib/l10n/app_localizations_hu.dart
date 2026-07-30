@@ -825,4 +825,19 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get routeGoHome => 'Vissza a kezdőlapra';
+
+  @override
+  String get sectionVoice => 'SZÓLAM';
+
+  @override
+  String get voiceMelody => 'Dallam';
+
+  @override
+  String get voiceAlto => 'Alt';
+
+  @override
+  String get voiceTenor => 'Tenor';
+
+  @override
+  String get voiceBass => 'Basszus';
 }

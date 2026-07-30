@@ -37,11 +37,36 @@ class SongControlsSheet extends ConsumerStatefulWidget {
   /// object every time it opens.
   final bool canShowSheetMusic;
 
+  /// Every voice this song's score holds, engraved one first, from
+  /// `SongNotation.voiceNames`. Empty for a song with no notation.
+  ///
+  /// The VOICE section appears only when there is more than one — unlike the
+  /// preset chips, which are shown disabled rather than removed. A disabled
+  /// picker offering one option explains nothing, and a four-part score is the
+  /// exception rather than the rule.
+  final List<String> voiceNames;
+
   const SongControlsSheet({
     required this.originalKey,
     this.canShowSheetMusic = true,
+    this.voiceNames = const [],
     super.key,
   });
+
+  /// The four well-known voice names in the reader's language.
+  ///
+  /// The stored names come from the importer, which writes English so the JSON
+  /// stays one thing whatever language the app is in. Anything the importer could
+  /// not identify - `P1 staff 2 voice 6` - passes through, because a label taken
+  /// from the file is not a word to translate.
+  static String voiceLabel(AppLocalizations l10n, String stored) =>
+      switch (stored) {
+        'Melody' => l10n.voiceMelody,
+        'Alto' => l10n.voiceAlto,
+        'Tenor' => l10n.voiceTenor,
+        'Bass' => l10n.voiceBass,
+        _ => stored,
+      };
 
   /// Names the auto-scroll speed instead of quoting it.
   ///
@@ -83,6 +108,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
     final transpose = ref.watch(transposeProvider);
     final textScale = ref.watch(textScaleProvider);
     final autoScroll = ref.watch(autoScrollProvider);
+    final engravedVoice = ref.watch(engravedVoiceProvider);
     final transpositionService = ref.read(transpositionServiceProvider);
     final capoService = ref.read(capoServiceProvider);
     final songViewNotifier = ref.read(songViewProvider.notifier);
@@ -412,6 +438,48 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                           theme: theme,
                         ),
                       ),
+
+                      // ----------------------------------------- 4b. VOICE
+                      //
+                      // Between CAPO and AUTO-SCROLL rather than up with VIEW:
+                      // it applies to a handful of imported four-part scores and
+                      // nothing else, so it must not push the controls that are
+                      // always relevant further down the sheet.
+                      if (widget.voiceNames.length > 1) ...[
+                        const Divider(height: 32),
+                        _SectionHeader(
+                          text: l10n.sectionVoice,
+                          theme: theme,
+                          enabled: viewConfig.showNotation,
+                        ),
+                        const SizedBox(height: 12),
+                        _Disableable(
+                          enabled: viewConfig.showNotation,
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (var i = 0;
+                                  i < widget.voiceNames.length;
+                                  i++)
+                                ChoiceChip(
+                                  // Same as the VIEW chips: the checkmark
+                                  // appears only on the selected one, so the
+                                  // row's width changed with every switch.
+                                  showCheckmark: false,
+                                  visualDensity: VisualDensity.compact,
+                                  label: Text(SongControlsSheet.voiceLabel(
+                                      l10n, widget.voiceNames[i])),
+                                  selected: engravedVoice == i,
+                                  onSelected: viewConfig.showNotation
+                                      ? (_) =>
+                                          songViewNotifier.setVoice(i)
+                                      : null,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
 
                       const Divider(height: 32),
 

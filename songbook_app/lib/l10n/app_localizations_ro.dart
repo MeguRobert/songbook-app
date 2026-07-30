@@ -827,4 +827,19 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get routeGoHome => 'Înapoi la început';
+
+  @override
+  String get sectionVoice => 'VOCE';
+
+  @override
+  String get voiceMelody => 'Melodie';
+
+  @override
+  String get voiceAlto => 'Alto';
+
+  @override
+  String get voiceTenor => 'Tenor';
+
+  @override
+  String get voiceBass => 'Bas';
 }

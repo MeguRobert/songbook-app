@@ -56,6 +56,10 @@ void main() {
         'languageRomanian',
         'languageEnglish',
         'navFavorites', // "Favorites" / "Favorite" differ; RO checked below
+        // The Italian voice names entered Hungarian unchanged. "Tenor" is the
+        // Hungarian word; inventing a different one to satisfy this test would
+        // put something wrong in front of a singer.
+        'voiceTenor',
       };
 
       for (final key in keysOf(en)) {

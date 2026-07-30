@@ -71,6 +71,16 @@ NotatedVerse _$NotatedVerseFromJson(Map<String, dynamic> json) => NotatedVerse(
 Map<String, dynamic> _$NotatedVerseToJson(NotatedVerse instance) =>
     <String, dynamic>{'number': instance.number, 'measures': instance.measures};
 
+NotatedVoice _$NotatedVoiceFromJson(Map<String, dynamic> json) => NotatedVoice(
+  name: json['name'] as String,
+  measures: (json['measures'] as List<dynamic>)
+      .map((e) => NotatedMeasure.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$NotatedVoiceToJson(NotatedVoice instance) =>
+    <String, dynamic>{'name': instance.name, 'measures': instance.measures};
+
 SongNotation _$SongNotationFromJson(Map<String, dynamic> json) => SongNotation(
   originalKey: json['originalKey'] as String,
   timeSignature: json['timeSignature'] as String,
@@ -81,6 +91,9 @@ SongNotation _$SongNotationFromJson(Map<String, dynamic> json) => SongNotation(
   pickup: (json['pickup'] as List<dynamic>?)
       ?.map((e) => NotatedBeat.fromJson(e as Map<String, dynamic>))
       .toList(),
+  voices: (json['voices'] as List<dynamic>?)
+      ?.map((e) => NotatedVoice.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$SongNotationToJson(SongNotation instance) =>
@@ -90,4 +103,5 @@ Map<String, dynamic> _$SongNotationToJson(SongNotation instance) =>
       'showTimeSignature': instance.showTimeSignature,
       'verses': instance.verses,
       'pickup': instance.pickup,
+      'voices': instance.voices,
     };

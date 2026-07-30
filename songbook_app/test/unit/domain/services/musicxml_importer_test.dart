@@ -914,4 +914,114 @@ void main() {
       expect(measure.volta, isNull);
     });
   });
+
+  // The importer recovered every voice from the start and the app then dropped
+  // all but the melody: nothing stored `additionalVoices`, so reading a bass
+  // line meant finding and re-importing the source file.
+  group('voices reach the stored notation', () {
+    List<NotatedMeasure> measuresOf(SongNotation notation) =>
+        notation.verses.single.measures;
+
+    /// One part, one staff, four voices stacked as a <chord> — the shape a
+    /// hymnal SATB score most often takes.
+    String satb() => score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('C', 5)}
+      ${note('G', 4, chord: true)}
+      ${note('E', 4, chord: true)}
+      ${note('C', 4, chord: true)}
+    </measure>
+  </part>''');
+
+    test('the extra voices are stored, not only held in the result', () {
+      final result = importer.importXml(satb());
+
+      expect(result.additionalVoices, hasLength(3),
+          reason: 'the fixture premise');
+      expect(result.notation.voices, hasLength(3));
+    });
+
+    test('four voices are named SATB, top down', () {
+      final result = importer.importXml(satb());
+
+      expect(result.notation.voiceNames,
+          ['Melody', 'Alto', 'Tenor', 'Bass']);
+    });
+
+    test('each stored voice carries its own pitches', () {
+      final result = importer.importXml(satb());
+
+      final pitches = result.notation.voices!
+          .map((v) => v.measures.single.beats.single.pitch)
+          .toList();
+      expect(pitches, ['G4', 'E4', 'C4']);
+      // And the engraved stream is still the top note.
+      expect(beatsOf(result.notation).single.pitch, 'C5');
+    });
+
+    test('any stored voice can be engraved in place of the melody', () {
+      final notation = importer.importXml(satb()).notation;
+
+      expect(notation.engravedAs(3).verses.single.measures.single.beats.single
+          .pitch, 'C4');
+    });
+
+    test('a single-voice score stores no voice list at all', () {
+      // Null rather than empty: a picker with one entry is noise, and
+      // hasMultipleVoices is what the controls sheet keys off.
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('G', 4)}
+    </measure>
+  </part>'''));
+
+      expect(result.notation.voices, isNull);
+      expect(result.notation.hasMultipleVoices, isFalse);
+    });
+
+    test('a count other than four falls back to the file’s own labels', () {
+      // SATB naming is a convention about four-part hymns. Two voices could be
+      // anything, so guessing "Alto" would be a lie the singer cannot check.
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('C', 5)}
+      ${note('E', 4, chord: true)}
+    </measure>
+  </part>'''));
+
+      expect(result.notation.voices, hasLength(1));
+      expect(result.notation.voices!.single.name, isNot('Alto'));
+      expect(result.notation.voices!.single.name, contains('P1'));
+    });
+
+    test('stored voices stay aligned measure-for-measure with the melody', () {
+      // A voice silent for a bar gets that bar as an empty measure rather than
+      // no measure, or switching voices would renumber every bar after it.
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('C', 5)}
+      ${note('G', 4, chord: true)}
+      ${note('E', 4, chord: true)}
+      ${note('C', 4, chord: true)}
+    </measure>
+    <measure number="2">
+      ${note('D', 5)}
+    </measure>
+  </part>'''));
+
+      final melodyBars = measuresOf(result.notation).length;
+      for (final voice in result.notation.voices!) {
+        expect(voice.measures, hasLength(melodyBars), reason: voice.name);
+      }
+    });
+  });
+
 }

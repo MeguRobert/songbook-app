@@ -232,6 +232,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     BuildContext context,
     String originalKey, {
     required bool canShowSheetMusic,
+    List<String> voiceNames = const [],
   }) {
     showModalBottomSheet(
       context: context,
@@ -239,6 +240,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
       builder: (context) => SongControlsSheet(
         originalKey: originalKey,
         canShowSheetMusic: canShowSheetMusic,
+        voiceNames: voiceNames,
       ),
     );
   }
@@ -535,6 +537,16 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
           _noticeNoSheetMusic();
         }
 
+        // The song as it should be engraved right now: for a four-part score
+        // with the bass selected, that is the same song with the bass line in
+        // place of the melody. Identical to `song` for every single-voice song,
+        // which is all of the bundled ones.
+        final voiceIndex = isCurrentSong ? songView!.voiceIndex : 0;
+        final notation = song.notation;
+        final engravedSong = notation == null || voiceIndex == 0
+            ? song
+            : song.copyWith(notation: notation.engravedAs(voiceIndex));
+
         return Scaffold(
           appBar: _buildAppBar(context, song, isFavorite),
           // Two gesture sources feed the same text-scale setting:
@@ -585,7 +597,11 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                 // Main content - render based on ViewConfig
                 if (showsNotation)
                   SheetMusicView(
-                    song: song,
+                    // The chosen voice is applied here rather than stored: the
+                    // selection is a way of reading this song now, not an edit
+                    // to it. Always projected from the STORED notation, which is
+                    // what makes `engravedAs` safe - see its doc comment.
+                    song: engravedSong,
                     transpose: transpose,
                     showChords: viewConfig.showChords,
                     textScale: textScale,
@@ -615,6 +631,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
               context,
               song.originalKey,
               canShowSheetMusic: canShowSheetMusic,
+              voiceNames: song.notation?.voiceNames ?? const [],
             ),
             tooltip: l10n.songControls,
             child: const Icon(Icons.tune),

@@ -127,11 +127,21 @@ class SongViewState {
   final double textScale;
   final ViewConfig? activeViewConfig;
 
+  /// Which voice of a multi-voice score is engraved: 0 is the melody, 1 and up
+  /// index `SongNotation.voices`.
+  ///
+  /// Not persisted, and reset by [SongViewNotifier.openSong] like the transpose
+  /// amount. Reading the bass line of one hymn is a thing done for one hymn, and
+  /// a stored choice would mean opening the next song on a line the singer did
+  /// not ask for.
+  final int voiceIndex;
+
   const SongViewState({
     required this.songId,
     this.transposeAmount = 0,
     this.textScale = 1.0,
     this.activeViewConfig,
+    this.voiceIndex = 0,
   });
 
   /// [clearActiveViewConfig] exists because `activeViewConfig: null` cannot
@@ -144,6 +154,7 @@ class SongViewState {
     double? textScale,
     ViewConfig? activeViewConfig,
     bool clearActiveViewConfig = false,
+    int? voiceIndex,
   }) {
     return SongViewState(
       songId: songId ?? this.songId,
@@ -152,6 +163,7 @@ class SongViewState {
       activeViewConfig: clearActiveViewConfig
           ? null
           : (activeViewConfig ?? this.activeViewConfig),
+      voiceIndex: voiceIndex ?? this.voiceIndex,
     );
   }
 }
@@ -175,6 +187,13 @@ class SongViewNotifier extends StateNotifier<SongViewState?> {
 
   void closeSong() {
     state = null;
+  }
+
+  /// Selects which voice of a multi-voice score is engraved.
+  void setVoice(int index) {
+    if (state != null) {
+      state = state!.copyWith(voiceIndex: index);
+    }
   }
 
   void setTranspose(int semitones) {
@@ -305,6 +324,12 @@ final songViewProvider =
 final transposeProvider = Provider<int>((ref) {
   final viewState = ref.watch(songViewProvider);
   return viewState?.transposeAmount ?? 0;
+});
+
+/// Which voice of the current song is engraved. 0 is the melody.
+final engravedVoiceProvider = Provider<int>((ref) {
+  final viewState = ref.watch(songViewProvider);
+  return viewState?.voiceIndex ?? 0;
 });
 
 /// Provider for the text scale of the current song view

@@ -1107,5 +1107,25 @@
   "routeGoHome": "Go Home",
   "@routeGoHome": {
     "description": "Button on the router error page, back to the song list"
+  },
+  "sectionVoice": "VOICE",
+  "@sectionVoice": {
+    "description": "Controls-sheet section heading: which line of a four-part score is engraved"
+  },
+  "voiceMelody": "Melody",
+  "@voiceMelody": {
+    "description": "The line the importer engraved — the top of the score. It has no name of its own."
+  },
+  "voiceAlto": "Alto",
+  "@voiceAlto": {
+    "description": "Second voice of a four-part score"
+  },
+  "voiceTenor": "Tenor",
+  "@voiceTenor": {
+    "description": "Third voice of a four-part score"
+  },
+  "voiceBass": "Bass",
+  "@voiceBass": {
+    "description": "Lowest voice of a four-part score"
   }
 }

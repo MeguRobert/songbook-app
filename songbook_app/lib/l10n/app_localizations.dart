@@ -1437,6 +1437,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Go Home'**
   String get routeGoHome;
+
+  /// Controls-sheet section heading: which line of a four-part score is engraved
+  ///
+  /// In en, this message translates to:
+  /// **'VOICE'**
+  String get sectionVoice;
+
+  /// The line the importer engraved — the top of the score. It has no name of its own.
+  ///
+  /// In en, this message translates to:
+  /// **'Melody'**
+  String get voiceMelody;
+
+  /// Second voice of a four-part score
+  ///
+  /// In en, this message translates to:
+  /// **'Alto'**
+  String get voiceAlto;
+
+  /// Third voice of a four-part score
+  ///
+  /// In en, this message translates to:
+  /// **'Tenor'**
+  String get voiceTenor;
+
+  /// Lowest voice of a four-part score
+  ///
+  /// In en, this message translates to:
+  /// **'Bass'**
+  String get voiceBass;
 }
 
 class _AppLocalizationsDelegate

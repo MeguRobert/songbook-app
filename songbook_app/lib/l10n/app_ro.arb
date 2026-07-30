@@ -222,5 +222,10 @@
   "sheetMissingForKey": "Nu există partitură în {key}. Se afișează tonalitatea originală ({original}).",
   "sheetNoneForSong": "Acest cântec nu are partitură",
   "routeNotFound": "Pagina nu a fost găsită",
-  "routeGoHome": "Înapoi la început"
+  "routeGoHome": "Înapoi la început",
+  "sectionVoice": "VOCE",
+  "voiceMelody": "Melodie",
+  "voiceAlto": "Alto",
+  "voiceTenor": "Tenor",
+  "voiceBass": "Bas"
 }

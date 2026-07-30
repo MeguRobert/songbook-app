@@ -319,6 +319,41 @@ class NotatedVerse {
   int get hashCode => Object.hash(number, Object.hashAll(measures));
 }
 
+/// One voice of a multi-voice score, beyond the one being engraved.
+///
+/// Hymnal MusicXML is usually four-voice SATB while [SongNotation] renders a
+/// single monophonic stream, so importing has always reduced a score to its top
+/// line. The importer recovered the other three all along and the app then threw
+/// them away — nothing stored them — so reading a bass line meant finding and
+/// re-importing the source file.
+@JsonSerializable()
+class NotatedVoice {
+  /// What to call this line in a picker: `Alto`, or the part name the file gave.
+  final String name;
+
+  /// Aligned measure-for-measure with the engraved stream, gaps filled with
+  /// rests by the importer, so switching voices cannot shift the bar numbering.
+  final List<NotatedMeasure> measures;
+
+  const NotatedVoice({required this.name, required this.measures});
+
+  factory NotatedVoice.fromJson(Map<String, dynamic> json) =>
+      _$NotatedVoiceFromJson(json);
+
+  Map<String, dynamic> toJson() => _$NotatedVoiceToJson(this);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NotatedVoice &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          const ListEquality<NotatedMeasure>().equals(measures, other.measures);
+
+  @override
+  int get hashCode => Object.hash(name, Object.hashAll(measures));
+}
+
 /// Complete notation data for a song
 @JsonSerializable()
 class SongNotation {
@@ -348,13 +383,71 @@ class SongNotation {
   /// solely so a payload that somehow contains the key still decodes.
   final List<NotatedBeat>? pickup;
 
+  /// The score's other voices — the alto, tenor and bass of an SATB hymn — kept
+  /// so they are not lost, and so any one of them can be engraved in place of
+  /// [verses] via [withVoice].
+  ///
+  /// Null rather than empty for a single-voice score, and for every song stored
+  /// before this field existed. Renaming a JSON key has destroyed stored data
+  /// here before, so this is only ever added, never changed.
+  final List<NotatedVoice>? voices;
+
   const SongNotation({
     required this.originalKey,
     required this.timeSignature,
     this.showTimeSignature = true,
     required this.verses,
     this.pickup,
+    this.voices,
   });
+
+  /// Every voice this score holds, engraved one first.
+  ///
+  /// The engraved stream has no name of its own — it is whatever the importer
+  /// reduced the score to — so it is called `Melody`, which is what it is for a
+  /// singer choosing a line to read.
+  List<String> get voiceNames =>
+      ['Melody', ...?voices?.map((v) => v.name)];
+
+  /// Whether there is anything to choose between.
+  bool get hasMultipleVoices => (voices?.isNotEmpty ?? false);
+
+  /// This score as it should be engraved when voice [index] is selected.
+  ///
+  /// Index 0 is the score unchanged; 1 and up select [voices] in order. The
+  /// verse number is kept because it identifies which words the notation belongs
+  /// to — a property of the song, not of the line singing it — and the voice
+  /// list is carried through so the picker still has something to offer.
+  ///
+  /// **Apply this to the STORED notation, never to its own output.** It is a
+  /// render-time projection, not a mutation: index 0 means "leave it alone", so
+  /// `engravedAs(2).engravedAs(0)` gives back the bass line rather than the
+  /// melody. The melody is not kept anywhere in the result — it is whatever
+  /// `verses` held before the swap. Callers read `song.notation` fresh each
+  /// build, which is where this is safe.
+  ///
+  /// An index out of range returns the score unchanged. A picker offering a
+  /// voice a re-import has since removed should show the melody, not throw.
+  SongNotation engravedAs(int index) {
+    if (index == 0) return this;
+    final all = voices;
+    if (all == null || index < 1 || index > all.length) return this;
+
+    final verse = verses.isEmpty ? null : verses.first;
+    return SongNotation(
+      originalKey: originalKey,
+      timeSignature: timeSignature,
+      showTimeSignature: showTimeSignature,
+      verses: [
+        NotatedVerse(
+          number: verse?.number ?? 1,
+          measures: all[index - 1].measures,
+        ),
+      ],
+      pickup: pickup,
+      voices: all,
+    );
+  }
 
   factory SongNotation.fromJson(Map<String, dynamic> json) =>
       _$SongNotationFromJson(json);
@@ -379,7 +472,8 @@ class SongNotation {
           timeSignature == other.timeSignature &&
           showTimeSignature == other.showTimeSignature &&
           const ListEquality<NotatedVerse>().equals(verses, other.verses) &&
-          const ListEquality<NotatedBeat>().equals(pickup, other.pickup);
+          const ListEquality<NotatedBeat>().equals(pickup, other.pickup) &&
+          const ListEquality<NotatedVoice>().equals(voices, other.voices);
 
   @override
   int get hashCode => Object.hash(
@@ -388,5 +482,6 @@ class SongNotation {
         showTimeSignature,
         Object.hashAll(verses),
         pickup == null ? null : Object.hashAll(pickup!),
+        voices == null ? null : Object.hashAll(voices!),
       );
 }

@@ -821,4 +821,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get routeGoHome => 'Go Home';
+
+  @override
+  String get sectionVoice => 'VOICE';
+
+  @override
+  String get voiceMelody => 'Melody';
+
+  @override
+  String get voiceAlto => 'Alto';
+
+  @override
+  String get voiceTenor => 'Tenor';
+
+  @override
+  String get voiceBass => 'Bass';
 }

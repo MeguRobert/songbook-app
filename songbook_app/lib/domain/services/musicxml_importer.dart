@@ -402,6 +402,11 @@ class MusicXmlImporter {
     }
     warnings.addAll(notices.messages);
 
+    final additionalVoices = [
+      for (final stream in additional)
+        stream.toImportedVoice(stream.toMeasures(lyricNumbers)),
+    ];
+
     return MusicXmlImportResult(
       notation: SongNotation(
         originalKey: key ?? 'C',
@@ -410,18 +415,61 @@ class MusicXmlImporter {
         // Python hard-coded the same thing.
         showTimeSignature: false,
         verses: [NotatedVerse(number: 1, measures: melodyMeasures)],
+        // Stored, not merely returned. These used to reach the caller and stop
+        // there, so reading a bass line meant re-importing the source file.
+        voices: _storedVoices(additionalVoices, melodyMeasures.length),
       ),
       verses: _buildVerses(melodyMeasures, lyricNumbers),
       title: title,
       key: key,
       timeSignature: timeSignature,
       melody: melody?.toImportedVoice(melodyMeasures),
-      additionalVoices: [
-        for (final stream in additional)
-          stream.toImportedVoice(stream.toMeasures(lyricNumbers)),
-      ],
+      additionalVoices: additionalVoices,
       warnings: warnings,
     );
+  }
+
+  /// The non-melody voices as they are stored on the song.
+  ///
+  /// Null rather than empty for a single-voice score: a picker with one entry is
+  /// noise, and `SongNotation.hasMultipleVoices` is what the controls key off.
+  ///
+  /// Measures are padded to [melodyBarCount] so every voice is aligned
+  /// bar-for-bar with the engraved one. A voice that falls silent before the end
+  /// would otherwise be short, and switching to it would renumber every bar
+  /// after the gap.
+  List<NotatedVoice>? _storedVoices(
+    List<ImportedVoice> voices,
+    int melodyBarCount,
+  ) {
+    if (voices.isEmpty) return null;
+    final names = _voiceNames(voices);
+
+    return [
+      for (var i = 0; i < voices.length; i++)
+        NotatedVoice(
+          name: names[i],
+          measures: [
+            ...voices[i].measures.take(melodyBarCount),
+            for (var b = voices[i].measures.length; b < melodyBarCount; b++)
+              const NotatedMeasure(beats: []),
+          ],
+        ),
+    ];
+  }
+
+  /// Names for the non-melody voices.
+  ///
+  /// Exactly three of them, under a melody, is a four-part hymn, and the reduction
+  /// rule has already ordered the streams top-down — so they are the alto, tenor
+  /// and bass, and saying so is far more use to a singer than `P1 staff 2 voice 6`.
+  ///
+  /// Any other count is not a convention this can lean on. Two voices could be
+  /// anything, so those keep the file's own labels: a guess a singer cannot check
+  /// is worse than a label that is merely ugly.
+  List<String> _voiceNames(List<ImportedVoice> voices) {
+    if (voices.length == 3) return const ['Alto', 'Tenor', 'Bass'];
+    return [for (final voice in voices) voice.label];
   }
 
   /// Reads one `<measure>` into [streams], returning the divisions value in
