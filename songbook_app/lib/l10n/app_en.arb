@@ -1376,5 +1376,140 @@
   "voiceAll": "All",
   "@voiceAll": {
     "description": "Voice picker option: engrave every voice at once, one staff each, rather than choosing one line to read. Must stay short — the chip row has to fit one line at 360px."
+  },
+  "importNoticeUnknownDirective": "Line {line}: ignored the unknown directive \"{text}\".",
+  "@importNoticeUnknownDirective": {
+    "description": "Chord-sheet parser: a {directive} it does not implement. The importNotice* keys are the messages of ChordSheetParser and MusicXmlImporter, which name a code rather than building prose — this is the only place that prose exists.",
+    "placeholders": {
+      "line": {
+        "type": "int"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "importNoticeAmbiguousBareRoot": "Line {line}: \"{text}\" could be a one-chord line or a lyric; kept as a lyric.",
+  "@importNoticeAmbiguousBareRoot": {
+    "description": "Chord-sheet parser: a lone note letter, which in Hungarian is also the definite article. Losing a chord is recoverable, losing a line of words is not, so it stays a lyric.",
+    "placeholders": {
+      "line": {
+        "type": "int"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "importNoticeBracketNotAChord": "Line {line}: \"[{text}]\" is not a chord; kept as lyric text.",
+  "@importNoticeBracketNotAChord": {
+    "description": "Chord-sheet parser: a [...] marker holding something else — a section name, a repeat count. `text` arrives without its brackets, so each language can punctuate it its own way.",
+    "placeholders": {
+      "line": {
+        "type": "int"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "importNoticeTimewiseScore": "This file is score-timewise, so its measures may be grouped incorrectly. Export it as score-partwise for a clean import.",
+  "@importNoticeTimewiseScore": {
+    "description": "MusicXML importer: the rarer of the two MusicXML layouts. The two format names are literal and stay untranslated."
+  },
+  "importNoticeNoNotes": "No notes were found in the file.",
+  "@importNoticeNoNotes": {
+    "description": "MusicXML importer: valid XML, but nothing to engrave"
+  },
+  "importNoticeExtraVoicesKept": "{count, plural, =1{1 voice beyond the melody was kept — only the melody is engraved. Switch voices in the song controls.} other{{count} voices beyond the melody were kept — only the melody is engraved. Switch voices in the song controls.}}",
+  "@importNoticeExtraVoicesKept": {
+    "description": "MusicXML importer: a four-part score reduces to its melody for engraving, and the other lines are stored on the song rather than discarded. \"the song controls\" is the sheet reached from the song view, whose VOICE section picks one.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importNoticeGraceNotesSkipped": "{count, plural, =1{1 grace note was skipped: the notation has no grace-note beat.} other{{count} grace notes were skipped: the notation has no grace-note beat.}}",
+  "@importNoticeGraceNotesSkipped": {
+    "description": "MusicXML importer: a grace note would be engraved as a full beat and break the bar's arithmetic, so it is dropped",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importNoticeChordsReduced": "{count, plural, =1{1 chord was reduced to its top note; the lower notes were kept as extra voices.} other{{count} chords were reduced to their top notes; the lower notes were kept as extra voices.}}",
+  "@importNoticeChordsReduced": {
+    "description": "MusicXML importer: the melody reduction applied vertically to a <chord> stack",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importNoticeDoubleAccidentals": "{count, plural, =1{1 double accidental was approximated to a single sharp or flat, which is all the notation stores.} other{{count} double accidentals were approximated to a single sharp or flat, which is all the notation stores.}}",
+  "@importNoticeDoubleAccidentals": {
+    "description": "MusicXML importer: a double sharp or double flat cannot round-trip through a model that stores one accidental character",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importNoticeDoubleDots": "{count, plural, =1{1 double-dotted note was imported as single-dotted.} other{{count} double-dotted notes were imported as single-dotted.}}",
+  "@importNoticeDoubleDots": {
+    "description": "MusicXML importer: the model has one dot, not two",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importNoticeUnsupportedNoteValues": "{count, plural, =1{The note value {text} cannot be drawn, so it was approximated to the nearest one that can.} other{The note values {text} cannot be drawn, so they were approximated to the nearest ones that can.}}",
+  "@importNoticeUnsupportedNoteValues": {
+    "description": "MusicXML importer: values shorter than a sixteenth or longer than a whole. `text` is the MusicXML type names, already sorted and comma-joined, and stays literal; `count` only selects singular or plural.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "importNoticeEmptyXmlInput": "The MusicXML input is empty.",
+  "@importNoticeEmptyXmlInput": {
+    "description": "MusicXML importer, fatal: nothing but whitespace was handed over"
+  },
+  "importNoticeInvalidXml": "This file is not valid XML: {text}",
+  "@importNoticeInvalidXml": {
+    "description": "MusicXML importer, fatal: the document is not well-formed. `text` is the XML parser's own reason and stays in English — it names elements and offsets.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "importNoticeContainerManifest": "This is the container index from inside an .mxl file, not a score. Open the .mxl file itself.",
+  "@importNoticeContainerManifest": {
+    "description": "MusicXML importer, fatal: META-INF/container.xml was passed on its own. It says which entry of the archive is the score, so it looks like MusicXML and holds no music."
+  },
+  "importNoticeEmptyMxlInput": "The .mxl input is empty.",
+  "@importNoticeEmptyMxlInput": {
+    "description": "MusicXML importer, fatal: no bytes at all"
+  },
+  "importNoticeUnreadableArchive": "This is not a readable .mxl archive: {text}",
+  "@importNoticeUnreadableArchive": {
+    "description": "MusicXML importer, fatal: .mxl is a zip, and these bytes are not one. `text` is the decoder's own reason.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "importNoticeNoScoreInArchive": "The .mxl archive contains no MusicXML score.",
+  "@importNoticeNoScoreInArchive": {
+    "description": "MusicXML importer, fatal: a readable zip with nothing to read in it"
   }
 }

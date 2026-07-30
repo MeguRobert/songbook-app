@@ -1821,6 +1821,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All'**
   String get voiceAll;
+
+  /// Chord-sheet parser: a {directive} it does not implement. The importNotice* keys are the messages of ChordSheetParser and MusicXmlImporter, which name a code rather than building prose — this is the only place that prose exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Line {line}: ignored the unknown directive \"{text}\".'**
+  String importNoticeUnknownDirective(int line, String text);
+
+  /// Chord-sheet parser: a lone note letter, which in Hungarian is also the definite article. Losing a chord is recoverable, losing a line of words is not, so it stays a lyric.
+  ///
+  /// In en, this message translates to:
+  /// **'Line {line}: \"{text}\" could be a one-chord line or a lyric; kept as a lyric.'**
+  String importNoticeAmbiguousBareRoot(int line, String text);
+
+  /// Chord-sheet parser: a [...] marker holding something else — a section name, a repeat count. `text` arrives without its brackets, so each language can punctuate it its own way.
+  ///
+  /// In en, this message translates to:
+  /// **'Line {line}: \"[{text}]\" is not a chord; kept as lyric text.'**
+  String importNoticeBracketNotAChord(int line, String text);
+
+  /// MusicXML importer: the rarer of the two MusicXML layouts. The two format names are literal and stay untranslated.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is score-timewise, so its measures may be grouped incorrectly. Export it as score-partwise for a clean import.'**
+  String get importNoticeTimewiseScore;
+
+  /// MusicXML importer: valid XML, but nothing to engrave
+  ///
+  /// In en, this message translates to:
+  /// **'No notes were found in the file.'**
+  String get importNoticeNoNotes;
+
+  /// MusicXML importer: a four-part score reduces to its melody for engraving, and the other lines are stored on the song rather than discarded. "the song controls" is the sheet reached from the song view, whose VOICE section picks one.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 voice beyond the melody was kept — only the melody is engraved. Switch voices in the song controls.} other{{count} voices beyond the melody were kept — only the melody is engraved. Switch voices in the song controls.}}'**
+  String importNoticeExtraVoicesKept(int count);
+
+  /// MusicXML importer: a grace note would be engraved as a full beat and break the bar's arithmetic, so it is dropped
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 grace note was skipped: the notation has no grace-note beat.} other{{count} grace notes were skipped: the notation has no grace-note beat.}}'**
+  String importNoticeGraceNotesSkipped(int count);
+
+  /// MusicXML importer: the melody reduction applied vertically to a <chord> stack
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 chord was reduced to its top note; the lower notes were kept as extra voices.} other{{count} chords were reduced to their top notes; the lower notes were kept as extra voices.}}'**
+  String importNoticeChordsReduced(int count);
+
+  /// MusicXML importer: a double sharp or double flat cannot round-trip through a model that stores one accidental character
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 double accidental was approximated to a single sharp or flat, which is all the notation stores.} other{{count} double accidentals were approximated to a single sharp or flat, which is all the notation stores.}}'**
+  String importNoticeDoubleAccidentals(int count);
+
+  /// MusicXML importer: the model has one dot, not two
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 double-dotted note was imported as single-dotted.} other{{count} double-dotted notes were imported as single-dotted.}}'**
+  String importNoticeDoubleDots(int count);
+
+  /// MusicXML importer: values shorter than a sixteenth or longer than a whole. `text` is the MusicXML type names, already sorted and comma-joined, and stays literal; `count` only selects singular or plural.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The note value {text} cannot be drawn, so it was approximated to the nearest one that can.} other{The note values {text} cannot be drawn, so they were approximated to the nearest ones that can.}}'**
+  String importNoticeUnsupportedNoteValues(int count, String text);
+
+  /// MusicXML importer, fatal: nothing but whitespace was handed over
+  ///
+  /// In en, this message translates to:
+  /// **'The MusicXML input is empty.'**
+  String get importNoticeEmptyXmlInput;
+
+  /// MusicXML importer, fatal: the document is not well-formed. `text` is the XML parser's own reason and stays in English — it names elements and offsets.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is not valid XML: {text}'**
+  String importNoticeInvalidXml(String text);
+
+  /// MusicXML importer, fatal: META-INF/container.xml was passed on its own. It says which entry of the archive is the score, so it looks like MusicXML and holds no music.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the container index from inside an .mxl file, not a score. Open the .mxl file itself.'**
+  String get importNoticeContainerManifest;
+
+  /// MusicXML importer, fatal: no bytes at all
+  ///
+  /// In en, this message translates to:
+  /// **'The .mxl input is empty.'**
+  String get importNoticeEmptyMxlInput;
+
+  /// MusicXML importer, fatal: .mxl is a zip, and these bytes are not one. `text` is the decoder's own reason.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a readable .mxl archive: {text}'**
+  String importNoticeUnreadableArchive(String text);
+
+  /// MusicXML importer, fatal: a readable zip with nothing to read in it
+  ///
+  /// In en, this message translates to:
+  /// **'The .mxl archive contains no MusicXML score.'**
+  String get importNoticeNoScoreInArchive;
 }
 
 class _AppLocalizationsDelegate
