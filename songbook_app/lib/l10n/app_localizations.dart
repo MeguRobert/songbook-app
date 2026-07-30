@@ -291,6 +291,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error loading songs'**
   String get errorLoadingSongs;
+
+  /// Tooltip on the empty heart
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favorites'**
+  String get favoriteAdd;
+
+  /// Tooltip on the filled heart
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get favoriteRemove;
+
+  /// Tooltip on the overflow menu
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get moreActions;
+
+  /// Tooltip on the controls button
+  ///
+  /// In en, this message translates to:
+  /// **'Song controls'**
+  String get songControls;
+
+  /// Overflow menu: full-screen lyrics for a congregation
+  ///
+  /// In en, this message translates to:
+  /// **'Presentation mode'**
+  String get menuPresentation;
+
+  /// Overflow menu: tag editor
+  ///
+  /// In en, this message translates to:
+  /// **'Edit tags'**
+  String get menuEditTags;
+
+  /// Overflow menu: put the song on the clipboard
+  ///
+  /// In en, this message translates to:
+  /// **'Copy song text'**
+  String get menuCopyText;
+
+  /// Overflow menu: correct a user song
+  ///
+  /// In en, this message translates to:
+  /// **'Edit song'**
+  String get menuEditSong;
+
+  /// Overflow menu: beat-level score correction
+  ///
+  /// In en, this message translates to:
+  /// **'Correct the notation'**
+  String get menuEditNotation;
+
+  /// Overflow menu: remove a user song
+  ///
+  /// In en, this message translates to:
+  /// **'Delete song'**
+  String get menuDeleteSong;
+
+  /// Confirmation after copying
+  ///
+  /// In en, this message translates to:
+  /// **'Song text copied.'**
+  String get songTextCopied;
+
+  /// Confirmation dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Delete song?'**
+  String get deleteSongTitle;
+
+  /// Warns that a user song has no copy anywhere else
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" is stored only on this device. Deleting it cannot be undone.'**
+  String deleteSongBody(String title);
+
+  /// Snackbar when the sheet-music view falls through to chords
+  ///
+  /// In en, this message translates to:
+  /// **'No sheet music for this song — showing chords.'**
+  String get noSheetMusicShowingChords;
+
+  /// App-bar title when a song fails to load
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get errorGeneric;
+
+  /// Controls-sheet section heading
+  ///
+  /// In en, this message translates to:
+  /// **'VIEW'**
+  String get sectionView;
+
+  /// Controls-sheet section heading
+  ///
+  /// In en, this message translates to:
+  /// **'TEXT SIZE'**
+  String get sectionTextSize;
+
+  /// Controls-sheet section heading
+  ///
+  /// In en, this message translates to:
+  /// **'TRANSPOSE'**
+  String get sectionTranspose;
+
+  /// Controls-sheet section heading
+  ///
+  /// In en, this message translates to:
+  /// **'CAPO'**
+  String get sectionCapo;
+
+  /// Controls-sheet section heading
+  ///
+  /// In en, this message translates to:
+  /// **'AUTO-SCROLL'**
+  String get sectionAutoScroll;
+
+  /// View preset: engraved notation
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet'**
+  String get presetSheetMusic;
+
+  /// View preset: chord symbols over lyrics
+  ///
+  /// In en, this message translates to:
+  /// **'Chords'**
+  String get presetChords;
+
+  /// View preset: words only
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get presetLyrics;
+
+  /// Toggle for chord symbols in the notation view
+  ///
+  /// In en, this message translates to:
+  /// **'Chords above staff'**
+  String get chordsAboveStaff;
+
+  /// Explains why the sheet-music preset is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'There is no sheet music for this song, so it opens in Chords.'**
+  String get noSheetMusicOpensInChords;
+
+  /// Accessibility label on A-
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease text size'**
+  String get textSizeDecrease;
+
+  /// Accessibility label on A+
+  ///
+  /// In en, this message translates to:
+  /// **'Increase text size'**
+  String get textSizeIncrease;
+
+  /// Tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Transpose down'**
+  String get transposeDown;
+
+  /// Tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Transpose up'**
+  String get transposeUp;
+
+  /// Clears transposition back to the song key
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to {key}'**
+  String transposeReset(String key);
+
+  /// Tooltip on play
+  ///
+  /// In en, this message translates to:
+  /// **'Start auto-scroll'**
+  String get autoScrollStart;
+
+  /// Tooltip on pause
+  ///
+  /// In en, this message translates to:
+  /// **'Stop auto-scroll'**
+  String get autoScrollStop;
+
+  /// Explains that speed is stored per song
+  ///
+  /// In en, this message translates to:
+  /// **'Speed remembered per song'**
+  String get autoScrollSpeedPerSong;
+
+  /// Why auto-scroll is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'not in sheet music view'**
+  String get autoScrollNotInSheetMusic;
+
+  /// Auto-scroll speed name
+  ///
+  /// In en, this message translates to:
+  /// **'Slowest'**
+  String get speedSlowest;
+
+  /// Auto-scroll speed name
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get speedSlow;
+
+  /// Auto-scroll speed name
+  ///
+  /// In en, this message translates to:
+  /// **'Gentle'**
+  String get speedGentle;
+
+  /// Auto-scroll speed name
+  ///
+  /// In en, this message translates to:
+  /// **'Steady'**
+  String get speedSteady;
+
+  /// Auto-scroll speed name
+  ///
+  /// In en, this message translates to:
+  /// **'Brisk'**
+  String get speedBrisk;
+
+  /// Auto-scroll speed name
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get speedFast;
+
+  /// Auto-scroll speed name
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest'**
+  String get speedFastest;
+
+  /// Shown when the key needs no capo
+  ///
+  /// In en, this message translates to:
+  /// **'No capo needed'**
+  String get capoNone;
+
+  /// Recommended capo fret
+  ///
+  /// In en, this message translates to:
+  /// **'Capo {fret}'**
+  String capoAt(int fret);
+
+  /// Capo advice with no capo fitted
+  ///
+  /// In en, this message translates to:
+  /// **'Play open in {shape} (sounds {key})'**
+  String capoOpenShape(String shape, String key);
+
+  /// Capo advice
+  ///
+  /// In en, this message translates to:
+  /// **'Clamp fret {fret}, finger {shape} shapes — sounds {key}'**
+  String capoClamp(int fret, String shape, String key);
+
+  /// Heading above alternative capo frets
+  ///
+  /// In en, this message translates to:
+  /// **'Other positions'**
+  String get capoOther;
+
+  /// Shown for a key with no useful capo
+  ///
+  /// In en, this message translates to:
+  /// **'No capo suggestion for {key}'**
+  String capoNoSuggestion(String key);
+
+  /// Empty state heading
+  ///
+  /// In en, this message translates to:
+  /// **'No favorites yet'**
+  String get favoritesEmpty;
+
+  /// Empty state hint
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart icon on a song to add it here'**
+  String get favoritesEmptyHint;
+
+  /// Button from the empty favourites screen
+  ///
+  /// In en, this message translates to:
+  /// **'Browse Songs'**
+  String get favoritesBrowse;
+
+  /// Favourites load failure
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading favorites'**
+  String get errorLoadingFavorites;
+
+  /// Tooltip during setlist playback
+  ///
+  /// In en, this message translates to:
+  /// **'Previous song'**
+  String get setlistPrevious;
+
+  /// Tooltip during setlist playback
+  ///
+  /// In en, this message translates to:
+  /// **'Next song'**
+  String get setlistNext;
+
+  /// Tooltip during setlist playback
+  ///
+  /// In en, this message translates to:
+  /// **'Stop playing setlist'**
+  String get setlistStop;
 }
 
 class _AppLocalizationsDelegate

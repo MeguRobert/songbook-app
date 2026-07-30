@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/models/view_config.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../domain/services/capo_service.dart';
 import '../../../providers/autoscroll_provider.dart';
 import '../../../providers/providers.dart';
@@ -52,9 +53,16 @@ class SongControlsSheet extends ConsumerStatefulWidget {
   ///
   /// Named rather than shown as a percentage for the same reason: 63% of a range
   /// nobody can see is still a number standing in for a feeling.
-  static String speedLabel(double speed) {
-    const names = ['Slowest', 'Slow', 'Gentle', 'Steady', 'Brisk', 'Fast',
-        'Fastest'];
+  static String speedLabel(AppLocalizations l10n, double speed) {
+    final names = [
+      l10n.speedSlowest,
+      l10n.speedSlow,
+      l10n.speedGentle,
+      l10n.speedSteady,
+      l10n.speedBrisk,
+      l10n.speedFast,
+      l10n.speedFastest,
+    ];
     const min = AutoScrollState.minSpeed;
     const max = AutoScrollState.maxSpeed;
     final fraction = ((speed - min) / (max - min)).clamp(0.0, 1.0);
@@ -70,6 +78,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final viewConfig = ref.watch(effectiveViewConfigProvider);
     final transpose = ref.watch(transposeProvider);
     final textScale = ref.watch(textScaleProvider);
@@ -150,7 +159,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // ---------------------------------------------- 1. VIEW
-                      _SectionHeader(text: 'VIEW', theme: theme),
+                      _SectionHeader(text: l10n.sectionView, theme: theme),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
@@ -164,14 +173,14 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                             // chip's own fill already says which is selected.
                             showCheckmark: false,
                             visualDensity: VisualDensity.compact,
-                            label: const Row(
+                            label: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 // A note, not a piano: the choice is between
                                 // notation and chords, not between instruments.
                                 Icon(Icons.music_note, size: 18),
                                 SizedBox(width: 6),
-                                Text('Sheet'),
+                                Text(l10n.presetSheetMusic),
                               ],
                             ),
                             selected: viewConfig.isSheetMusicPreset,
@@ -189,7 +198,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                             // chip's own fill already says which is selected.
                             showCheckmark: false,
                             visualDensity: VisualDensity.compact,
-                            label: const Row(
+                            label: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 // Chord letters, because that is literally what
@@ -199,7 +208,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                 // stock Material has no guitar glyph anyway.
                                 Icon(Icons.abc, size: 18),
                                 SizedBox(width: 6),
-                                Text('Chords'),
+                                Text(l10n.presetChords),
                               ],
                             ),
                             selected: viewConfig.isChordsPreset,
@@ -215,12 +224,12 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                             // chip's own fill already says which is selected.
                             showCheckmark: false,
                             visualDensity: VisualDensity.compact,
-                            label: const Row(
+                            label: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.text_snippet, size: 18),
                                 SizedBox(width: 6),
-                                Text('Lyrics'),
+                                Text(l10n.presetLyrics),
                               ],
                             ),
                             selected: viewConfig.isLyricsOnlyPreset,
@@ -234,8 +243,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                       if (!widget.canShowSheetMusic) ...[
                         const SizedBox(height: 8),
                         Text(
-                          'There is no sheet music for this song, so it opens '
-                          'in Chords.',
+                          l10n.noSheetMusicOpensInChords,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -254,21 +262,21 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                           onChanged: viewConfig.showNotation
                               ? songViewNotifier.setShowChords
                               : null,
-                          title: const Text('Chords above staff'),
+                          title: Text(l10n.chordsAboveStaff),
                         ),
                       ),
 
                       const Divider(height: 32),
 
                       // ----------------------------------------- 2. TEXT SIZE
-                      _SectionHeader(text: 'TEXT SIZE', theme: theme),
+                      _SectionHeader(text: l10n.sectionTextSize, theme: theme),
                       const SizedBox(height: 12),
                       Row(
                         children: [
                           TextButton(
                             onPressed: songViewNotifier.decreaseTextScale,
                             child: Semantics(
-                              label: 'Decrease text size',
+                              label: l10n.textSizeDecrease,
                               excludeSemantics: true,
                               child: const Text(
                                 'A-',
@@ -290,7 +298,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                           TextButton(
                             onPressed: songViewNotifier.increaseTextScale,
                             child: Semantics(
-                              label: 'Increase text size',
+                              label: l10n.textSizeIncrease,
                               excludeSemantics: true,
                               child: const Text(
                                 'A+',
@@ -325,7 +333,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                   onPressed: canTranspose
                                       ? songViewNotifier.transposeDown
                                       : null,
-                                  tooltip: 'Transpose down',
+                                  tooltip: l10n.transposeDown,
                                 ),
                                 Expanded(
                                   child: Column(
@@ -363,7 +371,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                   onPressed: canTranspose
                                       ? songViewNotifier.transposeUp
                                       : null,
-                                  tooltip: 'Transpose up',
+                                  tooltip: l10n.transposeUp,
                                 ),
                               ],
                             ),
@@ -409,10 +417,10 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
 
                       // --------------------------------------- 5. AUTO-SCROLL
                       _SectionHeader(
-                        text: 'AUTO-SCROLL',
+                        text: l10n.sectionAutoScroll,
                         theme: theme,
                         enabled: canAutoScroll,
-                        hint: canAutoScroll ? null : 'not in sheet music view',
+                        hint: canAutoScroll ? null : l10n.autoScrollNotInSheetMusic,
                       ),
                       const SizedBox(height: 12),
                       _Disableable(
@@ -443,20 +451,19 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                         }
                                       : null,
                                   tooltip: autoScroll.isPlaying
-                                      ? 'Stop auto-scroll'
-                                      : 'Start auto-scroll',
+                                      ? l10n.autoScrollStop
+                                      : l10n.autoScrollStart,
                                 ),
                                 const SizedBox(width: 8),
-                                const _SpeedGlyph(emoji: '🐌', label: 'Slow'),
+                                _SpeedGlyph(emoji: '🐌', label: l10n.speedSlow),
                                 Expanded(
                                   child: Slider(
                                     value: autoScroll.speed,
                                     min: AutoScrollState.minSpeed,
                                     max: AutoScrollState.maxSpeed,
                                     divisions: 18,
-                                    label:
-                                        SongControlsSheet.speedLabel(
-                                            autoScroll.speed),
+                                    label: SongControlsSheet.speedLabel(
+                                        l10n, autoScroll.speed),
                                     // Live update while dragging; persist once on
                                     // release rather than on every frame.
                                     onChanged: canAutoScroll
@@ -465,12 +472,12 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                     onChangeEnd: autoScrollNotifier.commitSpeed,
                                   ),
                                 ),
-                                const _SpeedGlyph(emoji: '🏎️', label: 'Fast'),
+                                _SpeedGlyph(emoji: '🏎️', label: l10n.speedFast),
                               ],
                             ),
                             Center(
                               child: Text(
-                                'Speed remembered per song',
+                                l10n.autoScrollSpeedPerSong,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -548,9 +555,10 @@ class _CapoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (suggestions.isEmpty) {
       return Text(
-        'No capo suggestion for $soundingKey',
+        l10n.capoNoSuggestion(soundingKey),
         style: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),
@@ -583,7 +591,7 @@ class _CapoSection extends StatelessWidget {
                     Text(
                       recommended.fret == 0
                           ? 'No capo needed'
-                          : 'Capo ${recommended.fret}',
+                          : l10n.capoAt(recommended.fret),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: scheme.onPrimaryContainer,
@@ -591,7 +599,7 @@ class _CapoSection extends StatelessWidget {
                     ),
                     Text(
                       recommended.fret == 0
-                          ? 'Play open in ${recommended.shapeKey} (sounds $soundingKey)'
+                          ? l10n.capoOpenShape(recommended.shapeKey, soundingKey)
                           : 'Clamp fret ${recommended.fret}, finger '
                                 '${recommended.shapeKey} shapes — sounds $soundingKey',
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -623,7 +631,7 @@ class _CapoSection extends StatelessWidget {
                   label: Text(
                     s.fret == 0
                         ? 'Open · ${s.shapeKey}'
-                        : 'Capo ${s.fret} · ${s.shapeKey}',
+                        : '${l10n.capoAt(s.fret)} · ${s.shapeKey}',
                   ),
                 ),
             ],

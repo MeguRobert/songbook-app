@@ -1,6 +1,7 @@
 import '../../../../data/models/song_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../router/app_router.dart';
@@ -40,7 +41,7 @@ class SetlistNavBar extends ConsumerWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.skip_previous),
-            tooltip: 'Previous song',
+            tooltip: AppLocalizations.of(context).setlistPrevious,
             onPressed: playback.hasPrevious
                 ? () {
                     final n = notifier.previous();
@@ -69,7 +70,7 @@ class SetlistNavBar extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.skip_next),
-            tooltip: 'Next song',
+            tooltip: AppLocalizations.of(context).setlistNext,
             onPressed: playback.hasNext
                 ? () {
                     final n = notifier.next();
@@ -81,7 +82,7 @@ class SetlistNavBar extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.close),
-            tooltip: 'Stop playing setlist',
+            tooltip: AppLocalizations.of(context).setlistStop,
             onPressed: () => notifier.stop(),
           ),
         ],

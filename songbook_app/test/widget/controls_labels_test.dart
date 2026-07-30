@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:songbook_app/l10n/app_localizations.dart';
+import 'package:songbook_app/presentation/providers/autoscroll_provider.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
 import 'package:songbook_app/presentation/screens/song_view/widgets/song_controls_sheet.dart';
 import 'package:songbook_app/presentation/screens/song_view/song_view_screen.dart';
@@ -60,15 +62,26 @@ void main() {
     testWidgets('names every step across the range', (tester) async {
       await pumpControls(tester);
       final slider = tester.widget<Slider>(find.byType(Slider).last);
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
       // Whatever the naming scheme, it has to cover the whole slider — a label
       // that goes blank at one end is worse than the number it replaced.
       for (var v = slider.min; v <= slider.max; v += 1) {
-        expect(SongControlsSheet.speedLabel(v), isNotEmpty,
+        expect(SongControlsSheet.speedLabel(l10n, v), isNotEmpty,
             reason: 'speed $v');
       }
-      expect(SongControlsSheet.speedLabel(slider.min), 'Slowest');
-      expect(SongControlsSheet.speedLabel(slider.max), 'Fastest');
+      expect(SongControlsSheet.speedLabel(l10n, slider.min), 'Slowest');
+      expect(SongControlsSheet.speedLabel(l10n, slider.max), 'Fastest');
+    });
+
+    testWidgets('and names them in the chosen language', (tester) async {
+      // The names live in the ARB now, so this is also a check that the speed
+      // scale did not stay English while the rest of the sheet translated.
+      final hu = await AppLocalizations.delegate.load(const Locale('hu'));
+      expect(SongControlsSheet.speedLabel(hu, AutoScrollState.minSpeed),
+          'Leglassabb');
+      expect(SongControlsSheet.speedLabel(hu, AutoScrollState.maxSpeed),
+          'Leggyorsabb');
     });
   });
 

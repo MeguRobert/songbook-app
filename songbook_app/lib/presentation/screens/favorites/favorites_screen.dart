@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../router/app_router.dart';
@@ -12,6 +13,7 @@ class FavoritesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final favoriteSongsAsync = ref.watch(favoriteSongsProvider);
 
     return Scaffold(
@@ -32,14 +34,14 @@ class FavoritesScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No favorites yet',
+                    l10n.favoritesEmpty,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tap the heart icon on a song to add it here',
+                    l10n.favoritesEmptyHint,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[500],
                         ),
@@ -48,7 +50,7 @@ class FavoritesScreen extends ConsumerWidget {
                   ElevatedButton.icon(
                     onPressed: () => context.go(AppRoutes.home),
                     icon: const Icon(Icons.library_music),
-                    label: const Text('Browse Songs'),
+                    label: Text(l10n.favoritesBrowse),
                   ),
                 ],
               ),

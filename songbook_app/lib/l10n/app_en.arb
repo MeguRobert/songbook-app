@@ -1,77 +1,391 @@
 {
   "@@locale": "en",
-
   "appTitle": "Songbook",
-  "@appTitle": {"description": "Application name, shown in the browser tab and the song list app bar"},
-
+  "@appTitle": {
+    "description": "Application name, shown in the browser tab and the song list app bar"
+  },
   "navSongs": "Songs",
-  "@navSongs": {"description": "Bottom navigation: the song list"},
+  "@navSongs": {
+    "description": "Bottom navigation: the song list"
+  },
   "navSetlists": "Setlists",
-  "@navSetlists": {"description": "Bottom navigation: saved orders of service"},
+  "@navSetlists": {
+    "description": "Bottom navigation: saved orders of service"
+  },
   "navFavorites": "Favorites",
-  "@navFavorites": {"description": "Bottom navigation: favourited songs"},
+  "@navFavorites": {
+    "description": "Bottom navigation: favourited songs"
+  },
   "navSettings": "Settings",
-  "@navSettings": {"description": "Bottom navigation: app settings"},
-
+  "@navSettings": {
+    "description": "Bottom navigation: app settings"
+  },
   "actionCancel": "Cancel",
-  "@actionCancel": {"description": "Dismiss a dialog without doing anything"},
+  "@actionCancel": {
+    "description": "Dismiss a dialog without doing anything"
+  },
   "actionDelete": "Delete",
-  "@actionDelete": {"description": "Confirm a destructive action"},
+  "@actionDelete": {
+    "description": "Confirm a destructive action"
+  },
   "actionSave": "Save",
-  "@actionSave": {"description": "Commit an edit"},
+  "@actionSave": {
+    "description": "Commit an edit"
+  },
   "actionClear": "Clear",
-  "@actionClear": {"description": "Empty a list or a field"},
+  "@actionClear": {
+    "description": "Empty a list or a field"
+  },
   "actionRetry": "Retry",
-  "@actionRetry": {"description": "Try a failed load again"},
-
+  "@actionRetry": {
+    "description": "Try a failed load again"
+  },
   "searchHint": "Search title, number, reference or lyrics…",
-  "@searchHint": {"description": "Placeholder in the song-list search field"},
+  "@searchHint": {
+    "description": "Placeholder in the song-list search field"
+  },
   "searchTooltip": "Search",
-  "@searchTooltip": {"description": "Tooltip on the search icon"},
+  "@searchTooltip": {
+    "description": "Tooltip on the search icon"
+  },
   "searchClose": "Close search",
-  "@searchClose": {"description": "Tooltip on the button that collapses the search field"},
+  "@searchClose": {
+    "description": "Tooltip on the button that collapses the search field"
+  },
   "searchRecent": "Recent searches",
-  "@searchRecent": {"description": "Heading above previously used search queries"},
+  "@searchRecent": {
+    "description": "Heading above previously used search queries"
+  },
   "searchNoResults": "No songs found",
-  "@searchNoResults": {"description": "Shown when a query matches nothing"},
+  "@searchNoResults": {
+    "description": "Shown when a query matches nothing"
+  },
   "searchScope": "Searched titles, numbers, references and lyrics",
-  "@searchScope": {"description": "Explains what a fruitless search covered"},
+  "@searchScope": {
+    "description": "Explains what a fruitless search covered"
+  },
   "searchLyricsFallback": "{count, plural, =1{No title match — found in the lyrics of 1 song} other{No title match — found in the lyrics of {count} songs}}",
   "@searchLyricsFallback": {
     "description": "Says why results appeared when no title matched",
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "searchNoTagMatch": "No songs match the selected tags and query",
-  "@searchNoTagMatch": {"description": "Empty search results while tags are also filtering"},
-
+  "@searchNoTagMatch": {
+    "description": "Empty search results while tags are also filtering"
+  },
   "booksTooltip": "Books",
-  "@booksTooltip": {"description": "Tooltip on the songbook filter icon"},
+  "@booksTooltip": {
+    "description": "Tooltip on the songbook filter icon"
+  },
   "tagsTooltip": "Tags",
-  "@tagsTooltip": {"description": "Tooltip on the tag filter icon"},
+  "@tagsTooltip": {
+    "description": "Tooltip on the tag filter icon"
+  },
   "addSong": "Add a song",
-  "@addSong": {"description": "Tooltip on the button that opens the import screen"},
+  "@addSong": {
+    "description": "Tooltip on the button that opens the import screen"
+  },
   "backToAllSongs": "Back to all songs",
-  "@backToAllSongs": {"description": "Tooltip on the button that clears the songbook filter"},
+  "@backToAllSongs": {
+    "description": "Tooltip on the button that clears the songbook filter"
+  },
   "clearTags": "Clear tags",
-  "@clearTags": {"description": "Removes every active tag filter"},
-
+  "@clearTags": {
+    "description": "Removes every active tag filter"
+  },
   "settingsTitle": "Settings",
-  "@settingsTitle": {"description": "Settings screen app-bar title"},
+  "@settingsTitle": {
+    "description": "Settings screen app-bar title"
+  },
   "settingsLanguage": "Language",
-  "@settingsLanguage": {"description": "Section heading for the interface language"},
+  "@settingsLanguage": {
+    "description": "Section heading for the interface language"
+  },
   "settingsLanguageSystem": "Match my device",
-  "@settingsLanguageSystem": {"description": "Language option that follows the phone's own language"},
+  "@settingsLanguageSystem": {
+    "description": "Language option that follows the phone's own language"
+  },
   "languageHungarian": "Magyar",
-  "@languageHungarian": {"description": "Hungarian, named in Hungarian so it is recognisable whatever the current language"},
+  "@languageHungarian": {
+    "description": "Hungarian, named in Hungarian so it is recognisable whatever the current language"
+  },
   "languageRomanian": "Română",
-  "@languageRomanian": {"description": "Romanian, named in Romanian"},
+  "@languageRomanian": {
+    "description": "Romanian, named in Romanian"
+  },
   "languageEnglish": "English",
-  "@languageEnglish": {"description": "English, named in English"},
-
+  "@languageEnglish": {
+    "description": "English, named in English"
+  },
   "songNotFound": "Song not found",
-  "@songNotFound": {"description": "Shown when a song id does not resolve"},
+  "@songNotFound": {
+    "description": "Shown when a song id does not resolve"
+  },
   "loading": "Loading…",
-  "@loading": {"description": "Placeholder title while a song loads"},
+  "@loading": {
+    "description": "Placeholder title while a song loads"
+  },
   "errorLoadingSongs": "Error loading songs",
-  "@errorLoadingSongs": {"description": "Shown when the catalogue fails to load"}
+  "@errorLoadingSongs": {
+    "description": "Shown when the catalogue fails to load"
+  },
+  "favoriteAdd": "Add to favorites",
+  "@favoriteAdd": {
+    "description": "Tooltip on the empty heart"
+  },
+  "favoriteRemove": "Remove from favorites",
+  "@favoriteRemove": {
+    "description": "Tooltip on the filled heart"
+  },
+  "moreActions": "More actions",
+  "@moreActions": {
+    "description": "Tooltip on the overflow menu"
+  },
+  "songControls": "Song controls",
+  "@songControls": {
+    "description": "Tooltip on the controls button"
+  },
+  "menuPresentation": "Presentation mode",
+  "@menuPresentation": {
+    "description": "Overflow menu: full-screen lyrics for a congregation"
+  },
+  "menuEditTags": "Edit tags",
+  "@menuEditTags": {
+    "description": "Overflow menu: tag editor"
+  },
+  "menuCopyText": "Copy song text",
+  "@menuCopyText": {
+    "description": "Overflow menu: put the song on the clipboard"
+  },
+  "menuEditSong": "Edit song",
+  "@menuEditSong": {
+    "description": "Overflow menu: correct a user song"
+  },
+  "menuEditNotation": "Correct the notation",
+  "@menuEditNotation": {
+    "description": "Overflow menu: beat-level score correction"
+  },
+  "menuDeleteSong": "Delete song",
+  "@menuDeleteSong": {
+    "description": "Overflow menu: remove a user song"
+  },
+  "songTextCopied": "Song text copied.",
+  "@songTextCopied": {
+    "description": "Confirmation after copying"
+  },
+  "deleteSongTitle": "Delete song?",
+  "@deleteSongTitle": {
+    "description": "Confirmation dialog title"
+  },
+  "deleteSongBody": "\"{title}\" is stored only on this device. Deleting it cannot be undone.",
+  "@deleteSongBody": {
+    "description": "Warns that a user song has no copy anywhere else",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "noSheetMusicShowingChords": "No sheet music for this song — showing chords.",
+  "@noSheetMusicShowingChords": {
+    "description": "Snackbar when the sheet-music view falls through to chords"
+  },
+  "errorGeneric": "Error",
+  "@errorGeneric": {
+    "description": "App-bar title when a song fails to load"
+  },
+  "sectionView": "VIEW",
+  "@sectionView": {
+    "description": "Controls-sheet section heading"
+  },
+  "sectionTextSize": "TEXT SIZE",
+  "@sectionTextSize": {
+    "description": "Controls-sheet section heading"
+  },
+  "sectionTranspose": "TRANSPOSE",
+  "@sectionTranspose": {
+    "description": "Controls-sheet section heading"
+  },
+  "sectionCapo": "CAPO",
+  "@sectionCapo": {
+    "description": "Controls-sheet section heading"
+  },
+  "sectionAutoScroll": "AUTO-SCROLL",
+  "@sectionAutoScroll": {
+    "description": "Controls-sheet section heading"
+  },
+  "presetSheetMusic": "Sheet",
+  "@presetSheetMusic": {
+    "description": "View preset: engraved notation"
+  },
+  "presetChords": "Chords",
+  "@presetChords": {
+    "description": "View preset: chord symbols over lyrics"
+  },
+  "presetLyrics": "Lyrics",
+  "@presetLyrics": {
+    "description": "View preset: words only"
+  },
+  "chordsAboveStaff": "Chords above staff",
+  "@chordsAboveStaff": {
+    "description": "Toggle for chord symbols in the notation view"
+  },
+  "noSheetMusicOpensInChords": "There is no sheet music for this song, so it opens in Chords.",
+  "@noSheetMusicOpensInChords": {
+    "description": "Explains why the sheet-music preset is disabled"
+  },
+  "textSizeDecrease": "Decrease text size",
+  "@textSizeDecrease": {
+    "description": "Accessibility label on A-"
+  },
+  "textSizeIncrease": "Increase text size",
+  "@textSizeIncrease": {
+    "description": "Accessibility label on A+"
+  },
+  "transposeDown": "Transpose down",
+  "@transposeDown": {
+    "description": "Tooltip"
+  },
+  "transposeUp": "Transpose up",
+  "@transposeUp": {
+    "description": "Tooltip"
+  },
+  "transposeReset": "Reset to {key}",
+  "@transposeReset": {
+    "description": "Clears transposition back to the song key",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "autoScrollStart": "Start auto-scroll",
+  "@autoScrollStart": {
+    "description": "Tooltip on play"
+  },
+  "autoScrollStop": "Stop auto-scroll",
+  "@autoScrollStop": {
+    "description": "Tooltip on pause"
+  },
+  "autoScrollSpeedPerSong": "Speed remembered per song",
+  "@autoScrollSpeedPerSong": {
+    "description": "Explains that speed is stored per song"
+  },
+  "autoScrollNotInSheetMusic": "not in sheet music view",
+  "@autoScrollNotInSheetMusic": {
+    "description": "Why auto-scroll is disabled"
+  },
+  "speedSlowest": "Slowest",
+  "@speedSlowest": {
+    "description": "Auto-scroll speed name"
+  },
+  "speedSlow": "Slow",
+  "@speedSlow": {
+    "description": "Auto-scroll speed name"
+  },
+  "speedGentle": "Gentle",
+  "@speedGentle": {
+    "description": "Auto-scroll speed name"
+  },
+  "speedSteady": "Steady",
+  "@speedSteady": {
+    "description": "Auto-scroll speed name"
+  },
+  "speedBrisk": "Brisk",
+  "@speedBrisk": {
+    "description": "Auto-scroll speed name"
+  },
+  "speedFast": "Fast",
+  "@speedFast": {
+    "description": "Auto-scroll speed name"
+  },
+  "speedFastest": "Fastest",
+  "@speedFastest": {
+    "description": "Auto-scroll speed name"
+  },
+  "capoNone": "No capo needed",
+  "@capoNone": {
+    "description": "Shown when the key needs no capo"
+  },
+  "capoAt": "Capo {fret}",
+  "@capoAt": {
+    "description": "Recommended capo fret",
+    "placeholders": {
+      "fret": {
+        "type": "int"
+      }
+    }
+  },
+  "capoOpenShape": "Play open in {shape} (sounds {key})",
+  "@capoOpenShape": {
+    "description": "Capo advice with no capo fitted",
+    "placeholders": {
+      "shape": {
+        "type": "String"
+      },
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "capoClamp": "Clamp fret {fret}, finger {shape} shapes — sounds {key}",
+  "@capoClamp": {
+    "description": "Capo advice",
+    "placeholders": {
+      "fret": {
+        "type": "int"
+      },
+      "shape": {
+        "type": "String"
+      },
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "capoOther": "Other positions",
+  "@capoOther": {
+    "description": "Heading above alternative capo frets"
+  },
+  "capoNoSuggestion": "No capo suggestion for {key}",
+  "@capoNoSuggestion": {
+    "description": "Shown for a key with no useful capo",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "favoritesEmpty": "No favorites yet",
+  "@favoritesEmpty": {
+    "description": "Empty state heading"
+  },
+  "favoritesEmptyHint": "Tap the heart icon on a song to add it here",
+  "@favoritesEmptyHint": {
+    "description": "Empty state hint"
+  },
+  "favoritesBrowse": "Browse Songs",
+  "@favoritesBrowse": {
+    "description": "Button from the empty favourites screen"
+  },
+  "errorLoadingFavorites": "Error loading favorites",
+  "@errorLoadingFavorites": {
+    "description": "Favourites load failure"
+  },
+  "setlistPrevious": "Previous song",
+  "@setlistPrevious": {
+    "description": "Tooltip during setlist playback"
+  },
+  "setlistNext": "Next song",
+  "@setlistNext": {
+    "description": "Tooltip during setlist playback"
+  },
+  "setlistStop": "Stop playing setlist",
+  "@setlistStop": {
+    "description": "Tooltip during setlist playback"
+  }
 }

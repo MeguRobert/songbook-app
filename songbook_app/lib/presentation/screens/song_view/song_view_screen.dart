@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
 import '../../../data/models/view_config.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../domain/services/chord_sheet_exporter.dart';
 import '../../providers/autoscroll_provider.dart';
 import '../../providers/book_provider.dart';
@@ -218,9 +219,10 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No sheet music for this song — showing chords.'),
-          duration: Duration(seconds: 3),
+        SnackBar(
+          content:
+              Text(AppLocalizations.of(context).noSheetMusicShowingChords),
+          duration: const Duration(seconds: 3),
         ),
       );
     });
@@ -262,8 +264,8 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Song text copied.'),
+      SnackBar(
+        content: Text(AppLocalizations.of(context).songTextCopied),
         duration: Duration(seconds: 2),
       ),
     );
@@ -276,25 +278,23 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   /// on and no server holding a second one.
   Future<void> _confirmDelete(Song song) async {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete song?'),
-        content: Text(
-          '"${song.title}" is stored only on this device. '
-          'Deleting it cannot be undone.',
-        ),
+        title: Text(l10n.deleteSongTitle),
+        content: Text(l10n.deleteSongBody(song.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: theme.colorScheme.error,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
@@ -335,6 +335,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   /// as the system font is enlarged.
   AppBar _buildAppBar(BuildContext context, Song song, bool isFavorite) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final textScaler = MediaQuery.textScalerOf(context);
     final numberStyle = theme.textTheme.labelMedium;
     final titleStyle = theme.textTheme.titleMedium;
@@ -380,11 +381,11 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
           onPressed: () => ref
               .read(favoritesProvider.notifier)
               .toggleFavorite(widget.songId),
-          tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+          tooltip: isFavorite ? l10n.favoriteRemove : l10n.favoriteAdd,
         ),
         PopupMenuButton<_SongMenuAction>(
           icon: const Icon(Icons.more_vert),
-          tooltip: 'More actions',
+          tooltip: l10n.moreActions,
           onSelected: (action) {
             switch (action) {
               case _SongMenuAction.presentation:
@@ -402,55 +403,55 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: _SongMenuAction.presentation,
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
                 // A screen with a play button says "start presenting". The
                 // fullscreen arrows say "make this bigger", which is a
                 // different promise than the one this action keeps.
-                leading: Icon(Icons.slideshow),
-                title: Text('Presentation mode'),
+                leading: const Icon(Icons.slideshow),
+                title: Text(l10n.menuPresentation),
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: _SongMenuAction.editTags,
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.label_outline),
-                title: Text('Edit tags'),
+                leading: const Icon(Icons.label_outline),
+                title: Text(l10n.menuEditTags),
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: _SongMenuAction.copyText,
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.copy_outlined),
-                title: Text('Copy song text'),
+                leading: const Icon(Icons.copy_outlined),
+                title: Text(l10n.menuCopyText),
               ),
             ),
             // Only the user's own songs can be written back to. Offering these
             // for a bundled hymn would be a control that cannot work.
             if (song.id.isUserSong) ...[
               const PopupMenuDivider(),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _SongMenuAction.editSong,
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.edit_outlined),
-                  title: Text('Edit song'),
+                  leading: const Icon(Icons.edit_outlined),
+                  title: Text(l10n.menuEditSong),
                 ),
               ),
               // Only when there is an engraving to correct. On a song with no
               // notation this would open a blank staff — which is the score
               // writer the editor is deliberately not.
               if (song.hasNotation)
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: _SongMenuAction.editNotation,
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.music_note_outlined),
-                    title: Text('Correct the notation'),
+                    leading: const Icon(Icons.music_note_outlined),
+                    title: Text(l10n.menuEditNotation),
                   ),
                 ),
               PopupMenuItem(
@@ -459,7 +460,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.delete_outline,
                       color: theme.colorScheme.error),
-                  title: Text('Delete song',
+                  title: Text(l10n.menuDeleteSong,
                       style: TextStyle(color: theme.colorScheme.error)),
                 ),
               ),
@@ -472,6 +473,7 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final songAsync = ref.watch(songByIdProvider(widget.songId));
     final isFavorite = ref.watch(isFavoriteProvider(widget.songId));
     // Deliberately NOT watching autoScrollProvider. The play control lives in
@@ -518,8 +520,8 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
       data: (song) {
         if (song == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Song not found')),
-            body: const Center(child: Text('Song not found')),
+            appBar: AppBar(title: Text(l10n.songNotFound)),
+            body: Center(child: Text(l10n.songNotFound)),
           );
         }
 
@@ -614,18 +616,18 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
               song.originalKey,
               canShowSheetMusic: canShowSheetMusic,
             ),
-            tooltip: 'Song controls',
+            tooltip: l10n.songControls,
             child: const Icon(Icons.tune),
           ),
           bottomNavigationBar: SetlistNavBar(songId: widget.songId),
         );
       },
       loading: () => Scaffold(
-        appBar: AppBar(title: const Text('Loading...')),
+        appBar: AppBar(title: Text(l10n.loading)),
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (error, stack) => Scaffold(
-        appBar: AppBar(title: const Text('Error')),
+        appBar: AppBar(title: Text(l10n.errorGeneric)),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
