@@ -34,6 +34,13 @@ const _localised = [
   'lib/presentation/screens/setlists/setlists_screen.dart',
   'lib/presentation/screens/setlists/setlist_detail_screen.dart',
   'lib/presentation/screens/import/import_song_screen.dart',
+  'lib/presentation/screens/song_view/widgets/tag_editor_sheet.dart',
+  'lib/presentation/screens/song_list/widgets/filter_sheets.dart',
+  'lib/presentation/screens/presentation/presentation_screen.dart',
+  'lib/presentation/widgets/sheet_music/sheet_music_renderer.dart',
+  'lib/presentation/screens/song_view/widgets/chord_view.dart',
+  'lib/presentation/screens/song_view/widgets/sheet_music_view.dart',
+  'lib/router/app_router.dart',
 ];
 
 /// Literals that are not interface text, with the reason each is here.
@@ -61,34 +68,68 @@ bool _looksLikeSentence(String value) {
   return RegExp(r'^[A-Z]').hasMatch(text);
 }
 
+/// Interface text found in [path], as `path:line  "value"` strings.
+List<String> _englishIn(String path) {
+  // Whole-file, not line-by-line: a `Text(` and its literal are routinely on
+  // separate lines, and a per-line scan silently skips exactly those.
+  // Comment lines are stripped first — they are prose about the code.
+  final source = File(path)
+      .readAsLinesSync()
+      .map((l) => l.trimLeft().startsWith('//') ? '' : l)
+      .join('\n');
+
+  final found = <String>[];
+  for (final match in _slots.allMatches(source)) {
+    final value = match.group(1) ?? match.group(2) ?? '';
+    if (!_looksLikeSentence(value)) continue;
+    final line = source.substring(0, match.start).split('\n').length;
+    found.add('$path:$line  "$value"');
+  }
+  return found;
+}
+
 void main() {
   test('no English is left on a translated screen', () {
     final offenders = <String>[];
 
     for (final path in _localised) {
-      final file = File(path);
-      expect(file.existsSync(), isTrue, reason: '$path is listed but missing');
-
-      // Whole-file, not line-by-line: a `Text(` and its literal are routinely on
-      // separate lines, and a per-line scan silently skips exactly those.
-      // Comment lines are stripped first — they are prose about the code.
-      final source = file
-          .readAsLinesSync()
-          .map((l) => l.trimLeft().startsWith('//') ? '' : l)
-          .join('\n');
-
-      for (final match in _slots.allMatches(source)) {
-        final value = match.group(1) ?? match.group(2) ?? '';
-        if (!_looksLikeSentence(value)) continue;
-        final line = source.substring(0, match.start).split('\n').length;
-        offenders.add('$path:$line  "$value"');
-      }
+      expect(File(path).existsSync(), isTrue,
+          reason: '$path is listed but missing');
+      offenders.addAll(_englishIn(path));
     }
 
     expect(
       offenders,
       isEmpty,
       reason: 'these belong in lib/l10n/app_en.arb:\n${offenders.join('\n')}',
+    );
+  });
+
+  test('every file with interface text is claimed as localised', () {
+    // The other direction, and the one that actually caught something: the test
+    // above only ever looks where it is told to. A handoff note listing the
+    // files left to translate missed `chord_view`, the legacy `sheet_music_view`
+    // and the router's 404 — three surfaces a singer sees — and nothing failed,
+    // because none of them was on the list. Sweeping lib/ instead means a NEW
+    // screen written with hardcoded strings fails here rather than shipping.
+    final claimed = _localised.toSet();
+    final unclaimed = <String>[];
+
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      final path = entity.path.replaceAll(r'\', '/');
+      // The generated AppLocalizations *is* the English, by definition.
+      if (path.startsWith('lib/l10n/')) continue;
+      if (claimed.contains(path)) continue;
+      unclaimed.addAll(_englishIn(path));
+    }
+
+    expect(
+      unclaimed,
+      isEmpty,
+      reason: 'either translate these and add the file to _localised, or — if '
+          'the string is not interface text — add it to _allowed with a '
+          'reason:\n${unclaimed.join('\n')}',
     );
   });
 }

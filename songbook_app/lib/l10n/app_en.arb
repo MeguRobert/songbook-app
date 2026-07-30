@@ -937,5 +937,175 @@
         "type": "int"
       }
     }
+  },
+  "tagsNoneYetAddOne": "No tags yet — add one below.",
+  "@tagsNoneYetAddOne": {
+    "description": "Empty state inside the tag editor, where adding one is the next step"
+  },
+  "tagAddLabel": "Add a tag",
+  "@tagAddLabel": {
+    "description": "Field label in the tag editor"
+  },
+  "tagAddHint": "e.g. Christmas, communion",
+  "@tagAddHint": {
+    "description": "Example tags. Translate to occasions a reader of this language would recognise."
+  },
+  "tagAddTooltip": "Add tag",
+  "@tagAddTooltip": {
+    "description": "Tooltip on the + inside the tag field"
+  },
+  "tagSuggestions": "Suggestions",
+  "@tagSuggestions": {
+    "description": "Heading above tags already used elsewhere in the library"
+  },
+  "tagResetToDefault": "Reset to default",
+  "@tagResetToDefault": {
+    "description": "Drops the per-song tag override and goes back to the bundled tags"
+  },
+  "filterAllSongs": "All Songs",
+  "@filterAllSongs": {
+    "description": "The book filter's no-filter row"
+  },
+  "songCount": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@songCount": {
+    "description": "How many songs a book holds, and the total across all books",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorLoadingBooks": "Error loading books: {detail}",
+  "@errorLoadingBooks": {
+    "description": "The book list failed to load",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "filterByTags": "Filter by tags",
+  "@filterByTags": {
+    "description": "Title of the tag filter sheet"
+  },
+  "filterTagsAnd": "Songs must carry every selected tag",
+  "@filterTagsAnd": {
+    "description": "Says the filter is AND, not OR — several tags narrow rather than widen"
+  },
+  "tagsEmpty": "No tags yet",
+  "@tagsEmpty": {
+    "description": "Empty state in the tag filter, where there is nothing to act on"
+  },
+  "errorLoadingTags": "Error loading tags: {detail}",
+  "@errorLoadingTags": {
+    "description": "The tag list failed to load",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "filterClearAllTags": "Clear all tags",
+  "@filterClearAllTags": {
+    "description": "Removes every tag filter from inside the filter sheet"
+  },
+  "presentationExit": "Exit (Esc)",
+  "@presentationExit": {
+    "description": "Leaves full-screen presentation mode. The key name stays literal."
+  },
+  "sheetSemanticsLabel": "Sheet music notation for {title}",
+  "@sheetSemanticsLabel": {
+    "description": "Screen-reader description of the engraved staff, which is a canvas and otherwise invisible to the accessibility tree",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "sheetKey": "Key: {key}",
+  "@sheetKey": {
+    "description": "The key the staff is currently written in, above the notation",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "sheetTransposed": "Transposed {offset}",
+  "@sheetTransposed": {
+    "description": "Badge shown when the staff is not in the song's own key. `offset` arrives with its sign already attached (\"+2\", \"-3\").",
+    "placeholders": {
+      "offset": {
+        "type": "String"
+      }
+    }
+  },
+  "sheetTime": "Time: {signature}",
+  "@sheetTime": {
+    "description": "The time signature, above the notation",
+    "placeholders": {
+      "signature": {
+        "type": "String"
+      }
+    }
+  },
+  "sheetTune": "Tune: {tune}",
+  "@sheetTune": {
+    "description": "The melody's name, in the footer under the score",
+    "placeholders": {
+      "tune": {
+        "type": "String"
+      }
+    }
+  },
+  "sheetOrigin": "Origin: {origin}",
+  "@sheetOrigin": {
+    "description": "Where the song came from, in the footer under the score",
+    "placeholders": {
+      "origin": {
+        "type": "String"
+      }
+    }
+  },
+  "sheetNotAvailable": "Sheet music not available",
+  "@sheetNotAvailable": {
+    "description": "Placeholder shown in place of a score the song has no notation for"
+  },
+  "sheetNotAvailableHint": "Switch to chord view to see lyrics with chords",
+  "@sheetNotAvailableHint": {
+    "description": "What to do instead when there is no score"
+  },
+  "sheetTransposedFrom": "Transposed from {key}",
+  "@sheetTransposedFrom": {
+    "description": "Badge on the legacy SVG view, naming the key the song is written in",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "sheetMissingForKey": "Sheet music for {key} not available. Showing original key ({original}).",
+  "@sheetMissingForKey": {
+    "description": "The legacy SVG view has one image per key, and the transposed key has no image. Distinct from having no sheet music at all — this song has some, just not in this key.",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "original": {
+        "type": "String"
+      }
+    }
+  },
+  "sheetNoneForSong": "No sheet music available for this song",
+  "@sheetNoneForSong": {
+    "description": "The legacy SVG view's empty state. Says \"this song\" where sheetNotAvailable says only \"not available\"."
+  },
+  "routeNotFound": "Page not found",
+  "@routeNotFound": {
+    "description": "Router error page heading for a URL that matches no route"
+  },
+  "routeGoHome": "Go Home",
+  "@routeGoHome": {
+    "description": "Button on the router error page, back to the song list"
   }
 }

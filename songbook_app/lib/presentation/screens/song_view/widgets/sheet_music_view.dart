@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../data/models/song.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../providers/providers.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/sheet_music/sheet_music_renderer.dart';
@@ -148,6 +149,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context, String targetKey) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +168,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
         Row(
           children: [
             Text(
-              'Key: $targetKey',
+              l10n.sheetKey(targetKey),
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
@@ -180,7 +182,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  'Transposed from ${song.originalKey}',
+                  l10n.sheetTransposedFrom(song.originalKey),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer,
                   ),
@@ -191,7 +193,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
         ),
         if (song.timeSignature != null)
           Text(
-            'Time: ${song.timeSignature}',
+            l10n.sheetTime(song.timeSignature!),
             style: theme.textTheme.bodySmall,
           ),
       ],
@@ -236,7 +238,8 @@ class SheetMusicViewWidget extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Sheet music for $targetKey not available. Showing original key (${song.originalKey}).',
+                        AppLocalizations.of(context)
+                            .sheetMissingForKey(targetKey, song.originalKey),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -270,14 +273,14 @@ class SheetMusicViewWidget extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No sheet music available for this song',
+            AppLocalizations.of(context).sheetNoneForSong,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Colors.grey[600],
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Switch to chord view to see lyrics with chords',
+            AppLocalizations.of(context).sheetNotAvailableHint,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[500],
                 ),
@@ -311,6 +314,7 @@ class SheetMusicViewWidget extends ConsumerWidget {
 
   Widget _buildMetadataFooter(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     if (song.origin?.displayString == null && song.tune?.name == null) {
       return const SizedBox.shrink();
@@ -323,12 +327,13 @@ class SheetMusicViewWidget extends ConsumerWidget {
         const SizedBox(height: 8),
         if (song.tune?.name != null)
           Text(
-            'Tune: ${song.tune!.name}${song.tune!.origin?.displayString != null ? ' (${song.tune!.origin!.displayString})' : ''}',
+            l10n.sheetTune(
+                '${song.tune!.name}${song.tune!.origin?.displayString != null ? ' (${song.tune!.origin!.displayString})' : ''}'),
             style: theme.textTheme.bodySmall,
           ),
         if (song.origin?.displayString != null)
           Text(
-            'Origin: ${song.origin!.displayString}',
+            l10n.sheetOrigin(song.origin!.displayString!),
             style: theme.textTheme.bodySmall,
           ),
       ],

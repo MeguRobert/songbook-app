@@ -6,6 +6,7 @@ import '../../../../data/models/song.dart';
 import '../../../../data/models/verse.dart';
 import '../../../../data/models/lyric_line.dart';
 import '../../../../data/models/chord_position.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../providers/providers.dart';
 import '../../../providers/settings_provider.dart';
 
@@ -34,6 +35,7 @@ class ChordView extends ConsumerWidget {
     final baseFontSize = ref.watch(fontSizeProvider);
     final fontSize = baseFontSize * textScale;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     // Every line here is a plain Text, which paints characters and offers no
@@ -85,12 +87,13 @@ class ChordView extends ConsumerWidget {
               const SizedBox(height: 8),
               if (song.tune?.name != null)
                 Text(
-                  'Tune: ${song.tune!.name}${song.tune!.origin?.displayString != null ? ' (${song.tune!.origin!.displayString})' : ''}',
+                  l10n.sheetTune(
+                      '${song.tune!.name}${song.tune!.origin?.displayString != null ? ' (${song.tune!.origin!.displayString})' : ''}'),
                   style: theme.textTheme.bodySmall,
                 ),
               if (song.origin?.displayString != null)
                 Text(
-                  'Origin: ${song.origin!.displayString}',
+                  l10n.sheetOrigin(song.origin!.displayString!),
                   style: theme.textTheme.bodySmall,
                 ),
             ],

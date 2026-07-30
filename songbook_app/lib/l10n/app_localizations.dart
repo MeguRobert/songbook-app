@@ -1269,6 +1269,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{Check this line} other{Check these lines}}'**
   String importWarningsTitle(int count);
+
+  /// Empty state inside the tag editor, where adding one is the next step
+  ///
+  /// In en, this message translates to:
+  /// **'No tags yet — add one below.'**
+  String get tagsNoneYetAddOne;
+
+  /// Field label in the tag editor
+  ///
+  /// In en, this message translates to:
+  /// **'Add a tag'**
+  String get tagAddLabel;
+
+  /// Example tags. Translate to occasions a reader of this language would recognise.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Christmas, communion'**
+  String get tagAddHint;
+
+  /// Tooltip on the + inside the tag field
+  ///
+  /// In en, this message translates to:
+  /// **'Add tag'**
+  String get tagAddTooltip;
+
+  /// Heading above tags already used elsewhere in the library
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get tagSuggestions;
+
+  /// Drops the per-song tag override and goes back to the bundled tags
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to default'**
+  String get tagResetToDefault;
+
+  /// The book filter's no-filter row
+  ///
+  /// In en, this message translates to:
+  /// **'All Songs'**
+  String get filterAllSongs;
+
+  /// How many songs a book holds, and the total across all books
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 song} other{{count} songs}}'**
+  String songCount(int count);
+
+  /// The book list failed to load
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading books: {detail}'**
+  String errorLoadingBooks(String detail);
+
+  /// Title of the tag filter sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by tags'**
+  String get filterByTags;
+
+  /// Says the filter is AND, not OR — several tags narrow rather than widen
+  ///
+  /// In en, this message translates to:
+  /// **'Songs must carry every selected tag'**
+  String get filterTagsAnd;
+
+  /// Empty state in the tag filter, where there is nothing to act on
+  ///
+  /// In en, this message translates to:
+  /// **'No tags yet'**
+  String get tagsEmpty;
+
+  /// The tag list failed to load
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading tags: {detail}'**
+  String errorLoadingTags(String detail);
+
+  /// Removes every tag filter from inside the filter sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all tags'**
+  String get filterClearAllTags;
+
+  /// Leaves full-screen presentation mode. The key name stays literal.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit (Esc)'**
+  String get presentationExit;
+
+  /// Screen-reader description of the engraved staff, which is a canvas and otherwise invisible to the accessibility tree
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet music notation for {title}'**
+  String sheetSemanticsLabel(String title);
+
+  /// The key the staff is currently written in, above the notation
+  ///
+  /// In en, this message translates to:
+  /// **'Key: {key}'**
+  String sheetKey(String key);
+
+  /// Badge shown when the staff is not in the song's own key. `offset` arrives with its sign already attached ("+2", "-3").
+  ///
+  /// In en, this message translates to:
+  /// **'Transposed {offset}'**
+  String sheetTransposed(String offset);
+
+  /// The time signature, above the notation
+  ///
+  /// In en, this message translates to:
+  /// **'Time: {signature}'**
+  String sheetTime(String signature);
+
+  /// The melody's name, in the footer under the score
+  ///
+  /// In en, this message translates to:
+  /// **'Tune: {tune}'**
+  String sheetTune(String tune);
+
+  /// Where the song came from, in the footer under the score
+  ///
+  /// In en, this message translates to:
+  /// **'Origin: {origin}'**
+  String sheetOrigin(String origin);
+
+  /// Placeholder shown in place of a score the song has no notation for
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet music not available'**
+  String get sheetNotAvailable;
+
+  /// What to do instead when there is no score
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to chord view to see lyrics with chords'**
+  String get sheetNotAvailableHint;
+
+  /// Badge on the legacy SVG view, naming the key the song is written in
+  ///
+  /// In en, this message translates to:
+  /// **'Transposed from {key}'**
+  String sheetTransposedFrom(String key);
+
+  /// The legacy SVG view has one image per key, and the transposed key has no image. Distinct from having no sheet music at all — this song has some, just not in this key.
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet music for {key} not available. Showing original key ({original}).'**
+  String sheetMissingForKey(String key, String original);
+
+  /// The legacy SVG view's empty state. Says "this song" where sheetNotAvailable says only "not available".
+  ///
+  /// In en, this message translates to:
+  /// **'No sheet music available for this song'**
+  String get sheetNoneForSong;
+
+  /// Router error page heading for a URL that matches no route
+  ///
+  /// In en, this message translates to:
+  /// **'Page not found'**
+  String get routeNotFound;
+
+  /// Button on the router error page, back to the song list
+  ///
+  /// In en, this message translates to:
+  /// **'Go Home'**
+  String get routeGoHome;
 }
 
 class _AppLocalizationsDelegate

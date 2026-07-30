@@ -2,6 +2,7 @@ import '../../../../data/models/song_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../providers/tag_provider.dart';
 
 /// Bottom sheet for editing a song's tags (add / remove), persisted via
@@ -70,6 +71,7 @@ class _TagEditorSheetState extends ConsumerState<TagEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     // Suggestions: existing tags across the library not already applied.
     final allTags = ref.watch(tagsProvider).maybeWhen(
           data: (tags) => tags.map((t) => t.name).toList(),
@@ -95,13 +97,13 @@ class _TagEditorSheetState extends ConsumerState<TagEditorSheet> {
             children: [
               const Icon(Icons.sell),
               const SizedBox(width: 8),
-              Text('Edit tags', style: theme.textTheme.titleLarge),
+              Text(l10n.menuEditTags, style: theme.textTheme.titleLarge),
             ],
           ),
           const SizedBox(height: 16),
           if (_tags.isEmpty)
             Text(
-              'No tags yet — add one below.',
+              l10n.tagsNoneYetAddOne,
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.hintColor),
             )
@@ -121,12 +123,12 @@ class _TagEditorSheetState extends ConsumerState<TagEditorSheet> {
             controller: _controller,
             textInputAction: TextInputAction.done,
             decoration: InputDecoration(
-              labelText: 'Add a tag',
-              hintText: 'e.g. Christmas, communion',
+              labelText: l10n.tagAddLabel,
+              hintText: l10n.tagAddHint,
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.add),
-                tooltip: 'Add tag',
+                tooltip: l10n.tagAddTooltip,
                 onPressed: () => _addTag(_controller.text),
               ),
             ),
@@ -134,7 +136,7 @@ class _TagEditorSheetState extends ConsumerState<TagEditorSheet> {
           ),
           if (suggestions.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Text('Suggestions', style: theme.textTheme.labelLarge),
+            Text(l10n.tagSuggestions, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -153,13 +155,13 @@ class _TagEditorSheetState extends ConsumerState<TagEditorSheet> {
             children: [
               TextButton(
                 onPressed: _resetToDefault,
-                child: const Text('Reset to default'),
+                child: Text(l10n.tagResetToDefault),
               ),
               const Spacer(),
               FilledButton.icon(
                 onPressed: _save,
                 icon: const Icon(Icons.check),
-                label: const Text('Save'),
+                label: Text(l10n.actionSave),
               ),
             ],
           ),

@@ -708,4 +708,117 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get tagsNoneYetAddOne => 'No tags yet — add one below.';
+
+  @override
+  String get tagAddLabel => 'Add a tag';
+
+  @override
+  String get tagAddHint => 'e.g. Christmas, communion';
+
+  @override
+  String get tagAddTooltip => 'Add tag';
+
+  @override
+  String get tagSuggestions => 'Suggestions';
+
+  @override
+  String get tagResetToDefault => 'Reset to default';
+
+  @override
+  String get filterAllSongs => 'All Songs';
+
+  @override
+  String songCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs',
+      one: '1 song',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String errorLoadingBooks(String detail) {
+    return 'Error loading books: $detail';
+  }
+
+  @override
+  String get filterByTags => 'Filter by tags';
+
+  @override
+  String get filterTagsAnd => 'Songs must carry every selected tag';
+
+  @override
+  String get tagsEmpty => 'No tags yet';
+
+  @override
+  String errorLoadingTags(String detail) {
+    return 'Error loading tags: $detail';
+  }
+
+  @override
+  String get filterClearAllTags => 'Clear all tags';
+
+  @override
+  String get presentationExit => 'Exit (Esc)';
+
+  @override
+  String sheetSemanticsLabel(String title) {
+    return 'Sheet music notation for $title';
+  }
+
+  @override
+  String sheetKey(String key) {
+    return 'Key: $key';
+  }
+
+  @override
+  String sheetTransposed(String offset) {
+    return 'Transposed $offset';
+  }
+
+  @override
+  String sheetTime(String signature) {
+    return 'Time: $signature';
+  }
+
+  @override
+  String sheetTune(String tune) {
+    return 'Tune: $tune';
+  }
+
+  @override
+  String sheetOrigin(String origin) {
+    return 'Origin: $origin';
+  }
+
+  @override
+  String get sheetNotAvailable => 'Sheet music not available';
+
+  @override
+  String get sheetNotAvailableHint =>
+      'Switch to chord view to see lyrics with chords';
+
+  @override
+  String sheetTransposedFrom(String key) {
+    return 'Transposed from $key';
+  }
+
+  @override
+  String sheetMissingForKey(String key, String original) {
+    return 'Sheet music for $key not available. Showing original key ($original).';
+  }
+
+  @override
+  String get sheetNoneForSong => 'No sheet music available for this song';
+
+  @override
+  String get routeNotFound => 'Page not found';
+
+  @override
+  String get routeGoHome => 'Go Home';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../providers/book_provider.dart';
 import '../../../providers/search_provider.dart';
 import '../../../providers/tag_provider.dart';
@@ -42,6 +43,7 @@ class _BookFilterSheet extends ConsumerWidget {
     final booksAsync = ref.watch(booksProvider);
     final selected = ref.watch(selectedBookProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return DraggableScrollableSheet(
       expand: false,
@@ -49,7 +51,7 @@ class _BookFilterSheet extends ConsumerWidget {
       maxChildSize: 0.9,
       builder: (context, scrollController) => Column(
         children: [
-          _SheetTitle(text: 'Books', theme: theme),
+          _SheetTitle(text: l10n.booksTooltip, theme: theme),
           const Divider(height: 1),
           Expanded(
             child: booksAsync.when(
@@ -61,8 +63,8 @@ class _BookFilterSheet extends ConsumerWidget {
                   children: [
                     ListTile(
                       leading: const Icon(Icons.library_music),
-                      title: const Text('All Songs'),
-                      subtitle: Text('$total songs'),
+                      title: Text(l10n.filterAllSongs),
+                      subtitle: Text(l10n.songCount(total)),
                       trailing: selected == null
                           ? Icon(Icons.check, color: theme.colorScheme.primary)
                           : null,
@@ -78,7 +80,7 @@ class _BookFilterSheet extends ConsumerWidget {
                       return ListTile(
                         leading: const Icon(Icons.menu_book),
                         title: Text(book.name),
-                        subtitle: Text('${book.songCount} songs'),
+                        subtitle: Text(l10n.songCount(book.songCount)),
                         trailing: isSelected
                             ? Icon(Icons.check,
                                 color: theme.colorScheme.primary)
@@ -97,7 +99,7 @@ class _BookFilterSheet extends ConsumerWidget {
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) =>
-                  Center(child: Text('Error loading books: $error')),
+                  Center(child: Text(l10n.errorLoadingBooks('$error'))),
             ),
           ),
         ],
@@ -114,6 +116,7 @@ class _TagFilterSheet extends ConsumerWidget {
     final tagsAsync = ref.watch(tagsProvider);
     final active = ref.watch(searchProvider).activeTags;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return DraggableScrollableSheet(
       expand: false,
@@ -121,9 +124,9 @@ class _TagFilterSheet extends ConsumerWidget {
       maxChildSize: 0.9,
       builder: (context, scrollController) => Column(
         children: [
-          _SheetTitle(text: 'Filter by tags', theme: theme),
+          _SheetTitle(text: l10n.filterByTags, theme: theme),
           Text(
-            'Songs must carry every selected tag',
+            l10n.filterTagsAnd,
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -132,7 +135,7 @@ class _TagFilterSheet extends ConsumerWidget {
           Expanded(
             child: tagsAsync.when(
               data: (tags) => tags.isEmpty
-                  ? const Center(child: Text('No tags yet'))
+                  ? Center(child: Text(l10n.tagsEmpty))
                   : SingleChildScrollView(
                       controller: scrollController,
                       padding: const EdgeInsets.all(16),
@@ -154,7 +157,7 @@ class _TagFilterSheet extends ConsumerWidget {
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) =>
-                  Center(child: Text('Error loading tags: $error')),
+                  Center(child: Text(l10n.errorLoadingTags('$error'))),
             ),
           ),
           if (active.isNotEmpty)
@@ -163,7 +166,7 @@ class _TagFilterSheet extends ConsumerWidget {
               child: TextButton(
                 onPressed: () =>
                     ref.read(searchProvider.notifier).clearTags(),
-                child: const Text('Clear all tags'),
+                child: Text(l10n.filterClearAllTags),
               ),
             ),
         ],

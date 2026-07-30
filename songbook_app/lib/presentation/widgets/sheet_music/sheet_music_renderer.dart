@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
 import '../../../domain/services/transposition_service.dart';
+import '../../../l10n/app_localizations.dart';
 import 'notation_palette.dart';
 import 'sheet_music_layout.dart';
 import 'sheet_music_painter.dart';
@@ -211,8 +212,8 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
                           // it for screen-reader users (06-01). Sizing is
                           // scaled by textScale for smooth zoom (04-04).
                           Semantics(
-                            label:
-                                'Sheet music notation for ${widget.song.title}',
+                            label: AppLocalizations.of(context)
+                                .sheetSemanticsLabel(widget.song.title),
                             image: true,
                             child: RepaintBoundary(
                               child: SizedBox(
@@ -255,6 +256,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
 
   Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final targetKey = _transpositionService.calculateTargetKey(
       widget.notation.originalKey,
       widget.transpose,
@@ -279,7 +281,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
           Row(
             children: [
               Text(
-                'Key: $targetKey',
+                l10n.sheetKey(targetKey),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
@@ -293,7 +295,10 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    'Transposed ${widget.transpose > 0 ? '+' : ''}${widget.transpose}',
+                    // The sign is attached here rather than in the message: a
+                    // localised number format would not add a leading '+'.
+                    l10n.sheetTransposed(
+                        '${widget.transpose > 0 ? '+' : ''}${widget.transpose}'),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer,
                     ),
@@ -305,7 +310,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
 
           if (widget.song.timeSignature != null)
             Text(
-              'Time: ${widget.song.timeSignature}',
+              l10n.sheetTime(widget.song.timeSignature!),
               style: theme.textTheme.bodySmall,
             ),
         ],
@@ -343,6 +348,7 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
 
   Widget _buildFooter(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final song = widget.song;
 
     if (song.origin?.displayString == null && song.tune?.name == null) {
@@ -358,12 +364,13 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
           const SizedBox(height: 8),
           if (song.tune?.name != null)
             Text(
-              'Tune: ${song.tune!.name}${song.tune!.origin?.displayString != null ? ' (${song.tune!.origin!.displayString})' : ''}',
+              l10n.sheetTune(
+                  '${song.tune!.name}${song.tune!.origin?.displayString != null ? ' (${song.tune!.origin!.displayString})' : ''}'),
               style: theme.textTheme.bodySmall,
             ),
           if (song.origin?.displayString != null)
             Text(
-              'Origin: ${song.origin!.displayString}',
+              l10n.sheetOrigin(song.origin!.displayString!),
               style: theme.textTheme.bodySmall,
             ),
         ],
@@ -399,6 +406,7 @@ class SheetMusicView extends StatelessWidget {
   }
 
   Widget _buildNoNotation(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(32),
       margin: const EdgeInsets.all(16),
@@ -416,14 +424,14 @@ class SheetMusicView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Sheet music not available',
+            l10n.sheetNotAvailable,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Colors.grey[600],
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Switch to chord view to see lyrics with chords',
+            l10n.sheetNotAvailableHint,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[500],
                 ),

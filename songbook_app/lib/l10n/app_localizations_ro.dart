@@ -713,4 +713,118 @@ class AppLocalizationsRo extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get tagsNoneYetAddOne => 'Încă nicio etichetă — adaugă una mai jos.';
+
+  @override
+  String get tagAddLabel => 'Adaugă o etichetă';
+
+  @override
+  String get tagAddHint => 'ex. Crăciun, cina Domnului';
+
+  @override
+  String get tagAddTooltip => 'Adaugă eticheta';
+
+  @override
+  String get tagSuggestions => 'Sugestii';
+
+  @override
+  String get tagResetToDefault => 'Revino la valorile implicite';
+
+  @override
+  String get filterAllSongs => 'Toate cântecele';
+
+  @override
+  String songCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cântece',
+      one: '1 cântec',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String errorLoadingBooks(String detail) {
+    return 'Eroare la încărcarea cărților: $detail';
+  }
+
+  @override
+  String get filterByTags => 'Filtrează după etichete';
+
+  @override
+  String get filterTagsAnd =>
+      'Cântecele trebuie să aibă toate etichetele selectate';
+
+  @override
+  String get tagsEmpty => 'Încă nicio etichetă';
+
+  @override
+  String errorLoadingTags(String detail) {
+    return 'Eroare la încărcarea etichetelor: $detail';
+  }
+
+  @override
+  String get filterClearAllTags => 'Șterge toate etichetele';
+
+  @override
+  String get presentationExit => 'Ieșire (Esc)';
+
+  @override
+  String sheetSemanticsLabel(String title) {
+    return 'Partitura pentru $title';
+  }
+
+  @override
+  String sheetKey(String key) {
+    return 'Tonalitate: $key';
+  }
+
+  @override
+  String sheetTransposed(String offset) {
+    return 'Transpus: $offset';
+  }
+
+  @override
+  String sheetTime(String signature) {
+    return 'Măsură: $signature';
+  }
+
+  @override
+  String sheetTune(String tune) {
+    return 'Melodie: $tune';
+  }
+
+  @override
+  String sheetOrigin(String origin) {
+    return 'Origine: $origin';
+  }
+
+  @override
+  String get sheetNotAvailable => 'Partitura nu este disponibilă';
+
+  @override
+  String get sheetNotAvailableHint =>
+      'Comută la vizualizarea cu acorduri pentru a vedea textul cu acorduri';
+
+  @override
+  String sheetTransposedFrom(String key) {
+    return 'Tonalitatea originală: $key';
+  }
+
+  @override
+  String sheetMissingForKey(String key, String original) {
+    return 'Nu există partitură în $key. Se afișează tonalitatea originală ($original).';
+  }
+
+  @override
+  String get sheetNoneForSong => 'Acest cântec nu are partitură';
+
+  @override
+  String get routeNotFound => 'Pagina nu a fost găsită';
+
+  @override
+  String get routeGoHome => 'Înapoi la început';
 }

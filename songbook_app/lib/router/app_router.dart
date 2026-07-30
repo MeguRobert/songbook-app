@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../data/models/song_id.dart';
+import '../l10n/app_localizations.dart';
 
 import '../presentation/screens/song_list/song_list_screen.dart';
 import '../presentation/screens/song_view/song_view_screen.dart';
@@ -171,7 +172,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             const Icon(Icons.error_outline, size: 64),
             const SizedBox(height: 16),
             Text(
-              'Page not found',
+              AppLocalizations.of(context).routeNotFound,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
@@ -179,7 +180,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => context.go(AppRoutes.home),
-              child: const Text('Go Home'),
+              child: Text(AppLocalizations.of(context).routeGoHome),
             ),
           ],
         ),

@@ -711,4 +711,118 @@ class AppLocalizationsHu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get tagsNoneYetAddOne => 'Még nincs címke — adj hozzá egyet alább.';
+
+  @override
+  String get tagAddLabel => 'Címke hozzáadása';
+
+  @override
+  String get tagAddHint => 'pl. Karácsony, úrvacsora';
+
+  @override
+  String get tagAddTooltip => 'Címke felvétele';
+
+  @override
+  String get tagSuggestions => 'Javaslatok';
+
+  @override
+  String get tagResetToDefault => 'Visszaállítás alapértelmezettre';
+
+  @override
+  String get filterAllSongs => 'Minden ének';
+
+  @override
+  String songCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ének',
+      one: '$count ének',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String errorLoadingBooks(String detail) {
+    return 'Hiba az énekeskönyvek betöltésekor: $detail';
+  }
+
+  @override
+  String get filterByTags => 'Szűrés címkék szerint';
+
+  @override
+  String get filterTagsAnd =>
+      'Az énekeknek minden kijelölt címkét tartalmazniuk kell';
+
+  @override
+  String get tagsEmpty => 'Még nincs címke';
+
+  @override
+  String errorLoadingTags(String detail) {
+    return 'Hiba a címkék betöltésekor: $detail';
+  }
+
+  @override
+  String get filterClearAllTags => 'Minden címke törlése';
+
+  @override
+  String get presentationExit => 'Kilépés (Esc)';
+
+  @override
+  String sheetSemanticsLabel(String title) {
+    return '$title kottája';
+  }
+
+  @override
+  String sheetKey(String key) {
+    return 'Hangnem: $key';
+  }
+
+  @override
+  String sheetTransposed(String offset) {
+    return 'Transzponálva: $offset';
+  }
+
+  @override
+  String sheetTime(String signature) {
+    return 'Ütemmutató: $signature';
+  }
+
+  @override
+  String sheetTune(String tune) {
+    return 'Dallam: $tune';
+  }
+
+  @override
+  String sheetOrigin(String origin) {
+    return 'Eredet: $origin';
+  }
+
+  @override
+  String get sheetNotAvailable => 'Nincs elérhető kotta';
+
+  @override
+  String get sheetNotAvailableHint =>
+      'Válts akkord nézetre, hogy lásd a szöveget az akkordokkal';
+
+  @override
+  String sheetTransposedFrom(String key) {
+    return 'Eredeti hangnem: $key';
+  }
+
+  @override
+  String sheetMissingForKey(String key, String original) {
+    return 'Nincs kotta $key hangnemben. Az eredeti hangnem látszik ($original).';
+  }
+
+  @override
+  String get sheetNoneForSong => 'Ehhez az énekhez nincs kotta';
+
+  @override
+  String get routeNotFound => 'Az oldal nem található';
+
+  @override
+  String get routeGoHome => 'Vissza a kezdőlapra';
 }

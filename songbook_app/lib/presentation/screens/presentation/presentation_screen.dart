@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/song.dart';
 import '../../../data/models/verse.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 
@@ -237,6 +238,7 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final songAsync = ref.watch(songByIdProvider(widget.songId));
 
     // Presentation colours are the presentation's own, NOT the app theme's.
@@ -254,7 +256,9 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
         if (song == null) {
           return Scaffold(
             backgroundColor: bgColor,
-            body: Center(child: Text('Song not found', style: TextStyle(color: textColor))),
+            body: Center(
+                child: Text(l10n.songNotFound,
+                    style: TextStyle(color: textColor))),
           );
         }
 
@@ -336,7 +340,8 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
             children: [
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error: $error', style: TextStyle(color: textColor)),
+              Text(l10n.errorDetail('$error'),
+                  style: TextStyle(color: textColor)),
             ],
           ),
         ),
@@ -366,7 +371,7 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.white),
                   onPressed: () => Navigator.of(context).pop(),
-                  tooltip: 'Exit (Esc)',
+                  tooltip: AppLocalizations.of(context).presentationExit,
                 ),
                 Expanded(
                   child: Text(
