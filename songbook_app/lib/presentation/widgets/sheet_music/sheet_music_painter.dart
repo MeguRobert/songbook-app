@@ -37,9 +37,7 @@ class SheetMusicPainter extends CustomPainter {
   /// Colour for chord symbols above the staff.
   final Color chordColor;
 
-  /// Colour for the "Key: X | Time: Y" line above the first system.
   /// Intentionally muted relative to [lyricColor] — it is metadata, not music.
-  final Color headerColor;
 
   SheetMusicPainter({
     required this.layout,
@@ -47,7 +45,6 @@ class SheetMusicPainter extends CustomPainter {
     this.staffColor = const Color(0xFF333333),
     this.lyricColor = const Color(0xFF333333),
     this.chordColor = const Color(0xFF1565C0),
-    this.headerColor = const Color(0xFF666666),
     this.showChords = true,
     this.textScale = 1.0,
   }) {
@@ -99,8 +96,6 @@ class SheetMusicPainter extends CustomPainter {
     canvas.save();
     canvas.scale(textScale);
 
-    _drawHeader(canvas, size);
-
     for (int i = 0; i < layout.systems.length; i++) {
       final system = layout.systems[i];
       final isFirstSystem = i == 0;
@@ -124,26 +119,6 @@ class SheetMusicPainter extends CustomPainter {
     }
 
     canvas.restore();
-  }
-
-  void _drawHeader(Canvas canvas, Size size) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'Key: ${layout.key} | Time: ${layout.timeSignature}',
-        style: TextStyle(
-          fontSize: 14,
-          color: headerColor,
-          fontFamily: 'Arial',
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    // Center using the unscaled layout width (not the scaled canvas `size`),
-    // since drawing happens inside canvas.scale(textScale) — centering off the
-    // scaled size here would double-scale the offset.
-    textPainter.paint(
-        canvas, Offset((layout.totalWidth - textPainter.width) / 2, 5));
   }
 
   void _drawStaffLines(Canvas canvas, StaffSystem system) {
@@ -984,7 +959,6 @@ class SheetMusicPainter extends CustomPainter {
         // canvas showing the previous palette until something else repaints.
         oldDelegate.lyricColor != lyricColor ||
         oldDelegate.chordColor != chordColor ||
-        oldDelegate.headerColor != headerColor ||
         oldDelegate.showChords != showChords ||
         oldDelegate.textScale != textScale;
   }

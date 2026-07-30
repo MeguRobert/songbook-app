@@ -7,9 +7,9 @@ import 'package:songbook_app/presentation/widgets/sheet_music/notation_palette.d
 ///
 /// The notation is painted straight onto the scaffold with no white "paper"
 /// behind it, so every mark has to follow the theme. Note heads and stems
-/// already did; lyrics, chord symbols, the time signature and the key/time
-/// header were drawn from EngravingConstants' baked-in light-theme colours and
-/// stayed near-black on a dark surface.
+/// already did; lyrics, chord symbols and the time signature were drawn from
+/// EngravingConstants' baked-in light-theme colours and stayed near-black on a
+/// dark surface.
 void main() {
   /// Relative luminance, WCAG definition. Used to assert "bright enough"
   /// without pinning exact hex values that a palette tweak may legitimately
@@ -25,7 +25,6 @@ void main() {
         'staff': dark.staff,
         'lyric': dark.lyric,
         'chord': dark.chord,
-        'header': dark.header,
       };
 
       marks.forEach((name, color) {
@@ -49,7 +48,6 @@ void main() {
       expect(dark.staff, isNot(light.staff));
       expect(dark.lyric, isNot(light.lyric));
       expect(dark.chord, isNot(light.chord));
-      expect(dark.header, isNot(light.header));
     });
 
     test('chords stay chromatic so they read as chords, not lyrics', () {
@@ -67,7 +65,6 @@ void main() {
         light.staff,
         light.lyric,
         light.chord,
-        light.header,
       ]) {
         expect(luminance(color), lessThan(0.35));
       }

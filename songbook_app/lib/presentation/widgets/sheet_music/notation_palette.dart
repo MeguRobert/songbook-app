@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 ///
 /// The notation is drawn on a [CustomPaint] straight over the scaffold — there
 /// is no white "paper" behind it — so every mark has to follow the theme. Note
-/// heads and stems already did, but lyrics, chord symbols, the time signature
-/// and the key/time header took their colour from
-/// `EngravingConstants`' baked-in light-theme values and stayed near-black on a
-/// dark background: white notes floating above unreadable words.
+/// heads and stems already did, but lyrics, chord symbols and the time signature
+/// took their colour from `EngravingConstants`' baked-in light-theme values and
+/// stayed near-black on a dark background: white notes floating above unreadable
+/// words.
 ///
-/// Kept as one object rather than five scattered ternaries so a new mark
-/// cannot be added without picking a colour for both themes.
+/// Kept as one object rather than scattered ternaries so a new mark cannot be
+/// added without picking a colour for both themes.
 class NotationPalette {
   /// Note heads, stems, beams, bar lines, ties — and the time signature, which
   /// is a glyph rather than text.
@@ -29,15 +29,11 @@ class NotationPalette {
   /// on a dark surface.
   final Color chord;
 
-  /// The "Key: X | Time: Y" line. Muted: it is metadata, not music.
-  final Color header;
-
   const NotationPalette({
     required this.note,
     required this.staff,
     required this.lyric,
     required this.chord,
-    required this.header,
   });
 
   static const _light = NotationPalette(
@@ -45,7 +41,6 @@ class NotationPalette {
     staff: Color(0xFF333333),
     lyric: Color(0xFF333333),
     chord: Color(0xFF1565C0),
-    header: Color(0xFF666666),
   );
 
   static const _dark = NotationPalette(
@@ -53,7 +48,6 @@ class NotationPalette {
     staff: Color(0xFFD0D0D6),
     lyric: Color(0xFFF2F2F5),
     chord: Color(0xFF8AB4FF),
-    header: Color(0xFFAAAAB4),
   );
 
   static NotationPalette of(ThemeData theme) =>

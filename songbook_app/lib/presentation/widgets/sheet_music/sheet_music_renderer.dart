@@ -225,7 +225,6 @@ class _SheetMusicRendererState extends State<SheetMusicRenderer> {
                                     staffColor: palette.staff,
                                     lyricColor: palette.lyric,
                                     chordColor: palette.chord,
-                                    headerColor: palette.header,
                                     showChords: widget.showChords,
                                     textScale: scale,
                                   ),
