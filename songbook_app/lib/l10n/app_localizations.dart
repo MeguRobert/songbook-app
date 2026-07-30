@@ -1467,6 +1467,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bass'**
   String get voiceBass;
+
+  /// Expander holding the import paths that are not pasting. Collapsed by default: pasting a chord sheet is what actually happens most of the time, and the file path needs a score exported from MuseScore first.
+  ///
+  /// In en, this message translates to:
+  /// **'More ways to add'**
+  String get importMoreWays;
+
+  /// Says what the file path is for, so demoting it does not make it look like a lesser version of paste
+  ///
+  /// In en, this message translates to:
+  /// **'The only path that brings in engraved notation. Export from MuseScore first.'**
+  String get importMusicXmlHint;
 }
 
 class _AppLocalizationsDelegate

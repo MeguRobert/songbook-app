@@ -28,6 +28,21 @@ Future<void> pasteAndParse(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
 }
 
+/// Names the song and scrolls the preview into view.
+///
+/// A title is what makes the draft valid enough to render at all. The scroll is
+/// needed because the preview sits below the fold — the file picker moved behind
+/// a "More ways to add" expander, which added a row above it — and every `find.*`
+/// skips offstage widgets by default, so the assertions below would look at an
+/// empty viewport and report the preview missing when it is built and correct.
+Future<void> nameAndRevealPreview(WidgetTester tester, String title) async {
+  await tester.enterText(find.widgetWithText(TextField, 'Title'), title);
+  await tester.pumpAndSettle();
+  await tester.scrollUntilVisible(find.text('PREVIEW'), 200,
+      scrollable: find.byType(Scrollable).first);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('Save is disabled until there is something to save',
       (tester) async {
@@ -54,10 +69,7 @@ void main() {
       (tester) async {
     await pumpImport(tester);
     await pasteAndParse(tester, _twoLine);
-    // Entering a title is what makes the draft valid enough to render.
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Title'), 'Az Úrra bízom életem');
-    await tester.pumpAndSettle();
+    await nameAndRevealPreview(tester, 'Az Úrra bízom életem');
 
     // Same widget the song view uses, so what is approved here is what ships.
     expect(find.byType(ChordView), findsOneWidget);
@@ -137,9 +149,7 @@ void main() {
     // not only here.
     await pumpImport(tester);
     await pasteAndParse(tester, _twoLine);
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Title'), 'Az Úrra bízom életem');
-    await tester.pumpAndSettle();
+    await nameAndRevealPreview(tester, 'Az Úrra bízom életem');
 
     expect(find.text('G'), findsWidgets);
     expect(find.text('C'), findsWidgets);

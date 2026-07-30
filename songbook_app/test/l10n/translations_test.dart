@@ -60,6 +60,11 @@ void main() {
         // Hungarian word; inventing a different one to satisfy this test would
         // put something wrong in front of a singer.
         'voiceTenor',
+        // Hungarian guitarists say "capo". The dictionary word "kapodaszter"
+        // (via German Kapodaster) was here first and the reader — a Hungarian
+        // guitarist — did not recognise it. Note this is only the heading;
+        // capoNone/capoAt/capoClamp around it are all genuinely translated.
+        'sectionCapo',
       };
 
       for (final key in keysOf(en)) {

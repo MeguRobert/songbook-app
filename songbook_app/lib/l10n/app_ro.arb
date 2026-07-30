@@ -227,5 +227,7 @@
   "voiceMelody": "Melodie",
   "voiceAlto": "Alto",
   "voiceTenor": "Tenor",
-  "voiceBass": "Bas"
+  "voiceBass": "Bas",
+  "importMoreWays": "Alte moduri de adăugare",
+  "importMusicXmlHint": "Singura cale care aduce și partitura. Exportă mai întâi din MuseScore."
 }

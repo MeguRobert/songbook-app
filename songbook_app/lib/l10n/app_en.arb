@@ -1127,5 +1127,13 @@
   "voiceBass": "Bass",
   "@voiceBass": {
     "description": "Lowest voice of a four-part score"
+  },
+  "importMoreWays": "More ways to add",
+  "@importMoreWays": {
+    "description": "Expander holding the import paths that are not pasting. Collapsed by default: pasting a chord sheet is what actually happens most of the time, and the file path needs a score exported from MuseScore first."
+  },
+  "importMusicXmlHint": "The only path that brings in engraved notation. Export from MuseScore first.",
+  "@importMusicXmlHint": {
+    "description": "Says what the file path is for, so demoting it does not make it look like a lesser version of paste"
   }
 }

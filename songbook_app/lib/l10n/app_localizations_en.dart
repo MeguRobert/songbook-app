@@ -836,4 +836,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceBass => 'Bass';
+
+  @override
+  String get importMoreWays => 'More ways to add';
+
+  @override
+  String get importMusicXmlHint =>
+      'The only path that brings in engraved notation. Export from MuseScore first.';
 }

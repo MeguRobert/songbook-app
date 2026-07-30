@@ -842,4 +842,11 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get voiceBass => 'Bas';
+
+  @override
+  String get importMoreWays => 'Alte moduri de adăugare';
+
+  @override
+  String get importMusicXmlHint =>
+      'Singura cale care aduce și partitura. Exportă mai întâi din MuseScore.';
 }

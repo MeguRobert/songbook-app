@@ -112,6 +112,13 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   bool _picking = false;
   String? _fileError;
 
+  /// Whether the "More ways to add" expander is open.
+  ///
+  /// Collapsed on open, and not remembered between visits: pasting is the path
+  /// almost every import takes, and a picker left expanded would compete with
+  /// the box the user is about to type into on every subsequent visit too.
+  bool _showMoreWays = false;
+
   /// The song being corrected, read once when the screen opens. Null when
   /// adding, and also when [ImportSongScreen.editingId] names a song that is no
   /// longer stored (deleted from another route since the link was made).
@@ -406,20 +413,12 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             onChanged: (_) => setState(() => _pending = _savedPending),
           ),
           const SizedBox(height: 8),
+          // Parse alone on its row. It used to share the row with the file
+          // picker, which gave equal billing to a path that needs a score
+          // exported from MuseScore first — while pasting a chord sheet is what
+          // actually happens most of the time.
           Row(
             children: [
-              // The only path that yields real notation, and the lyrics come
-              // free from <lyric> elements.
-              OutlinedButton.icon(
-                onPressed: _picking ? null : _pickMusicXmlFile,
-                icon: _picking
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.piano_outlined),
-                label: Text(l10n.importMusicXmlFile),
-              ),
               const Spacer(),
               FilledButton.tonalIcon(
                 onPressed:
@@ -429,6 +428,52 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
               ),
             ],
           ),
+
+          // The file path, demoted but not hidden: it is the only one that
+          // produces engraved notation, and the landing point for a photo
+          // pipeline later, so the expander says what it is for rather than
+          // just tucking it away.
+          //
+          // A failed pick needs no special case — the button is inside here, so
+          // this is necessarily open when the error appears below.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () =>
+                  setState(() => _showMoreWays = !_showMoreWays),
+              icon: Icon(_showMoreWays
+                  ? Icons.expand_less
+                  : Icons.expand_more),
+              label: Text(l10n.importMoreWays),
+            ),
+          ),
+          if (_showMoreWays) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 4),
+              child: Text(
+                l10n.importMusicXmlHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: OutlinedButton.icon(
+                  onPressed: _picking ? null : _pickMusicXmlFile,
+                  icon: _picking
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.piano_outlined),
+                  label: Text(l10n.importMusicXmlFile),
+                ),
+              ),
+            ),
+          ],
 
           if (_fileError != null) ...[
             const SizedBox(height: 12),

@@ -173,7 +173,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get sectionTranspose => 'TRANSZPONÁLÁS';
 
   @override
-  String get sectionCapo => 'KAPODASZTER';
+  String get sectionCapo => 'CAPO';
 
   @override
   String get sectionAutoScroll => 'GÖRGETÉS';
@@ -245,11 +245,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get speedFastest => 'Leggyorsabb';
 
   @override
-  String get capoNone => 'Nem kell kapodaszter';
+  String get capoNone => 'Nem kell capo';
 
   @override
   String capoAt(int fret) {
-    return '$fret. fogás';
+    return '$fret. bund';
   }
 
   @override
@@ -259,7 +259,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String capoClamp(int fret, String shape, String key) {
-    return '$fret. fogásra tedd, $shape fogásokkal — így $key szól';
+    return '$fret. bundra tedd, $shape fogásokkal — így $key szól';
   }
 
   @override
@@ -267,7 +267,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String capoNoSuggestion(String key) {
-    return '$key-hez nincs kapodaszter-javaslat';
+    return '$key-hez nincs capo-javaslat';
   }
 
   @override
@@ -275,7 +275,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get favoritesEmptyHint =>
-      'Koppints egy ének szív ikonjára, hogy ide kerülljön';
+      'Koppints egy ének szív ikonjára, hogy ide kerüljön';
 
   @override
   String get favoritesBrowse => 'Énekek böngészése';
@@ -840,4 +840,11 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get voiceBass => 'Basszus';
+
+  @override
+  String get importMoreWays => 'További lehetőségek';
+
+  @override
+  String get importMusicXmlHint =>
+      'Csak ez a mód hoz be kottát is. Előbb exportáld a MuseScore-ból.';
 }
