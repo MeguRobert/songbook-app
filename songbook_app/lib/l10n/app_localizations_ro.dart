@@ -532,4 +532,185 @@ class AppLocalizationsRo extends AppLocalizations {
   @override
   String get settingsViewLyricsOnlyHint =>
       'Text curat, fără partitură sau acorduri';
+
+  @override
+  String get actionRename => 'Redenumește';
+
+  @override
+  String get setlistSingular => 'Listă de cântece';
+
+  @override
+  String get setlistNotFound => 'Lista nu a fost găsită';
+
+  @override
+  String setlistSongCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cântece',
+      one: '1 cântec',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get setlistOptions => 'Opțiuni pentru listă';
+
+  @override
+  String get setlistNew => 'Listă nouă';
+
+  @override
+  String get setlistRenameTitle => 'Redenumește lista';
+
+  @override
+  String get setlistDeleteTitle => 'Ștergi lista?';
+
+  @override
+  String setlistDeleteBody(String name) {
+    return '„$name” va fi eliminată definitiv.';
+  }
+
+  @override
+  String get setlistNameLabel => 'Nume';
+
+  @override
+  String get setlistNameHint => 'Numele listei';
+
+  @override
+  String get setlistsEmpty => 'Încă nicio listă';
+
+  @override
+  String get setlistsEmptyHint => 'Creează una pentru următorul serviciu divin';
+
+  @override
+  String get setlistPlay => 'Pornește lista';
+
+  @override
+  String get setlistAddSongs => 'Adaugă cântece';
+
+  @override
+  String get setlistRemoveSong => 'Elimină din listă';
+
+  @override
+  String get setlistEmpty => 'Niciun cântec în această listă';
+
+  @override
+  String errorLoadingSongsDetail(String detail) {
+    return 'Eroare la încărcarea cântecelor: $detail';
+  }
+
+  @override
+  String get importSectionPaste => 'LIPEȘTE CÂNTECUL';
+
+  @override
+  String get importSectionReplace => 'ÎNLOCUIEȘTE TEXTUL ȘI ACORDURILE';
+
+  @override
+  String get importPasteHint =>
+      'G       C\nAz Úrra bízom életem\n\nsau [G]Az Úrra [C]bízom életem';
+
+  @override
+  String get importMusicXmlFile => 'Fișier MusicXML';
+
+  @override
+  String get importParse => 'Procesează';
+
+  @override
+  String get importSectionDetails => 'DETALII';
+
+  @override
+  String importFromSource(String source) {
+    return 'din $source';
+  }
+
+  @override
+  String get importSourceSaved => 'cântecul salvat';
+
+  @override
+  String get importSourcePasted => 'text lipit';
+
+  @override
+  String get importTitleField => 'Titlu';
+
+  @override
+  String get importNumberField => 'Număr';
+
+  @override
+  String get importBookField => 'Carte de cântece';
+
+  @override
+  String importKeyFromFile(String key) {
+    return 'Tonalitatea $key, din fișier.';
+  }
+
+  @override
+  String importKeyGuessed(String key) {
+    return 'Tonalitatea a fost dedusă ca $key din primul acord.';
+  }
+
+  @override
+  String get importSectionPreview => 'PREVIZUALIZARE';
+
+  @override
+  String importVerseCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count strofe',
+      one: '1 strofă',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importBarCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count măsuri',
+      one: '1 măsură',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importBlockerDeleted =>
+      'Acest cântec nu mai este salvat pe acest dispozitiv.';
+
+  @override
+  String get importBlockerNothing =>
+      'Lipește un cântec sau deschide un fișier MusicXML.';
+
+  @override
+  String get importBlockerEmpty =>
+      'Nu s-a găsit text sau partitură în această sursă.';
+
+  @override
+  String get importBlockerNoTitle => 'Dă un titlu cântecului.';
+
+  @override
+  String importErrorNotMusicXml(String name) {
+    return '$name nu este un fișier MusicXML. Se acceptă .xml, .musicxml sau .mxl — un fișier MuseScore .mscz trebuie exportat mai întâi.';
+  }
+
+  @override
+  String importErrorUnreadable(String name) {
+    return '$name nu poate fi citit.';
+  }
+
+  @override
+  String importErrorFailed(String detail) {
+    return 'Fișierul nu poate fi importat: $detail';
+  }
+
+  @override
+  String importWarningsTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Verifică aceste rânduri',
+      one: 'Verifică acest rând',
+    );
+    return '$_temp0';
+  }
 }

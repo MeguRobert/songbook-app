@@ -705,5 +705,237 @@
   "settingsViewLyricsOnlyHint": "Clean text without notation or chords",
   "@settingsViewLyricsOnlyHint": {
     "description": "What the lyrics-only default shows"
+  },
+  "actionRename": "Rename",
+  "@actionRename": {
+    "description": "Change the name of something"
+  },
+  "setlistSingular": "Setlist",
+  "@setlistSingular": {
+    "description": "One order of service. The app-bar title while a setlist is being resolved."
+  },
+  "setlistNotFound": "Setlist not found",
+  "@setlistNotFound": {
+    "description": "Shown when a setlist id does not resolve"
+  },
+  "setlistSongCount": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@setlistSongCount": {
+    "description": "How many songs a setlist holds, under its name in the list",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "setlistOptions": "Setlist options",
+  "@setlistOptions": {
+    "description": "Tooltip on a setlist row's overflow menu"
+  },
+  "setlistNew": "New setlist",
+  "@setlistNew": {
+    "description": "Creates a setlist. Used as the button, its tooltip and the dialog title."
+  },
+  "setlistRenameTitle": "Rename setlist",
+  "@setlistRenameTitle": {
+    "description": "Title of the rename dialog"
+  },
+  "setlistDeleteTitle": "Delete setlist?",
+  "@setlistDeleteTitle": {
+    "description": "Title of the delete confirmation"
+  },
+  "setlistDeleteBody": "\"{name}\" will be permanently removed.",
+  "@setlistDeleteBody": {
+    "description": "Warns that deleting a setlist cannot be undone",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "setlistNameLabel": "Name",
+  "@setlistNameLabel": {
+    "description": "Field label in the create/rename dialog"
+  },
+  "setlistNameHint": "Setlist name",
+  "@setlistNameHint": {
+    "description": "Placeholder in the create/rename dialog"
+  },
+  "setlistsEmpty": "No setlists yet",
+  "@setlistsEmpty": {
+    "description": "Empty state heading on the setlists screen"
+  },
+  "setlistsEmptyHint": "Create one for your next service",
+  "@setlistsEmptyHint": {
+    "description": "Empty state hint on the setlists screen"
+  },
+  "setlistPlay": "Play setlist",
+  "@setlistPlay": {
+    "description": "Tooltip that starts working through a setlist in order"
+  },
+  "setlistAddSongs": "Add songs",
+  "@setlistAddSongs": {
+    "description": "Opens the picker that toggles songs in and out of a setlist"
+  },
+  "setlistRemoveSong": "Remove from setlist",
+  "@setlistRemoveSong": {
+    "description": "Tooltip on a song row's remove button"
+  },
+  "setlistEmpty": "No songs in this setlist",
+  "@setlistEmpty": {
+    "description": "Empty state heading inside one setlist"
+  },
+  "errorLoadingSongsDetail": "Error loading songs: {detail}",
+  "@errorLoadingSongsDetail": {
+    "description": "Catalogue load failure with the underlying message appended",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "importSectionPaste": "PASTE THE SONG",
+  "@importSectionPaste": {
+    "description": "Section heading above the chord-sheet box when adding a song"
+  },
+  "importSectionReplace": "REPLACE THE WORDS AND CHORDS",
+  "@importSectionReplace": {
+    "description": "The same box's heading when correcting a song that is already saved"
+  },
+  "importPasteHint": "G       C\nAz Úrra bízom életem\n\nor [G]Az Úrra [C]bízom életem",
+  "@importPasteHint": {
+    "description": "Placeholder showing both accepted shapes — chords on their own line above the words, or inline in brackets. The example line stays Hungarian in every language because the songs are Hungarian; only the connective changes."
+  },
+  "importMusicXmlFile": "MusicXML file",
+  "@importMusicXmlFile": {
+    "description": "Button that opens a file picker for .xml/.musicxml/.mxl"
+  },
+  "importParse": "Parse",
+  "@importParse": {
+    "description": "Button that reads the pasted text into a song"
+  },
+  "importSectionDetails": "DETAILS",
+  "@importSectionDetails": {
+    "description": "Section heading above title, number and songbook"
+  },
+  "importFromSource": "from {source}",
+  "@importFromSource": {
+    "description": "Names which importer produced what is on screen",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "importSourceSaved": "the saved song",
+  "@importSourceSaved": {
+    "description": "Source label when the preview is the song as already stored"
+  },
+  "importSourcePasted": "pasted text",
+  "@importSourcePasted": {
+    "description": "Source label when the preview came from the paste box"
+  },
+  "importTitleField": "Title",
+  "@importTitleField": {
+    "description": "Field label for the song title"
+  },
+  "importNumberField": "Number",
+  "@importNumberField": {
+    "description": "Field label for the hymn number"
+  },
+  "importBookField": "Songbook",
+  "@importBookField": {
+    "description": "Field label for which book the song belongs to"
+  },
+  "importKeyFromFile": "Key {key}, from the file.",
+  "@importKeyFromFile": {
+    "description": "Says the key was declared by the source rather than guessed",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "importKeyGuessed": "Key guessed as {key} from the first chord.",
+  "@importKeyGuessed": {
+    "description": "Says the key was inferred, so it is worth checking",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "importSectionPreview": "PREVIEW",
+  "@importSectionPreview": {
+    "description": "Section heading above the rendered song"
+  },
+  "importVerseCount": "{count, plural, =1{1 verse} other{{count} verses}}",
+  "@importVerseCount": {
+    "description": "How many verses the importer recovered",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importBarCount": "{count, plural, =1{1 bar} other{{count} bars}}",
+  "@importBarCount": {
+    "description": "How many measures of notation the importer recovered",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importBlockerDeleted": "That song is no longer stored on this device.",
+  "@importBlockerDeleted": {
+    "description": "Why Save is disabled: the song being corrected was deleted elsewhere"
+  },
+  "importBlockerNothing": "Paste a song or open a MusicXML file.",
+  "@importBlockerNothing": {
+    "description": "Why Save is disabled: nothing has been imported yet"
+  },
+  "importBlockerEmpty": "No lyrics or notation found in that source.",
+  "@importBlockerEmpty": {
+    "description": "Why Save is disabled: the importer recovered nothing"
+  },
+  "importBlockerNoTitle": "Give the song a title.",
+  "@importBlockerNoTitle": {
+    "description": "Why Save is disabled: the title box is empty"
+  },
+  "importErrorNotMusicXml": "{name} is not a MusicXML file. Expected .xml, .musicxml or .mxl — a MuseScore .mscz has to be exported first.",
+  "@importErrorNotMusicXml": {
+    "description": "Rejects a picked file by extension, and says what to do about the commonest wrong one",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importErrorUnreadable": "Could not read {name}.",
+  "@importErrorUnreadable": {
+    "description": "The picker returned a file with no bytes",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importErrorFailed": "Could not import that file: {detail}",
+  "@importErrorFailed": {
+    "description": "An unexpected failure while importing, with the underlying message",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "importWarningsTitle": "{count, plural, =1{Check this line} other{Check these lines}}",
+  "@importWarningsTitle": {
+    "description": "Heading above the importer's warnings",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

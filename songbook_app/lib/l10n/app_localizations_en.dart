@@ -528,4 +528,184 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsViewLyricsOnlyHint =>
       'Clean text without notation or chords';
+
+  @override
+  String get actionRename => 'Rename';
+
+  @override
+  String get setlistSingular => 'Setlist';
+
+  @override
+  String get setlistNotFound => 'Setlist not found';
+
+  @override
+  String setlistSongCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs',
+      one: '1 song',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get setlistOptions => 'Setlist options';
+
+  @override
+  String get setlistNew => 'New setlist';
+
+  @override
+  String get setlistRenameTitle => 'Rename setlist';
+
+  @override
+  String get setlistDeleteTitle => 'Delete setlist?';
+
+  @override
+  String setlistDeleteBody(String name) {
+    return '\"$name\" will be permanently removed.';
+  }
+
+  @override
+  String get setlistNameLabel => 'Name';
+
+  @override
+  String get setlistNameHint => 'Setlist name';
+
+  @override
+  String get setlistsEmpty => 'No setlists yet';
+
+  @override
+  String get setlistsEmptyHint => 'Create one for your next service';
+
+  @override
+  String get setlistPlay => 'Play setlist';
+
+  @override
+  String get setlistAddSongs => 'Add songs';
+
+  @override
+  String get setlistRemoveSong => 'Remove from setlist';
+
+  @override
+  String get setlistEmpty => 'No songs in this setlist';
+
+  @override
+  String errorLoadingSongsDetail(String detail) {
+    return 'Error loading songs: $detail';
+  }
+
+  @override
+  String get importSectionPaste => 'PASTE THE SONG';
+
+  @override
+  String get importSectionReplace => 'REPLACE THE WORDS AND CHORDS';
+
+  @override
+  String get importPasteHint =>
+      'G       C\nAz Úrra bízom életem\n\nor [G]Az Úrra [C]bízom életem';
+
+  @override
+  String get importMusicXmlFile => 'MusicXML file';
+
+  @override
+  String get importParse => 'Parse';
+
+  @override
+  String get importSectionDetails => 'DETAILS';
+
+  @override
+  String importFromSource(String source) {
+    return 'from $source';
+  }
+
+  @override
+  String get importSourceSaved => 'the saved song';
+
+  @override
+  String get importSourcePasted => 'pasted text';
+
+  @override
+  String get importTitleField => 'Title';
+
+  @override
+  String get importNumberField => 'Number';
+
+  @override
+  String get importBookField => 'Songbook';
+
+  @override
+  String importKeyFromFile(String key) {
+    return 'Key $key, from the file.';
+  }
+
+  @override
+  String importKeyGuessed(String key) {
+    return 'Key guessed as $key from the first chord.';
+  }
+
+  @override
+  String get importSectionPreview => 'PREVIEW';
+
+  @override
+  String importVerseCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count verses',
+      one: '1 verse',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importBarCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bars',
+      one: '1 bar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importBlockerDeleted =>
+      'That song is no longer stored on this device.';
+
+  @override
+  String get importBlockerNothing => 'Paste a song or open a MusicXML file.';
+
+  @override
+  String get importBlockerEmpty =>
+      'No lyrics or notation found in that source.';
+
+  @override
+  String get importBlockerNoTitle => 'Give the song a title.';
+
+  @override
+  String importErrorNotMusicXml(String name) {
+    return '$name is not a MusicXML file. Expected .xml, .musicxml or .mxl — a MuseScore .mscz has to be exported first.';
+  }
+
+  @override
+  String importErrorUnreadable(String name) {
+    return 'Could not read $name.';
+  }
+
+  @override
+  String importErrorFailed(String detail) {
+    return 'Could not import that file: $detail';
+  }
+
+  @override
+  String importWarningsTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Check these lines',
+      one: 'Check this line',
+    );
+    return '$_temp0';
+  }
 }

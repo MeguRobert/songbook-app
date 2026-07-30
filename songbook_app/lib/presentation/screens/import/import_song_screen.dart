@@ -12,12 +12,22 @@ import '../../../data/models/verse.dart';
 import '../../../domain/services/chord_sheet_exporter.dart';
 import '../../../domain/services/chord_sheet_parser.dart';
 import '../../../domain/services/musicxml_importer.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../providers/book_provider.dart';
 import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 import '../../../router/app_router.dart';
 import '../song_view/widgets/chord_view.dart';
 import '../song_view/widgets/sheet_music_view.dart';
+
+/// Where a pending import came from.
+///
+/// A kind rather than a ready-made label, because the label has to be in the
+/// language the screen is being read in *now*. Resolving it at import time
+/// would freeze whichever language happened to be active when Parse was
+/// pressed, and `initState` is the wrong place to reach for an inherited widget
+/// anyway.
+enum _ImportSource { savedSong, pastedText, file }
 
 /// What an importer produced, whatever the source.
 ///
@@ -35,17 +45,29 @@ class _PendingImport {
   final List<String> warnings;
 
   /// Shown so it is obvious which source produced what is on screen.
-  final String sourceLabel;
+  final _ImportSource source;
+
+  /// The picked file's name, when [source] is [_ImportSource.file].
+  final String? fileName;
 
   const _PendingImport({
     required this.verses,
-    required this.sourceLabel,
+    required this.source,
+    this.fileName,
     this.notation,
     this.title,
     this.key,
     this.timeSignature,
     this.warnings = const [],
   });
+
+  String sourceLabel(AppLocalizations l10n) => switch (source) {
+        _ImportSource.savedSong => l10n.importSourceSaved,
+        _ImportSource.pastedText => l10n.importSourcePasted,
+        // A file name is the same in every language; the fallback only fires if
+        // the picker ever returns a file with no name.
+        _ImportSource.file => fileName ?? l10n.importMusicXmlFile,
+      };
 }
 
 /// Adds a song by pasting a chord sheet or opening a MusicXML file — or
@@ -122,7 +144,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       title: existing.title,
       key: existing.originalKey,
       timeSignature: existing.timeSignature,
-      sourceLabel: 'the saved song',
+      source: _ImportSource.savedSong,
     );
     _pending = _savedPending;
     _key = existing.originalKey;
@@ -169,11 +191,12 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       title: result.title,
       key: result.key,
       warnings: result.warnings,
-      sourceLabel: 'pasted text',
+      source: _ImportSource.pastedText,
     ));
   }
 
   Future<void> _pickMusicXmlFile() async {
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _picking = true;
       _fileError = null;
@@ -192,15 +215,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       if (!name.endsWith('.xml') &&
           !name.endsWith('.musicxml') &&
           !name.endsWith('.mxl')) {
-        setState(() => _fileError =
-            '${file.name} is not a MusicXML file. Expected .xml, .musicxml '
-            'or .mxl — a MuseScore .mscz has to be exported first.');
+        setState(
+            () => _fileError = l10n.importErrorNotMusicXml(file.name));
         return;
       }
 
       final bytes = file.bytes;
       if (bytes == null) {
-        setState(() => _fileError = 'Could not read ${file.name}.');
+        setState(() => _fileError = l10n.importErrorUnreadable(file.name));
         return;
       }
 
@@ -217,14 +239,18 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
         key: result.key,
         timeSignature: result.timeSignature,
         warnings: result.warnings,
-        sourceLabel: file.name,
+        source: _ImportSource.file,
+        fileName: file.name,
       ));
     } on MusicXmlImportException catch (e) {
+      // Still English: the importer is a pure domain service and builds its own
+      // messages. Giving it translations means structured codes rather than
+      // prose, which is a bigger change than this pass. See the handoff.
       setState(() => _fileError = e.message);
     } catch (e) {
       // A malformed file must not take the screen down with it — the user
       // still has a pasted draft in progress they would otherwise lose.
-      setState(() => _fileError = 'Could not import that file: $e');
+      setState(() => _fileError = l10n.importErrorFailed('$e'));
     } finally {
       if (mounted) setState(() => _picking = false);
     }
@@ -285,19 +311,19 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     );
   }
 
-  List<String> get _blockers {
+  List<String> _blockersIn(AppLocalizations l10n) {
     if (_isEditing && _editing == null) {
-      return const ['That song is no longer stored on this device.'];
+      return [l10n.importBlockerDeleted];
     }
     final pending = _pending;
     if (pending == null) {
-      return const ['Paste a song or open a MusicXML file.'];
+      return [l10n.importBlockerNothing];
     }
     if (!_hasContent(pending)) {
-      return const ['No lyrics or notation found in that source.'];
+      return [l10n.importBlockerEmpty];
     }
     if (_titleController.text.trim().isEmpty) {
-      return const ['Give the song a title.'];
+      return [l10n.importBlockerNoTitle];
     }
     return const [];
   }
@@ -329,13 +355,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final pending = _pending;
     final draft = _draft;
-    final blockers = _blockers;
+    final blockers = _blockersIn(l10n);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit song' : 'Add a song'),
+        title: Text(_isEditing ? l10n.menuEditSong : l10n.addSong),
         actions: [
           TextButton(
             onPressed: blockers.isEmpty && !_saving ? _save : null,
@@ -344,14 +371,17 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save'),
+                : Text(l10n.actionSave),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(_isEditing ? 'REPLACE THE WORDS AND CHORDS' : 'PASTE THE SONG',
+          Text(
+              _isEditing
+                  ? l10n.importSectionReplace
+                  : l10n.importSectionPaste,
               style: _sectionStyle(theme)),
           const SizedBox(height: 8),
           TextField(
@@ -359,13 +389,10 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             maxLines: 8,
             minLines: 4,
             style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
               alignLabelWithHint: true,
-              hintText: 'G       C\n'
-                  'Az Úrra bízom életem\n'
-                  '\n'
-                  'or [G]Az Úrra [C]bízom életem',
+              hintText: l10n.importPasteHint,
             ),
             // Always setState, not just when clearing a previous parse: the
             // Parse button's enabled state depends on this field being
@@ -391,14 +418,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.piano_outlined),
-                label: const Text('MusicXML file'),
+                label: Text(l10n.importMusicXmlFile),
               ),
               const Spacer(),
               FilledButton.tonalIcon(
                 onPressed:
                     _sheetController.text.trim().isEmpty ? null : _parsePasted,
                 icon: const Icon(Icons.auto_fix_high),
-                label: const Text('Parse'),
+                label: Text(l10n.importParse),
               ),
             ],
           ),
@@ -417,11 +444,11 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             const Divider(height: 32),
             Row(
               children: [
-                Text('DETAILS', style: _sectionStyle(theme)),
+                Text(l10n.importSectionDetails, style: _sectionStyle(theme)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'from ${pending.sourceLabel}',
+                    l10n.importFromSource(pending.sourceLabel(l10n)),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -433,9 +460,9 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.importTitleField,
+                border: const OutlineInputBorder(),
               ),
               onChanged: (_) => setState(() => _titleEdited = true),
             ),
@@ -448,9 +475,9 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                   child: TextField(
                     controller: _numberController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Number',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.importNumberField,
+                      border: const OutlineInputBorder(),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -468,8 +495,8 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
               const SizedBox(height: 8),
               Text(
                 pending.key != null
-                    ? 'Key $_key, from the file.'
-                    : 'Key guessed as $_key from the first chord.',
+                    ? l10n.importKeyFromFile(_key!)
+                    : l10n.importKeyGuessed(_key!),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -484,15 +511,15 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             const Divider(height: 32),
             Row(
               children: [
-                Text('PREVIEW', style: _sectionStyle(theme)),
+                Text(l10n.importSectionPreview, style: _sectionStyle(theme)),
                 const SizedBox(width: 8),
                 Text(
                   [
                     if (pending.verses.isNotEmpty)
-                      '${pending.verses.length} verse'
-                          '${pending.verses.length == 1 ? '' : 's'}',
+                      l10n.importVerseCount(pending.verses.length),
                     if (pending.notation != null)
-                      '${pending.notation!.verses.fold<int>(0, (n, v) => n + v.measures.length)} bars',
+                      l10n.importBarCount(pending.notation!.verses
+                          .fold<int>(0, (n, v) => n + v.measures.length)),
                   ].join(' · '),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -580,9 +607,9 @@ class _BookFieldState extends ConsumerState<_BookField> {
         return TextField(
           controller: textController,
           focusNode: focusNode,
-          decoration: const InputDecoration(
-            labelText: 'Songbook',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).importBookField,
+            border: const OutlineInputBorder(),
           ),
           onChanged: (_) => widget.onChanged(),
           onSubmitted: (_) => onSubmitted(),
@@ -631,8 +658,9 @@ class _Warnings extends StatelessWidget {
       icon: Icons.info_outline,
       background: theme.colorScheme.secondaryContainer,
       foreground: theme.colorScheme.onSecondaryContainer,
-      title: 'Check ${warnings.length == 1 ? 'this' : 'these'} '
-          '${warnings.length == 1 ? 'line' : 'lines'}',
+      title: AppLocalizations.of(context).importWarningsTitle(warnings.length),
+      // The warnings themselves are still English: they are built by the pure
+      // parser/importer services, which have no access to a BuildContext.
       text: warnings.map((w) => '• $w').join('\n'),
     );
   }

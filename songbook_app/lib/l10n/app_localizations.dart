@@ -1011,6 +1011,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clean text without notation or chords'**
   String get settingsViewLyricsOnlyHint;
+
+  /// Change the name of something
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get actionRename;
+
+  /// One order of service. The app-bar title while a setlist is being resolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Setlist'**
+  String get setlistSingular;
+
+  /// Shown when a setlist id does not resolve
+  ///
+  /// In en, this message translates to:
+  /// **'Setlist not found'**
+  String get setlistNotFound;
+
+  /// How many songs a setlist holds, under its name in the list
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 song} other{{count} songs}}'**
+  String setlistSongCount(int count);
+
+  /// Tooltip on a setlist row's overflow menu
+  ///
+  /// In en, this message translates to:
+  /// **'Setlist options'**
+  String get setlistOptions;
+
+  /// Creates a setlist. Used as the button, its tooltip and the dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'New setlist'**
+  String get setlistNew;
+
+  /// Title of the rename dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Rename setlist'**
+  String get setlistRenameTitle;
+
+  /// Title of the delete confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Delete setlist?'**
+  String get setlistDeleteTitle;
+
+  /// Warns that deleting a setlist cannot be undone
+  ///
+  /// In en, this message translates to:
+  /// **'\"{name}\" will be permanently removed.'**
+  String setlistDeleteBody(String name);
+
+  /// Field label in the create/rename dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get setlistNameLabel;
+
+  /// Placeholder in the create/rename dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Setlist name'**
+  String get setlistNameHint;
+
+  /// Empty state heading on the setlists screen
+  ///
+  /// In en, this message translates to:
+  /// **'No setlists yet'**
+  String get setlistsEmpty;
+
+  /// Empty state hint on the setlists screen
+  ///
+  /// In en, this message translates to:
+  /// **'Create one for your next service'**
+  String get setlistsEmptyHint;
+
+  /// Tooltip that starts working through a setlist in order
+  ///
+  /// In en, this message translates to:
+  /// **'Play setlist'**
+  String get setlistPlay;
+
+  /// Opens the picker that toggles songs in and out of a setlist
+  ///
+  /// In en, this message translates to:
+  /// **'Add songs'**
+  String get setlistAddSongs;
+
+  /// Tooltip on a song row's remove button
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from setlist'**
+  String get setlistRemoveSong;
+
+  /// Empty state heading inside one setlist
+  ///
+  /// In en, this message translates to:
+  /// **'No songs in this setlist'**
+  String get setlistEmpty;
+
+  /// Catalogue load failure with the underlying message appended
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading songs: {detail}'**
+  String errorLoadingSongsDetail(String detail);
+
+  /// Section heading above the chord-sheet box when adding a song
+  ///
+  /// In en, this message translates to:
+  /// **'PASTE THE SONG'**
+  String get importSectionPaste;
+
+  /// The same box's heading when correcting a song that is already saved
+  ///
+  /// In en, this message translates to:
+  /// **'REPLACE THE WORDS AND CHORDS'**
+  String get importSectionReplace;
+
+  /// Placeholder showing both accepted shapes — chords on their own line above the words, or inline in brackets. The example line stays Hungarian in every language because the songs are Hungarian; only the connective changes.
+  ///
+  /// In en, this message translates to:
+  /// **'G       C\nAz Úrra bízom életem\n\nor [G]Az Úrra [C]bízom életem'**
+  String get importPasteHint;
+
+  /// Button that opens a file picker for .xml/.musicxml/.mxl
+  ///
+  /// In en, this message translates to:
+  /// **'MusicXML file'**
+  String get importMusicXmlFile;
+
+  /// Button that reads the pasted text into a song
+  ///
+  /// In en, this message translates to:
+  /// **'Parse'**
+  String get importParse;
+
+  /// Section heading above title, number and songbook
+  ///
+  /// In en, this message translates to:
+  /// **'DETAILS'**
+  String get importSectionDetails;
+
+  /// Names which importer produced what is on screen
+  ///
+  /// In en, this message translates to:
+  /// **'from {source}'**
+  String importFromSource(String source);
+
+  /// Source label when the preview is the song as already stored
+  ///
+  /// In en, this message translates to:
+  /// **'the saved song'**
+  String get importSourceSaved;
+
+  /// Source label when the preview came from the paste box
+  ///
+  /// In en, this message translates to:
+  /// **'pasted text'**
+  String get importSourcePasted;
+
+  /// Field label for the song title
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get importTitleField;
+
+  /// Field label for the hymn number
+  ///
+  /// In en, this message translates to:
+  /// **'Number'**
+  String get importNumberField;
+
+  /// Field label for which book the song belongs to
+  ///
+  /// In en, this message translates to:
+  /// **'Songbook'**
+  String get importBookField;
+
+  /// Says the key was declared by the source rather than guessed
+  ///
+  /// In en, this message translates to:
+  /// **'Key {key}, from the file.'**
+  String importKeyFromFile(String key);
+
+  /// Says the key was inferred, so it is worth checking
+  ///
+  /// In en, this message translates to:
+  /// **'Key guessed as {key} from the first chord.'**
+  String importKeyGuessed(String key);
+
+  /// Section heading above the rendered song
+  ///
+  /// In en, this message translates to:
+  /// **'PREVIEW'**
+  String get importSectionPreview;
+
+  /// How many verses the importer recovered
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 verse} other{{count} verses}}'**
+  String importVerseCount(int count);
+
+  /// How many measures of notation the importer recovered
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 bar} other{{count} bars}}'**
+  String importBarCount(int count);
+
+  /// Why Save is disabled: the song being corrected was deleted elsewhere
+  ///
+  /// In en, this message translates to:
+  /// **'That song is no longer stored on this device.'**
+  String get importBlockerDeleted;
+
+  /// Why Save is disabled: nothing has been imported yet
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a song or open a MusicXML file.'**
+  String get importBlockerNothing;
+
+  /// Why Save is disabled: the importer recovered nothing
+  ///
+  /// In en, this message translates to:
+  /// **'No lyrics or notation found in that source.'**
+  String get importBlockerEmpty;
+
+  /// Why Save is disabled: the title box is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Give the song a title.'**
+  String get importBlockerNoTitle;
+
+  /// Rejects a picked file by extension, and says what to do about the commonest wrong one
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is not a MusicXML file. Expected .xml, .musicxml or .mxl — a MuseScore .mscz has to be exported first.'**
+  String importErrorNotMusicXml(String name);
+
+  /// The picker returned a file with no bytes
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read {name}.'**
+  String importErrorUnreadable(String name);
+
+  /// An unexpected failure while importing, with the underlying message
+  ///
+  /// In en, this message translates to:
+  /// **'Could not import that file: {detail}'**
+  String importErrorFailed(String detail);
+
+  /// Heading above the importer's warnings
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Check this line} other{Check these lines}}'**
+  String importWarningsTitle(int count);
 }
 
 class _AppLocalizationsDelegate

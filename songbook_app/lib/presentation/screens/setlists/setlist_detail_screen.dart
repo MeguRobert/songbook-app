@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/models/setlist.dart';
 import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../router/app_router.dart';
 import '../../providers/setlist_provider.dart';
 import '../../providers/song_provider.dart';
@@ -17,12 +18,13 @@ class SetlistDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final setlist = ref.watch(setlistByIdProvider(setlistId));
 
     if (setlist == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Setlist')),
-        body: const Center(child: Text('Setlist not found')),
+        appBar: AppBar(title: Text(l10n.setlistSingular)),
+        body: Center(child: Text(l10n.setlistNotFound)),
       );
     }
 
@@ -34,7 +36,7 @@ class SetlistDetailScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.play_arrow),
-            tooltip: 'Play setlist',
+            tooltip: l10n.setlistPlay,
             onPressed: setlist.isEmpty
                 ? null
                 : () => _play(context, ref, setlist),
@@ -96,7 +98,7 @@ class SetlistDetailScreen extends ConsumerWidget {
                 subtitle: song.reference != null ? Text(song.reference!) : null,
                 trailing: IconButton(
                   icon: const Icon(Icons.remove_circle_outline),
-                  tooltip: 'Remove from setlist',
+                  tooltip: l10n.setlistRemoveSong,
                   onPressed: () => ref
                       .read(setlistsProvider.notifier)
                       .removeSong(setlist.id, song.id),
@@ -107,13 +109,13 @@ class SetlistDetailScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text('Error loading songs: $error'),
+          child: Text(l10n.errorLoadingSongsDetail('$error')),
         ),
       ),
       floatingActionButton: songsAsync.maybeWhen(
         data: (allSongs) => FloatingActionButton(
           onPressed: () => _showAddSongs(context, ref, setlist, allSongs),
-          tooltip: 'Add songs',
+          tooltip: l10n.setlistAddSongs,
           child: const Icon(Icons.add),
         ),
         orElse: () => null,
@@ -167,11 +169,12 @@ class _AddSongsSheet extends ConsumerWidget {
       builder: (context, scrollController) {
         return Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
-                'Add songs',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                AppLocalizations.of(context).setlistAddSongs,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             const Divider(height: 1),
@@ -212,6 +215,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -219,7 +223,7 @@ class _EmptyState extends StatelessWidget {
           Icon(Icons.queue_music, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No songs in this setlist',
+            l10n.setlistEmpty,
             style: Theme.of(context)
                 .textTheme
                 .titleMedium
@@ -229,7 +233,7 @@ class _EmptyState extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add),
-            label: const Text('Add songs'),
+            label: Text(l10n.setlistAddSongs),
           ),
         ],
       ),

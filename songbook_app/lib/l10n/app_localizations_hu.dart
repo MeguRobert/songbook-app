@@ -530,4 +530,185 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get settingsViewLyricsOnlyHint =>
       'Tiszta szöveg kotta és akkordok nélkül';
+
+  @override
+  String get actionRename => 'Átnevezés';
+
+  @override
+  String get setlistSingular => 'Énekrend';
+
+  @override
+  String get setlistNotFound => 'Az énekrend nem található';
+
+  @override
+  String setlistSongCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ének',
+      one: '$count ének',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get setlistOptions => 'Énekrend műveletei';
+
+  @override
+  String get setlistNew => 'Új énekrend';
+
+  @override
+  String get setlistRenameTitle => 'Énekrend átnevezése';
+
+  @override
+  String get setlistDeleteTitle => 'Törli az énekrendet?';
+
+  @override
+  String setlistDeleteBody(String name) {
+    return 'A(z) „$name” véglegesen törlődik.';
+  }
+
+  @override
+  String get setlistNameLabel => 'Név';
+
+  @override
+  String get setlistNameHint => 'Az énekrend neve';
+
+  @override
+  String get setlistsEmpty => 'Még nincs énekrend';
+
+  @override
+  String get setlistsEmptyHint => 'Készíts egyet a következő istentiszteletre';
+
+  @override
+  String get setlistPlay => 'Énekrend indítása';
+
+  @override
+  String get setlistAddSongs => 'Énekek hozzáadása';
+
+  @override
+  String get setlistRemoveSong => 'Eltávolítás az énekrendből';
+
+  @override
+  String get setlistEmpty => 'Ebben az énekrendben nincs ének';
+
+  @override
+  String errorLoadingSongsDetail(String detail) {
+    return 'Hiba az énekek betöltésekor: $detail';
+  }
+
+  @override
+  String get importSectionPaste => 'ILLESZD BE AZ ÉNEKET';
+
+  @override
+  String get importSectionReplace => 'SZÖVEG ÉS AKKORDOK CSERÉJE';
+
+  @override
+  String get importPasteHint =>
+      'G       C\nAz Úrra bízom életem\n\nvagy [G]Az Úrra [C]bízom életem';
+
+  @override
+  String get importMusicXmlFile => 'MusicXML fájl';
+
+  @override
+  String get importParse => 'Feldolgozás';
+
+  @override
+  String get importSectionDetails => 'ADATOK';
+
+  @override
+  String importFromSource(String source) {
+    return 'innen: $source';
+  }
+
+  @override
+  String get importSourceSaved => 'a mentett ének';
+
+  @override
+  String get importSourcePasted => 'beillesztett szöveg';
+
+  @override
+  String get importTitleField => 'Cím';
+
+  @override
+  String get importNumberField => 'Szám';
+
+  @override
+  String get importBookField => 'Énekeskönyv';
+
+  @override
+  String importKeyFromFile(String key) {
+    return '$key hangnem, a fájlból.';
+  }
+
+  @override
+  String importKeyGuessed(String key) {
+    return 'A hangnem $key, az első akkordból következtetve.';
+  }
+
+  @override
+  String get importSectionPreview => 'ELŐNÉZET';
+
+  @override
+  String importVerseCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count versszak',
+      one: '$count versszak',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importBarCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ütem',
+      one: '$count ütem',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importBlockerDeleted =>
+      'Ez az ének már nincs eltárolva ezen a készüléken.';
+
+  @override
+  String get importBlockerNothing =>
+      'Illessz be egy éneket, vagy nyiss meg egy MusicXML fájlt.';
+
+  @override
+  String get importBlockerEmpty =>
+      'Nem található szöveg vagy kotta ebben a forrásban.';
+
+  @override
+  String get importBlockerNoTitle => 'Adj címet az éneknek.';
+
+  @override
+  String importErrorNotMusicXml(String name) {
+    return 'A(z) $name nem MusicXML fájl. Elfogadott: .xml, .musicxml vagy .mxl — a MuseScore .mscz fájlt előbb exportálni kell.';
+  }
+
+  @override
+  String importErrorUnreadable(String name) {
+    return 'A(z) $name nem olvasható.';
+  }
+
+  @override
+  String importErrorFailed(String detail) {
+    return 'A fájl nem importálható: $detail';
+  }
+
+  @override
+  String importWarningsTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ellenőrizd ezeket a sorokat',
+      one: 'Ellenőrizd ezt a sort',
+    );
+    return '$_temp0';
+  }
 }

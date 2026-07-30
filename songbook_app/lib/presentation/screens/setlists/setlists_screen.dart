@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/models/setlist.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../router/app_router.dart';
 import '../../providers/setlist_provider.dart';
 
@@ -12,10 +13,11 @@ class SetlistsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final setlists = ref.watch(setlistsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Setlists')),
+      appBar: AppBar(title: Text(l10n.navSetlists)),
       body: setlists.isEmpty
           ? _EmptyState(onCreate: () => _showCreateDialog(context, ref))
           : ListView.builder(
@@ -25,13 +27,11 @@ class SetlistsScreen extends ConsumerWidget {
                 return ListTile(
                   leading: const Icon(Icons.queue_music),
                   title: Text(setlist.name),
-                  subtitle: Text(
-                    '${setlist.length} ${setlist.length == 1 ? 'song' : 'songs'}',
-                  ),
+                  subtitle: Text(l10n.setlistSongCount(setlist.length)),
                   onTap: () =>
                       context.push(AppRoutes.setlistDetailPath(setlist.id)),
                   trailing: PopupMenuButton<String>(
-                    tooltip: 'Setlist options',
+                    tooltip: l10n.setlistOptions,
                     onSelected: (value) {
                       if (value == 'rename') {
                         _showRenameDialog(context, ref, setlist);
@@ -39,9 +39,11 @@ class SetlistsScreen extends ConsumerWidget {
                         _showDeleteDialog(context, ref, setlist);
                       }
                     },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(value: 'rename', child: Text('Rename')),
-                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                          value: 'rename', child: Text(l10n.actionRename)),
+                      PopupMenuItem(
+                          value: 'delete', child: Text(l10n.actionDelete)),
                     ],
                   ),
                 );
@@ -49,14 +51,17 @@ class SetlistsScreen extends ConsumerWidget {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateDialog(context, ref),
-        tooltip: 'New setlist',
+        tooltip: l10n.setlistNew,
         child: const Icon(Icons.add),
       ),
     );
   }
 
   Future<void> _showCreateDialog(BuildContext context, WidgetRef ref) async {
-    final name = await _promptForName(context, title: 'New setlist');
+    final name = await _promptForName(
+      context,
+      title: AppLocalizations.of(context).setlistNew,
+    );
     if (name != null && name.trim().isNotEmpty) {
       await ref.read(setlistsProvider.notifier).create(name.trim());
     }
@@ -69,7 +74,7 @@ class SetlistsScreen extends ConsumerWidget {
   ) async {
     final name = await _promptForName(
       context,
-      title: 'Rename setlist',
+      title: AppLocalizations.of(context).setlistRenameTitle,
       initialValue: setlist.name,
     );
     if (name != null && name.trim().isNotEmpty) {
@@ -82,19 +87,20 @@ class SetlistsScreen extends ConsumerWidget {
     WidgetRef ref,
     Setlist setlist,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete setlist?'),
-        content: Text('"${setlist.name}" will be permanently removed.'),
+        title: Text(l10n.setlistDeleteTitle),
+        content: Text(l10n.setlistDeleteBody(setlist.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
@@ -131,6 +137,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -138,7 +145,7 @@ class _EmptyState extends StatelessWidget {
           Icon(Icons.queue_music, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No setlists yet',
+            l10n.setlistsEmpty,
             style: Theme.of(context)
                 .textTheme
                 .titleMedium
@@ -146,7 +153,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Create one for your next service',
+            l10n.setlistsEmptyHint,
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
@@ -156,7 +163,7 @@ class _EmptyState extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onCreate,
             icon: const Icon(Icons.add),
-            label: const Text('New setlist'),
+            label: Text(l10n.setlistNew),
           ),
         ],
       ),
@@ -192,25 +199,26 @@ class _NamePromptDialogState extends State<_NamePromptDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(widget.title),
       content: TextField(
         controller: _controller,
         autofocus: true,
-        decoration: const InputDecoration(
-          hintText: 'Setlist name',
-          labelText: 'Name',
+        decoration: InputDecoration(
+          hintText: l10n.setlistNameHint,
+          labelText: l10n.setlistNameLabel,
         ),
         onSubmitted: (value) => Navigator.of(context).pop(value),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n.actionCancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: const Text('Save'),
+          child: Text(l10n.actionSave),
         ),
       ],
     );
