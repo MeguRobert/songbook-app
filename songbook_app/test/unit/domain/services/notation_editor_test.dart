@@ -98,6 +98,41 @@ void main() {
       expect(after.pickup, before.pickup);
     });
 
+    test('keeps the score’s other voices', () {
+      // A four-part score came back from one corrected note with its alto, tenor
+      // and bass gone: this rebuilt SongNotation field by field and `voices` was
+      // added after that code was written, so every beat edit dropped it and
+      // reading the bass line meant finding and re-importing the source file.
+      // The same shape of hole that had already cost `isPickup` twice.
+      const before = SongNotation(
+        originalKey: 'C',
+        timeSignature: '4/4',
+        verses: [
+          NotatedVerse(number: 1, measures: [
+            NotatedMeasure(beats: [
+              NotatedBeat(pitch: 'C5', duration: NoteDuration.quarter),
+            ]),
+          ]),
+        ],
+        voices: [
+          NotatedVoice(name: 'Bass', measures: [
+            NotatedMeasure(beats: [
+              NotatedBeat(pitch: 'C3', duration: NoteDuration.quarter),
+            ]),
+          ]),
+        ],
+      );
+
+      final after = editor.replaceBeat(
+        before,
+        const BeatAddress(verse: 0, measure: 0, beat: 0),
+        const NotatedBeat(pitch: 'D5', duration: NoteDuration.quarter),
+      );
+
+      expect(after.verses.first.measures.first.beats.single.pitch, 'D5');
+      expect(after.voices, before.voices);
+    });
+
     test('is a no-op for an address out of range', () {
       final before = twoMeasures();
       const replacement =

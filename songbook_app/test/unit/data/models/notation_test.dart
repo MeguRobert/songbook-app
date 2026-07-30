@@ -231,6 +231,27 @@ void main() {
       ]);
       expect(verse.allBeats.map((b) => b.pitch), ['C4', 'D4', 'E4']);
     });
+
+    test('copyWith swaps the measures and keeps the verse number', () {
+      // The verse number identifies which words the notation belongs to, so a
+      // pass that changes the bars must not renumber the verse by omission.
+      const verse = NotatedVerse(number: 3, measures: [
+        NotatedMeasure(beats: [
+          NotatedBeat(pitch: 'C4', duration: NoteDuration.quarter),
+        ]),
+      ]);
+
+      final rebarred = verse.copyWith(measures: const [
+        NotatedMeasure(beats: [
+          NotatedBeat(pitch: 'C4', duration: NoteDuration.quarter),
+        ]),
+        NotatedMeasure(beats: []),
+      ]);
+
+      expect(rebarred.number, 3);
+      expect(rebarred.measures, hasLength(2));
+      expect(verse.copyWith(number: 4).measures, verse.measures);
+    });
   });
 
   group('SongNotation', () {
@@ -283,6 +304,66 @@ void main() {
       expect(decoded.verses.single.measures.single.repeatEnd, isTrue);
       expect(decoded.verses.single.measures.single.lineBreakAfter, isTrue);
       expect(decoded.pickup?.single.pitch, 'F4');
+    });
+
+    group('copyWith', () {
+      const satb = SongNotation(
+        originalKey: 'Bb',
+        timeSignature: '3/4',
+        showTimeSignature: false,
+        verses: [
+          NotatedVerse(number: 1, measures: [
+            NotatedMeasure(beats: [
+              NotatedBeat(pitch: 'Bb4', duration: NoteDuration.quarter),
+            ]),
+          ]),
+        ],
+        pickup: [NotatedBeat(pitch: 'F4', duration: NoteDuration.eighth)],
+        voices: [
+          NotatedVoice(name: 'Bass', measures: [
+            NotatedMeasure(beats: [
+              NotatedBeat(pitch: 'Bb2', duration: NoteDuration.quarter),
+            ]),
+          ]),
+        ],
+      );
+
+      test('changing the verses keeps every other field', () {
+        // This is the whole reason it exists. Rebuilding a SongNotation field by
+        // field to change one thing is how `isPickup` was lost twice and how the
+        // beat editor was silently discarding `voices` — a four-part score came
+        // back from a single corrected note with its alto, tenor and bass gone,
+        // which meant finding and re-importing the source file.
+        final edited = satb.copyWith(verses: const [
+          NotatedVerse(number: 1, measures: [
+            NotatedMeasure(beats: [
+              NotatedBeat(pitch: 'C5', duration: NoteDuration.quarter),
+            ]),
+          ]),
+        ]);
+
+        expect(edited.verses.single.measures.single.beats.single.pitch, 'C5');
+        expect(edited.originalKey, 'Bb');
+        expect(edited.timeSignature, '3/4');
+        expect(edited.showTimeSignature, isFalse);
+        expect(edited.pickup, satb.pickup);
+        expect(edited.voices, satb.voices);
+      });
+
+      test('each field can be overridden on its own', () {
+        expect(satb.copyWith(originalKey: 'D').originalKey, 'D');
+        expect(satb.copyWith(timeSignature: '4/4').timeSignature, '4/4');
+        expect(satb.copyWith(showTimeSignature: true).showTimeSignature, isTrue);
+        expect(satb.copyWith(voices: const []).voices, isEmpty);
+        expect(satb.copyWith(pickup: const []).pickup, isEmpty);
+      });
+
+      test('returns a value that compares unequal once something changed', () {
+        // Riverpod and Flutter decide whether to rebuild by comparing values, so
+        // an edited notation still equal to its previous self is invisible.
+        expect(satb.copyWith(originalKey: 'D'), isNot(satb));
+        expect(satb.copyWith(), satb);
+      });
     });
   });
 }

@@ -137,15 +137,13 @@ class NotationEditor {
         measure.copyWith(beats: transform(measure.beats));
 
     final verses = [...notation.verses];
-    verses[address.verse] =
-        NotatedVerse(number: verse.number, measures: measures);
+    verses[address.verse] = verse.copyWith(measures: measures);
 
-    return SongNotation(
-      originalKey: notation.originalKey,
-      timeSignature: notation.timeSignature,
-      showTimeSignature: notation.showTimeSignature,
-      verses: verses,
-      pickup: notation.pickup,
-    );
+    // copyWith all the way up, for the third time in this file's history. Spelled
+    // out, this dropped `voices` — added to the model after this code was
+    // written — so a four-part score came back from one corrected note with its
+    // alto, tenor and bass gone, and reading the bass line meant finding and
+    // re-importing the source file.
+    return notation.copyWith(verses: verses);
   }
 }
