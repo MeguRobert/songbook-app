@@ -357,142 +357,441 @@ def distribute_lyrics_to_notes(notation: dict, lyrics_by_system: list) -> dict:
     return notation
 
 
-def parse_musicxml(mxl_path: str) -> dict:
-    """Parse MusicXML file and extract notation data."""
-    print(f"Parsing MusicXML: {mxl_path}")
+MAJOR_KEYS = {
+    0: 'C', 1: 'G', 2: 'D', 3: 'A', 4: 'E', 5: 'B', 6: 'F#', 7: 'C#',
+    -1: 'F', -2: 'Bb', -3: 'Eb', -4: 'Ab', -5: 'Db', -6: 'Gb', -7: 'Cb',
+}
 
-    tree = ET.parse(mxl_path)
-    root = tree.getroot()
+MINOR_KEYS = {
+    0: 'Am', 1: 'Em', 2: 'Bm', 3: 'F#m', 4: 'C#m', 5: 'G#m', 6: 'D#m',
+    7: 'A#m', -1: 'Dm', -2: 'Gm', -3: 'Cm', -4: 'Fm', -5: 'Bbm', -6: 'Ebm',
+    -7: 'Abm',
+}
 
-    # Handle namespace if present
-    ns = {}
-    if root.tag.startswith('{'):
-        ns_end = root.tag.find('}')
-        ns['m'] = root.tag[1:ns_end]
+DURATION_TYPES = {
+    'whole': 'whole',
+    'half': 'half',
+    'quarter': 'quarter',
+    'eighth': 'eighth',
+    '16th': 'sixteenth',
+    'sixteenth': 'sixteenth',
+}
 
-    def find(element, path):
-        if ns:
-            # Convert path to namespaced version
-            parts = path.split('/')
-            ns_path = '/'.join(f"m:{p}" if p and not p.startswith('@') else p for p in parts)
-            return element.find(ns_path, ns)
-        return element.find(path)
+# Beats a note is worth, relative to a quarter. Mirrors NoteDuration in
+# lib/data/models/notation.dart, which is the set the renderer can draw.
+DURATION_TYPES_BEATS = {
+    'whole': 4.0,
+    'half': 2.0,
+    'quarter': 1.0,
+    'eighth': 0.5,
+    'sixteenth': 0.25,
+}
 
-    def findall(element, path):
-        if ns:
-            parts = path.split('/')
-            ns_path = '/'.join(f"m:{p}" if p and not p.startswith('@') else p for p in parts)
-            return element.findall(ns_path, ns)
-        return element.findall(path)
+# Semitones above C, for picking the top note of a <chord> stack.
+_STEP_SEMITONES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
 
-    # Extract key signature
-    key_fifths = 0
-    key_elem = find(root, './/key/fifths')
-    if key_elem is not None:
-        key_fifths = int(key_elem.text)
 
-    key_map = {
-        0: 'C', 1: 'G', 2: 'D', 3: 'A', 4: 'E', 5: 'B', 6: 'F#', 7: 'C#',
-        -1: 'F', -2: 'Bb', -3: 'Eb', -4: 'Ab', -5: 'Db', -6: 'Gb', -7: 'Cb'
+def _local(tag: str) -> str:
+    """Element tag without its namespace."""
+    return tag.split('}')[-1] if '}' in tag else tag
+
+
+def _children(element, name: str):
+    return [c for c in element if _local(c.tag) == name]
+
+
+def _child(element, name: str):
+    for c in element:
+        if _local(c.tag) == name:
+            return c
+    return None
+
+
+def _text(element, name: str):
+    child = _child(element, name)
+    if child is None or child.text is None:
+        return None
+    return child.text.strip()
+
+
+def _descendants(root, name: str):
+    return [e for e in root.iter() if _local(e.tag) == name]
+
+
+def _pitch_value(step: str, alter: int, octave: int) -> int:
+    return (octave + 1) * 12 + _STEP_SEMITONES.get(step.upper(), 0) + alter
+
+
+def _read_note(note_elem):
+    """One <note> as a dict, or None for a grace note.
+
+    Grace notes are dropped: the app's model has no grace-note beat, so a kept
+    one becomes a full beat that breaks the bar's arithmetic, and the notation
+    editor then flags the bar red for a note the engraver never intended.
+    """
+    if _child(note_elem, 'grace') is not None:
+        return None
+
+    is_rest = _child(note_elem, 'rest') is not None
+    pitch = 'R'
+    pitch_value = -1
+
+    pitch_elem = _child(note_elem, 'pitch')
+    if not is_rest and pitch_elem is not None:
+        step = _text(pitch_elem, 'step')
+        octave = _text(pitch_elem, 'octave')
+        alter_text = _text(pitch_elem, 'alter')
+        alter = int(alter_text) if alter_text else 0
+        if step and octave:
+            accidental = ''
+            if alter > 0:
+                accidental = '#'
+            elif alter < 0:
+                accidental = 'b'
+            pitch = step + accidental + octave
+            try:
+                pitch_value = _pitch_value(step, alter, int(octave))
+            except ValueError:
+                pitch_value = -1
+
+    type_text = _text(note_elem, 'type')
+    duration = DURATION_TYPES.get(type_text, 'quarter') if type_text else 'quarter'
+
+    # Ties are written as <tie> and duplicated as <notations><tied>; some
+    # exporters write only the second.
+    tie_types = set(t.get('type') for t in _children(note_elem, 'tie'))
+    for notations in _children(note_elem, 'notations'):
+        tie_types |= set(t.get('type') for t in _children(notations, 'tied'))
+
+    syllable = None
+    lyric_elem = _child(note_elem, 'lyric')
+    if lyric_elem is not None:
+        text_elem = _child(lyric_elem, 'text')
+        if text_elem is not None and text_elem.text:
+            syllable = text_elem.text
+            syllabic = _text(lyric_elem, 'syllabic')
+            if syllabic in ('begin', 'middle'):
+                syllable += '-'
+
+    staff_text = _text(note_elem, 'staff')
+    return {
+        'pitch': pitch,
+        'pitchValue': pitch_value,
+        'duration': duration,
+        'dotted': _child(note_elem, 'dot') is not None,
+        'tieStart': 'start' in tie_types,
+        'tieEnd': 'stop' in tie_types,
+        'syllable': syllable,
+        'staff': int(staff_text) if staff_text and staff_text.isdigit() else 1,
+        'voice': _text(note_elem, 'voice') or '1',
+        'isChordMember': _child(note_elem, 'chord') is not None,
     }
-    original_key = key_map.get(key_fifths, 'C')
 
-    # Extract time signature
-    time_beats = '4'
-    time_type = '4'
-    beats_elem = find(root, './/time/beats')
-    beat_type_elem = find(root, './/time/beat-type')
-    if beats_elem is not None:
-        time_beats = beats_elem.text
-    if beat_type_elem is not None:
-        time_type = beat_type_elem.text
-    time_signature = f"{time_beats}/{time_type}"
 
-    # Extract measures and notes
+def _read_barline(barline_elem, into: dict):
+    """Folds one <barline> into a per-measure dict of repeat/ending state.
+
+    A measure can carry two - a forward repeat on its left and a backward one on
+    its right - so this accumulates rather than replaces.
+    """
+    repeat = _child(barline_elem, 'repeat')
+    if repeat is not None:
+        direction = repeat.get('direction')
+        if direction == 'forward':
+            into['repeatStart'] = True
+        elif direction == 'backward':
+            into['repeatEnd'] = True
+
+    ending = _child(barline_elem, 'ending')
+    if ending is None:
+        return
+    ending_type = ending.get('type')
+    if ending_type == 'start':
+        # "1, 2" is legal and means the bracket covers both passes. The app model
+        # holds one number, so the lowest is what gets drawn.
+        for part in (ending.get('number') or '').split(','):
+            part = part.strip()
+            if part.isdigit():
+                into['endingStart'] = int(part)
+                break
+    elif ending_type in ('stop', 'discontinue'):
+        into['endingStops'] = True
+
+
+def _melody_beats(notes: list) -> list:
+    """The melody line of one measure, by the documented reduction rule.
+
+    The first <part> in the score, its lowest-numbered <staff>, its
+    lowest-numbered <voice> on that staff - the top line of the top staff of the
+    first part, which is where the melody lives in both the
+    four-parts-one-voice and the one-part-two-staves SATB encodings. A <chord>
+    stack reduces to its highest-sounding note, the same rule applied vertically.
+
+    This replaces walking `.//note` and appending every one, which interleaved
+    all four voices of an SATB page into a single bar - so every bar had four
+    times its beats and fixing one song by hand meant deleting three notes in
+    four. Matches lib/domain/services/musicxml_importer.dart, so the two import
+    paths agree about what a given file means.
+    """
+    if not notes:
+        return []
+
+    # Group into stacks: one note plus any <chord> notes hanging off it.
+    stacks = []
+    for note in notes:
+        if note['isChordMember'] and stacks:
+            stacks[-1].append(note)
+        else:
+            stacks.append([note])
+
+    # The melody's (staff, voice) is the lowest of each, taken from the stack
+    # heads - a chord member carries no voice of its own.
+    def sort_key(stack):
+        head = stack[0]
+        voice = head['voice']
+        return (head['staff'], int(voice) if voice.isdigit() else 1 << 20, voice)
+
+    best = min(sort_key(stack) for stack in stacks)
+
+    beats = []
+    for stack in stacks:
+        if sort_key(stack) != best:
+            continue
+        # Highest sounding note of the stack.
+        top = max(stack, key=lambda n: n['pitchValue'])
+        # The lyric belongs to the stack, not to one of its notes: engravers hang
+        # the syllable off whichever notehead they like, so a reduction that only
+        # looked at the top note dropped the word.
+        syllable = None
+        for candidate in stack:
+            if candidate['syllable']:
+                syllable = candidate['syllable']
+                break
+
+        beat = {'pitch': top['pitch'], 'duration': top['duration']}
+        if syllable:
+            beat['syllable'] = syllable
+        if top['dotted']:
+            beat['dotted'] = True
+        if top['tieStart']:
+            beat['tieStart'] = True
+        if top['tieEnd']:
+            beat['tieEnd'] = True
+        beats.append(beat)
+
+    return beats
+
+
+def parse_musicxml_string(xml: str) -> dict:
+    """Parse a MusicXML document held in a string.
+
+    Split out from parse_musicxml so the parsing is testable without a file on
+    disk. The reduction rule above is the part that most needed pinning down, and
+    it had no tests at all.
+
+    Raises ValueError for a DOCTYPE with an internal entity subset.
+
+    `xml.etree` does not resolve *external* entities, but it does expand internal
+    ones, which is the billion-laughs shape. So the internal subset is what gets
+    refused - not the DOCTYPE itself. Audiveris and MuseScore both emit the
+    standard external one:
+
+        <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0
+          Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+
+    which is inert here because nothing fetches it. Refusing every DOCTYPE
+    rejected the entire contents of audiveris_output/ - the real OMR output this
+    pipeline exists to read - which is how this was caught.
+
+    Precise rather than a pip dependency on defusedxml: this tooling is
+    deliberately pure-stdlib so it runs on a machine with nothing installed.
+    """
+    # Checked before parsing, not after: the point is not to hand the entity
+    # expander anything in the first place.
+    if re.search(r'<!DOCTYPE[^>\[]*\[', xml, re.IGNORECASE):
+        raise ValueError(
+            'This file declares its own XML entities (a DOCTYPE with an '
+            'internal subset). A MusicXML score has no use for that, and '
+            'expanding them can exhaust memory, so it will not be parsed. '
+            'Re-export the score from MuseScore.')
+
+    root = ET.fromstring(xml)
+
+    key_elems = _descendants(root, 'key')
+    key_fifths = 0
+    key_minor = False
+    if key_elems:
+        key_elem = key_elems[0]
+        fifths = _text(key_elem, 'fifths')
+        if fifths:
+            try:
+                key_fifths = int(fifths)
+            except ValueError:
+                key_fifths = 0
+        key_minor = (_text(key_elem, 'mode') or '').lower() == 'minor'
+    key_map = MINOR_KEYS if key_minor else MAJOR_KEYS
+    original_key = key_map.get(key_fifths, 'Am' if key_minor else 'C')
+
+    beats_elems = _descendants(root, 'beats')
+    beat_type_elems = _descendants(root, 'beat-type')
+    time_beats = (beats_elems[0].text or '4').strip() if beats_elems else '4'
+    time_type = (beat_type_elems[0].text or '4').strip() if beat_type_elems else '4'
+    time_signature = time_beats + '/' + time_type
+
+    parts = _descendants(root, 'part')
+    # Only the first part. The Python used to walk every one of them into a
+    # single measure list, so a four-parts-one-voice SATB file produced four
+    # copies of the piece end to end.
+    part = parts[0] if parts else root
+
+    measure_elems = _children(part, 'measure') or _descendants(part, 'measure')
+
     measures = []
-    parts = findall(root, './/part')
+    open_volta = None
+    for measure_elem in measure_elems:
+        notes = []
+        bars = {}
+        for child in measure_elem:
+            tag = _local(child.tag)
+            if tag == 'note':
+                note = _read_note(child)
+                if note is not None:
+                    notes.append(note)
+            elif tag == 'barline':
+                _read_barline(child, bars)
 
-    if not parts:
-        parts = [root]  # Try root if no parts found
+        # Kept even when empty. `if beats:` dropped silent bars, which renumbered
+        # every bar after them - so a correction aimed at bar 12 landed on 11.
+        measure = {'beats': _melody_beats(notes)}
 
-    for part in parts:
-        for measure in findall(part, './/measure') or findall(part, 'measure'):
-            beats = []
+        if measure_elem.get('implicit') == 'yes':
+            measure['isPickup'] = True
+        if bars.get('repeatStart'):
+            measure['repeatStart'] = True
+        if bars.get('repeatEnd'):
+            measure['repeatEnd'] = True
 
-            for note in findall(measure, './/note') or findall(measure, 'note'):
-                # Check if it's a rest
-                rest_elem = find(note, 'rest')
-                is_rest = rest_elem is not None
+        open_volta = bars.get('endingStart', open_volta)
+        if open_volta is not None:
+            measure['volta'] = open_volta
+        if bars.get('endingStops'):
+            open_volta = None
 
-                # Get pitch
-                pitch = 'R'
-                if not is_rest:
-                    pitch_elem = find(note, 'pitch')
-                    if pitch_elem is not None:
-                        step = find(pitch_elem, 'step')
-                        octave = find(pitch_elem, 'octave')
-                        alter = find(pitch_elem, 'alter')
-
-                        if step is not None and octave is not None:
-                            note_name = step.text
-                            if alter is not None:
-                                alter_val = int(alter.text)
-                                if alter_val == 1:
-                                    note_name += '#'
-                                elif alter_val == -1:
-                                    note_name += 'b'
-                            pitch = f"{note_name}{octave.text}"
-
-                # Get duration type
-                type_elem = find(note, 'type')
-                duration_map = {
-                    'whole': 'whole',
-                    'half': 'half',
-                    'quarter': 'quarter',
-                    'eighth': 'eighth',
-                    '16th': 'sixteenth',
-                    'sixteenth': 'sixteenth'
-                }
-                duration = 'quarter'
-                if type_elem is not None:
-                    duration = duration_map.get(type_elem.text, 'quarter')
-
-                # Check for dotted
-                dot_elem = find(note, 'dot')
-                dotted = dot_elem is not None
-
-                # Get lyric (from MusicXML if present)
-                syllable = None
-                lyric_elem = find(note, 'lyric')
-                if lyric_elem is not None:
-                    text_elem = find(lyric_elem, 'text')
-                    syllabic_elem = find(lyric_elem, 'syllabic')
-                    if text_elem is not None:
-                        syllable = text_elem.text or ''
-                        # Add hyphen if syllable continues
-                        if syllabic_elem is not None and syllabic_elem.text in ('begin', 'middle'):
-                            syllable += '-'
-
-                beat = {
-                    'pitch': pitch,
-                    'duration': duration
-                }
-                if syllable:
-                    beat['syllable'] = syllable
-                if dotted:
-                    beat['dotted'] = True
-
-                beats.append(beat)
-
-            if beats:
-                measures.append({'beats': beats})
+        measures.append(measure)
 
     return {
         'originalKey': original_key,
         'timeSignature': time_signature,
         'showTimeSignature': False,
-        'measures': measures
+        'measures': measures,
     }
+
+
+def parse_musicxml(mxl_path: str) -> dict:
+    """Parse a MusicXML file and extract notation data."""
+    print("Parsing MusicXML: " + str(mxl_path))
+    with open(mxl_path, 'r', encoding='utf-8', errors='replace') as handle:
+        return parse_musicxml_string(handle.read())
+
+
+def rebar_measures(notation: dict) -> dict:
+    """Split measures that hold more beats than the time signature allows.
+
+    Audiveris misses barlines on a photographed page. On the real SE-90 output it
+    misses nearly all of them: six <measure> elements come back holding 18 beats
+    each in 4/4, so each one is really four and a half bars. Nothing downstream
+    can use that - the staff engraves six enormous bars, the notation editor flags
+    every one red, and correcting it by hand means splitting each of them, which
+    the editor cannot do (it edits beats within a measure, not measures).
+
+    This is arithmetic on a beat list, so it cannot invent or lose a note: the
+    notes come out in the same order, redistributed into bars that add up.
+
+    What it deliberately does NOT do:
+
+      - pad a SHORT bar. A bar under the signature is a dropped note, not a
+        barline error, and a rest inserted to make the sum work would hide the
+        loss. The validator reports those instead.
+      - touch a declared pickup. It is supposed to be short.
+      - split a single note longer than a bar. That is a mis-read duration, and
+        re-barring cannot fix it; it gets its own bar and the validator says so.
+
+    Opt-in via --rebar, because a score whose barlines WERE detected must not be
+    second-guessed.
+    """
+    signature = notation.get('timeSignature')
+    expected = None
+    if isinstance(signature, str) and '/' in signature:
+        beats, _, beat_type = signature.partition('/')
+        try:
+            # Beats per bar expressed in quarters: 6/8 is three quarters' worth.
+            expected = int(beats) * 4.0 / int(beat_type)
+        except (ValueError, ZeroDivisionError):
+            expected = None
+    if not expected or expected <= 0:
+        return notation
+
+    rebarred = []
+    for measure in notation.get('measures', []):
+        rebarred.extend(_split_measure(measure, expected))
+    notation['measures'] = rebarred
+    return notation
+
+
+def _beat_value(beat: dict) -> float:
+    value = DURATION_TYPES_BEATS.get(beat.get('duration'), 1.0)
+    return value * 1.5 if beat.get('dotted') else value
+
+
+def _split_measure(measure: dict, expected: float) -> list:
+    """One measure as a list of bars that each add up to [expected]."""
+    beats = measure.get('beats') or []
+    if not beats or measure.get('isPickup'):
+        return [measure]
+
+    total = sum(_beat_value(b) for b in beats)
+    # Only over-long bars. A short one is a dropped note; see the docstring.
+    if total <= expected + 0.001:
+        return [measure]
+
+    groups = []
+    current = []
+    running = 0.0
+    for beat in beats:
+        value = _beat_value(beat)
+        # Close the bar BEFORE a note that would overflow it, so a bar never
+        # exceeds the signature. A note longer than a whole bar cannot be placed
+        # without exceeding it, so it lands alone and is reported instead.
+        if current and running + value > expected + 0.001:
+            groups.append(current)
+            current = []
+            running = 0.0
+        current.append(beat)
+        running += value
+    if current:
+        groups.append(current)
+
+    if len(groups) < 2:
+        return [measure]
+
+    # Flags belong to the ends of the run, not to every piece of it: an opening
+    # repeat at the start, a closing repeat and the line break at the end.
+    # Copying them all onto all of them would print a repeat sign mid-phrase.
+    result = []
+    for index, group in enumerate(groups):
+        bar = {'beats': group}
+        if index == 0 and measure.get('repeatStart'):
+            bar['repeatStart'] = True
+        if index == len(groups) - 1:
+            if measure.get('repeatEnd'):
+                bar['repeatEnd'] = True
+            if measure.get('lineBreakAfter'):
+                bar['lineBreakAfter'] = True
+        # A volta bracket covers every bar of the run it was read from.
+        if measure.get('volta') is not None:
+            bar['volta'] = measure['volta']
+        result.append(bar)
+    return result
 
 
 def add_line_breaks(notation: dict, measures_per_line: int = None) -> dict:
@@ -609,6 +908,15 @@ def main():
                         help='Number of systems/lines in the image for OCR (default: 6)')
     parser.add_argument('--book', '-b', default=None,
                         help='Book/hymnal name to assign to the song (e.g. "Zsoltárok", "Dicséretek")')
+    parser.add_argument('--rebar', action='store_true',
+                        help='Split measures holding more beats than the '
+                             'time signature allows. Audiveris misses '
+                             'barlines on a photographed page - on real '
+                             'output it can return one measure per SYSTEM '
+                             '- and re-barring turns that into bars that '
+                             'add up. Off by default: a score whose '
+                             'barlines WERE detected must not be '
+                             'second-guessed.')
     parser.add_argument('--no-validate', action='store_true',
                         help='Skip song validation before writing songs.json (not recommended)')
 
@@ -634,6 +942,8 @@ def main():
             notation = parse_musicxml(xml_path)
 
         # Add line breaks
+        if args.rebar:
+            notation = rebar_measures(notation)
         notation = add_line_breaks(notation, args.measures_per_line)
 
         # OCR lyrics if requested and image is available
@@ -660,6 +970,8 @@ def main():
                 notation = parse_musicxml(mxl_path)
 
                 # Add line breaks
+                if args.rebar:
+                    notation = rebar_measures(notation)
                 notation = add_line_breaks(notation, args.measures_per_line)
 
                 # OCR lyrics if requested

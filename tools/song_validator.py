@@ -117,7 +117,108 @@ def validate_song(song, index=None):
         if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
             warn("tags", "'tags' should be a list of strings")
 
+    # notation (optional)
+    if isinstance(song.get("notation"), dict):
+        issues.extend(_validate_notation(song["notation"], sid))
+
     return issues
+
+
+# Beats a note is worth, relative to a quarter. Mirrors NoteDuration in
+# lib/data/models/notation.dart, which is the set the renderer can draw.
+_DURATION_BEATS = {
+    "whole": 4.0,
+    "half": 2.0,
+    "quarter": 1.0,
+    "eighth": 0.5,
+    "sixteenth": 0.25,
+}
+
+
+def _validate_notation(notation, sid):
+    """Check each notated measure against the time signature.
+
+    Nothing looked inside `notation` before this, so a bar holding twelve beats in
+    4/4 — which is what Audiveris produces when it misses a barline, and it does
+    that on the real SÉ-90 output — reached songs.json silently and was found in
+    the app. Naming the bad bars at import time is the difference between "this
+    song is wrong somewhere" and "fix bars 5 and 6".
+
+    Everything here is a WARNING. A bar that does not add up is still worth
+    importing and correcting in the notation editor, and OCR tolerance is the
+    established rule for this file.
+    """
+    issues = []
+
+    def warn(field, msg):
+        issues.append(ValidationIssue(WARNING, sid, field, msg))
+
+    signature = notation.get("timeSignature")
+    expected = None
+    if isinstance(signature, str) and "/" in signature:
+        beats, _, beat_type = signature.partition("/")
+        try:
+            # Beats per bar expressed in quarters: 6/8 is three quarters' worth.
+            expected = int(beats) * 4.0 / int(beat_type)
+        except (ValueError, ZeroDivisionError):
+            expected = None
+    if expected is None:
+        warn("notation.timeSignature",
+             f"unrecognized time signature {signature!r}; "
+             "cannot check whether the bars add up")
+        return issues
+
+    unknown_durations = set()
+
+    for vi, verse in enumerate(notation.get("verses") or []):
+        if not isinstance(verse, dict):
+            continue
+        for mi, measure in enumerate(verse.get("measures") or []):
+            if not isinstance(measure, dict):
+                continue
+            field = f"notation.verses[{vi}].measures[{mi}]"
+            beats = measure.get("beats") or []
+
+            # An empty bar is a placeholder the importer keeps on purpose so bar
+            # numbers stay right, not a miscount.
+            if not beats:
+                continue
+            # A pickup is SUPPOSED not to add up. Flagging it would train the
+            # warning away on exactly the hymns that open on an upbeat.
+            if measure.get("isPickup"):
+                continue
+
+            total = 0.0
+            for beat in beats:
+                if not isinstance(beat, dict):
+                    continue
+                name = beat.get("duration")
+                value = _DURATION_BEATS.get(name)
+                if value is None:
+                    unknown_durations.add(str(name))
+                    continue
+                total += value * 1.5 if beat.get("dotted") else value
+
+            if abs(total - expected) > 0.001:
+                warn(field,
+                     f"holds {_number(total)} beats but the time signature "
+                     f"{signature} wants {_number(expected)}")
+
+    if unknown_durations:
+        warn("notation",
+             "unknown note value(s) " +
+             ", ".join(sorted(unknown_durations)) +
+             f"; expected one of {', '.join(sorted(_DURATION_BEATS))}")
+
+    return issues
+
+
+def _number(value):
+    """`4`, not `4.0`; `3.5` where it matters."""
+    rounded = round(value)
+    if abs(value - rounded) < 0.001:
+        return str(int(rounded))
+    return f"{value:.2f}".rstrip("0")
 
 
 def _validate_verse(verse, vi, sid):

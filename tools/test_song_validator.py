@@ -146,6 +146,102 @@ class ChordTests(unittest.TestCase):
         self.assertTrue(warnings(issues))
 
 
+def notated_song(measures, time_signature="4/4", **overrides):
+    """A valid song whose notation is exactly [measures]."""
+    return valid_song(
+        notation={
+            "originalKey": "G",
+            "timeSignature": time_signature,
+            "verses": [{"number": 1, "measures": measures}],
+        },
+        **overrides,
+    )
+
+
+def bar(*durations, **flags):
+    measure = {
+        "beats": [{"pitch": "G4", "duration": d} for d in durations],
+    }
+    measure.update(flags)
+    return measure
+
+
+class NotationBeatArithmeticTests(unittest.TestCase):
+    """Bars that do not add up against the time signature.
+
+    Nothing looked inside `notation` at all, so a bar holding twelve beats in 4/4
+    — which is what Audiveris produces when it misses a barline, and it does that
+    on the real SÉ-90 output — passed validation silently and was discovered in
+    the app. Naming the bad bars at import time is the difference between "this
+    song is wrong somewhere" and "fix bars 5 and 6".
+
+    Warnings, not errors: a bar that does not add up is still worth importing and
+    correcting in the editor, and OCR tolerance is the established rule here.
+    """
+
+    def test_a_bar_that_adds_up_is_silent(self):
+        issues = sv.validate_song(notated_song([bar("quarter", "quarter",
+                                                   "quarter", "quarter")]))
+        self.assertEqual(warnings(issues), [])
+        self.assertEqual(errors(issues), [])
+
+    def test_a_bar_with_too_many_beats_warns_and_names_it(self):
+        issues = sv.validate_song(notated_song([
+            bar("quarter", "quarter", "quarter", "quarter"),
+            bar(*(["quarter"] * 12)),
+        ]))
+
+        found = warnings(issues)
+        self.assertEqual(len(found), 1)
+        self.assertIn("measures[1]", found[0].field)
+        self.assertIn("12", found[0].message)
+        self.assertIn("4", found[0].message)
+
+    def test_a_bar_with_too_few_beats_warns(self):
+        issues = sv.validate_song(notated_song([bar("quarter", "quarter")]))
+        self.assertEqual(len(warnings(issues)), 1)
+
+    def test_a_declared_pickup_is_not_flagged(self):
+        # An anacrusis is SUPPOSED not to add up. Flagging it would train the
+        # warning away on exactly the hymns that open on an upbeat.
+        issues = sv.validate_song(
+            notated_song([bar("quarter", isPickup=True),
+                          bar("quarter", "quarter", "quarter", "quarter")]))
+        self.assertEqual(warnings(issues), [])
+
+    def test_an_empty_bar_is_not_flagged(self):
+        # The importer keeps silent bars so bar numbers stay right; an empty one
+        # is a known placeholder, not a miscount.
+        issues = sv.validate_song(notated_song([bar()]))
+        self.assertEqual(warnings(issues), [])
+
+    def test_dotted_notes_count_as_one_and_a_half(self):
+        # 3/4 as a dotted half.
+        issues = sv.validate_song(
+            notated_song([{"beats": [{"pitch": "G4", "duration": "half",
+                                     "dotted": True}]}],
+                         time_signature="3/4"))
+        self.assertEqual(warnings(issues), [])
+
+    def test_a_song_with_no_notation_is_unaffected(self):
+        issues = sv.validate_song(valid_song())
+        self.assertEqual(warnings(issues), [])
+
+    def test_an_unparseable_time_signature_is_reported_once(self):
+        issues = sv.validate_song(notated_song(
+            [bar("quarter")], time_signature="common"))
+        found = warnings(issues)
+        self.assertEqual(len(found), 1)
+        self.assertIn("timeSignature", found[0].field)
+
+    def test_an_unknown_duration_name_is_reported(self):
+        issues = sv.validate_song(notated_song([
+            {"beats": [{"pitch": "G4", "duration": "thirtysecond"}]},
+        ]))
+        self.assertTrue(
+            any("thirtysecond" in w.message for w in warnings(issues)))
+
+
 class DuplicateTests(unittest.TestCase):
     def test_duplicate_numbers_reported_once(self):
         issues = sv.validate_songs([valid_song(number=1), valid_song(number=1),
