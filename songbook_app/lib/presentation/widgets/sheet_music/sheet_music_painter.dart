@@ -98,11 +98,15 @@ class SheetMusicPainter extends CustomPainter {
 
     for (int i = 0; i < layout.systems.length; i++) {
       final system = layout.systems[i];
-      final isFirstSystem = i == 0;
+      // The first LINE of music, which in a grand staff is several systems.
+      // Indexing the list instead would put the time signature on the top voice
+      // and silently deny it to the other three.
+      final isFirstSystem = system.systemIndex == 0;
 
       _drawStaffLines(canvas, system);
 
       // Draw clef and key signature on every system
+      _drawStaffLabel(canvas, system);
       _drawClef(canvas, system);
       _drawKeySignature(canvas, system, layout.key);
 
@@ -134,15 +138,17 @@ class SheetMusicPainter extends CustomPainter {
 
   void _drawClef(Canvas canvas, StaffSystem system) {
     final x = system.x + 2;
-    // G line is the 2nd line from bottom (index 3 from top)
-    final gLineY = system.y + EngravingConstants.staffLineSpacing * 3;
-
-    // SMuFL treble clef (G clef): U+E050
-    const trebleClef = '\uE050';
+    // Each clef's baseline is its own reference line: the G line for the treble
+    // clef (2nd from the bottom), the F line for the bass clef (4th from the
+    // bottom). Since a music font draws both from that baseline, the 0.58-of-
+    // height offset that puts the G clef's curl on the G line puts the F clef's
+    // dots on the F line without any per-glyph adjustment.
+    final anchorLineY = system.y +
+        EngravingConstants.staffLineSpacing * system.clef.anchorLineFromTop;
 
     final textPainter = TextPainter(
       text: TextSpan(
-        text: trebleClef,
+        text: system.clef.glyph,
         style: TextStyle(
           fontSize: EngravingConstants.staffLineSpacing * 4, // Scale to staff height
           fontFamily: 'Bravura',
@@ -154,10 +160,38 @@ class SheetMusicPainter extends CustomPainter {
     );
 
     textPainter.layout();
-    // Position so the curl wraps around the G line
-    // The G clef's curl should center on the G line (2nd line from bottom)
-    final clefY = gLineY - textPainter.height * 0.58;
+    final clefY = anchorLineY - textPainter.height * 0.58;
     textPainter.paint(canvas, Offset(x, clefY));
+  }
+
+  /// The voice's name, to the left of the clef.
+  ///
+  /// Only a grand staff sets one \u2014 four identical staves with nothing to tell
+  /// them apart is the one way this feature could be actively unhelpful. The
+  /// layout engine has already reserved the room for it, so this draws
+  /// right-aligned back from the staff's left edge and cannot collide with the
+  /// clef.
+  void _drawStaffLabel(Canvas canvas, StaffSystem system) {
+    final label = system.label;
+    if (label == null) return;
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: EngravingConstants.staffLabelStyle.copyWith(color: lyricColor),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    textPainter.paint(
+      canvas,
+      Offset(
+        system.x -
+            EngravingConstants.staffLabelToClefSpace -
+            textPainter.width,
+        system.y + EngravingConstants.staffHeight / 2 - textPainter.height / 2,
+      ),
+    );
   }
 
   void _drawKeySignature(Canvas canvas, StaffSystem system, String key) {
@@ -173,7 +207,9 @@ class SheetMusicPainter extends CustomPainter {
     double x = system.x + EngravingConstants.clefWidth + EngravingConstants.clefToKeySpace;
 
     for (int i = 0; i < count && i < positions.length; i++) {
-      final position = positions[i];
+      // Bass-clef accidentals sit one diatonic step lower than their treble
+      // counterparts — F# on the fourth line rather than the top one.
+      final position = positions[i] + system.clef.keyPositionOffset;
       final y = system.y +
           EngravingConstants.staffHeight / 2 -
           position * (EngravingConstants.staffLineSpacing / 2);
@@ -308,10 +344,6 @@ class SheetMusicPainter extends CustomPainter {
     final offset = EngravingConstants.barLineSeparation +
         EngravingConstants.thickBarLineThickness / 2;
     const dotRadius = 2.5;
-    // The two dots straddle the middle staff line, in the spaces either side of
-    // it — where every engraver puts them.
-    final dot1Y = barLine.topY + EngravingConstants.staffLineSpacing * 1.5;
-    final dot2Y = barLine.topY + EngravingConstants.staffLineSpacing * 2.5;
 
     void half(int direction) {
       final thinX = barLine.x + direction * (offset + 8);
@@ -321,8 +353,23 @@ class SheetMusicPainter extends CustomPainter {
         _barLinePaint,
       );
       final dotX = barLine.x + direction * (offset + 16);
-      canvas.drawCircle(Offset(dotX, dot1Y), dotRadius, dotPaint);
-      canvas.drawCircle(Offset(dotX, dot2Y), dotRadius, dotPaint);
+      // A pair per staff this line serves. In a grand staff the line's own topY
+      // is the top of the GROUP, so anchoring the dots to it would put all four
+      // pairs inside the soprano staff.
+      for (final staffTop in barLine.dotAnchors) {
+        // The two dots straddle the middle staff line, in the spaces either side
+        // of it — where every engraver puts them.
+        canvas.drawCircle(
+          Offset(dotX, staffTop + EngravingConstants.staffLineSpacing * 1.5),
+          dotRadius,
+          dotPaint,
+        );
+        canvas.drawCircle(
+          Offset(dotX, staffTop + EngravingConstants.staffLineSpacing * 2.5),
+          dotRadius,
+          dotPaint,
+        );
+      }
     }
 
     // A closing repeat faces backwards, an opening one forwards.
