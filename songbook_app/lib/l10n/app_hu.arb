@@ -228,5 +228,22 @@
   "voiceAlto": "Alt",
   "voiceTenor": "Tenor",
   "voiceBass": "Basszus",
-  "voiceAll": "Mind"
+  "voiceAll": "Mind",
+  "importNoticeUnknownDirective": "{line}. sor: a „{text}” ismeretlen utasítást kihagytam.",
+  "importNoticeAmbiguousBareRoot": "{line}. sor: a „{text}” lehet egyetlen akkordot tartalmazó sor vagy szöveg is; szövegként hagytam meg.",
+  "importNoticeBracketNotAChord": "{line}. sor: a „[{text}]” nem akkord; szövegként hagytam meg.",
+  "importNoticeTimewiseScore": "Ez a fájl score-timewise felépítésű, ezért az ütemek csoportosítása hibás lehet. A tiszta importáláshoz mentsd score-partwise formátumban.",
+  "importNoticeNoNotes": "A fájlban nem találtam hangokat.",
+  "importNoticeExtraVoicesKept": "{count, plural, =1{A dallam mellett 1 szólamot megtartottam — csak a dallam van lekottázva. A szólamot az ének beállításaiban választhatod ki.} other{A dallam mellett {count} szólamot megtartottam — csak a dallam van lekottázva. A szólamot az ének beállításaiban választhatod ki.}}",
+  "importNoticeGraceNotesSkipped": "{count, plural, =1{1 díszítőhangot kihagytam: a kotta nem ismer díszítőhangot.} other{{count} díszítőhangot kihagytam: a kotta nem ismer díszítőhangot.}}",
+  "importNoticeChordsReduced": "{count, plural, =1{1 akkordot a legfelső hangjára egyszerűsítettem; az alsó hangokat külön szólamként megtartottam.} other{{count} akkordot a legfelső hangjára egyszerűsítettem; az alsó hangokat külön szólamként megtartottam.}}",
+  "importNoticeDoubleAccidentals": "{count, plural, =1{1 kettős módosítójelet egyetlen keresztre vagy bére közelítettem — a kotta csak egyet tárol.} other{{count} kettős módosítójelet egyetlen keresztre vagy bére közelítettem — a kotta csak egyet tárol.}}",
+  "importNoticeDoubleDots": "{count, plural, =1{1 kétszer pontozott hangot egyszer pontozottként importáltam.} other{{count} kétszer pontozott hangot egyszer pontozottként importáltam.}}",
+  "importNoticeUnsupportedNoteValues": "{count, plural, =1{A(z) {text} hangértéket nem tudom kirajzolni, ezért a legközelebbi rajzolhatóra közelítettem.} other{A(z) {text} hangértékeket nem tudom kirajzolni, ezért a legközelebbi rajzolhatókra közelítettem.}}",
+  "importNoticeEmptyXmlInput": "A MusicXML bemenet üres.",
+  "importNoticeInvalidXml": "Ez a fájl nem érvényes XML: {text}",
+  "importNoticeContainerManifest": "Ez egy .mxl fájl belső tartalomjegyzéke, nem kotta. Magát az .mxl fájlt nyisd meg.",
+  "importNoticeEmptyMxlInput": "Az .mxl bemenet üres.",
+  "importNoticeUnreadableArchive": "Ez nem olvasható .mxl archívum: {text}",
+  "importNoticeNoScoreInArchive": "Az .mxl archívum nem tartalmaz MusicXML kottát."
 }

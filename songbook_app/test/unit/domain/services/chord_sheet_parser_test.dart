@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/data/models/chord_position.dart';
 import 'package:songbook_app/domain/services/chord_sheet_parser.dart';
+import 'package:songbook_app/domain/services/import_notice.dart';
 
 void main() {
   const parser = ChordSheetParser();
@@ -164,7 +165,16 @@ void main() {
       expect(line.text, '[Chorus] sing [2x]');
       expect(line.chords, isEmpty);
       expect(result.warnings.length, 2);
-      expect(result.warnings.first, contains('[Chorus]'));
+      // The code and the token, not a sentence: the prose lives in the ARBs, so
+      // asserting on it here would pin the English wording rather than the
+      // behaviour. The token arrives without its brackets — each language
+      // punctuates it itself.
+      expect(
+        result.warnings.first,
+        const ImportNotice(ImportNoticeCode.bracketNotAChord,
+            line: 1, text: 'Chorus'),
+      );
+      expect(result.warnings.last.text, '2x');
     });
 
     test('an unclosed bracket is left alone', () {
@@ -256,8 +266,11 @@ void main() {
       expect(result.verses.single.lines.length, 2);
       expect(result.verses.single.lines[0].text, 'A');
       expect(result.verses.single.lines[0].chords, isEmpty);
-      expect(result.warnings.single, contains('Line 1'));
-      expect(result.warnings.single, contains('"A"'));
+      expect(
+        result.warnings.single,
+        const ImportNotice(ImportNoticeCode.ambiguousBareRoot,
+            line: 1, text: 'A'),
+      );
     });
   });
 
@@ -342,7 +355,11 @@ void main() {
     test('unknown directives are ignored with a warning', () {
       final result = parser.parse('{define: G base-fret 1}\nline');
       expect(result.verses.single.lines.single.text, 'line');
-      expect(result.warnings.single, contains('unknown directive'));
+      expect(
+        result.warnings.single,
+        const ImportNotice(ImportNoticeCode.unknownDirective,
+            line: 1, text: '{define: G base-fret 1}'),
+      );
     });
   });
 

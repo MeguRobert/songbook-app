@@ -845,4 +845,126 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get voiceAll => 'Toate';
+
+  @override
+  String importNoticeUnknownDirective(int line, String text) {
+    return 'Rândul $line: am ignorat directiva necunoscută „$text”.';
+  }
+
+  @override
+  String importNoticeAmbiguousBareRoot(int line, String text) {
+    return 'Rândul $line: „$text” poate fi un rând cu un singur acord sau un rând de text; l-am păstrat ca text.';
+  }
+
+  @override
+  String importNoticeBracketNotAChord(int line, String text) {
+    return 'Rândul $line: „[$text]” nu este un acord; l-am păstrat ca text.';
+  }
+
+  @override
+  String get importNoticeTimewiseScore =>
+      'Acest fișier este de tip score-timewise, așa că măsurile pot fi grupate greșit. Salvează-l ca score-partwise pentru un import curat.';
+
+  @override
+  String get importNoticeNoNotes => 'Nu am găsit nicio notă în fișier.';
+
+  @override
+  String importNoticeExtraVoicesKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Am păstrat $count voci în afară de melodie — doar melodia este scrisă pe portativ. Poți schimba vocea din setările cântecului.',
+      one:
+          'Am păstrat 1 voce în afară de melodie — doar melodia este scrisă pe portativ. Poți schimba vocea din setările cântecului.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeGraceNotesSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Am omis $count note de podoabă: notația nu are timp pentru note de podoabă.',
+      one:
+          'Am omis 1 notă de podoabă: notația nu are timp pentru note de podoabă.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeChordsReduced(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Am redus $count acorduri la nota lor de sus; notele de jos au fost păstrate ca voci suplimentare.',
+      one:
+          'Am redus 1 acord la nota lui de sus; notele de jos au fost păstrate ca voci suplimentare.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeDoubleAccidentals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Am aproximat $count alterații duble la un singur diez sau bemol — notația păstrează doar una.',
+      one:
+          'Am aproximat 1 alterație dublă la un singur diez sau bemol — notația păstrează doar una.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeDoubleDots(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Am importat $count note cu două puncte ca note cu un punct.',
+      one: 'Am importat 1 notă cu două puncte ca notă cu un punct.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importNoticeUnsupportedNoteValues(int count, String text) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Duratele $text nu pot fi desenate, așa că le-am aproximat la cele mai apropiate durate care pot fi desenate.',
+      one:
+          'Durata $text nu poate fi desenată, așa că am aproximat-o la cea mai apropiată durată care poate fi desenată.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNoticeEmptyXmlInput => 'Fișierul MusicXML este gol.';
+
+  @override
+  String importNoticeInvalidXml(String text) {
+    return 'Acest fișier nu este XML valid: $text';
+  }
+
+  @override
+  String get importNoticeContainerManifest =>
+      'Acesta este cuprinsul din interiorul unui fișier .mxl, nu o partitură. Deschide fișierul .mxl în sine.';
+
+  @override
+  String get importNoticeEmptyMxlInput => 'Fișierul .mxl este gol.';
+
+  @override
+  String importNoticeUnreadableArchive(String text) {
+    return 'Aceasta nu este o arhivă .mxl care poate fi citită: $text';
+  }
+
+  @override
+  String get importNoticeNoScoreInArchive =>
+      'Arhiva .mxl nu conține nicio partitură MusicXML.';
 }
