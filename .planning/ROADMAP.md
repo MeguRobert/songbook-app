@@ -90,7 +90,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Floating column replaced by FAB that opens a Material bottom sheet with labeled sections
   2. Pinch-to-zoom gesture works for text scaling (A+/A- buttons also available inside sheet)
-  3. Three view presets (Sheet Music, Chords, Lyrics) are primary; individual toggles accessible via "Custom" option
+  3. Three view presets (Sheet Music, Chords, Lyrics) are primary. *(Revised: the
+     "Custom" option this criterion originally named was found broken and removed
+     in 04-03 rather than fixed — it was a fourth preset producing states the other
+     three already covered. The one individual toggle worth keeping, "Chords above
+     staff", sits in the same sheet section as the presets.)*
   4. Presentation mode button is in the app bar (not buried in controls)
   5. Transpose controls are clearly labeled with key display in the bottom sheet
 **Plans**: 2 plans in 2 waves
