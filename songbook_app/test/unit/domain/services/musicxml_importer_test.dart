@@ -83,6 +83,24 @@ String rest({String type = 'quarter', int duration = 1, String? voice}) {
       </note>''';
 }
 
+/// A `<barline>`, the element that carries repeat signs and volta brackets.
+///
+/// `location` is genuinely optional in MusicXML and defaults to `right`, so it is
+/// nullable here rather than defaulted — a fixture that omits it is testing that
+/// the importer applies the same default.
+String barline({
+  String? location,
+  String? repeat,
+  String? endingNumber,
+  String? endingType,
+}) {
+  return '''
+      <barline${location == null ? '' : ' location="$location"'}>
+        ${endingType == null ? '' : '<ending number="${endingNumber ?? '1'}" type="$endingType"/>'}
+        ${repeat == null ? '' : '<repeat direction="$repeat"/>'}
+      </barline>''';
+}
+
 /// Packs [entries] into an in-memory zip, the way a real `.mxl` is laid out.
 List<int> zip(Map<String, String> entries) {
   final archive = Archive();
@@ -730,6 +748,170 @@ void main() {
           contains('importCompressed'),
         )),
       );
+    });
+  });
+
+  // Hymns repeat constantly — the refrain, the second half, a whole verse — and
+  // every repeat sign in an imported score used to be dropped on the floor:
+  // `_readMeasure` handled <attributes>, <print>, <harmony> and <note>, and
+  // nothing else. NotatedMeasure had carried repeatStart/repeatEnd all along.
+  group('repeats and endings', () {
+    List<NotatedMeasure> measuresOf(SongNotation notation) =>
+        notation.verses.single.measures;
+
+    test('a backward repeat on the right barline closes a repeat', () {
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('G', 4)}
+      ${barline(location: 'right', repeat: 'backward')}
+    </measure>
+    <measure number="2">
+      ${note('A', 4)}
+    </measure>
+  </part>'''));
+
+      final measures = measuresOf(result.notation);
+      expect(measures[0].repeatEnd, isTrue);
+      expect(measures[1].repeatEnd, isFalse);
+    });
+
+    test('a forward repeat on the left barline opens a repeat', () {
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('G', 4)}
+    </measure>
+    <measure number="2">
+      ${barline(location: 'left', repeat: 'forward')}
+      ${note('A', 4)}
+    </measure>
+  </part>'''));
+
+      final measures = measuresOf(result.notation);
+      expect(measures[0].repeatStart, isFalse);
+      expect(measures[1].repeatStart, isTrue);
+    });
+
+    test('a barline with no location defaults to the right of the measure', () {
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('G', 4)}
+      ${barline(repeat: 'backward')}
+    </measure>
+  </part>'''));
+
+      expect(measuresOf(result.notation).single.repeatEnd, isTrue);
+      expect(measuresOf(result.notation).single.repeatStart, isFalse);
+    });
+
+    test('an ending marks every measure under its bracket, not just the first',
+        () {
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('G', 4)}
+    </measure>
+    <measure number="2">
+      ${barline(location: 'left', endingNumber: '1', endingType: 'start')}
+      ${note('A', 4)}
+    </measure>
+    <measure number="3">
+      ${note('B', 4)}
+      ${barline(location: 'right', endingNumber: '1', endingType: 'stop', repeat: 'backward')}
+    </measure>
+    <measure number="4">
+      ${barline(location: 'left', endingNumber: '2', endingType: 'start')}
+      ${note('C', 5)}
+    </measure>
+  </part>'''));
+
+      final measures = measuresOf(result.notation);
+      expect(measures.map((m) => m.volta), [null, 1, 1, 2]);
+    });
+
+    test('a discontinued ending still closes the bracket', () {
+      // `discontinue` is the open-ended second-time bar: the bracket has no
+      // downward hook at its right end. It still ends the run of measures.
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${barline(location: 'left', endingNumber: '2', endingType: 'start')}
+      ${note('G', 4)}
+      ${barline(location: 'right', endingNumber: '2', endingType: 'discontinue')}
+    </measure>
+    <measure number="2">
+      ${note('A', 4)}
+    </measure>
+  </part>'''));
+
+      expect(measuresOf(result.notation).map((m) => m.volta), [2, null]);
+    });
+
+    test('an ending number the file writes as a list keeps the first', () {
+      // "1,2" is legal and means the bracket covers both passes. The model holds
+      // one number, so the lowest is what gets drawn.
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${barline(location: 'left', endingNumber: '1, 2', endingType: 'start')}
+      ${note('G', 4)}
+      ${barline(location: 'right', endingNumber: '1, 2', endingType: 'stop')}
+    </measure>
+  </part>'''));
+
+      expect(measuresOf(result.notation).single.volta, 1);
+    });
+
+    test('repeats survive the line-breaking pass', () {
+      // `_applyLineBreaks` and `_markPickups` both rebuild measures. They use
+      // copyWith for exactly this reason — isPickup was silently dropped by a
+      // field-by-field rebuild once already.
+      final result = importer.importXml(
+        score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('G', 4)}
+      ${barline(location: 'right', repeat: 'backward')}
+    </measure>
+    <measure number="2">
+      ${barline(location: 'left', repeat: 'forward')}
+      ${note('A', 4)}
+    </measure>
+    <measure number="3">
+      ${note('B', 4)}
+    </measure>
+  </part>'''),
+        measuresPerLine: 1,
+      );
+
+      final measures = measuresOf(result.notation);
+      expect(measures[0].lineBreakAfter, isTrue, reason: 'the fixture premise');
+      expect(measures[0].repeatEnd, isTrue);
+      expect(measures[1].repeatStart, isTrue);
+    });
+
+    test('a score with no barline elements reports no repeats', () {
+      final result = importer.importXml(score(body: '''
+  <part id="P1">
+    <measure number="1">
+      ${attributes()}
+      ${note('G', 4)}
+    </measure>
+  </part>'''));
+
+      final measure = measuresOf(result.notation).single;
+      expect(measure.repeatStart, isFalse);
+      expect(measure.repeatEnd, isFalse);
+      expect(measure.volta, isNull);
     });
   });
 }

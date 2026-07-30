@@ -48,6 +48,7 @@ NotatedMeasure _$NotatedMeasureFromJson(Map<String, dynamic> json) =>
       repeatEnd: json['repeatEnd'] as bool? ?? false,
       lineBreakAfter: json['lineBreakAfter'] as bool? ?? false,
       isPickup: json['isPickup'] as bool? ?? false,
+      volta: (json['volta'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$NotatedMeasureToJson(NotatedMeasure instance) =>
@@ -57,6 +58,7 @@ Map<String, dynamic> _$NotatedMeasureToJson(NotatedMeasure instance) =>
       'repeatEnd': instance.repeatEnd,
       'lineBreakAfter': instance.lineBreakAfter,
       'isPickup': instance.isPickup,
+      'volta': instance.volta,
     };
 
 NotatedVerse _$NotatedVerseFromJson(Map<String, dynamic> json) => NotatedVerse(

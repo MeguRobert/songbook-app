@@ -128,12 +128,13 @@ class NotationEditor {
     }
 
     final measures = [...verse.measures];
-    measures[address.measure] = NotatedMeasure(
-      beats: transform(measure.beats),
-      repeatStart: measure.repeatStart,
-      repeatEnd: measure.repeatEnd,
-      lineBreakAfter: measure.lineBreakAfter,
-    );
+    // copyWith, not a fresh NotatedMeasure: this changes the beats and nothing
+    // else, and spelling out the other fields made every field added to the
+    // model a field an edit would silently drop. It already had — `isPickup`
+    // and `volta` were both being lost here, so correcting one note in an
+    // upbeat bar came back flagged as a bar the transcription had damaged.
+    measures[address.measure] =
+        measure.copyWith(beats: transform(measure.beats));
 
     final verses = [...notation.verses];
     verses[address.verse] =

@@ -219,6 +219,8 @@ void main() {
               repeatStart: true,
               repeatEnd: true,
               lineBreakAfter: true,
+              isPickup: true,
+              volta: 2,
             ),
           ]),
         ],
@@ -231,6 +233,13 @@ void main() {
       expect(measure.repeatStart, isTrue);
       expect(measure.repeatEnd, isTrue);
       expect(measure.lineBreakAfter, isTrue);
+      // isPickup and volta were both silently dropped: this rebuilt the measure
+      // field by field, so every field added to the model was one an edit lost.
+      // A pickup bar corrected in the editor came back flagged as a short bar
+      // the transcription had damaged — the one thing isPickup exists to
+      // prevent.
+      expect(measure.isPickup, isTrue);
+      expect(measure.volta, 2);
     });
 
     test('is a no-op for an address out of range', () {

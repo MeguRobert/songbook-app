@@ -102,6 +102,41 @@ class PositionedBarLine {
   });
 }
 
+/// A positioned volta ("second-time bar") bracket.
+///
+/// One per run of measures sharing a [NotatedMeasure.volta] number, per system:
+/// a bracket crossing a line break is drawn as two of these, which is what an
+/// engraver does too. The hooks say which ends are real ends of the run rather
+/// than the edge of a system, so neither half grows a hook it should not have.
+class PositionedVolta {
+  final int number;
+  final double startX;
+  final double endX;
+
+  /// Top of the bracket. The horizontal stroke sits here; the hooks drop from
+  /// it.
+  final double y;
+
+  /// The run begins here, so the left end turns down into the staff.
+  final bool hasStartHook;
+
+  /// The run ends here, so the right end turns down.
+  ///
+  /// Always true where a run ends. MusicXML distinguishes `stop` (hooked) from
+  /// `discontinue` (open), but [NotatedMeasure] keeps only the number, so the
+  /// difference is not available here. It is cosmetic.
+  final bool hasEndHook;
+
+  const PositionedVolta({
+    required this.number,
+    required this.startX,
+    required this.endX,
+    required this.y,
+    required this.hasStartHook,
+    required this.hasEndHook,
+  });
+}
+
 /// Represents a single staff system (one line of music)
 class StaffSystem {
   final double x;
@@ -111,6 +146,10 @@ class StaffSystem {
   final List<PositionedSyllable> syllables;
   final List<PositionedChord> chords;
   final List<PositionedBarLine> barLines;
+
+  /// Volta brackets over this system, if any.
+  final List<PositionedVolta> voltas;
+
   final int startMeasure;
   final int endMeasure;
 
@@ -122,9 +161,36 @@ class StaffSystem {
     required this.syllables,
     required this.chords,
     required this.barLines,
+    this.voltas = const [],
     required this.startMeasure,
     required this.endMeasure,
   });
+
+  /// Exists so the normalisation pass in [SheetMusicLayoutEngine] cannot
+  /// silently drop a field.
+  ///
+  /// That pass rebuilds every system to widen it to the widest one, and it used
+  /// to spell out each field — which made every field added here one the pass
+  /// would lose. `voltas` would have been the first casualty; the same mistake
+  /// already cost `NotatedMeasure.isPickup` once.
+  StaffSystem copyWith({
+    double? width,
+    List<PositionedBarLine>? barLines,
+    List<PositionedVolta>? voltas,
+  }) {
+    return StaffSystem(
+      x: x,
+      y: y,
+      width: width ?? this.width,
+      notes: notes,
+      syllables: syllables,
+      chords: chords,
+      barLines: barLines ?? this.barLines,
+      voltas: voltas ?? this.voltas,
+      startMeasure: startMeasure,
+      endMeasure: endMeasure,
+    );
+  }
 
   double get staffTop => y;
   double get staffBottom => y + EngravingConstants.staffHeight;
@@ -216,6 +282,7 @@ class SheetMusicLayoutEngine {
       final rightEdge = s.x + maxSystemWidth - EngravingConstants.rightMargin;
 
       // Adjust the last bar line to be at the right edge
+      final lastX = s.barLines.isEmpty ? null : s.barLines.last.x;
       final adjustedBarLines = s.barLines.isNotEmpty
           ? [
               ...s.barLines.take(s.barLines.length - 1),
@@ -231,16 +298,29 @@ class SheetMusicLayoutEngine {
             ]
           : s.barLines;
 
-      return StaffSystem(
-        x: s.x,
-        y: s.y,
+      // A bracket that ran to the old last bar line follows it out to the edge,
+      // so the two do not end a system's width apart.
+      final adjustedVoltas = lastX == null
+          ? s.voltas
+          : [
+              for (final volta in s.voltas)
+                if ((volta.endX - lastX).abs() < 0.5)
+                  PositionedVolta(
+                    number: volta.number,
+                    startX: volta.startX,
+                    endX: rightEdge,
+                    y: volta.y,
+                    hasStartHook: volta.hasStartHook,
+                    hasEndHook: volta.hasEndHook,
+                  )
+                else
+                  volta,
+            ];
+
+      return s.copyWith(
         width: maxSystemWidth,
-        notes: s.notes,
-        syllables: s.syllables,
-        chords: s.chords,
         barLines: adjustedBarLines,
-        startMeasure: s.startMeasure,
-        endMeasure: s.endMeasure,
+        voltas: adjustedVoltas,
       );
     }).toList();
 
@@ -300,6 +380,10 @@ class SheetMusicLayoutEngine {
         true, // Show clef and key on every system
         endIndex >= measures.length, // Is last system
         key,
+        // The volta on either side of this system, so a bracket that carries on
+        // past a line break does not sprout a hook at the break.
+        voltaBefore: measureIndex > 0 ? measures[measureIndex - 1].volta : null,
+        voltaAfter: endIndex < measures.length ? measures[endIndex].volta : null,
       );
 
       systems.add(system);
@@ -312,6 +396,58 @@ class SheetMusicLayoutEngine {
     }
 
     return systems;
+  }
+
+  /// Spans a bracket over each run of consecutive measures sharing a volta
+  /// number.
+  ///
+  /// A run is the bracket: MusicXML marks one by its two ends, but the importer
+  /// has already spread the number across every measure the ends enclose, so
+  /// grouping equal neighbours recovers the same thing — and it recovers it
+  /// per system, which is what has to be drawn.
+  ///
+  /// [voltaBefore] and [voltaAfter] are the numbers on the measures either side
+  /// of this system. When one matches the run at that edge, the run is
+  /// continuing rather than beginning or ending, and gets no hook there.
+  List<PositionedVolta> _layoutVoltas(
+    List<NotatedMeasure> measures,
+    List<double> startX,
+    List<double> endX, {
+    required double staffTop,
+    int? voltaBefore,
+    int? voltaAfter,
+  }) {
+    final voltas = <PositionedVolta>[];
+    // Clear of the chord row, so a volta and a chord symbol never collide.
+    final y = staffTop -
+        EngravingConstants.chordAboveStaff -
+        (showChords ? EngravingConstants.staffLineSpacing * 1.6 : 0);
+
+    var i = 0;
+    while (i < measures.length) {
+      final number = measures[i].volta;
+      if (number == null) {
+        i++;
+        continue;
+      }
+
+      var last = i;
+      while (last + 1 < measures.length && measures[last + 1].volta == number) {
+        last++;
+      }
+
+      voltas.add(PositionedVolta(
+        number: number,
+        startX: startX[i] - EngravingConstants.measureSpacing / 2,
+        endX: endX[last],
+        y: y,
+        hasStartHook: !(i == 0 && voltaBefore == number),
+        hasEndHook: !(last == measures.length - 1 && voltaAfter == number),
+      ));
+
+      i = last + 1;
+    }
+    return voltas;
   }
 
   /// Calculate optimal measures per line considering:
@@ -403,8 +539,10 @@ class SheetMusicLayoutEngine {
     int transposeSemitones,
     bool showClefAndKey,
     bool isLastSystem,
-    String key,
-  ) {
+    String key, {
+    int? voltaBefore,
+    int? voltaAfter,
+  }) {
     final notes = <PositionedNote>[];
     final syllables = <PositionedSyllable>[];
     final chords = <PositionedChord>[];
@@ -424,18 +562,33 @@ class SheetMusicLayoutEngine {
            EngravingConstants.timeToNoteSpace;
     }
 
-    // Add initial bar line
+    // Add initial bar line.
+    //
+    // A repeat opening on the system's first measure belongs here: there is no
+    // earlier line to hang it on, and an engraver puts `||:` at the head of the
+    // system rather than inventing a bar.
+    final opensRepeat = measures.isNotEmpty && measures.first.repeatStart;
     barLines.add(PositionedBarLine(
       x: x - 5,
       topY: y,
       bottomY: staffBottom,
+      repeatStart: opensRepeat,
     ));
+    // Push the first note clear of the dots the painter will draw to the right
+    // of that line.
+    if (opensRepeat) x += EngravingConstants.repeatSignWidth;
+
+    // Where each measure begins and ends horizontally, so a volta bracket can
+    // be spanned over a run of them afterwards.
+    final measureStartX = <double>[];
+    final measureEndX = <double>[];
 
     // Layout each measure
     for (int i = 0; i < measures.length; i++) {
       final measure = measures[i];
       final isLastMeasure = i == measures.length - 1 && isLastSystem;
       final measureIndex = startMeasureIndex + i;
+      measureStartX.add(x);
 
       // Calculate beam groups for this measure
       // In 4/4 time, beam eighth notes in groups of 4 (half-bar) or 2 (per beat)
@@ -545,17 +698,29 @@ class SheetMusicLayoutEngine {
         globalBeamGroup += maxLocalGroup + 1;
       }
 
-      // Add bar line after measure
+      // Add bar line after measure.
+      //
+      // A closing repeat needs its dots to the LEFT of the line, so the space
+      // goes in before it; an opening repeat for the next measure needs them to
+      // the right, so that space goes in after.
       x += EngravingConstants.measureSpacing / 2;
+      if (measure.repeatEnd) x += EngravingConstants.repeatSignWidth;
+      measureEndX.add(x);
+      // One line serves two measures, so it carries the closing repeat of the
+      // measure behind it AND the opening repeat of the one ahead — `:||:`, the
+      // shape a hymn whose refrain repeats straight into the next verse needs.
+      final opensNext = i + 1 < measures.length && measures[i + 1].repeatStart;
       barLines.add(PositionedBarLine(
         x: x,
         topY: y,
         bottomY: staffBottom,
         isFinal: isLastMeasure,
-        isDouble: isLastMeasure || measure.repeatEnd,
+        isDouble: isLastMeasure || measure.repeatEnd || opensNext,
         repeatEnd: measure.repeatEnd,
+        repeatStart: opensNext,
       ));
       x += EngravingConstants.measureSpacing / 2;
+      if (opensNext) x += EngravingConstants.repeatSignWidth;
     }
 
     return StaffSystem(
@@ -566,6 +731,14 @@ class SheetMusicLayoutEngine {
       syllables: syllables,
       chords: chords,
       barLines: barLines,
+      voltas: _layoutVoltas(
+        measures,
+        measureStartX,
+        measureEndX,
+        staffTop: y,
+        voltaBefore: voltaBefore,
+        voltaAfter: voltaAfter,
+      ),
       startMeasure: startMeasureIndex,
       endMeasure: endMeasureIndex,
     );

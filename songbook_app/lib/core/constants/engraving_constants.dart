@@ -62,6 +62,14 @@ class EngravingConstants {
   /// Bar line separation for double bars (SMuFL default: 0.4 spaces)
   static double get barLineSeparation => staffSpace * 0.4;
 
+  /// Horizontal room a repeat sign needs beside its bar line, for the thin line
+  /// and the two dots.
+  ///
+  /// Reserved by the layout rather than assumed by the painter: a repeat opening
+  /// a system draws rightward from a bar line that already sits 5px before the
+  /// first note, so without reserved space the dots land on the note head.
+  static double get repeatSignWidth => staffSpace * 2.2;
+
   // ============ STEM RULES ============
   // Based on Ted Ross "The Art of Music Engraving" and Elaine Gould "Behind Bars"
 

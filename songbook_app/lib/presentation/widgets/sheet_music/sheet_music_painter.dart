@@ -112,6 +112,7 @@ class SheetMusicPainter extends CustomPainter {
       }
 
       _drawBarLines(canvas, system);
+      _drawVoltas(canvas, system);
       _drawNotesWithBeams(canvas, system);
       _drawTies(canvas, system);
       if (showChords) _drawChords(canvas, system);
@@ -258,36 +259,8 @@ class SheetMusicPainter extends CustomPainter {
 
   void _drawBarLines(Canvas canvas, StaffSystem system) {
     for (final barLine in system.barLines) {
-      if (barLine.repeatEnd) {
-        // Repeat end bar: thin line, thick line, two dots
-        final dotPaint = Paint()
-          ..color = noteColor
-          ..style = PaintingStyle.fill;
-
-        // Thin line
-        canvas.drawLine(
-          Offset(barLine.x - EngravingConstants.barLineSeparation -
-              EngravingConstants.thickBarLineThickness / 2 - 8, barLine.topY),
-          Offset(barLine.x - EngravingConstants.barLineSeparation -
-              EngravingConstants.thickBarLineThickness / 2 - 8, barLine.bottomY),
-          _barLinePaint,
-        );
-        // Thick line
-        canvas.drawLine(
-          Offset(barLine.x, barLine.topY),
-          Offset(barLine.x, barLine.bottomY),
-          _thickBarLinePaint,
-        );
-        // Two dots (between 2nd and 3rd, and 3rd and 4th staff lines)
-        final dotRadius = 2.5;
-        final dotX = barLine.x - EngravingConstants.barLineSeparation -
-            EngravingConstants.thickBarLineThickness / 2 - 16;
-        // Dot between lines 2 and 3 (from top)
-        final dot1Y = barLine.topY + EngravingConstants.staffLineSpacing * 1.5;
-        // Dot between lines 3 and 4 (from top)
-        final dot2Y = barLine.topY + EngravingConstants.staffLineSpacing * 2.5;
-        canvas.drawCircle(Offset(dotX, dot1Y), dotRadius, dotPaint);
-        canvas.drawCircle(Offset(dotX, dot2Y), dotRadius, dotPaint);
+      if (barLine.repeatStart || barLine.repeatEnd) {
+        _drawRepeatBarLine(canvas, barLine);
       } else if (barLine.isFinal) {
         // Final bar: thin line, thick line
         canvas.drawLine(
@@ -309,6 +282,102 @@ class SheetMusicPainter extends CustomPainter {
           _barLinePaint,
         );
       }
+    }
+  }
+
+  /// A repeat sign: a thick line, with a thin line and two dots on whichever
+  /// side or sides the repeat faces.
+  ///
+  /// Both flags can be set on one line — the `:‖:` of a hymn whose refrain
+  /// repeats straight into the next verse — so the two halves are drawn
+  /// independently rather than as three mutually exclusive cases. The layout
+  /// engine has already reserved [EngravingConstants.repeatSignWidth] on the
+  /// relevant side, so nothing here lands on a note head.
+  void _drawRepeatBarLine(Canvas canvas, PositionedBarLine barLine) {
+    final dotPaint = Paint()
+      ..color = noteColor
+      ..style = PaintingStyle.fill;
+
+    // The thick line sits ON the bar line's own x; everything else hangs off it.
+    canvas.drawLine(
+      Offset(barLine.x, barLine.topY),
+      Offset(barLine.x, barLine.bottomY),
+      _thickBarLinePaint,
+    );
+
+    final offset = EngravingConstants.barLineSeparation +
+        EngravingConstants.thickBarLineThickness / 2;
+    const dotRadius = 2.5;
+    // The two dots straddle the middle staff line, in the spaces either side of
+    // it — where every engraver puts them.
+    final dot1Y = barLine.topY + EngravingConstants.staffLineSpacing * 1.5;
+    final dot2Y = barLine.topY + EngravingConstants.staffLineSpacing * 2.5;
+
+    void half(int direction) {
+      final thinX = barLine.x + direction * (offset + 8);
+      canvas.drawLine(
+        Offset(thinX, barLine.topY),
+        Offset(thinX, barLine.bottomY),
+        _barLinePaint,
+      );
+      final dotX = barLine.x + direction * (offset + 16);
+      canvas.drawCircle(Offset(dotX, dot1Y), dotRadius, dotPaint);
+      canvas.drawCircle(Offset(dotX, dot2Y), dotRadius, dotPaint);
+    }
+
+    // A closing repeat faces backwards, an opening one forwards.
+    if (barLine.repeatEnd) half(-1);
+    if (barLine.repeatStart) half(1);
+  }
+
+  /// Volta ("second-time bar") brackets: a horizontal stroke above the staff
+  /// with its number at the left, hooked down at whichever ends are real ends of
+  /// the run.
+  void _drawVoltas(Canvas canvas, StaffSystem system) {
+    if (system.voltas.isEmpty) return;
+
+    final bracketPaint = Paint()
+      ..color = noteColor
+      ..strokeWidth = EngravingConstants.barLineThickness
+      ..style = PaintingStyle.stroke;
+
+    // Hook length: deep enough to read as a bracket, short of the staff so it
+    // never crosses the top line.
+    final hookDepth = EngravingConstants.staffLineSpacing * 1.2;
+
+    for (final volta in system.voltas) {
+      canvas.drawLine(
+        Offset(volta.startX, volta.y),
+        Offset(volta.endX, volta.y),
+        bracketPaint,
+      );
+      if (volta.hasStartHook) {
+        canvas.drawLine(
+          Offset(volta.startX, volta.y),
+          Offset(volta.startX, volta.y + hookDepth),
+          bracketPaint,
+        );
+      }
+      if (volta.hasEndHook) {
+        canvas.drawLine(
+          Offset(volta.endX, volta.y),
+          Offset(volta.endX, volta.y + hookDepth),
+          bracketPaint,
+        );
+      }
+
+      // The number goes inside the bracket at its left end — but only on the
+      // half that starts the run, or a bracket split by a line break would be
+      // numbered twice.
+      if (!volta.hasStartHook) continue;
+      final label = TextPainter(
+        text: TextSpan(
+          text: '${volta.number}.',
+          style: EngravingConstants.chordStyle.copyWith(color: noteColor),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      label.paint(canvas, Offset(volta.startX + 4, volta.y + 1));
     }
   }
 

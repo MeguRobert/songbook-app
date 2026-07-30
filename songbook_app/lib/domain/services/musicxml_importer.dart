@@ -23,6 +23,22 @@ class MusicXmlImportException implements Exception {
   String toString() => 'MusicXmlImportException: $message';
 }
 
+/// What one measure's `<barline>` elements said, beyond the notes.
+///
+/// Kept per part-relative measure ordinal alongside the streams, the same way
+/// system breaks and `implicit="yes"` already are: repeats belong to the bar,
+/// not to a voice, and only the melody part's answer is rendered.
+class _Barlines {
+  bool repeatStart = false;
+  bool repeatEnd = false;
+
+  /// `<ending type="start">`'s number, when this measure opens a volta bracket.
+  int? endingStart;
+
+  /// True when this measure closes one, whether by `stop` or `discontinue`.
+  bool endingStops = false;
+}
+
 /// One monophonic note stream recovered from the source file.
 ///
 /// A stream is identified by the MusicXML triple (part, staff, voice). SATB
@@ -307,12 +323,15 @@ class MusicXmlImporter {
     // Measure ordinals the file declared `implicit="yes"`. Kept per part, like
     // the system breaks, because only the melody part's answer is used.
     final implicitMeasures = <int, Set<int>>{};
+    // Repeat signs and volta brackets, per part, per measure ordinal.
+    final barlines = <int, Map<int, _Barlines>>{};
 
     for (var partIndex = 0; partIndex < parts.length; partIndex++) {
       final part = parts[partIndex];
       final partId = part.getAttribute('id') ?? 'P${partIndex + 1}';
       final breaks = systemBreaks[partIndex] = <int>{};
       final implicit = implicitMeasures[partIndex] = <int>{};
+      final bars = barlines[partIndex] = <int, _Barlines>{};
 
       var measures = part.findElements('measure', namespace: '*').toList();
       if (measures.isEmpty) {
@@ -336,6 +355,7 @@ class MusicXmlImporter {
           divisions: divisions,
           streams: streams,
           systemBreaks: breaks,
+          barlines: bars,
           notices: notices,
         );
       }
@@ -354,9 +374,12 @@ class MusicXmlImporter {
     final melodyMeasures = melody == null
         ? <NotatedMeasure>[]
         : _applyLineBreaks(
-            _markPickups(
-              melody.toMeasures(lyricNumbers),
-              implicitMeasures[melody.partIndex] ?? const <int>{},
+            _applyBarlines(
+              _markPickups(
+                melody.toMeasures(lyricNumbers),
+                implicitMeasures[melody.partIndex] ?? const <int>{},
+              ),
+              barlines[melody.partIndex] ?? const <int, _Barlines>{},
             ),
             systemBreaks[melody.partIndex] ?? const <int>{},
             measuresPerLine,
@@ -412,6 +435,7 @@ class MusicXmlImporter {
     required double divisions,
     required Map<String, _Stream> streams,
     required Set<int> systemBreaks,
+    required Map<int, _Barlines> barlines,
     required _Notices notices,
   }) {
     var currentDivisions = divisions;
@@ -433,6 +457,12 @@ class MusicXmlImporter {
               child.getAttribute('new-page') == 'yes') {
             systemBreaks.add(ordinal);
           }
+
+        case 'barline':
+          _readBarline(
+            child,
+            barlines.putIfAbsent(ordinal, _Barlines.new),
+          );
 
         case 'harmony':
           // <harmony> precedes the note it sits above, so it is held until the
@@ -494,6 +524,50 @@ class MusicXmlImporter {
     }
 
     return currentDivisions;
+  }
+
+  /// Folds one `<barline>` into [into].
+  ///
+  /// A measure can carry two of them — a forward repeat on its left and a
+  /// backward one on its right — so this accumulates rather than replaces.
+  /// `location` is optional in MusicXML and defaults to `right`; the direction
+  /// of the `<repeat>` already says which side it belongs to, so `location` is
+  /// only consulted for the ending, where it cannot be inferred.
+  void _readBarline(XmlElement barline, _Barlines into) {
+    final repeat = _childOf(barline, 'repeat');
+    if (repeat != null) {
+      switch (repeat.getAttribute('direction')) {
+        case 'forward':
+          into.repeatStart = true;
+        case 'backward':
+          into.repeatEnd = true;
+      }
+    }
+
+    final ending = _childOf(barline, 'ending');
+    if (ending == null) return;
+    switch (ending.getAttribute('type')) {
+      case 'start':
+        into.endingStart = _firstEndingNumber(ending.getAttribute('number'));
+      // `discontinue` is the open-ended second-time bar: no downward hook on
+      // the right. It still ends the run of measures under the bracket.
+      case 'stop':
+      case 'discontinue':
+        into.endingStops = true;
+    }
+  }
+
+  /// The first number in an `<ending number>`, which may be a list (`"1, 2"`).
+  ///
+  /// A bracket covering two passes is one bracket, and the model holds one
+  /// number, so the lowest is what gets drawn.
+  int? _firstEndingNumber(String? attribute) {
+    if (attribute == null) return null;
+    for (final part in attribute.split(',')) {
+      final value = int.tryParse(part.trim());
+      if (value != null) return value;
+    }
+    return null;
   }
 
   /// The note at vertical [level] of [stack], counting down from the top.
@@ -751,6 +825,43 @@ class MusicXmlImporter {
         else
           measures[i],
     ];
+  }
+
+  /// Applies the repeat signs and volta brackets read from `<barline>`.
+  ///
+  /// The volta is the only part that needs state: MusicXML marks a bracket by
+  /// its two ends, and [NotatedMeasure.volta] is carried by every measure the
+  /// bracket covers, so the number is held open from `start` until the measure
+  /// that stops it — inclusive, because the closing barline sits on the right of
+  /// the last covered bar, not before it.
+  ///
+  /// A bracket the file never closes runs to the end of the piece. That is what
+  /// an unterminated `<ending>` means on paper too, and guessing shorter would
+  /// silently drop bars out of a repeat.
+  List<NotatedMeasure> _applyBarlines(
+    List<NotatedMeasure> measures,
+    Map<int, _Barlines> barlines,
+  ) {
+    if (barlines.isEmpty) return measures;
+
+    final result = <NotatedMeasure>[];
+    int? openVolta;
+
+    for (var i = 0; i < measures.length; i++) {
+      final bars = barlines[i];
+      openVolta = bars?.endingStart ?? openVolta;
+
+      result.add(bars == null && openVolta == null
+          ? measures[i]
+          : measures[i].copyWith(
+              repeatStart: bars?.repeatStart ?? false,
+              repeatEnd: bars?.repeatEnd ?? false,
+              volta: openVolta,
+            ));
+
+      if (bars?.endingStops ?? false) openVolta = null;
+    }
+    return result;
   }
 
   /// Ported from `add_line_breaks()`, with the file's own system breaks winning

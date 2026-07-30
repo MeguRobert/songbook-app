@@ -211,12 +211,22 @@ class NotatedMeasure {
   @JsonKey(defaultValue: false)
   final bool isPickup;
 
+  /// The volta (second-time bar) bracket this measure sits under, or null.
+  ///
+  /// Carried per measure rather than as a span, so a bracket needs no separate
+  /// start/end bookkeeping: a run of measures sharing a number *is* the bracket,
+  /// and the layout engine draws the hook where the run begins and ends. That
+  /// also survives line breaking for free — half a bracket on each of two
+  /// systems is what an engraver does anyway.
+  final int? volta;
+
   const NotatedMeasure({
     required this.beats,
     this.repeatStart = false,
     this.repeatEnd = false,
     this.lineBreakAfter = false,
     this.isPickup = false,
+    this.volta,
   });
 
   factory NotatedMeasure.fromJson(Map<String, dynamic> json) =>
@@ -239,6 +249,7 @@ class NotatedMeasure {
     bool? repeatEnd,
     bool? lineBreakAfter,
     bool? isPickup,
+    int? volta,
   }) {
     return NotatedMeasure(
       beats: beats ?? this.beats,
@@ -246,6 +257,7 @@ class NotatedMeasure {
       repeatEnd: repeatEnd ?? this.repeatEnd,
       lineBreakAfter: lineBreakAfter ?? this.lineBreakAfter,
       isPickup: isPickup ?? this.isPickup,
+      volta: volta ?? this.volta,
     );
   }
 
@@ -258,7 +270,8 @@ class NotatedMeasure {
           repeatStart == other.repeatStart &&
           repeatEnd == other.repeatEnd &&
           lineBreakAfter == other.lineBreakAfter &&
-          isPickup == other.isPickup;
+          isPickup == other.isPickup &&
+          volta == other.volta;
 
   @override
   int get hashCode => Object.hash(
@@ -267,6 +280,7 @@ class NotatedMeasure {
         repeatEnd,
         lineBreakAfter,
         isPickup,
+        volta,
       );
 }
 
