@@ -310,4 +310,163 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get noSongsHint => 'Az alkalmazással szállított énekeskönyv üres.';
+
+  @override
+  String get actionEdit => 'Szerkesztés';
+
+  @override
+  String get actionApply => 'Alkalmaz';
+
+  @override
+  String get actionDiscard => 'Elvetés';
+
+  @override
+  String get discardTitle => 'Elveti a javításokat?';
+
+  @override
+  String get discardBody =>
+      'Az ezen a képernyőn végzett módosítások nincsenek elmentve az énekhez.';
+
+  @override
+  String get discardKeepEditing => 'Tovább szerkesztem';
+
+  @override
+  String get notationNoneStored =>
+      'Ehhez az énekhez nincs kotta tárolva, vagy már nincs meg ezen a készüléken.';
+
+  @override
+  String notationVerse(int number) {
+    return '$number. versszak';
+  }
+
+  @override
+  String notationMeasure(int number) {
+    return '$number. ütem';
+  }
+
+  @override
+  String get notationPickup => 'Felütés';
+
+  @override
+  String notationPickupBeats(int count, String beats) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$beats ütés az 1. ütem előtt',
+      one: '$beats ütés az 1. ütem előtt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notationMeasureBeats(String total, int expected) {
+    return '$total / $expected ütés';
+  }
+
+  @override
+  String get notationNoBeats => 'Ebben az ütemben nincs hang.';
+
+  @override
+  String notationStalePickupNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count ütés az ének régi, külön felütéslistájában van, amelyet semmi nem olvas, ezért sem fent, sem lent nem látszanak. A felütés helye egy bevezető ütem.',
+      one:
+          '1 ütés az ének régi, külön felütéslistájában van, amelyet semmi nem olvas, ezért sem fent, sem lent nem látszik. A felütés helye egy bevezető ütem.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get beatRestShort => 'szünet';
+
+  @override
+  String get beatActions => 'Ütés műveletei';
+
+  @override
+  String get beatInsertAfter => 'Beszúrás utána';
+
+  @override
+  String get beatEditTitle => 'ÜTÉS SZERKESZTÉSE';
+
+  @override
+  String get beatRest => 'Szünet';
+
+  @override
+  String get beatNote => 'Hang';
+
+  @override
+  String get beatAccidental => 'Módosítójel';
+
+  @override
+  String get accidentalNatural => 'feloldójel';
+
+  @override
+  String get accidentalSharp => 'kereszt';
+
+  @override
+  String get accidentalFlat => 'bé';
+
+  @override
+  String get beatOctave => 'Oktáv';
+
+  @override
+  String get octaveLower => 'Alacsonyabb oktáv';
+
+  @override
+  String get octaveHigher => 'Magasabb oktáv';
+
+  @override
+  String get beatDuration => 'Hangérték';
+
+  @override
+  String get beatDotted => 'Pontozott';
+
+  @override
+  String get beatDottedHint => 'A hangérték másfélszerese';
+
+  @override
+  String get beatTieEnd => 'Kötés az előző hangtól';
+
+  @override
+  String get beatTieStart => 'Kötés a következő hangig';
+
+  @override
+  String get beatSyllable => 'Szótag';
+
+  @override
+  String get beatChord => 'Akkord a kotta felett';
+
+  @override
+  String beatExtraLyricLines(int count, String lines) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ezen a hangon még $count szövegsor ($lines) változatlan marad.',
+      one: 'Ezen a hangon még 1 szövegsor ($lines) változatlan marad.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get durationWhole => 'egész';
+
+  @override
+  String get durationHalf => 'fél';
+
+  @override
+  String get durationQuarter => 'negyed';
+
+  @override
+  String get durationEighth => 'nyolcad';
+
+  @override
+  String get durationSixteenth => 'tizenhatod';
+
+  @override
+  String durationDotted(String duration) {
+    return '$duration, pontozott';
+  }
 }

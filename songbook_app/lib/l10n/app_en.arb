@@ -417,5 +417,213 @@
   "noSongsHint": "The songbook that ships with the app is empty.",
   "@noSongsHint": {
     "description": "Explains an empty catalogue. Replaces a developer hint naming an asset path, which is not something a singer can act on."
+  },
+  "actionEdit": "Edit",
+  "@actionEdit": {
+    "description": "Open something for correction"
+  },
+  "actionApply": "Apply",
+  "@actionApply": {
+    "description": "Commit the fields of a bottom sheet back to the caller"
+  },
+  "actionDiscard": "Discard",
+  "@actionDiscard": {
+    "description": "Leave a screen and lose the unsaved changes on it"
+  },
+  "discardTitle": "Discard corrections?",
+  "@discardTitle": {
+    "description": "Title of the prompt shown when leaving the notation editor dirty"
+  },
+  "discardBody": "The changes on this screen have not been saved to the song.",
+  "@discardBody": {
+    "description": "Says what is about to be lost"
+  },
+  "discardKeepEditing": "Keep editing",
+  "@discardKeepEditing": {
+    "description": "Dismiss the discard prompt and stay on the screen"
+  },
+  "notationNoneStored": "This song has no engraved notation stored, or is no longer on this device.",
+  "@notationNoneStored": {
+    "description": "Shown when the notation editor is opened for a song it cannot edit"
+  },
+  "notationVerse": "Verse {number}",
+  "@notationVerse": {
+    "description": "Header above a notated verse in the beat list",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "notationMeasure": "Measure {number}",
+  "@notationMeasure": {
+    "description": "Header above one measure's beats",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "notationPickup": "Pickup",
+  "@notationPickup": {
+    "description": "Header for an anacrusis — the short opening bar before bar 1. A score does not number it."
+  },
+  "notationPickupBeats": "{count, plural, =1{{beats} beat before bar 1} other{{beats} beats before bar 1}}",
+  "@notationPickupBeats": {
+    "description": "How long the anacrusis is. `beats` is already formatted for display (\"3\", \"3.5\"); `count` only selects singular or plural.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "beats": {
+        "type": "String"
+      }
+    }
+  },
+  "notationMeasureBeats": "{total} / {expected} beats",
+  "@notationMeasureBeats": {
+    "description": "What a measure's beats add up to against the time signature. Turns red when the two disagree.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "expected": {
+        "type": "int"
+      }
+    }
+  },
+  "notationNoBeats": "No beats in this measure.",
+  "@notationNoBeats": {
+    "description": "Shown for a measure whose last beat was deleted"
+  },
+  "notationStalePickupNotice": "{count, plural, =1{1 beat sits in this song’s old separate pickup list, which nothing reads, so it is not shown above or below. An upbeat belongs in a leading measure instead.} other{{count} beats sit in this song’s old separate pickup list, which nothing reads, so they are not shown above or below. An upbeat belongs in a leading measure instead.}}",
+  "@notationStalePickupNotice": {
+    "description": "Warns that beats in the superseded SongNotation.pickup field are invisible everywhere",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "beatRestShort": "rest",
+  "@beatRestShort": {
+    "description": "Stands in for the pitch of a rest in the beat list. Lower case: it sits where a pitch like \"F4\" would."
+  },
+  "beatActions": "Beat actions",
+  "@beatActions": {
+    "description": "Tooltip on a beat row's overflow menu"
+  },
+  "beatInsertAfter": "Insert after",
+  "@beatInsertAfter": {
+    "description": "Beat menu: add a new beat behind this one"
+  },
+  "beatEditTitle": "EDIT BEAT",
+  "@beatEditTitle": {
+    "description": "Heading of the beat-fields bottom sheet"
+  },
+  "beatRest": "Rest",
+  "@beatRest": {
+    "description": "Switch that turns a note into a rest"
+  },
+  "beatNote": "Note",
+  "@beatNote": {
+    "description": "Field label for the note letter (C–B)"
+  },
+  "beatAccidental": "Accidental",
+  "@beatAccidental": {
+    "description": "Field label for sharp/flat/natural"
+  },
+  "accidentalNatural": "natural",
+  "@accidentalNatural": {
+    "description": "Accidental option: no sharp or flat. Named rather than shown as ♮, which rendered unreadably in a browser."
+  },
+  "accidentalSharp": "sharp",
+  "@accidentalSharp": {
+    "description": "Accidental option: raised a semitone (♯)"
+  },
+  "accidentalFlat": "flat",
+  "@accidentalFlat": {
+    "description": "Accidental option: lowered a semitone (♭)"
+  },
+  "beatOctave": "Octave",
+  "@beatOctave": {
+    "description": "Field label above the octave stepper"
+  },
+  "octaveLower": "Lower octave",
+  "@octaveLower": {
+    "description": "Tooltip on the octave stepper's minus"
+  },
+  "octaveHigher": "Higher octave",
+  "@octaveHigher": {
+    "description": "Tooltip on the octave stepper's plus"
+  },
+  "beatDuration": "Duration",
+  "@beatDuration": {
+    "description": "Field label for the note value"
+  },
+  "beatDotted": "Dotted",
+  "@beatDotted": {
+    "description": "Switch that adds a dot to the note"
+  },
+  "beatDottedHint": "One and a half times the duration",
+  "@beatDottedHint": {
+    "description": "Explains what a dot does"
+  },
+  "beatTieEnd": "Ties from the previous note",
+  "@beatTieEnd": {
+    "description": "Switch for a tie arriving at this note"
+  },
+  "beatTieStart": "Ties to the next note",
+  "@beatTieStart": {
+    "description": "Switch for a tie leaving this note"
+  },
+  "beatSyllable": "Syllable",
+  "@beatSyllable": {
+    "description": "Field label for the lyric syllable under the note"
+  },
+  "beatChord": "Chord above the staff",
+  "@beatChord": {
+    "description": "Field label for the chord symbol printed over the note"
+  },
+  "beatExtraLyricLines": "{count, plural, =1{1 further lyric line on this note ({lines}) is kept as it is.} other{{count} further lyric lines on this note ({lines}) are kept as they are.}}",
+  "@beatExtraLyricLines": {
+    "description": "Says that verses after the first are preserved untouched by this sheet",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "lines": {
+        "type": "String"
+      }
+    }
+  },
+  "durationWhole": "whole",
+  "@durationWhole": {
+    "description": "Note value: four quarter beats"
+  },
+  "durationHalf": "half",
+  "@durationHalf": {
+    "description": "Note value: two quarter beats"
+  },
+  "durationQuarter": "quarter",
+  "@durationQuarter": {
+    "description": "Note value: one beat in 4/4"
+  },
+  "durationEighth": "eighth",
+  "@durationEighth": {
+    "description": "Note value: half a beat"
+  },
+  "durationSixteenth": "sixteenth",
+  "@durationSixteenth": {
+    "description": "Note value: a quarter of a beat"
+  },
+  "durationDotted": "{duration}, dotted",
+  "@durationDotted": {
+    "description": "A note value with a dot, as shown in the beat list",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
   }
 }

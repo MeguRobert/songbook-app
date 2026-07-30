@@ -307,4 +307,164 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noSongsHint => 'The songbook that ships with the app is empty.';
+
+  @override
+  String get actionEdit => 'Edit';
+
+  @override
+  String get actionApply => 'Apply';
+
+  @override
+  String get actionDiscard => 'Discard';
+
+  @override
+  String get discardTitle => 'Discard corrections?';
+
+  @override
+  String get discardBody =>
+      'The changes on this screen have not been saved to the song.';
+
+  @override
+  String get discardKeepEditing => 'Keep editing';
+
+  @override
+  String get notationNoneStored =>
+      'This song has no engraved notation stored, or is no longer on this device.';
+
+  @override
+  String notationVerse(int number) {
+    return 'Verse $number';
+  }
+
+  @override
+  String notationMeasure(int number) {
+    return 'Measure $number';
+  }
+
+  @override
+  String get notationPickup => 'Pickup';
+
+  @override
+  String notationPickupBeats(int count, String beats) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$beats beats before bar 1',
+      one: '$beats beat before bar 1',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notationMeasureBeats(String total, int expected) {
+    return '$total / $expected beats';
+  }
+
+  @override
+  String get notationNoBeats => 'No beats in this measure.';
+
+  @override
+  String notationStalePickupNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count beats sit in this song’s old separate pickup list, which nothing reads, so they are not shown above or below. An upbeat belongs in a leading measure instead.',
+      one:
+          '1 beat sits in this song’s old separate pickup list, which nothing reads, so it is not shown above or below. An upbeat belongs in a leading measure instead.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get beatRestShort => 'rest';
+
+  @override
+  String get beatActions => 'Beat actions';
+
+  @override
+  String get beatInsertAfter => 'Insert after';
+
+  @override
+  String get beatEditTitle => 'EDIT BEAT';
+
+  @override
+  String get beatRest => 'Rest';
+
+  @override
+  String get beatNote => 'Note';
+
+  @override
+  String get beatAccidental => 'Accidental';
+
+  @override
+  String get accidentalNatural => 'natural';
+
+  @override
+  String get accidentalSharp => 'sharp';
+
+  @override
+  String get accidentalFlat => 'flat';
+
+  @override
+  String get beatOctave => 'Octave';
+
+  @override
+  String get octaveLower => 'Lower octave';
+
+  @override
+  String get octaveHigher => 'Higher octave';
+
+  @override
+  String get beatDuration => 'Duration';
+
+  @override
+  String get beatDotted => 'Dotted';
+
+  @override
+  String get beatDottedHint => 'One and a half times the duration';
+
+  @override
+  String get beatTieEnd => 'Ties from the previous note';
+
+  @override
+  String get beatTieStart => 'Ties to the next note';
+
+  @override
+  String get beatSyllable => 'Syllable';
+
+  @override
+  String get beatChord => 'Chord above the staff';
+
+  @override
+  String beatExtraLyricLines(int count, String lines) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count further lyric lines on this note ($lines) are kept as they are.',
+      one: '1 further lyric line on this note ($lines) is kept as it is.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get durationWhole => 'whole';
+
+  @override
+  String get durationHalf => 'half';
+
+  @override
+  String get durationQuarter => 'quarter';
+
+  @override
+  String get durationEighth => 'eighth';
+
+  @override
+  String get durationSixteenth => 'sixteenth';
+
+  @override
+  String durationDotted(String duration) {
+    return '$duration, dotted';
+  }
 }

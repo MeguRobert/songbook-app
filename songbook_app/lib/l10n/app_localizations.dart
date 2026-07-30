@@ -645,6 +645,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The songbook that ships with the app is empty.'**
   String get noSongsHint;
+
+  /// Open something for correction
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get actionEdit;
+
+  /// Commit the fields of a bottom sheet back to the caller
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get actionApply;
+
+  /// Leave a screen and lose the unsaved changes on it
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get actionDiscard;
+
+  /// Title of the prompt shown when leaving the notation editor dirty
+  ///
+  /// In en, this message translates to:
+  /// **'Discard corrections?'**
+  String get discardTitle;
+
+  /// Says what is about to be lost
+  ///
+  /// In en, this message translates to:
+  /// **'The changes on this screen have not been saved to the song.'**
+  String get discardBody;
+
+  /// Dismiss the discard prompt and stay on the screen
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get discardKeepEditing;
+
+  /// Shown when the notation editor is opened for a song it cannot edit
+  ///
+  /// In en, this message translates to:
+  /// **'This song has no engraved notation stored, or is no longer on this device.'**
+  String get notationNoneStored;
+
+  /// Header above a notated verse in the beat list
+  ///
+  /// In en, this message translates to:
+  /// **'Verse {number}'**
+  String notationVerse(int number);
+
+  /// Header above one measure's beats
+  ///
+  /// In en, this message translates to:
+  /// **'Measure {number}'**
+  String notationMeasure(int number);
+
+  /// Header for an anacrusis — the short opening bar before bar 1. A score does not number it.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup'**
+  String get notationPickup;
+
+  /// How long the anacrusis is. `beats` is already formatted for display ("3", "3.5"); `count` only selects singular or plural.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{beats} beat before bar 1} other{{beats} beats before bar 1}}'**
+  String notationPickupBeats(int count, String beats);
+
+  /// What a measure's beats add up to against the time signature. Turns red when the two disagree.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} / {expected} beats'**
+  String notationMeasureBeats(String total, int expected);
+
+  /// Shown for a measure whose last beat was deleted
+  ///
+  /// In en, this message translates to:
+  /// **'No beats in this measure.'**
+  String get notationNoBeats;
+
+  /// Warns that beats in the superseded SongNotation.pickup field are invisible everywhere
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 beat sits in this song’s old separate pickup list, which nothing reads, so it is not shown above or below. An upbeat belongs in a leading measure instead.} other{{count} beats sit in this song’s old separate pickup list, which nothing reads, so they are not shown above or below. An upbeat belongs in a leading measure instead.}}'**
+  String notationStalePickupNotice(int count);
+
+  /// Stands in for the pitch of a rest in the beat list. Lower case: it sits where a pitch like "F4" would.
+  ///
+  /// In en, this message translates to:
+  /// **'rest'**
+  String get beatRestShort;
+
+  /// Tooltip on a beat row's overflow menu
+  ///
+  /// In en, this message translates to:
+  /// **'Beat actions'**
+  String get beatActions;
+
+  /// Beat menu: add a new beat behind this one
+  ///
+  /// In en, this message translates to:
+  /// **'Insert after'**
+  String get beatInsertAfter;
+
+  /// Heading of the beat-fields bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'EDIT BEAT'**
+  String get beatEditTitle;
+
+  /// Switch that turns a note into a rest
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get beatRest;
+
+  /// Field label for the note letter (C–B)
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get beatNote;
+
+  /// Field label for sharp/flat/natural
+  ///
+  /// In en, this message translates to:
+  /// **'Accidental'**
+  String get beatAccidental;
+
+  /// Accidental option: no sharp or flat. Named rather than shown as ♮, which rendered unreadably in a browser.
+  ///
+  /// In en, this message translates to:
+  /// **'natural'**
+  String get accidentalNatural;
+
+  /// Accidental option: raised a semitone (♯)
+  ///
+  /// In en, this message translates to:
+  /// **'sharp'**
+  String get accidentalSharp;
+
+  /// Accidental option: lowered a semitone (♭)
+  ///
+  /// In en, this message translates to:
+  /// **'flat'**
+  String get accidentalFlat;
+
+  /// Field label above the octave stepper
+  ///
+  /// In en, this message translates to:
+  /// **'Octave'**
+  String get beatOctave;
+
+  /// Tooltip on the octave stepper's minus
+  ///
+  /// In en, this message translates to:
+  /// **'Lower octave'**
+  String get octaveLower;
+
+  /// Tooltip on the octave stepper's plus
+  ///
+  /// In en, this message translates to:
+  /// **'Higher octave'**
+  String get octaveHigher;
+
+  /// Field label for the note value
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get beatDuration;
+
+  /// Switch that adds a dot to the note
+  ///
+  /// In en, this message translates to:
+  /// **'Dotted'**
+  String get beatDotted;
+
+  /// Explains what a dot does
+  ///
+  /// In en, this message translates to:
+  /// **'One and a half times the duration'**
+  String get beatDottedHint;
+
+  /// Switch for a tie arriving at this note
+  ///
+  /// In en, this message translates to:
+  /// **'Ties from the previous note'**
+  String get beatTieEnd;
+
+  /// Switch for a tie leaving this note
+  ///
+  /// In en, this message translates to:
+  /// **'Ties to the next note'**
+  String get beatTieStart;
+
+  /// Field label for the lyric syllable under the note
+  ///
+  /// In en, this message translates to:
+  /// **'Syllable'**
+  String get beatSyllable;
+
+  /// Field label for the chord symbol printed over the note
+  ///
+  /// In en, this message translates to:
+  /// **'Chord above the staff'**
+  String get beatChord;
+
+  /// Says that verses after the first are preserved untouched by this sheet
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 further lyric line on this note ({lines}) is kept as it is.} other{{count} further lyric lines on this note ({lines}) are kept as they are.}}'**
+  String beatExtraLyricLines(int count, String lines);
+
+  /// Note value: four quarter beats
+  ///
+  /// In en, this message translates to:
+  /// **'whole'**
+  String get durationWhole;
+
+  /// Note value: two quarter beats
+  ///
+  /// In en, this message translates to:
+  /// **'half'**
+  String get durationHalf;
+
+  /// Note value: one beat in 4/4
+  ///
+  /// In en, this message translates to:
+  /// **'quarter'**
+  String get durationQuarter;
+
+  /// Note value: half a beat
+  ///
+  /// In en, this message translates to:
+  /// **'eighth'**
+  String get durationEighth;
+
+  /// Note value: a quarter of a beat
+  ///
+  /// In en, this message translates to:
+  /// **'sixteenth'**
+  String get durationSixteenth;
+
+  /// A note value with a dot, as shown in the beat list
+  ///
+  /// In en, this message translates to:
+  /// **'{duration}, dotted'**
+  String durationDotted(String duration);
 }
 
 class _AppLocalizationsDelegate

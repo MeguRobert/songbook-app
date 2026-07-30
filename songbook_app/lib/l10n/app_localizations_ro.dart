@@ -311,4 +311,164 @@ class AppLocalizationsRo extends AppLocalizations {
   @override
   String get noSongsHint =>
       'Cartea de cântece livrată cu aplicația este goală.';
+
+  @override
+  String get actionEdit => 'Editează';
+
+  @override
+  String get actionApply => 'Aplică';
+
+  @override
+  String get actionDiscard => 'Renunță';
+
+  @override
+  String get discardTitle => 'Renunți la corecturi?';
+
+  @override
+  String get discardBody =>
+      'Modificările de pe acest ecran nu au fost salvate în cântec.';
+
+  @override
+  String get discardKeepEditing => 'Continuă editarea';
+
+  @override
+  String get notationNoneStored =>
+      'Acest cântec nu are partitură salvată sau nu se mai află pe acest dispozitiv.';
+
+  @override
+  String notationVerse(int number) {
+    return 'Strofa $number';
+  }
+
+  @override
+  String notationMeasure(int number) {
+    return 'Măsura $number';
+  }
+
+  @override
+  String get notationPickup => 'Anacruză';
+
+  @override
+  String notationPickupBeats(int count, String beats) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$beats timpi înainte de măsura 1',
+      one: '$beats timp înainte de măsura 1',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notationMeasureBeats(String total, int expected) {
+    return '$total / $expected timpi';
+  }
+
+  @override
+  String get notationNoBeats => 'Nicio notă în această măsură.';
+
+  @override
+  String notationStalePickupNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count timpi se află în vechea listă separată de anacruză a acestui cântec, pe care nimic nu o citește, așa că nu apar nici deasupra, nici dedesubt. Anacruza își are locul într-o măsură introductivă.',
+      one:
+          '1 timp se află în vechea listă separată de anacruză a acestui cântec, pe care nimic nu o citește, așa că nu apare nici deasupra, nici dedesubt. Anacruza își are locul într-o măsură introductivă.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get beatRestShort => 'pauză';
+
+  @override
+  String get beatActions => 'Acțiuni pentru notă';
+
+  @override
+  String get beatInsertAfter => 'Inserează după';
+
+  @override
+  String get beatEditTitle => 'EDITARE NOTĂ';
+
+  @override
+  String get beatRest => 'Pauză';
+
+  @override
+  String get beatNote => 'Notă';
+
+  @override
+  String get beatAccidental => 'Alterație';
+
+  @override
+  String get accidentalNatural => 'becar';
+
+  @override
+  String get accidentalSharp => 'diez';
+
+  @override
+  String get accidentalFlat => 'bemol';
+
+  @override
+  String get beatOctave => 'Octavă';
+
+  @override
+  String get octaveLower => 'Octavă mai joasă';
+
+  @override
+  String get octaveHigher => 'Octavă mai înaltă';
+
+  @override
+  String get beatDuration => 'Durată';
+
+  @override
+  String get beatDotted => 'Cu punct';
+
+  @override
+  String get beatDottedHint => 'De o dată și jumătate durata';
+
+  @override
+  String get beatTieEnd => 'Legată de nota anterioară';
+
+  @override
+  String get beatTieStart => 'Legată de nota următoare';
+
+  @override
+  String get beatSyllable => 'Silabă';
+
+  @override
+  String get beatChord => 'Acord deasupra portativului';
+
+  @override
+  String beatExtraLyricLines(int count, String lines) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Încă $count rânduri de text pe această notă ($lines) rămân neschimbate.',
+      one: 'Încă 1 rând de text pe această notă ($lines) rămâne neschimbat.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get durationWhole => 'întreagă';
+
+  @override
+  String get durationHalf => 'doime';
+
+  @override
+  String get durationQuarter => 'pătrime';
+
+  @override
+  String get durationEighth => 'optime';
+
+  @override
+  String get durationSixteenth => 'șaisprezecime';
+
+  @override
+  String durationDotted(String duration) {
+    return '$duration, cu punct';
+  }
 }

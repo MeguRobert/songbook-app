@@ -6,12 +6,26 @@ import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
 import '../../../domain/services/notation_editor.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 import '../../widgets/sheet_music/sheet_music_renderer.dart';
 
 /// What a beat row's overflow menu offers.
 enum _BeatAction { edit, insertAfter, delete }
+
+/// The note value as a word in the current language.
+///
+/// A switch rather than a map keyed on the enum, so adding a [NoteDuration] is a
+/// compile error here instead of a silently missing label.
+String _durationName(AppLocalizations l10n, NoteDuration duration) =>
+    switch (duration) {
+      NoteDuration.whole => l10n.durationWhole,
+      NoteDuration.half => l10n.durationHalf,
+      NoteDuration.quarter => l10n.durationQuarter,
+      NoteDuration.eighth => l10n.durationEighth,
+      NoteDuration.sixteenth => l10n.durationSixteenth,
+    };
 
 /// Corrects the notation of a song the user imported.
 ///
@@ -112,23 +126,23 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
 
   /// Whether to leave with corrections unsaved. Null/false means stay.
   Future<bool> _askDiscard() async {
+    final l10n = AppLocalizations.of(context);
     final discard = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Discard corrections?'),
-        content: const Text(
-            'The changes on this screen have not been saved to the song.'),
+        title: Text(l10n.discardTitle),
+        content: Text(l10n.discardBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Keep editing'),
+            child: Text(l10n.discardKeepEditing),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(dialogContext).colorScheme.error,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Discard'),
+            child: Text(l10n.actionDiscard),
           ),
         ],
       ),
@@ -138,18 +152,18 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final song = _song;
     final notation = _notation;
 
     if (song == null || notation == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Correct the notation')),
-        body: const Center(
+        appBar: AppBar(title: Text(l10n.menuEditNotation)),
+        body: Center(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Text(
-              'This song has no engraved notation stored, or is no longer on '
-              'this device.',
+              l10n.notationNoneStored,
               textAlign: TextAlign.center,
             ),
           ),
@@ -173,11 +187,11 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Correct the notation'),
+          title: Text(l10n.menuEditNotation),
           actions: [
             TextButton(
               onPressed: _dirty ? _save : null,
-              child: const Text('Save'),
+              child: Text(l10n.actionSave),
             ),
           ],
         ),
@@ -254,7 +268,7 @@ class _VerseHeader extends StatelessWidget {
       color: theme.colorScheme.primaryContainer,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Text(
-        'Verse $number',
+        AppLocalizations.of(context).notationVerse(number),
         style: theme.textTheme.labelLarge
             ?.copyWith(color: theme.colorScheme.onPrimaryContainer),
       ),
@@ -292,6 +306,7 @@ class _MeasureHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final short = (total - expected).abs() > 0.001;
     final colour =
         short ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant;
@@ -301,12 +316,15 @@ class _MeasureHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
-          Text(isPickup ? 'Pickup' : 'Measure $number',
+          Text(isPickup ? l10n.notationPickup : l10n.notationMeasure(number ?? 0),
               style: theme.textTheme.labelLarge),
           const Spacer(),
           if (isPickup)
             Text(
-              '${format(total)} ${total == 1 ? 'beat' : 'beats'} before bar 1',
+              // `format(total)` is already display-ready ("3", "3.5"); the count
+              // only picks singular from plural, so it is the exact-one test and
+              // not a rounding of the beat count — 0.5 must not read "1 beat".
+              l10n.notationPickupBeats(total == 1 ? 1 : 2, format(total)),
               style: theme.textTheme.labelMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             )
@@ -316,7 +334,7 @@ class _MeasureHeader extends StatelessWidget {
               const SizedBox(width: 4),
             ],
             Text(
-              '${format(total)} / $expected beats',
+              l10n.notationMeasureBeats(format(total), expected),
               style: theme.textTheme.labelMedium?.copyWith(color: colour),
             ),
           ],
@@ -341,7 +359,7 @@ class _EmptyMeasureRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Text(
-        'No beats in this measure.',
+        AppLocalizations.of(context).notationNoBeats,
         style: theme.textTheme.bodySmall
             ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
       ),
@@ -376,10 +394,7 @@ class _PickupNotice extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$count ${count == 1 ? 'beat sits' : 'beats sit'} in this song’s '
-              'old separate pickup list, which nothing reads, so '
-              '${count == 1 ? 'it is' : 'they are'} not shown above or below. An '
-              'upbeat belongs in a leading measure instead.',
+              AppLocalizations.of(context).notationStalePickupNotice(count),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSecondaryContainer),
             ),
@@ -402,15 +417,18 @@ class _BeatRow extends StatelessWidget {
     required this.onAction,
   });
 
-  /// The duration as words. `.name` rather than a glyph: a glyph in the Bravura
-  /// font is what the preview above is for, and words are what the dropdown in
-  /// the edit sheet offers, so the two agree.
-  String get _duration =>
-      beat.dotted ? '${beat.duration.name}, dotted' : beat.duration.name;
+  /// The duration as words rather than a glyph: a glyph in the Bravura font is
+  /// what the preview above is for, and words are what the dropdown in the edit
+  /// sheet offers, so the two agree.
+  String _duration(AppLocalizations l10n) {
+    final name = _durationName(l10n, beat.duration);
+    return beat.dotted ? l10n.durationDotted(name) : name;
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final syllables = beat.allSyllables.join(' / ');
 
     return ListTile(
@@ -421,7 +439,7 @@ class _BeatRow extends StatelessWidget {
           SizedBox(
             width: 52,
             child: Text(
-              beat.isRest ? 'rest' : beat.pitch,
+              beat.isRest ? l10n.beatRestShort : beat.pitch,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 fontFeatures: const [],
@@ -432,7 +450,7 @@ class _BeatRow extends StatelessWidget {
           SizedBox(
             width: 116,
             child: Text(
-              _duration,
+              _duration(l10n),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               overflow: TextOverflow.ellipsis,
@@ -463,13 +481,15 @@ class _BeatRow extends StatelessWidget {
         key: Key('beat-menu-${address.verse}-${address.measure}-'
             '${address.beat}'),
         icon: const Icon(Icons.more_vert, size: 18),
-        tooltip: 'Beat actions',
+        tooltip: l10n.beatActions,
         onSelected: (action) => onAction(action, address, beat),
-        itemBuilder: (context) => const [
-          PopupMenuItem(value: _BeatAction.edit, child: Text('Edit')),
+        itemBuilder: (context) => [
+          PopupMenuItem(value: _BeatAction.edit, child: Text(l10n.actionEdit)),
           PopupMenuItem(
-              value: _BeatAction.insertAfter, child: Text('Insert after')),
-          PopupMenuItem(value: _BeatAction.delete, child: Text('Delete')),
+              value: _BeatAction.insertAfter,
+              child: Text(l10n.beatInsertAfter)),
+          PopupMenuItem(
+              value: _BeatAction.delete, child: Text(l10n.actionDelete)),
         ],
       ),
     );
@@ -496,15 +516,23 @@ class _BeatFieldsSheet extends StatefulWidget {
 class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
   static const _letters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
-  /// Label to stored accidental. The stored form is what MusicXML and the
-  /// transposer already use.
+  /// The stored accidentals, in the order the dropdown offers them. The stored
+  /// form is what MusicXML and the transposer already use.
   ///
   /// Named rather than shown as ♮/♯/♭. In the release build in a browser, ♮
   /// rendered as an unreadable mark sitting below the baseline in Roboto, which
   /// left the selected accidental indistinguishable from the other two — on the
   /// one control here that most needs to be unambiguous, since a wrong
   /// accidental is both a common OMR error and invisible once saved.
-  static const _accidentals = {'natural': '', 'sharp': '#', 'flat': 'b'};
+  static const _accidentals = ['', '#', 'b'];
+
+  /// The name of a stored accidental in the current language.
+  static String _accidentalName(AppLocalizations l10n, String stored) =>
+      switch (stored) {
+        '#' => l10n.accidentalSharp,
+        'b' => l10n.accidentalFlat,
+        _ => l10n.accidentalNatural,
+      };
 
   late bool _isRest;
   late String _letter;
@@ -533,9 +561,8 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
     final parsed = beat.parsedPitch;
     final note = parsed?.$1 ?? 'C';
     _letter = _letters.contains(note[0]) ? note[0] : 'C';
-    _accidental = note.length > 1 && _accidentals.containsValue(note[1])
-        ? note[1]
-        : '';
+    _accidental =
+        note.length > 1 && _accidentals.contains(note[1]) ? note[1] : '';
     _octave = parsed?.$2 ?? 4;
     _duration = beat.duration;
     _dotted = beat.dotted;
@@ -582,6 +609,7 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -596,7 +624,7 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('EDIT BEAT',
+              Text(l10n.beatEditTitle,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.bold,
@@ -606,7 +634,7 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
               SwitchListTile(
                 key: const Key('beat-rest'),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Rest'),
+                title: Text(l10n.beatRest),
                 value: _isRest,
                 onChanged: (value) => setState(() => _isRest = value),
               ),
@@ -617,7 +645,8 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
                       child: DropdownButtonFormField<String>(
                         key: const Key('beat-note'),
                         initialValue: _letter,
-                        decoration: const InputDecoration(labelText: 'Note'),
+                        decoration:
+                            InputDecoration(labelText: l10n.beatNote),
                         items: [
                           for (final letter in _letters)
                             DropdownMenuItem(
@@ -633,11 +662,13 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
                         key: const Key('beat-accidental'),
                         initialValue: _accidental,
                         decoration:
-                            const InputDecoration(labelText: 'Accidental'),
+                            InputDecoration(labelText: l10n.beatAccidental),
                         items: [
-                          for (final entry in _accidentals.entries)
+                          for (final stored in _accidentals)
                             DropdownMenuItem(
-                                value: entry.value, child: Text(entry.key)),
+                              value: stored,
+                              child: Text(_accidentalName(l10n, stored)),
+                            ),
                         ],
                         onChanged: (value) =>
                             setState(() => _accidental = value ?? ''),
@@ -654,11 +685,13 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
               DropdownButtonFormField<NoteDuration>(
                 key: const Key('beat-duration'),
                 initialValue: _duration,
-                decoration: const InputDecoration(labelText: 'Duration'),
+                decoration: InputDecoration(labelText: l10n.beatDuration),
                 items: [
                   for (final duration in NoteDuration.values)
                     DropdownMenuItem(
-                        value: duration, child: Text(duration.name)),
+                      value: duration,
+                      child: Text(_durationName(l10n, duration)),
+                    ),
                 ],
                 onChanged: (value) =>
                     setState(() => _duration = value ?? _duration),
@@ -666,22 +699,22 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
               SwitchListTile(
                 key: const Key('beat-dotted'),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Dotted'),
-                subtitle: const Text('One and a half times the duration'),
+                title: Text(l10n.beatDotted),
+                subtitle: Text(l10n.beatDottedHint),
                 value: _dotted,
                 onChanged: (value) => setState(() => _dotted = value),
               ),
               SwitchListTile(
                 key: const Key('beat-tie-end'),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Ties from the previous note'),
+                title: Text(l10n.beatTieEnd),
                 value: _tieEnd,
                 onChanged: (value) => setState(() => _tieEnd = value),
               ),
               SwitchListTile(
                 key: const Key('beat-tie-start'),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Ties to the next note'),
+                title: Text(l10n.beatTieStart),
                 value: _tieStart,
                 onChanged: (value) => setState(() => _tieStart = value),
               ),
@@ -689,17 +722,18 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
               TextField(
                 key: const Key('beat-syllable'),
                 controller: _syllable,
-                decoration: const InputDecoration(
-                  labelText: 'Syllable',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.beatSyllable,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               if (_extraSyllableLines.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
-                  '${_extraSyllableLines.length} further lyric '
-                  '${_extraSyllableLines.length == 1 ? 'line' : 'lines'} on this '
-                  'note (${_extraSyllableLines.join(', ')}) are kept as they are.',
+                  l10n.beatExtraLyricLines(
+                    _extraSyllableLines.length,
+                    _extraSyllableLines.join(', '),
+                  ),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
@@ -708,9 +742,9 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
               TextField(
                 key: const Key('beat-chord'),
                 controller: _chord,
-                decoration: const InputDecoration(
-                  labelText: 'Chord above the staff',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.beatChord,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -719,10 +753,10 @@ class _BeatFieldsSheetState extends State<_BeatFieldsSheet> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
+                    child: Text(l10n.actionCancel),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton(onPressed: _apply, child: const Text('Apply')),
+                  FilledButton(onPressed: _apply, child: Text(l10n.actionApply)),
                 ],
               ),
             ],
@@ -748,10 +782,11 @@ class _OctaveStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Octave', style: theme.textTheme.bodySmall),
+        Text(l10n.beatOctave, style: theme.textTheme.bodySmall),
         Row(
           children: [
             IconButton(
@@ -759,7 +794,7 @@ class _OctaveStepper extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               onPressed: value > _min ? () => onChanged(value - 1) : null,
               icon: const Icon(Icons.remove),
-              tooltip: 'Lower octave',
+              tooltip: l10n.octaveLower,
             ),
             Text('$value', style: theme.textTheme.titleMedium),
             IconButton(
@@ -767,7 +802,7 @@ class _OctaveStepper extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               onPressed: value < _max ? () => onChanged(value + 1) : null,
               icon: const Icon(Icons.add),
-              tooltip: 'Higher octave',
+              tooltip: l10n.octaveHigher,
             ),
           ],
         ),
