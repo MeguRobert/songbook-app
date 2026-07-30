@@ -8,19 +8,29 @@ import '../../data/models/chord_position.dart';
 import '../../data/models/lyric_line.dart';
 import '../../data/models/notation.dart';
 import '../../data/models/verse.dart';
+import 'import_notice.dart';
 
 /// Thrown when the input is not usable MusicXML at all.
 ///
 /// Anything that is merely *lossy* — an unsupported note value, a voice the app
 /// cannot render — is reported through [MusicXmlImportResult.warnings] instead,
 /// so a partially understood score still imports.
+///
+/// Carries an [ImportNotice] rather than a message. Deliberately no `String` on
+/// it at all: this importer has no `BuildContext`, so any sentence it built
+/// would be English on a screen that is otherwise Hungarian or Romanian, and the
+/// absence of a message field is what forces a caller through the localised
+/// formatter instead of reaching for prose that is already here.
 class MusicXmlImportException implements Exception {
-  final String message;
+  final ImportNotice notice;
 
-  const MusicXmlImportException(this.message);
+  const MusicXmlImportException(this.notice);
+
+  /// What went wrong, for a caller that wants to branch on it.
+  ImportNoticeCode get code => notice.code;
 
   @override
-  String toString() => 'MusicXmlImportException: $message';
+  String toString() => 'MusicXmlImportException($notice)';
 }
 
 /// What one measure's `<barline>` elements said, beyond the notes.
@@ -123,7 +133,9 @@ class MusicXmlImportResult {
 
   /// Non-fatal problems: dropped grace notes, approximated note values,
   /// unrendered voices. Meant to be surfaced to whoever ran the import.
-  final List<String> warnings;
+  ///
+  /// Codes rather than sentences, for the reason [MusicXmlImportException] gives.
+  final List<ImportNotice> warnings;
 
   const MusicXmlImportResult({
     required this.notation,
@@ -183,20 +195,26 @@ class MusicXmlImporter {
   }) {
     final source = _stripBom(xml).trim();
     if (source.isEmpty) {
-      throw const MusicXmlImportException('The MusicXML input is empty.');
+      throw const MusicXmlImportException(
+        ImportNotice(ImportNoticeCode.emptyXmlInput),
+      );
     }
 
     final XmlDocument document;
     try {
       document = XmlDocument.parse(source);
     } on XmlException catch (e) {
-      throw MusicXmlImportException('The file is not valid XML: ${e.message}');
+      // The parser's own reason names an element and an offset, which is the
+      // only usable clue to where the file is broken, so it travels as an
+      // argument rather than being folded into a sentence here.
+      throw MusicXmlImportException(
+        ImportNotice(ImportNoticeCode.invalidXml, text: e.message),
+      );
     }
 
     if (document.rootElement.localName == 'container') {
       throw const MusicXmlImportException(
-        'This is an .mxl container manifest, not a score. '
-        'Pass the whole .mxl file to importCompressed instead.',
+        ImportNotice(ImportNoticeCode.containerManifestNotScore),
       );
     }
 
@@ -228,14 +246,18 @@ class MusicXmlImporter {
 
   String _scoreXmlFromMxl(List<int> bytes) {
     if (bytes.isEmpty) {
-      throw const MusicXmlImportException('The .mxl input is empty.');
+      throw const MusicXmlImportException(
+        ImportNotice(ImportNoticeCode.emptyMxlInput),
+      );
     }
 
     final Archive archive;
     try {
       archive = ZipDecoder().decodeBytes(bytes);
     } catch (e) {
-      throw MusicXmlImportException('Not a readable .mxl archive: $e');
+      throw MusicXmlImportException(
+        ImportNotice(ImportNoticeCode.unreadableArchive, text: '$e'),
+      );
     }
 
     final manifest = archive.files.firstWhereOrNull(
@@ -260,7 +282,7 @@ class MusicXmlImporter {
     });
     if (fallback == null) {
       throw const MusicXmlImportException(
-        'The .mxl archive contains no MusicXML score entry.',
+        ImportNotice(ImportNoticeCode.noScoreInArchive),
       );
     }
     return _entryAsString(fallback);
@@ -297,14 +319,11 @@ class MusicXmlImporter {
 
   MusicXmlImportResult _parse(XmlDocument document, int measuresPerLine) {
     final root = document.rootElement;
-    final warnings = <String>[];
+    final warnings = <ImportNotice>[];
     final notices = _Notices();
 
     if (root.localName == 'score-timewise') {
-      warnings.add(
-        'score-timewise files are not fully supported; measures may be '
-        'grouped incorrectly. Convert to score-partwise for a clean import.',
-      );
+      warnings.add(const ImportNotice(ImportNoticeCode.timewiseScore));
     }
 
     final title = _readTitle(root);
@@ -386,21 +405,17 @@ class MusicXmlImporter {
           );
 
     if (melody == null) {
-      warnings.add('No notes were found in the file.');
+      warnings.add(const ImportNotice(ImportNoticeCode.noNotes));
     }
     if (additional.isNotEmpty) {
-      final declared = additional.where((s) => !s.isChordMember).length;
-      final stacked = additional.length - declared;
-      final phrases = <String>[
-        if (declared > 0) '$declared additional voice${declared == 1 ? '' : 's'}',
-        if (stacked > 0) '$stacked chord line${stacked == 1 ? '' : 's'}',
-      ];
-      warnings.add(
-        'Found ${phrases.join(' and ')} beyond the melody. Only the melody is '
-        'rendered; the rest are kept in additionalVoices.',
-      );
+      // One count, not a declared/chord-derived split. The chord stacks get
+      // their own notice below, so naming them twice was noise — and the split
+      // was reported as a sentence assembled from two fragments, which is the
+      // reliable way to end up with a wrong translation.
+      warnings.add(ImportNotice(ImportNoticeCode.extraVoicesKept,
+          count: additional.length));
     }
-    warnings.addAll(notices.messages);
+    warnings.addAll(notices.notices);
 
     final additionalVoices = [
       for (final stream in additional)
@@ -1136,24 +1151,30 @@ class _Notices {
   int multipleDots = 0;
   final Set<String> unsupportedTypes = {};
 
-  List<String> get messages => [
+  /// The counters as notices, in the order they are worth reading.
+  ///
+  /// The count is what each carries; the plural agreement that used to be spelled
+  /// out here with `${n == 1 ? '' : 's'}` is now the ARB's business, which is the
+  /// only place it can be right for Hungarian and Romanian too.
+  List<ImportNotice> get notices => [
         if (graceNotes > 0)
-          '$graceNotes grace note${graceNotes == 1 ? '' : 's'} skipped: the '
-              'notation model has no grace-note beat.',
+          ImportNotice(ImportNoticeCode.graceNotesSkipped, count: graceNotes),
         if (chordStacks > 0)
-          '$chordStacks chord${chordStacks == 1 ? '' : 's'} reduced to the top '
-              'note; the lower notes are kept in additionalVoices.',
+          ImportNotice(ImportNoticeCode.chordsReducedToTopNote,
+              count: chordStacks),
         if (doubleAccidentals > 0)
-          '$doubleAccidentals double accidental'
-              '${doubleAccidentals == 1 ? '' : 's'} approximated to a single '
-              'sharp/flat — the model stores one accidental character.',
+          ImportNotice(ImportNoticeCode.doubleAccidentalsApproximated,
+              count: doubleAccidentals),
         if (multipleDots > 0)
-          '$multipleDots double-dotted note${multipleDots == 1 ? '' : 's'} '
-              'imported as single-dotted.',
+          ImportNotice(ImportNoticeCode.doubleDotsReduced, count: multipleDots),
         if (unsupportedTypes.isNotEmpty)
-          'Unsupported note value${unsupportedTypes.length == 1 ? '' : 's'} '
-              '(${(unsupportedTypes.toList()..sort()).join(', ')}) approximated '
-              'to the nearest value the app can draw.',
+          ImportNotice(
+            ImportNoticeCode.unsupportedNoteValues,
+            count: unsupportedTypes.length,
+            // Sorted, so the same file always reports the same string — an
+            // unordered Set would make the message flap between runs.
+            text: (unsupportedTypes.toList()..sort()).join(', '),
+          ),
       ];
 }
 

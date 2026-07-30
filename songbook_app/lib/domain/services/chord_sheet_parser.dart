@@ -1,6 +1,7 @@
 import '../../data/models/chord_position.dart';
 import '../../data/models/lyric_line.dart';
 import '../../data/models/verse.dart';
+import 'import_notice.dart';
 
 /// The result of parsing a pasted chord sheet.
 ///
@@ -28,7 +29,11 @@ class ParsedChordSheet {
 
   /// Non-fatal problems: ambiguous lines, brackets that were not chords,
   /// directives we did not understand. Each entry names the source line.
-  final List<String> warnings;
+  ///
+  /// Codes rather than sentences. This parser has no `BuildContext` and the app
+  /// is read in three languages, so it says what happened and the presentation
+  /// layer says it in words — see [ImportNotice].
+  final List<ImportNotice> warnings;
 
   const ParsedChordSheet({
     this.verses = const [],
@@ -169,7 +174,7 @@ class ChordSheetParser {
     final verses = <Verse>[];
     final comments = <String>[];
     final chorusVerses = <int>{};
-    final warnings = <String>[];
+    final warnings = <ImportNotice>[];
     var pending = <LyricLine>[];
     String? title;
     String? key;
@@ -224,7 +229,8 @@ class ChordSheetParser {
             flush();
             inChorus = false;
           default:
-            warnings.add('Line $lineNo: ignored unknown directive "$trimmed".');
+            warnings.add(ImportNotice(ImportNoticeCode.unknownDirective,
+                line: lineNo, text: trimmed));
         }
         continue;
       }
@@ -250,8 +256,8 @@ class ChordSheetParser {
       }
 
       if (_bareRoot.hasMatch(trimmed)) {
-        warnings.add('Line $lineNo: "$trimmed" could be a one-chord line or a '
-            'lyric; treated as a lyric.');
+        warnings.add(ImportNotice(ImportNoticeCode.ambiguousBareRoot,
+            line: lineNo, text: trimmed));
       }
       pending.add(LyricLine(text: raw.trimRight()));
     }
@@ -279,7 +285,7 @@ class ChordSheetParser {
 
   /// Strips `[…]` markers, recording each one at the length of the text
   /// emitted so far — which is exactly its index in the finished lyric.
-  LyricLine _parseInline(String raw, int lineNo, List<String> warnings) {
+  LyricLine _parseInline(String raw, int lineNo, List<ImportNotice> warnings) {
     final text = StringBuffer();
     final chords = <ChordPosition>[];
 
@@ -297,8 +303,11 @@ class ChordSheetParser {
           }
           // Section markers and repeat counts (`[Chorus]`, `[2x]`) are not
           // chords; keeping them as visible text beats inventing a chord.
-          warnings.add(
-              'Line $lineNo: "[$token]" is not a chord; kept as lyric text.');
+          //
+          // The token goes over without its brackets: they belong to the
+          // sentence, and each language quotes it its own way.
+          warnings.add(ImportNotice(ImportNoticeCode.bracketNotAChord,
+              line: lineNo, text: token));
         }
       }
       text.write(char);
