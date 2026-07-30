@@ -182,7 +182,7 @@ class AppLocalizationsRo extends AppLocalizations {
   String get presetSheetMusic => 'Partitură';
 
   @override
-  String get presetChords => 'Acorduri';
+  String get presetChords => 'Acord';
 
   @override
   String get presetLyrics => 'Versuri';
@@ -291,4 +291,24 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get setlistStop => 'Oprește lista de cântece';
+
+  @override
+  String get showAllSongs => 'Arată toate cântecele';
+
+  @override
+  String errorDetail(String detail) {
+    return 'Eroare: $detail';
+  }
+
+  @override
+  String noSongsInBook(String book) {
+    return 'Nu există cântece în „$book”';
+  }
+
+  @override
+  String get noSongsAvailable => 'Niciun cântec disponibil';
+
+  @override
+  String get noSongsHint =>
+      'Cartea de cântece livrată cu aplicația este goală.';
 }

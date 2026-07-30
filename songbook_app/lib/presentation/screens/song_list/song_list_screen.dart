@@ -319,6 +319,7 @@ class _EmptyState extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     if (selectedBook != null) {
       return Center(
         child: Column(
@@ -327,34 +328,34 @@ class _EmptyState extends ConsumerWidget {
             const Icon(Icons.menu_book_outlined, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              'No songs in "$selectedBook"',
+              l10n.noSongsInBook(selectedBook!),
               style: const TextStyle(fontSize: 18, color: Colors.grey),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => ref.read(selectedBookProvider.notifier).clear(),
-              child: const Text('Show all songs'),
+              child: Text(l10n.showAllSongs),
             ),
           ],
         ),
       );
     }
 
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.music_off, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
+          const Icon(Icons.music_off, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
           Text(
-            'No songs available',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
+            l10n.noSongsAvailable,
+            style: const TextStyle(fontSize: 18, color: Colors.grey),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            'Add songs to assets/data/songs.json',
-            style: TextStyle(color: Colors.grey),
+            l10n.noSongsHint,
+            style: const TextStyle(color: Colors.grey),
           ),
         ],
       ),

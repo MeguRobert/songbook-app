@@ -387,5 +387,35 @@
   "setlistStop": "Stop playing setlist",
   "@setlistStop": {
     "description": "Tooltip during setlist playback"
+  },
+  "showAllSongs": "Show all songs",
+  "@showAllSongs": {
+    "description": "Button that clears the songbook filter from an empty list"
+  },
+  "errorDetail": "Error: {detail}",
+  "@errorDetail": {
+    "description": "A failure with the underlying message appended",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "noSongsInBook": "No songs in \"{book}\"",
+  "@noSongsInBook": {
+    "description": "Empty state when a songbook filter matches nothing",
+    "placeholders": {
+      "book": {
+        "type": "String"
+      }
+    }
+  },
+  "noSongsAvailable": "No songs available",
+  "@noSongsAvailable": {
+    "description": "Empty state when the whole catalogue is empty"
+  },
+  "noSongsHint": "The songbook that ships with the app is empty.",
+  "@noSongsHint": {
+    "description": "Explains an empty catalogue. Replaces a developer hint naming an asset path, which is not something a singer can act on."
   }
 }

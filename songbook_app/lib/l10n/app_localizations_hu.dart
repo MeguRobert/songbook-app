@@ -182,7 +182,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get presetSheetMusic => 'Kotta';
 
   @override
-  String get presetChords => 'Akkordok';
+  String get presetChords => 'Akkord';
 
   @override
   String get presetLyrics => 'Szöveg';
@@ -275,7 +275,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get favoritesEmptyHint =>
-      'Koppints egy ének szív ikonjára, hogy ide kerülön';
+      'Koppints egy ének szív ikonjára, hogy ide kerülljön';
 
   @override
   String get favoritesBrowse => 'Énekek böngészése';
@@ -291,4 +291,23 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get setlistStop => 'Énekrend leállítása';
+
+  @override
+  String get showAllSongs => 'Összes ének';
+
+  @override
+  String errorDetail(String detail) {
+    return 'Hiba: $detail';
+  }
+
+  @override
+  String noSongsInBook(String book) {
+    return '„$book” nem tartalmaz éneket';
+  }
+
+  @override
+  String get noSongsAvailable => 'Nincs elérhető ének';
+
+  @override
+  String get noSongsHint => 'Az alkalmazással szállított énekeskönyv üres.';
 }

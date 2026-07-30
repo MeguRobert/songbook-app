@@ -615,6 +615,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stop playing setlist'**
   String get setlistStop;
+
+  /// Button that clears the songbook filter from an empty list
+  ///
+  /// In en, this message translates to:
+  /// **'Show all songs'**
+  String get showAllSongs;
+
+  /// A failure with the underlying message appended
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {detail}'**
+  String errorDetail(String detail);
+
+  /// Empty state when a songbook filter matches nothing
+  ///
+  /// In en, this message translates to:
+  /// **'No songs in \"{book}\"'**
+  String noSongsInBook(String book);
+
+  /// Empty state when the whole catalogue is empty
+  ///
+  /// In en, this message translates to:
+  /// **'No songs available'**
+  String get noSongsAvailable;
+
+  /// Explains an empty catalogue. Replaces a developer hint naming an asset path, which is not something a singer can act on.
+  ///
+  /// In en, this message translates to:
+  /// **'The songbook that ships with the app is empty.'**
+  String get noSongsHint;
 }
 
 class _AppLocalizationsDelegate

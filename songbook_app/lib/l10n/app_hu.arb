@@ -53,7 +53,7 @@
   "sectionCapo": "KAPODASZTER",
   "sectionAutoScroll": "AUTOMATIKUS GÖRGETÉS",
   "presetSheetMusic": "Kotta",
-  "presetChords": "Akkordok",
+  "presetChords": "Akkord",
   "presetLyrics": "Szöveg",
   "chordsAboveStaff": "Akkordok a kotta felett",
   "noSheetMusicOpensInChords": "Ehhez az énekhez nincs kotta, ezért az Akkordok nézetben nyílik meg.",
@@ -85,5 +85,10 @@
   "errorLoadingFavorites": "Nem sikerült betölteni a kedvenceket",
   "setlistPrevious": "Előző ének",
   "setlistNext": "Következő ének",
-  "setlistStop": "Énekrend leállítása"
+  "setlistStop": "Énekrend leállítása",
+  "showAllSongs": "Összes ének",
+  "errorDetail": "Hiba: {detail}",
+  "noSongsInBook": "„{book}” nem tartalmaz éneket",
+  "noSongsAvailable": "Nincs elérhető ének",
+  "noSongsHint": "Az alkalmazással szállított énekeskönyv üres."
 }

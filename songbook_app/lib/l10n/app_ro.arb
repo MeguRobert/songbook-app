@@ -53,7 +53,7 @@
   "sectionCapo": "CAPODASTRU",
   "sectionAutoScroll": "DERULARE AUTOMATĂ",
   "presetSheetMusic": "Partitură",
-  "presetChords": "Acorduri",
+  "presetChords": "Acord",
   "presetLyrics": "Versuri",
   "chordsAboveStaff": "Acorduri deasupra portativului",
   "noSheetMusicOpensInChords": "Acest cântec nu are partitură, așa că se deschide în Acorduri.",
@@ -85,5 +85,10 @@
   "errorLoadingFavorites": "Nu am putut încărca favoritele",
   "setlistPrevious": "Cântecul anterior",
   "setlistNext": "Cântecul următor",
-  "setlistStop": "Oprește lista de cântece"
+  "setlistStop": "Oprește lista de cântece",
+  "showAllSongs": "Arată toate cântecele",
+  "errorDetail": "Eroare: {detail}",
+  "noSongsInBook": "Nu există cântece în „{book}”",
+  "noSongsAvailable": "Niciun cântec disponibil",
+  "noSongsHint": "Cartea de cântece livrată cu aplicația este goală."
 }

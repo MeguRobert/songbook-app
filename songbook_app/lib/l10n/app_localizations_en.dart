@@ -288,4 +288,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setlistStop => 'Stop playing setlist';
+
+  @override
+  String get showAllSongs => 'Show all songs';
+
+  @override
+  String errorDetail(String detail) {
+    return 'Error: $detail';
+  }
+
+  @override
+  String noSongsInBook(String book) {
+    return 'No songs in \"$book\"';
+  }
+
+  @override
+  String get noSongsAvailable => 'No songs available';
+
+  @override
+  String get noSongsHint => 'The songbook that ships with the app is empty.';
 }

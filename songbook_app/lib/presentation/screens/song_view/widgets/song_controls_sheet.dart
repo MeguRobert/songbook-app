@@ -316,7 +316,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
 
                       // ----------------------------------------- 3. TRANSPOSE
                       _SectionHeader(
-                        text: 'TRANSPOSE',
+                        text: l10n.sectionTranspose,
                         theme: theme,
                         enabled: canTranspose,
                         hint: canTranspose ? null : 'no chords in this view',
@@ -386,7 +386,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
                                   onPressed: canTranspose
                                       ? songViewNotifier.resetTranspose
                                       : null,
-                                  child: Text('Reset to ${widget.originalKey}'),
+                                  child: Text(l10n.transposeReset(widget.originalKey)),
                                 ),
                               ),
                             ),
@@ -398,7 +398,7 @@ class _SongControlsSheetState extends ConsumerState<SongControlsSheet> {
 
                       // ---------------------------------------------- 4. CAPO
                       _SectionHeader(
-                        text: 'CAPO',
+                        text: l10n.sectionCapo,
                         theme: theme,
                         enabled: canTranspose,
                         hint: canTranspose ? null : 'no chords in this view',
@@ -590,7 +590,7 @@ class _CapoSection extends StatelessWidget {
                   children: [
                     Text(
                       recommended.fret == 0
-                          ? 'No capo needed'
+                          ? l10n.capoNone
                           : l10n.capoAt(recommended.fret),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -600,8 +600,8 @@ class _CapoSection extends StatelessWidget {
                     Text(
                       recommended.fret == 0
                           ? l10n.capoOpenShape(recommended.shapeKey, soundingKey)
-                          : 'Clamp fret ${recommended.fret}, finger '
-                                '${recommended.shapeKey} shapes — sounds $soundingKey',
+                          : l10n.capoClamp(recommended.fret,
+                              recommended.shapeKey, soundingKey),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: scheme.onPrimaryContainer,
                       ),
@@ -615,7 +615,7 @@ class _CapoSection extends StatelessWidget {
         if (alternatives.isNotEmpty) ...[
           const SizedBox(height: 10),
           Text(
-            'Other positions',
+            l10n.capoOther,
             style: theme.textTheme.labelSmall?.copyWith(
               color: scheme.onSurfaceVariant,
             ),

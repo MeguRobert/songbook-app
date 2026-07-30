@@ -101,7 +101,7 @@ class FavoritesScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error loading favorites: $error'),
+              Text('${l10n.errorLoadingFavorites}: $error'),
             ],
           ),
         ),
