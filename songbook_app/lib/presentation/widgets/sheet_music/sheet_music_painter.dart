@@ -96,11 +96,11 @@ class SheetMusicPainter extends CustomPainter {
     canvas.save();
     canvas.scale(textScale);
 
-    for (int i = 0; i < layout.systems.length; i++) {
-      final system = layout.systems[i];
-      // The first LINE of music, which in a grand staff is several systems.
-      // Indexing the list instead would put the time signature on the top voice
-      // and silently deny it to the other three.
+    for (final system in layout.systems) {
+      // The first LINE of music, which in a grand staff is several systems — so
+      // this asks the system, rather than counting the list as it used to. An
+      // index would have put the time signature on the top voice only and
+      // silently denied it to the other three.
       final isFirstSystem = system.systemIndex == 0;
 
       _drawStaffLines(canvas, system);
