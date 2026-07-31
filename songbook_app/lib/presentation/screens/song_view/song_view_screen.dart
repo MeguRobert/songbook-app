@@ -99,6 +99,34 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
     });
   }
 
+  /// Whether this song was reached by a link rather than from the list, sampled
+  /// once when the screen mounts.
+  ///
+  /// Deliberately NOT re-read per build, which is how it was first written and is
+  /// wrong. `GoRouter.canPop()` answers about the navigator as it stands right
+  /// now, and the controls sheet is a route on that same navigator — so while the
+  /// sheet is open there IS something to pop. Tapping anything in the sheet
+  /// rebuilds this screen inside that window, which latched "not a deep link",
+  /// and nothing rebuilt it again once the sheet closed, because
+  /// `InheritedGoRouter` does not notify on navigation. The result was a shared
+  /// song with no way out at all after one tap on a preset.
+  ///
+  /// Mount time is the one moment the question is about this page rather than
+  /// about whatever is sitting on top of it.
+  bool _reachedByLink = false;
+  bool _sampledReachedByLink = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_sampledReachedByLink) return;
+    _sampledReachedByLink = true;
+    // Null without a router at all: several widget tests mount this screen
+    // straight under `MaterialApp.home`.
+    final router = GoRouter.maybeOf(context);
+    _reachedByLink = router != null && !router.canPop();
+  }
+
   @override
   void didUpdateWidget(covariant SongViewScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -326,12 +354,11 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   /// *user* song, whose id means nothing on another device — the reader lands on
   /// "song not found" with no control on screen at all.
   ///
-  /// Null whenever there *is* something to pop, so the ordinary back arrow is
-  /// left exactly as it was, and null without a router at all because several
-  /// widget tests mount this screen straight under `MaterialApp.home`.
+  /// Null whenever there *was* something to pop when this screen mounted, so the
+  /// ordinary back arrow is left exactly as it was. See [_reachedByLink] for why
+  /// the answer is sampled at mount rather than asked for here.
   Widget? _leadingWayOut(BuildContext context) {
-    final router = GoRouter.maybeOf(context);
-    if (router == null || router.canPop()) return null;
+    if (!_reachedByLink) return null;
     return BackButton(onPressed: () => context.go(AppRoutes.home));
   }
 

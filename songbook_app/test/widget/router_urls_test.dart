@@ -128,6 +128,53 @@ Song savedSong({String ref = 'abc'}) => Song(
 void main() {
   const song = SongId.hymnal(42);
 
+  group('the way out of a deep-linked song', () {
+    /// Opens the controls sheet, changes something in it, and dismisses it.
+    ///
+    /// The change is the whole point: opening and closing the sheet on its own
+    /// never rebuilds the song view, so it cannot latch anything. Tapping a
+    /// preset does — and tapping a preset is why the sheet gets opened.
+    Future<void> useControlsSheet(WidgetTester tester) async {
+      await tester.tap(find.byIcon(Icons.tune));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lyrics'));
+      await tester.pumpAndSettle();
+      // The scrim, rather than Escape: this is the gesture a phone user has, and
+      // it is what the browser check did.
+      await tester.tapAt(const Offset(8, 8));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('survives using the controls sheet', (tester) async {
+      // Found in a browser, not here. The sheet is a route on the same Navigator,
+      // so while it is open there IS something to pop and the screen withholds
+      // its own back button. Tapping anything in the sheet rebuilds the song view
+      // inside that window, which latched the wrong answer — and nothing rebuilt
+      // it again when the sheet closed, because InheritedGoRouter does not notify
+      // on navigation. A deep-linked song was left with no way out at all.
+      await pumpAppAt(tester, '/song/user:abc', userSongs: [savedSong()]);
+      expect(find.byType(BackButton), findsOneWidget,
+          reason: 'nothing beneath it to pop, so the screen supplies one');
+
+      await useControlsSheet(tester);
+
+      expect(find.byType(BackButton), findsOneWidget);
+    });
+
+    testWidgets('a song opened from the list keeps exactly one arrow',
+        (tester) async {
+      // The mirror case: here there IS something to pop, so Material supplies the
+      // arrow and the screen must not add a second one beside it.
+      final router = await pumpAppAt(tester, '/', userSongs: [savedSong()]);
+      router.push(AppRoutes.songPath(const SongId.user('abc')));
+      await tester.pumpAndSettle();
+
+      await useControlsSheet(tester);
+
+      expect(find.byType(BackButton), findsOneWidget);
+    });
+  });
+
   group('the address bar follows navigation', () {
     testWidgets('switching to a tab puts the tab in the URL', (tester) async {
       final (router, bar) = await pumpApp(tester);
