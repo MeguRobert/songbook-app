@@ -7,6 +7,7 @@ import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
 import '../../../domain/services/notation_editor.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../router/app_router.dart';
 import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 import '../../widgets/content_pane.dart';
@@ -89,6 +90,23 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
 
   bool get _dirty => _notation != _original;
 
+  /// Leaves this screen, however it was reached.
+  ///
+  /// `optionURLReflectsImperativeAPIs` puts `/song/:id/notation` in the address
+  /// bar, which makes it reloadable — and a reload lands on it *cold*, as the one
+  /// and only entry on the stack, where a bare `context.pop()` is answered with
+  /// `GoError('There is nothing to pop')`. The save has already completed by
+  /// then, so nothing is lost, but in a release build the button simply looks
+  /// dead. Falls back to the song this screen was correcting, which is where
+  /// popping would have landed anyway.
+  void _leave() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.songPath(widget.songId));
+    }
+  }
+
   Future<void> _save() async {
     final song = _song;
     final notation = _notation;
@@ -99,7 +117,7 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
         .read(userSongsProvider.notifier)
         .update(song.copyWith(notation: notation));
     if (!mounted) return;
-    context.pop();
+    _leave();
   }
 
   Future<void> _editBeat(BeatAddress address, NotatedBeat beat) async {
@@ -184,7 +202,7 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
         // shadows `this.context`, and the analyzer can only tie the guard to the
         // context it can see. Same check, spelled so it is checkable.
         if (!context.mounted) return;
-        context.pop();
+        _leave();
       },
       child: Scaffold(
         appBar: AppBar(

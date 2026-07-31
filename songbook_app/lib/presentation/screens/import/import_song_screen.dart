@@ -598,7 +598,19 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       setState(() => _saving = false);
       // Back to the song being corrected. Pushing it instead would stack a
       // second copy of the same song on top of the one we came from.
-      context.pop();
+      //
+      // Guarded, because `optionURLReflectsImperativeAPIs` puts
+      // `/song/:id/edit` in the address bar and so makes it reloadable: a reload
+      // lands on it cold, as the one and only entry on the stack, and a bare
+      // `context.pop()` there is answered with
+      // `GoError('There is nothing to pop')`. The update has already completed,
+      // so nothing is lost, but in a release build the button just looks dead.
+      // The fallback is the song itself — where popping would have landed.
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go(AppRoutes.songPath(draft.id));
+      }
       return;
     }
 
