@@ -313,6 +313,47 @@ void main() {
     });
   });
 
+  group('the right-hand edge', () {
+    // The staff lines used to be drawn to the system's full width while the final
+    // bar line sat a right margin short of it, so every system ended with the
+    // five lines poking out past the double bar. One staff made that a blemish;
+    // four staves make it the first thing you see.
+    test('a grand staff stops its lines at the bar line that closes it', () {
+      final layout = engine().calculateGrandStaffLayout(satb(), 0);
+      final top = layout.systems.first;
+
+      expect(top.barLines, isNotEmpty, reason: 'the fixture premise');
+      expect(top.staffLineEndX, closeTo(top.barLines.last.x, 0.01));
+    });
+
+    test('the lower staves end where the shared bar line does', () {
+      // They carry no bar lines of their own, so this only holds because every
+      // staff of a line shares one width.
+      final layout = engine().calculateGrandStaffLayout(satb(), 0);
+      final closing = layout.systems.first.barLines.last.x;
+
+      for (final system in layout.systems) {
+        expect(system.staffLineEndX, closeTo(closing, 0.01));
+      }
+    });
+
+    test('a single staff does the same', () {
+      final layout = engine().calculateLayout(
+        SongNotation(
+          originalKey: 'C',
+          timeSignature: '4/4',
+          verses: [
+            NotatedVerse(number: 1, measures: [quarters(['G4', 'A4'])]),
+          ],
+        ),
+        0,
+      );
+      final system = layout.systems.single;
+
+      expect(system.staffLineEndX, closeTo(system.barLines.last.x, 0.01));
+    });
+  });
+
   group('what the painter is told to draw', () {
     // The painter itself is checked with a browser screenshot — a pixel
     // assertion on a Bravura glyph tests the font. What is testable is the

@@ -128,7 +128,7 @@ class SheetMusicPainter extends CustomPainter {
 
   void _drawStaffLines(Canvas canvas, StaffSystem system) {
     final startX = system.x;
-    final endX = system.x + system.width;
+    final endX = system.staffLineEndX;
 
     for (int i = 0; i < EngravingConstants.staffLines; i++) {
       final y = system.y + i * EngravingConstants.staffLineSpacing;

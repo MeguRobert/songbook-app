@@ -255,6 +255,14 @@ class StaffSystem {
 
   double get staffTop => y;
   double get staffBottom => y + EngravingConstants.staffHeight;
+
+  /// Where the five staff lines stop.
+  ///
+  /// A right margin short of [width], which is exactly where the normalisation
+  /// pass puts the bar line that closes the system. The lines used to be drawn to
+  /// the full width and so poked out past the double bar on every system; with one
+  /// staff that was a blemish, with four it is the first thing you see.
+  double get staffLineEndX => x + width - EngravingConstants.rightMargin;
   double get lyricY => staffBottom + EngravingConstants.lyricBelowStaff;
   double get chordY => staffTop - EngravingConstants.chordAboveStaff;
 
