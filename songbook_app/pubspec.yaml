@@ -54,6 +54,11 @@ dependencies:
   # bundled-only rather than breaking startup. See song_repository.dart.
   supabase_flutter: ^2.8.0
 
+  # Photo import posts the image to a user-configured endpoint. `http` rather
+  # than dart:io's HttpClient because this has to work on web, which is where
+  # the app is deployed.
+  http: ^1.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
