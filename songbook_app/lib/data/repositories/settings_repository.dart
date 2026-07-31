@@ -11,6 +11,14 @@ class SettingsKeys {
   static const viewConfig = 'view_config';
   static const projectionMode = 'projection_mode';
   static const selectedBook = 'selected_book';
+
+  /// Where photo import sends the image, and the token it presents.
+  ///
+  /// Configured rather than compiled in: this ships as a static PWA, so a key
+  /// in the bundle would be public, and which service does the extraction is
+  /// deliberately the user's choice.
+  static const photoImportEndpoint = 'photo_import_endpoint';
+  static const photoImportToken = 'photo_import_token';
 }
 
 /// Repository for app settings
@@ -119,6 +127,57 @@ class SettingsRepository {
     if (legacy == null) return removed;
     final legacyRemoved = await _localDataSource.removeStringSetting(legacy);
     return removed || legacyRemoved;
+  }
+
+  // --- Photo import ---
+
+  /// The configured photo-import endpoint, or null when unset or unusable.
+  ///
+  /// Parsing here rather than at the call site so a typo saved months ago
+  /// cannot surface as a crash mid-import: an unparseable or non-http value
+  /// reads the same as "not configured", which is the state the UI already
+  /// has to explain.
+  Uri? getPhotoImportEndpoint() {
+    final raw = _localDataSource
+        .getStringSetting(SettingsKeys.photoImportEndpoint)
+        ?.trim();
+    if (raw == null || raw.isEmpty) return null;
+    final uri = Uri.tryParse(raw);
+    if (uri == null) return null;
+    // `host.isNotEmpty`, not `hasAuthority`: `https://` has an authority
+    // section — the `//` — with nothing in it, so hasAuthority is true and the
+    // result is a Uri that cannot be requested.
+    if (uri.host.isEmpty) return null;
+    if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+    return uri;
+  }
+
+  /// Stores the endpoint. An empty value clears it.
+  Future<bool> setPhotoImportEndpoint(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return _localDataSource
+          .removeStringSetting(SettingsKeys.photoImportEndpoint);
+    }
+    return _localDataSource
+        .setStringSetting(SettingsKeys.photoImportEndpoint, trimmed);
+  }
+
+  /// The bearer token, or null when none is set. Optional: a service on the
+  /// user's own network may not want one.
+  String? getPhotoImportToken() {
+    final raw =
+        _localDataSource.getStringSetting(SettingsKeys.photoImportToken)?.trim();
+    return (raw == null || raw.isEmpty) ? null : raw;
+  }
+
+  Future<bool> setPhotoImportToken(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return _localDataSource.removeStringSetting(SettingsKeys.photoImportToken);
+    }
+    return _localDataSource
+        .setStringSetting(SettingsKeys.photoImportToken, trimmed);
   }
 
   // --- Projection Mode ---

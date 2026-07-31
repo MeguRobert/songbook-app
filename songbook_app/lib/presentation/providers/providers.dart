@@ -13,6 +13,7 @@ import '../../data/repositories/settings_repository.dart';
 import '../../data/repositories/setlist_repository.dart';
 import '../../data/repositories/tag_repository.dart';
 import '../../data/repositories/user_song_repository.dart';
+import '../../domain/services/photo_import_service.dart';
 import '../../domain/services/transposition_service.dart';
 import '../../domain/services/search_service.dart';
 import '../../domain/services/capo_service.dart';
@@ -169,6 +170,21 @@ final userSongRepositoryProvider = Provider<UserSongRepository>((ref) {
 // --- Service Providers ---
 
 /// Transposition service provider
+/// Photo import, or null when no endpoint has been configured.
+///
+/// Null rather than a throwing stub so the UI can offer the feature honestly:
+/// "point this at a service" is a setup step, not an error, and the import
+/// screen can say so instead of failing on tap.
+final photoImportServiceProvider = Provider<PhotoImportService?>((ref) {
+  final settings = ref.watch(settingsRepositoryProvider);
+  final endpoint = settings.getPhotoImportEndpoint();
+  if (endpoint == null) return null;
+  return HttpPhotoImportService(
+    endpoint: endpoint,
+    token: settings.getPhotoImportToken(),
+  );
+});
+
 final transpositionServiceProvider = Provider<TranspositionService>((ref) {
   return const TranspositionService();
 });
