@@ -250,6 +250,7 @@ class NotatedMeasure {
     bool? lineBreakAfter,
     bool? isPickup,
     int? volta,
+    bool clearVolta = false,
   }) {
     return NotatedMeasure(
       beats: beats ?? this.beats,
@@ -257,7 +258,15 @@ class NotatedMeasure {
       repeatEnd: repeatEnd ?? this.repeatEnd,
       lineBreakAfter: lineBreakAfter ?? this.lineBreakAfter,
       isPickup: isPickup ?? this.isPickup,
-      volta: volta ?? this.volta,
+      // `copyWith(volta: null)` cannot take a bracket off: null falls through the
+      // `??` and keeps the old number. That default is right everywhere else —
+      // omitting a field must mean "leave it alone" — but it made "no longer
+      // under a bracket" inexpressible, so a volta the OMR invented could not be
+      // removed. [clearVolta] says it explicitly, which is better than the
+      // alternative of spelling the constructor out at the call site: that is a
+      // field-by-field rebuild, and this file's whole history is fields lost to
+      // one of those.
+      volta: clearVolta ? null : (volta ?? this.volta),
     );
   }
 
@@ -357,6 +366,19 @@ class NotatedVoice {
       _$NotatedVoiceFromJson(json);
 
   Map<String, dynamic> toJson() => _$NotatedVoiceToJson(this);
+
+  /// Exists for the same reason every other `copyWith` in this file does: a pass
+  /// that re-bars a voice changes [measures] and must not be able to lose the
+  /// name the voice picker shows.
+  NotatedVoice copyWith({
+    String? name,
+    List<NotatedMeasure>? measures,
+  }) {
+    return NotatedVoice(
+      name: name ?? this.name,
+      measures: measures ?? this.measures,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>
