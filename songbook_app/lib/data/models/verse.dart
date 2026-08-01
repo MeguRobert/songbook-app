@@ -32,13 +32,23 @@ class Verse {
 
   Map<String, dynamic> toJson() => _$VerseToJson(this);
 
-  /// Gets the display text for this verse
-  String get displayText {
-    if (plainText != null && plainText!.isNotEmpty) {
-      return plainText!;
-    }
-    return lines.map((line) => line.text).join('\n');
+  /// This verse's text, one entry per line.
+  ///
+  /// The single place the `plainText`-wins rule is expressed; [displayText] is
+  /// derived from it, so the two cannot drift apart.
+  ///
+  /// Search reads this rather than splitting [displayText] back up. A verse's
+  /// lines are already separate, so joining them into one string only to split it
+  /// apart again cost two allocations per verse per song on every keystroke — and
+  /// the lyrics fallback scans the whole catalogue.
+  List<String> get displayLines {
+    final plain = plainText;
+    if (plain != null && plain.isNotEmpty) return plain.split('\n');
+    return [for (final line in lines) line.text];
   }
+
+  /// Gets the display text for this verse
+  String get displayText => displayLines.join('\n');
 
   /// Returns true if this verse has structured chord data
   bool get hasChordData => lines.any((line) => line.hasChords);
