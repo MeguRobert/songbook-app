@@ -346,6 +346,48 @@ class EasyOcrResultTests(unittest.TestCase):
         self.assertEqual(worker.boxes_from_easyocr(results), [])
 
 
+class SpacedPunctuationTests(unittest.TestCase):
+    """The recogniser puts a space before its own comma, inside one region.
+
+    Measured on a simulated photo: a region came back as `vagy ,` at 0.60
+    confidence, so the lyric imported as `mert velem vagy ,`. It is one region
+    and not two — checked, and no punctuation ever arrived as a box of its own
+    across six real runs — so nothing about the layout reaches this. The
+    recognised text itself is what is wrong.
+    """
+
+    def test_a_space_before_a_comma_is_closed(self):
+        boxes = row(100, 20, ('vagy ,', 0, 120))
+        self.assertEqual(render(boxes), 'vagy,')
+
+    def test_a_space_before_a_full_stop_is_closed(self):
+        boxes = row(100, 20, ('mutat .', 0, 140))
+        self.assertEqual(render(boxes), 'mutat.')
+
+    def test_a_spaced_dash_is_left_alone(self):
+        # ` - ` separates syllables all over a hymnal page.
+        boxes = row(100, 20, ('for-mál - va', 0, 240))
+        self.assertEqual(render(boxes), 'for-mál - va')
+
+    def test_an_ordinary_gap_between_words_is_left_alone(self):
+        boxes = row(100, 20, ('velem vagy', 0, 200))
+        self.assertEqual(render(boxes), 'velem vagy')
+
+    def test_closing_the_gap_does_not_move_the_chord_above(self):
+        # The line gets shorter, so the chord has to follow the text rather
+        # than the pixels.
+        boxes = row(70, 16, ('D', 0, 20), ('A', 130, 150)) \
+            + row(100, 20, ('vagy ,', 0, 120), ('mert', 130, 210))
+        chords, lyrics = render(boxes).split('\n')
+        self.assertEqual(lyrics, 'vagy, mert')
+        self.assertEqual(chords.index('A'), lyrics.index('mert'))
+
+    def test_a_chord_row_is_not_touched(self):
+        # Only lyric rows are repaired; nothing on a chord row needs it.
+        boxes = row(70, 16, ('C7', 0, 20), ('x1', 30, 50), ('G', 60, 70))
+        self.assertIn('x1', render(boxes))
+
+
 class NotationNoiseTests(unittest.TestCase):
     """Stave furniture read as text.
 

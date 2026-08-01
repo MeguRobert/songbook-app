@@ -313,6 +313,15 @@ _SKEW_FLOOR = 0.4
 # A skew estimate needs several lines to be evidence rather than noise.
 _MIN_BOXES_FOR_SKEW = 6
 
+# A space the recogniser inserted before its own punctuation. Measured: a
+# region came back as `vagy ,` at 0.60 confidence, which imported the lyric as
+# `mert velem vagy ,`. It is one region and not two, so no amount of layout
+# reaches it — the recognised text itself is what is wrong.
+#
+# A dash is deliberately absent: ` - ` separates syllables all over a hymnal
+# page and is not stray spacing.
+_SPACE_BEFORE_PUNCTUATION = re.compile(r"\s+([,.;:!?])")
+
 
 def estimate_skew(boxes, limit: float = _MAX_SKEW,
                   step: float = _SKEW_STEP) -> float:
@@ -469,12 +478,21 @@ def _lay_out_chords(row, anchors, char_width: float) -> str:
     return line
 
 
-def _repair_hungarian(row):
-    """[row] with EasyOCR's `1`/`i` confusion undone. Length-preserving."""
+def _repair_ocr(row):
+    """[row] with the recogniser's known slips undone.
+
+    Two kinds: Hungarian letters read as digits, and a space inserted before
+    the recogniser's own punctuation. Applied to lyric rows only — a chord row
+    has neither problem, and `x1` is a repeat marker rather than a misread `xi`.
+
+    Runs before layout, so a length change here is free; the chord row above is
+    interpolated onto the columns this produces, not onto raw pixels.
+    """
     repaired = []
     for index, box in enumerate(row):
         text = _ONE_IN_WORD.sub("i", box.text)
         text = _SIX_IN_WORD.sub("ő", text)
+        text = _SPACE_BEFORE_PUNCTUATION.sub(r"\1", text)
         # A lone `1` between words is the same confusion with the spaces left
         # in. At the start of a row it is a verse number, so it stays.
         if text == "1" and index > 0 and row[index - 1].text[-1].isalpha():
@@ -533,7 +551,7 @@ def chordpro_from_boxes(boxes) -> tuple[str, list]:
             lines.append("")
         row = rows[index]
         if not is_chord_row([b.text for b in row]):
-            lines.append(_lay_out(_repair_hungarian(row))[0])
+            lines.append(_lay_out(_repair_ocr(row))[0])
             index += 1
             continue
 
@@ -550,7 +568,7 @@ def chordpro_from_boxes(boxes) -> tuple[str, list]:
             index += 1
             continue
 
-        lyrics, anchors = _lay_out(_repair_hungarian(below))
+        lyrics, anchors = _lay_out(_repair_ocr(below))
         lines.append(_lay_out_chords(row, anchors, _char_width(below)))
         lines.append(lyrics)
         index += 2
