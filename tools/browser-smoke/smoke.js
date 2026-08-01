@@ -43,14 +43,27 @@ const WORDS = {
     allVoices: 'Mind',
     back: 'Vissza',
     settings: 'Beállítások',
+    measureActions: 'Ütem műveletei',
+    beatActions: 'Ütés műveletei',
+    merge: 'Összevonás az előző ütemmel',
+    properties: 'Ütem tulajdonságai',
+    otherVoices: 'TOVÁBBI SZÓLAMOK',
   },
   en: {
     controls: 'Song controls',
-    presets: ['Sheet Music', 'Chords', 'Lyrics'],
+    // 'Sheet', not 'Sheet Music' — the chip is deliberately shorter than the
+    // settings row that names the same view. Getting this wrong is what the
+    // in-script vocabulary is for.
+    presets: ['Sheet', 'Chords', 'Lyrics'],
     voices: ['Melody', 'Alto', 'Tenor', 'Bass'],
     allVoices: 'All',
     back: 'Back',
     settings: 'Settings',
+    measureActions: 'Measure actions',
+    beatActions: 'Beat actions',
+    merge: 'Merge into previous measure',
+    properties: 'Measure properties',
+    otherVoices: 'OTHER VOICES',
   },
   ro: {
     controls: 'Setările cântecului',
@@ -59,6 +72,11 @@ const WORDS = {
     allVoices: 'Toate',
     back: 'Înapoi',
     settings: 'Setări',
+    measureActions: 'Acțiuni pentru măsură',
+    beatActions: 'Acțiuni pentru notă',
+    merge: 'Unește cu măsura anterioară',
+    properties: 'Proprietățile măsurii',
+    otherVoices: 'ALTE VOCI',
   },
 };
 
@@ -132,27 +150,68 @@ async function labels(page) {
       .filter((s) => s.length));
 }
 
-/// True when some semantics node's label is exactly [text].
+/// True when some semantics node's label is exactly [text], or is exactly one of
+/// the newline-separated parts of a MERGED node's label.
 ///
-/// Exact rather than substring: Flutter also emits merged ancestor nodes whose
-/// label is every descendant's text concatenated, so a substring match finds the
-/// whole app bar and proves nothing.
+/// Not a substring match — that finds the whole app bar and proves nothing. But
+/// Flutter really does merge a compound row into one node: a notation-editor bar
+/// header arrives as a single label reading `1. ütem\n4 / 4 ütés`, and refusing to
+/// look inside it reports a working row as broken. Exact-match-per-part keeps the
+/// precision while seeing the parts.
 async function hasLabel(page, text) {
-  return (await labels(page)).includes(text);
+  const all = await labels(page);
+  return all.some((l) => l === text || l.split('\n').some((p) => p.trim() === text));
 }
 
-async function clickLabel(page, text) {
-  const ok = await page.evaluate((t) => {
-    const el = [...document.querySelectorAll('flt-semantics')].find(
+/// Clicks the [nth] node whose label is exactly [text].
+///
+/// The index matters where a control repeats per row — every bar header carries
+/// the same "measure actions" label, and the interesting one is rarely the first.
+async function clickLabel(page, text, nth = 0) {
+  const ok = await page.evaluate(([t, i]) => {
+    const els = [...document.querySelectorAll('flt-semantics')].filter(
       (e) => (e.getAttribute('aria-label') || e.textContent || '').trim() === t);
-    if (!el) return false;
-    el.click();
+    if (els.length <= i) return false;
+    els[i].click();
     return true;
-  }, text);
+  }, [text, nth]);
   if (!ok) return false;
   await page.waitForTimeout(1200);
   await stableSemantics(page);
   return true;
+}
+
+/// Anything whose box reaches past the viewport, and the widest few nodes.
+///
+/// This is the only way this harness can see an overflow at all: a RELEASE build
+/// reports no `RenderFlex` overflow, because both the assertion and the yellow
+/// stripe are debug-only. So it measures the semantics boxes instead — which is
+/// also closer to the real question, since a label can be clipped or ellipsized
+/// without any RenderFlex ever complaining.
+async function overflowing(page) {
+  return page.evaluate((w) => {
+    const rows = [...document.querySelectorAll('flt-semantics')]
+      .map((e) => {
+        const r = e.getBoundingClientRect();
+        return {
+          label: (e.getAttribute('aria-label') || '').trim().replace(/\n/g, ' / '),
+          right: Math.round(r.right),
+          width: Math.round(r.width),
+        };
+      })
+      .filter((r) => r.label && r.width > 0);
+    return {
+      past: rows.filter((r) => r.right > w + 1).map((r) => `${r.label} → ${r.right}px`),
+      widest: rows.sort((a, b) => b.width - a.width).slice(0, 3),
+    };
+  }, WIDTH);
+}
+
+/// Reports any node reaching past the viewport at the current width.
+async function checkNoOverflow(page, where) {
+  const box = await overflowing(page);
+  check(`nothing overflows the viewport in ${where}`,
+    box.past.length === 0, box.past.join('; '));
 }
 
 /// Scrolls a bottom sheet's lower sections into view.
@@ -217,6 +276,7 @@ async function shot(page, name, opts = {}) {
     check('the song list reaches the accessibility tree',
       (await labels(page)).length > 5);
     check(`the list is in ${LOCALE}`, await hasLabel(page, words.settings));
+    await checkNoOverflow(page, 'the song list');
     await shot(page, '01-list');
 
     // --- a song opened from a link ---------------------------------------
@@ -242,6 +302,8 @@ async function shot(page, name, opts = {}) {
       check(`the ${voice} voice is offered`, await hasLabel(page, voice));
     }
     check('all voices at once is offered', await hasLabel(page, words.allVoices));
+    // The chip row is one of the two places Hungarian has broken this layout.
+    await checkNoOverflow(page, 'the voice chip row');
     await shot(page, '04-voices');
 
     // --- the grand staff --------------------------------------------------
@@ -255,6 +317,38 @@ async function shot(page, name, opts = {}) {
     check('the way out survives using the controls sheet',
       await hasLabel(page, words.back));
     await shot(page, '05-grand-staff', { fullPage: true });
+
+    // --- the notation editor ----------------------------------------------
+    // The newest and largest surface, and the one with a control on every row —
+    // which is exactly the shape that has broken this layout twice. `merge` is the
+    // longest label the feature added in any language, so it is the reason to look.
+    await page.goto(`${BASE}/#/song/user:satb-check/notation`,
+      { waitUntil: 'domcontentloaded' });
+    await enableSemantics(page);
+    check('the notation editor opens cold from a URL',
+      await hasLabel(page, words.measureActions));
+    check('the beat rows keep their own menu',
+      await hasLabel(page, words.beatActions));
+    await checkNoOverflow(page, 'the editor bar headers');
+    await shot(page, '06-editor');
+
+    // OTHER VOICES is appended after every verse, so on a phone it starts well
+    // below the fold — and the semantics tree only carries what is laid out, so
+    // asking for it without scrolling reports a working section as missing. Same
+    // trap as the controls sheet's lower half.
+    await scrollSheet(page, 30);
+    check('the other voices are listed', await hasLabel(page, words.otherVoices));
+
+    // The SECOND bar's menu: bar 1 offers no merge, having nothing in front of it.
+    check('a bar menu opens', await clickLabel(page, words.measureActions, 1));
+    check('it offers the merge that fixes mis-barring',
+      await hasLabel(page, words.merge));
+    check('it offers the measure properties',
+      await hasLabel(page, words.properties));
+    await checkNoOverflow(page, 'the bar menu');
+    await shot(page, '07-measure-menu');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
 
     // --- the browser's own back button ------------------------------------
     await page.goto(BASE, { waitUntil: 'domcontentloaded' });
