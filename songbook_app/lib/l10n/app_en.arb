@@ -597,6 +597,104 @@
       }
     }
   },
+  "measureActions": "Measure actions",
+  "@measureActions": {
+    "description": "Tooltip on a measure header's overflow menu"
+  },
+  "measureProperties": "Measure properties",
+  "@measureProperties": {
+    "description": "Measure menu: open the repeat, volta and pickup controls"
+  },
+  "measureEditTitle": "MEASURE PROPERTIES",
+  "@measureEditTitle": {
+    "description": "Heading of the measure-properties bottom sheet"
+  },
+  "measureInsertBefore": "Insert measure before",
+  "@measureInsertBefore": {
+    "description": "Measure menu: add a bar in front of this one"
+  },
+  "measureInsertAfter": "Insert measure after",
+  "@measureInsertAfter": {
+    "description": "Measure menu: add a bar behind this one"
+  },
+  "measureMerge": "Merge into previous measure",
+  "@measureMerge": {
+    "description": "Measure menu: move this bar's beats onto the end of the bar before it"
+  },
+  "measureDelete": "Delete measure",
+  "@measureDelete": {
+    "description": "Measure menu: remove the whole bar and its beats"
+  },
+  "measureSplitHere": "Start a new measure here",
+  "@measureSplitHere": {
+    "description": "Beat menu: put a bar line in front of this beat, so it begins the next measure"
+  },
+  "measureRepeatStart": "Repeat sign at the start",
+  "@measureRepeatStart": {
+    "description": "Switch for NotatedMeasure.repeatStart"
+  },
+  "measureRepeatEnd": "Repeat sign at the end",
+  "@measureRepeatEnd": {
+    "description": "Switch for NotatedMeasure.repeatEnd"
+  },
+  "measureLineBreak": "Break the staff after this measure",
+  "@measureLineBreak": {
+    "description": "Switch for NotatedMeasure.lineBreakAfter"
+  },
+  "measurePickup": "Pickup measure",
+  "@measurePickup": {
+    "description": "Switch for NotatedMeasure.isPickup"
+  },
+  "measurePickupHint": "Short on purpose: not numbered, and not checked against the time signature",
+  "@measurePickupHint": {
+    "description": "Explains what declaring a bar a pickup changes, since a short bar is otherwise flagged as damaged"
+  },
+  "measureVolta": "Volta bracket",
+  "@measureVolta": {
+    "description": "Dropdown label for NotatedMeasure.volta — the second-time bar bracket"
+  },
+  "measureVoltaNone": "None",
+  "@measureVoltaNone": {
+    "description": "Volta dropdown: this bar is under no bracket"
+  },
+  "measureVoltaEnding": "Ending {number}",
+  "@measureVoltaEnding": {
+    "description": "Volta dropdown: bars sharing a number form one bracket",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "notationOtherVoices": "OTHER VOICES",
+  "@notationOtherVoices": {
+    "description": "Section heading above the score's non-engraved voices in the editor"
+  },
+  "notationOtherVoicesHint": "Kept with the song and not engraved here. Pick the line to read in the song controls.",
+  "@notationOtherVoicesHint": {
+    "description": "Explains why the other voices are listed but show no beats"
+  },
+  "notationVoiceMeasures": "{count, plural, =1{1 measure} other{{count} measures}}",
+  "@notationVoiceMeasures": {
+    "description": "How many bars a voice holds, which should match the melody",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "voiceActions": "Voice actions",
+  "@voiceActions": {
+    "description": "Tooltip on a voice row's overflow menu"
+  },
+  "voiceRenameTitle": "Rename voice",
+  "@voiceRenameTitle": {
+    "description": "Title of the dialog that relabels one voice"
+  },
+  "voiceName": "Voice name",
+  "@voiceName": {
+    "description": "Field label for a voice's label, which the voice picker shows"
+  },
   "durationWhole": "whole",
   "@durationWhole": {
     "description": "Note value: four quarter beats"

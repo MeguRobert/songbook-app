@@ -453,6 +453,366 @@ void main() {
     });
   });
 
+  group('re-barring a mis-barred import', () {
+    /// Picks [label] from the measure menu on the header of measure [m].
+    Future<void> measureMenu(WidgetTester tester, int m, String label) async {
+      await tester.tap(find.byKey(Key('measure-menu-0-$m')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(label));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('one over-long bar becomes 4/4 bars, a split at a time',
+        (tester) async {
+      // The real SÉ-90 case. Audiveris returned ONE measure per system — six bars
+      // of 18 beats in 4/4 — and until now the editor could only change beats
+      // inside a bar, so the one thing wrong with that page was the one thing it
+      // could not fix.
+      final container = await pumpEditor(
+        tester,
+        notatedUserSong(
+          notation: SongNotation(
+            originalKey: 'C',
+            timeSignature: '4/4',
+            verses: [
+              NotatedVerse(number: 1, measures: [
+                NotatedMeasure(beats: [
+                  for (var i = 0; i < 6; i++)
+                    const NotatedBeat(
+                        pitch: 'C4', duration: NoteDuration.quarter),
+                ]),
+              ]),
+            ],
+          ),
+        ),
+      );
+
+      expect(find.text('6 / 4 beats'), findsOneWidget);
+
+      // The fifth beat begins the next bar.
+      await tester.tap(find.byKey(const Key('beat-menu-0-0-4')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start a new measure here'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('4 / 4 beats'), findsOneWidget);
+      expect(find.text('2 / 4 beats'), findsOneWidget);
+      expect(find.text('Measure 2'), findsOneWidget);
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      final measures = container
+          .read(userSongsProvider)
+          .single
+          .notation!
+          .verses
+          .first
+          .measures;
+      expect(measures, hasLength(2));
+      expect(measures.map((m) => m.beats.length), [4, 2]);
+    });
+
+    testWidgets('the first beat of a bar offers no split', (tester) async {
+      // There is nothing in front of it to leave behind, so the operation would
+      // move no bar line at all.
+      await pumpEditor(tester, notatedUserSong());
+      await tester.tap(find.byKey(const Key('beat-menu-0-0-0')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Start a new measure here'), findsNothing);
+      expect(find.text('Insert after'), findsOneWidget);
+    });
+
+    testWidgets('merge folds a bar into the one before it', (tester) async {
+      // The other half of mis-barring: OMR reads one bar as two when a system
+      // breaks inside it.
+      await pumpEditor(tester, notatedUserSong());
+      await measureMenu(tester, 1, 'Merge into previous measure');
+
+      expect(find.text('Measure 2'), findsNothing);
+      expect(find.text('7 / 4 beats'), findsOneWidget);
+    });
+
+    testWidgets('the first measure cannot be merged into nothing',
+        (tester) async {
+      await pumpEditor(tester, notatedUserSong());
+      await tester.tap(find.byKey(const Key('measure-menu-0-0')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Merge into previous measure'), findsNothing);
+      expect(find.text('Insert measure after'), findsOneWidget);
+    });
+
+    testWidgets('an inserted bar arrives with a rest that can be corrected',
+        (tester) async {
+      // An empty bar would have no row in this list, so there would be no beat to
+      // tap and no way to put a note into it.
+      await pumpEditor(tester, notatedUserSong());
+      await measureMenu(tester, 0, 'Insert measure after');
+
+      expect(find.text('Measure 3'), findsOneWidget);
+      expect(find.text('rest'), findsOneWidget);
+      expect(find.text('1 / 4 beats'), findsOneWidget);
+    });
+
+    testWidgets('delete removes the whole bar', (tester) async {
+      final container = await pumpEditor(tester, notatedUserSong());
+      await measureMenu(tester, 1, 'Delete measure');
+
+      expect(find.text('F4'), findsNothing);
+      expect(find.text('G4'), findsNothing);
+      expect(find.text('Measure 2'), findsNothing);
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(
+          container
+              .read(userSongsProvider)
+              .single
+              .notation!
+              .verses
+              .first
+              .measures,
+          hasLength(1));
+    });
+  });
+
+  group('repeats, voltas and the pickup flag', () {
+    Future<void> openMeasure(WidgetTester tester, int m) async {
+      await tester.tap(find.byKey(Key('measure-menu-0-$m')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Measure properties'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a repeat sign can be put on a bar that lost one',
+        (tester) async {
+      // The importer had no `<barline>` case at all until recently, so every
+      // repeat in an older import was dropped — and there was no way to put one
+      // back.
+      final container = await pumpEditor(tester, notatedUserSong());
+      await openMeasure(tester, 1);
+
+      await tester.tap(find.byKey(const Key('measure-repeat-end')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(
+          container.read(userSongsProvider).single.notation!.verses.first
+              .measures[1].repeatEnd,
+          isTrue);
+    });
+
+    testWidgets('a volta bracket can be put on a bar', (tester) async {
+      final container = await pumpEditor(tester, notatedUserSong());
+      await openMeasure(tester, 0);
+      await selectFromDropdown(tester, 'measure-volta', 'Ending 2');
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(
+          container.read(userSongsProvider).single.notation!.verses.first
+              .measures.first.volta,
+          2);
+    });
+
+    testWidgets('and taken off one that already has it', (tester) async {
+      // The direction `copyWith(volta: null)` cannot express — null falls through
+      // the `??` and keeps the old number — so a bracket the OMR invented would
+      // have been permanent. Starting from a STORED volta rather than from an
+      // unsaved edit, because that is the case a user actually meets, and because
+      // Save leaves this screen: the two directions cannot share one test.
+      final container = await pumpEditor(
+        tester,
+        notatedUserSong(
+          notation: const SongNotation(
+            originalKey: 'C',
+            timeSignature: '4/4',
+            verses: [
+              NotatedVerse(number: 1, measures: [
+                NotatedMeasure(volta: 2, beats: [
+                  NotatedBeat(pitch: 'C4', duration: NoteDuration.whole),
+                ]),
+              ]),
+            ],
+          ),
+        ),
+      );
+
+      await openMeasure(tester, 0);
+      await selectFromDropdown(tester, 'measure-volta', 'None');
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(
+          container.read(userSongsProvider).single.notation!.verses.first
+              .measures.first.volta,
+          isNull);
+    });
+
+    testWidgets('declaring a short bar a pickup silences the warning',
+        (tester) async {
+      // The manual answer to the ambiguity `isPickup` exists for. Measure 2 is a
+      // beat short and flagged red; if it is actually the upbeat, saying so is
+      // now possible and the red goes away.
+      await pumpEditor(tester, notatedUserSong());
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+
+      await openMeasure(tester, 1);
+      await tester.tap(find.byKey(const Key('measure-pickup')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+      expect(find.text('Pickup'), findsOneWidget);
+      expect(find.text('3 / 4 beats'), findsNothing);
+    });
+
+    testWidgets('and un-declaring one puts the warning back', (tester) async {
+      // The other direction, which matters just as much: an `isPickup` the
+      // importer got wrong hides a lost beat for good.
+      await pumpEditor(
+        tester,
+        notatedUserSong(
+          notation: const SongNotation(
+            originalKey: 'C',
+            timeSignature: '4/4',
+            verses: [
+              NotatedVerse(number: 1, measures: [
+                NotatedMeasure(isPickup: true, beats: [
+                  NotatedBeat(pitch: 'G3', duration: NoteDuration.quarter),
+                ]),
+              ]),
+            ],
+          ),
+        ),
+      );
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+
+      await openMeasure(tester, 0);
+      await tester.tap(find.byKey(const Key('measure-pickup')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+      expect(find.text('1 / 4 beats'), findsOneWidget);
+    });
+  });
+
+  group('the score’s other voices', () {
+    SongNotation withBass() => const SongNotation(
+          originalKey: 'C',
+          timeSignature: '4/4',
+          verses: [
+            NotatedVerse(number: 1, measures: [
+              NotatedMeasure(beats: [
+                NotatedBeat(pitch: 'C5', duration: NoteDuration.whole),
+              ]),
+            ]),
+          ],
+          voices: [
+            NotatedVoice(name: 'P2', measures: [
+              NotatedMeasure(beats: [
+                NotatedBeat(pitch: 'C3', duration: NoteDuration.whole),
+              ]),
+            ]),
+          ],
+        );
+
+    testWidgets('are listed, so it is visible that they survived',
+        (tester) async {
+      // The editor preserved them and said nothing about them, which on a screen
+      // whose whole job is "is this right?" is the worst of both.
+      await pumpEditor(tester, notatedUserSong(notation: withBass()));
+
+      expect(find.text('OTHER VOICES'), findsOneWidget);
+      expect(find.text('P2'), findsOneWidget);
+      expect(find.text('1 measure'), findsOneWidget);
+    });
+
+    testWidgets('nothing is shown when the score has only one line',
+        (tester) async {
+      await pumpEditor(tester, notatedUserSong());
+      expect(find.text('OTHER VOICES'), findsNothing);
+    });
+
+    testWidgets('one can be renamed, which is what the voice picker shows',
+        (tester) async {
+      // Audiveris names parts P1, P2, P3 and those names reach a singer choosing
+      // a line to read.
+      final container =
+          await pumpEditor(tester, notatedUserSong(notation: withBass()));
+
+      await tester.tap(find.byKey(const Key('voice-menu-0')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rename'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('voice-name')), 'Basszus');
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Basszus'), findsOneWidget);
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(
+          container.read(userSongsProvider).single.notation!.voices!.single.name,
+          'Basszus');
+    });
+
+    testWidgets('a re-barred melody keeps its voices aligned', (tester) async {
+      // The contract `engravedAs` relies on to hand a bass line the melody's
+      // repeats and voltas. Re-barring the melody alone would shift every later
+      // bar of every other voice by one.
+      final container = await pumpEditor(
+        tester,
+        notatedUserSong(
+          notation: const SongNotation(
+            originalKey: 'C',
+            timeSignature: '4/4',
+            verses: [
+              NotatedVerse(number: 1, measures: [
+                NotatedMeasure(beats: [
+                  NotatedBeat(pitch: 'C5', duration: NoteDuration.half),
+                  NotatedBeat(pitch: 'D5', duration: NoteDuration.half),
+                ]),
+              ]),
+            ],
+            voices: [
+              NotatedVoice(name: 'Bass', measures: [
+                NotatedMeasure(beats: [
+                  NotatedBeat(pitch: 'C3', duration: NoteDuration.half),
+                  NotatedBeat(pitch: 'G3', duration: NoteDuration.half),
+                ]),
+              ]),
+            ],
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('beat-menu-0-0-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start a new measure here'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      final stored = container.read(userSongsProvider).single.notation!;
+      expect(stored.verses.first.measures, hasLength(2));
+      expect(stored.voices!.single.measures, hasLength(2));
+      expect(stored.voices!.single.measures[1].beats.single.pitch, 'G3');
+    });
+  });
+
   group('leaving with unsaved corrections', () {
     testWidgets('asks before discarding them', (tester) async {
       final container = await pumpEditor(tester, notatedUserSong());

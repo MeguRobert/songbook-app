@@ -856,6 +856,138 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 further lyric line on this note ({lines}) is kept as it is.} other{{count} further lyric lines on this note ({lines}) are kept as they are.}}'**
   String beatExtraLyricLines(int count, String lines);
 
+  /// Tooltip on a measure header's overflow menu
+  ///
+  /// In en, this message translates to:
+  /// **'Measure actions'**
+  String get measureActions;
+
+  /// Measure menu: open the repeat, volta and pickup controls
+  ///
+  /// In en, this message translates to:
+  /// **'Measure properties'**
+  String get measureProperties;
+
+  /// Heading of the measure-properties bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'MEASURE PROPERTIES'**
+  String get measureEditTitle;
+
+  /// Measure menu: add a bar in front of this one
+  ///
+  /// In en, this message translates to:
+  /// **'Insert measure before'**
+  String get measureInsertBefore;
+
+  /// Measure menu: add a bar behind this one
+  ///
+  /// In en, this message translates to:
+  /// **'Insert measure after'**
+  String get measureInsertAfter;
+
+  /// Measure menu: move this bar's beats onto the end of the bar before it
+  ///
+  /// In en, this message translates to:
+  /// **'Merge into previous measure'**
+  String get measureMerge;
+
+  /// Measure menu: remove the whole bar and its beats
+  ///
+  /// In en, this message translates to:
+  /// **'Delete measure'**
+  String get measureDelete;
+
+  /// Beat menu: put a bar line in front of this beat, so it begins the next measure
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new measure here'**
+  String get measureSplitHere;
+
+  /// Switch for NotatedMeasure.repeatStart
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat sign at the start'**
+  String get measureRepeatStart;
+
+  /// Switch for NotatedMeasure.repeatEnd
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat sign at the end'**
+  String get measureRepeatEnd;
+
+  /// Switch for NotatedMeasure.lineBreakAfter
+  ///
+  /// In en, this message translates to:
+  /// **'Break the staff after this measure'**
+  String get measureLineBreak;
+
+  /// Switch for NotatedMeasure.isPickup
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup measure'**
+  String get measurePickup;
+
+  /// Explains what declaring a bar a pickup changes, since a short bar is otherwise flagged as damaged
+  ///
+  /// In en, this message translates to:
+  /// **'Short on purpose: not numbered, and not checked against the time signature'**
+  String get measurePickupHint;
+
+  /// Dropdown label for NotatedMeasure.volta — the second-time bar bracket
+  ///
+  /// In en, this message translates to:
+  /// **'Volta bracket'**
+  String get measureVolta;
+
+  /// Volta dropdown: this bar is under no bracket
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get measureVoltaNone;
+
+  /// Volta dropdown: bars sharing a number form one bracket
+  ///
+  /// In en, this message translates to:
+  /// **'Ending {number}'**
+  String measureVoltaEnding(int number);
+
+  /// Section heading above the score's non-engraved voices in the editor
+  ///
+  /// In en, this message translates to:
+  /// **'OTHER VOICES'**
+  String get notationOtherVoices;
+
+  /// Explains why the other voices are listed but show no beats
+  ///
+  /// In en, this message translates to:
+  /// **'Kept with the song and not engraved here. Pick the line to read in the song controls.'**
+  String get notationOtherVoicesHint;
+
+  /// How many bars a voice holds, which should match the melody
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 measure} other{{count} measures}}'**
+  String notationVoiceMeasures(int count);
+
+  /// Tooltip on a voice row's overflow menu
+  ///
+  /// In en, this message translates to:
+  /// **'Voice actions'**
+  String get voiceActions;
+
+  /// Title of the dialog that relabels one voice
+  ///
+  /// In en, this message translates to:
+  /// **'Rename voice'**
+  String get voiceRenameTitle;
+
+  /// Field label for a voice's label, which the voice picker shows
+  ///
+  /// In en, this message translates to:
+  /// **'Voice name'**
+  String get voiceName;
+
   /// Note value: four quarter beats
   ///
   /// In en, this message translates to:

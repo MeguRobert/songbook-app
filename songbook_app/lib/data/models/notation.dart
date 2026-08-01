@@ -250,6 +250,7 @@ class NotatedMeasure {
     bool? lineBreakAfter,
     bool? isPickup,
     int? volta,
+    bool clearVolta = false,
   }) {
     return NotatedMeasure(
       beats: beats ?? this.beats,
@@ -257,7 +258,15 @@ class NotatedMeasure {
       repeatEnd: repeatEnd ?? this.repeatEnd,
       lineBreakAfter: lineBreakAfter ?? this.lineBreakAfter,
       isPickup: isPickup ?? this.isPickup,
-      volta: volta ?? this.volta,
+      // `copyWith(volta: null)` cannot take a bracket off: null falls through the
+      // `??` and keeps the old number. That default is right everywhere else —
+      // omitting a field must mean "leave it alone" — but it made "no longer
+      // under a bracket" inexpressible, so a volta the OMR invented could not be
+      // removed. [clearVolta] says it explicitly, which is better than the
+      // alternative of spelling the constructor out at the call site: that is a
+      // field-by-field rebuild, and this file's whole history is fields lost to
+      // one of those.
+      volta: clearVolta ? null : (volta ?? this.volta),
     );
   }
 
@@ -307,6 +316,22 @@ class NotatedVerse {
   List<NotatedBeat> get allBeats =>
       measures.expand((m) => m.beats).toList();
 
+  /// Exists for the same reason [NotatedMeasure.copyWith] does: a pass that
+  /// re-bars a verse changes [measures] and nothing else, and spelling out
+  /// [number] alongside it makes the verse number a thing that pass can lose.
+  ///
+  /// The verse number identifies which words the notation belongs to, so losing
+  /// it detaches the bars from the text they carry.
+  NotatedVerse copyWith({
+    int? number,
+    List<NotatedMeasure>? measures,
+  }) {
+    return NotatedVerse(
+      number: number ?? this.number,
+      measures: measures ?? this.measures,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -341,6 +366,19 @@ class NotatedVoice {
       _$NotatedVoiceFromJson(json);
 
   Map<String, dynamic> toJson() => _$NotatedVoiceToJson(this);
+
+  /// Exists for the same reason every other `copyWith` in this file does: a pass
+  /// that re-bars a voice changes [measures] and must not be able to lose the
+  /// name the voice picker shows.
+  NotatedVoice copyWith({
+    String? name,
+    List<NotatedMeasure>? measures,
+  }) {
+    return NotatedVoice(
+      name: name ?? this.name,
+      measures: measures ?? this.measures,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -502,6 +540,41 @@ class SongNotation {
 
   /// Gets beats per measure
   int get beatsPerMeasure => parsedTimeSignature.$1;
+
+  /// The whole score with one thing changed.
+  ///
+  /// The most load-bearing `copyWith` in this file, because the editor's every
+  /// operation changes [verses] and must leave the other five fields exactly as
+  /// they were. Rebuilding this class field by field has already cost real data
+  /// twice: the MusicXML importer lost [NotatedMeasure.isPickup] that way, and
+  /// the beat editor was silently dropping [voices] — a four-part score came back
+  /// from one corrected note with its alto, tenor and bass gone, so reading the
+  /// bass line meant finding and re-importing the source file.
+  ///
+  /// **Cannot clear a nullable field.** `copyWith(voices: null)` falls through
+  /// the `??` and keeps the old list, which is right for every caller here — an
+  /// edit to the melody must never be what deletes the other voices. Anything
+  /// that genuinely needs to null one out passes an empty list (which behaves
+  /// identically everywhere: [hasMultipleVoices] is false, [voiceNames] is just
+  /// the melody, and [engravedAs] returns the score unchanged) or spells the
+  /// constructor out, the way [engravedAs] does and for the same reason.
+  SongNotation copyWith({
+    String? originalKey,
+    String? timeSignature,
+    bool? showTimeSignature,
+    List<NotatedVerse>? verses,
+    List<NotatedBeat>? pickup,
+    List<NotatedVoice>? voices,
+  }) {
+    return SongNotation(
+      originalKey: originalKey ?? this.originalKey,
+      timeSignature: timeSignature ?? this.timeSignature,
+      showTimeSignature: showTimeSignature ?? this.showTimeSignature,
+      verses: verses ?? this.verses,
+      pickup: pickup ?? this.pickup,
+      voices: voices ?? this.voices,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>

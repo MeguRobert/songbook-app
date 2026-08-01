@@ -7,12 +7,48 @@ import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
 import '../../../domain/services/notation_editor.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../router/app_router.dart';
 import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 import '../../widgets/sheet_music/sheet_music_renderer.dart';
 
 /// What a beat row's overflow menu offers.
-enum _BeatAction { edit, insertAfter, delete }
+///
+/// [splitHere] is a MEASURE operation reached from a BEAT, because the beat is
+/// where the answer lives: the user is choosing which note begins the next bar,
+/// and no control on a measure header can express that.
+enum _BeatAction { edit, splitHere, insertAfter, delete }
+
+/// What a measure header's overflow menu offers.
+enum _MeasureAction { properties, insertBefore, insertAfter, merge, delete }
+
+/// What a voice row's overflow menu offers.
+enum _VoiceAction { rename, remove }
+
+/// Everything about a measure that is not a note.
+///
+/// Carried out of the properties sheet as a value rather than as a rebuilt
+/// [NotatedMeasure], so the sheet never touches `beats` — the one field of a
+/// measure it has no business in, and the one a field-by-field rebuild there
+/// would be most likely to lose.
+class _MeasureFlags {
+  final bool repeatStart;
+  final bool repeatEnd;
+  final bool lineBreakAfter;
+  final bool isPickup;
+
+  /// Null means "under no bracket", not "unchanged" — the sheet always knows the
+  /// whole answer, which is why `NotationEditor.setMeasureFlags` takes all five.
+  final int? volta;
+
+  const _MeasureFlags({
+    required this.repeatStart,
+    required this.repeatEnd,
+    required this.lineBreakAfter,
+    required this.isPickup,
+    required this.volta,
+  });
+}
 
 /// The note value as a word in the current language.
 ///
@@ -88,6 +124,23 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
 
   bool get _dirty => _notation != _original;
 
+  /// Leaves this screen, however it was reached.
+  ///
+  /// `optionURLReflectsImperativeAPIs` puts `/song/:id/notation` in the address
+  /// bar, which makes it reloadable — and a reload lands on it *cold*, as the one
+  /// and only entry on the stack, where a bare `context.pop()` is answered with
+  /// `GoError('There is nothing to pop')`. The save has already completed by
+  /// then, so nothing is lost, but in a release build the button simply looks
+  /// dead. Falls back to the song this screen was correcting, which is where
+  /// popping would have landed anyway.
+  void _leave() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.songPath(widget.songId));
+    }
+  }
+
   Future<void> _save() async {
     final song = _song;
     final notation = _notation;
@@ -98,7 +151,7 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
         .read(userSongsProvider.notifier)
         .update(song.copyWith(notation: notation));
     if (!mounted) return;
-    context.pop();
+    _leave();
   }
 
   Future<void> _editBeat(BeatAddress address, NotatedBeat beat) async {
@@ -117,10 +170,67 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
     switch (action) {
       case _BeatAction.edit:
         _editBeat(address, beat);
+      case _BeatAction.splitHere:
+        setState(() => _notation = _editor.splitMeasure(_notation!, address));
       case _BeatAction.insertAfter:
         setState(() => _notation = _editor.insertBeatAfter(_notation!, address));
       case _BeatAction.delete:
         setState(() => _notation = _editor.deleteBeat(_notation!, address));
+    }
+  }
+
+  Future<void> _editMeasure(MeasureAddress address, NotatedMeasure measure) async {
+    final flags = await showModalBottomSheet<_MeasureFlags>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _MeasureFieldsSheet(measure: measure),
+    );
+    if (flags == null || !mounted) return;
+    setState(() => _notation = _editor.setMeasureFlags(
+          _notation!,
+          address,
+          repeatStart: flags.repeatStart,
+          repeatEnd: flags.repeatEnd,
+          lineBreakAfter: flags.lineBreakAfter,
+          isPickup: flags.isPickup,
+          volta: flags.volta,
+        ));
+  }
+
+  void _onMeasureAction(
+      _MeasureAction action, MeasureAddress address, NotatedMeasure measure) {
+    switch (action) {
+      case _MeasureAction.properties:
+        _editMeasure(address, measure);
+      case _MeasureAction.insertBefore:
+        setState(
+            () => _notation = _editor.insertMeasureBefore(_notation!, address));
+      case _MeasureAction.insertAfter:
+        setState(
+            () => _notation = _editor.insertMeasureAfter(_notation!, address));
+      case _MeasureAction.merge:
+        setState(() =>
+            _notation = _editor.mergeMeasureIntoPrevious(_notation!, address));
+      case _MeasureAction.delete:
+        setState(() => _notation = _editor.deleteMeasure(_notation!, address));
+    }
+  }
+
+  Future<void> _renameVoice(int index, NotatedVoice voice) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => _VoiceNameDialog(name: voice.name),
+    );
+    if (name == null || !mounted) return;
+    setState(() => _notation = _editor.renameVoice(_notation!, index, name));
+  }
+
+  void _onVoiceAction(_VoiceAction action, int index, NotatedVoice voice) {
+    switch (action) {
+      case _VoiceAction.rename:
+        _renameVoice(index, voice);
+      case _VoiceAction.remove:
+        setState(() => _notation = _editor.removeVoice(_notation!, index));
     }
   }
 
@@ -183,7 +293,7 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
         // shadows `this.context`, and the analyzer can only tie the guard to the
         // context it can see. Same check, spelled so it is checkable.
         if (!context.mounted) return;
-        context.pop();
+        _leave();
       },
       child: Scaffold(
         appBar: AppBar(
@@ -232,22 +342,47 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
       for (var m = 0; m < verse.measures.length; m++) {
         final measure = verse.measures[m];
         rows.add(_MeasureHeader(
+          address: MeasureAddress(verse: v, measure: m),
+          measure: measure,
           // An anacrusis is not counted, the way a printed score does not count
           // it: the first FULL bar is bar 1.
           number: measure.isPickup ? null : measureNumber++,
           total: measure.totalBeats,
           expected: expected,
           isPickup: measure.isPickup,
+          // The first bar has nothing in front of it to merge into.
+          canMerge: m > 0,
+          onAction: _onMeasureAction,
         ));
         for (var b = 0; b < measure.beats.length; b++) {
           final address = BeatAddress(verse: v, measure: m, beat: b);
           rows.add(_BeatRow(
             address: address,
             beat: measure.beats[b],
+            // Splitting in front of the first beat would leave an empty first
+            // half and move no bar line at all.
+            canSplit: b > 0,
             onAction: _onBeatAction,
           ));
         }
         if (measure.beats.isEmpty) rows.add(const _EmptyMeasureRow());
+      }
+    }
+
+    // The score's other voices, after the bars they are aligned with. Listed
+    // rather than editable beat by beat: only one line is engraved at a time, and
+    // the reason to show them at all is that the editor used to preserve them
+    // silently — on a screen whose whole job is "is this right?", a four-part
+    // score that looks monophonic is the worst of both.
+    final voices = notation.voices;
+    if (voices != null && voices.isNotEmpty) {
+      rows.add(const _OtherVoicesHeader());
+      for (var i = 0; i < voices.length; i++) {
+        rows.add(_VoiceRow(
+          index: i,
+          voice: voices[i],
+          onAction: _onVoiceAction,
+        ));
       }
     }
     return rows;
@@ -276,8 +411,11 @@ class _VerseHeader extends StatelessWidget {
   }
 }
 
-/// Measure number and what its beats add up to against the time signature.
+/// Measure number, what its beats add up to, and the bar-level actions.
 class _MeasureHeader extends StatelessWidget {
+  final MeasureAddress address;
+  final NotatedMeasure measure;
+
   /// Null for a pickup bar, which a score does not number.
   final int? number;
   final double total;
@@ -288,10 +426,19 @@ class _MeasureHeader extends StatelessWidget {
   /// would train the warning away on exactly the hymns that open on an upbeat.
   final bool isPickup;
 
+  /// False on the first bar, which has nothing in front of it.
+  final bool canMerge;
+
+  final void Function(_MeasureAction, MeasureAddress, NotatedMeasure) onAction;
+
   const _MeasureHeader({
+    required this.address,
+    required this.measure,
     required this.number,
     required this.total,
     required this.expected,
+    required this.canMerge,
+    required this.onAction,
     this.isPickup = false,
   });
 
@@ -313,20 +460,28 @@ class _MeasureHeader extends StatelessWidget {
 
     return Container(
       color: theme.colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.only(left: 16, right: 4, top: 2, bottom: 2),
       child: Row(
         children: [
           Text(isPickup ? l10n.notationPickup : l10n.notationMeasure(number ?? 0),
               style: theme.textTheme.labelLarge),
           const Spacer(),
           if (isPickup)
-            Text(
-              // `format(total)` is already display-ready ("3", "3.5"); the count
-              // only picks singular from plural, so it is the exact-one test and
-              // not a rounding of the beat count — 0.5 must not read "1 beat".
-              l10n.notationPickupBeats(total == 1 ? 1 : 2, format(total)),
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            // Flexible, because this is the longest thing that can sit in a bar
+            // header and Hungarian runs longer than English — "3 ütés az 1. ütem
+            // előtt" against "3 beats before bar 1". Ellipsizing beats an overflow
+            // stripe at 360 px.
+            Flexible(
+              child: Text(
+                // `format(total)` is already display-ready ("3", "3.5"); the count
+                // only picks singular from plural, so it is the exact-one test and
+                // not a rounding of the beat count — 0.5 must not read "1 beat".
+                l10n.notationPickupBeats(total == 1 ? 1 : 2, format(total)),
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
             )
           else ...[
             if (short) ...[
@@ -338,7 +493,319 @@ class _MeasureHeader extends StatelessWidget {
               style: theme.textTheme.labelMedium?.copyWith(color: colour),
             ),
           ],
+          // Icon-only, with every label inside the menu. A bar header repeats once
+          // per measure, so a text button here would be the widest thing on the
+          // screen multiplied by the bar count — and "Összevonás az előző
+          // ütemmel" is far longer than "Merge into previous measure". The beat
+          // row already settled this the same way.
+          SizedBox(
+            width: 32,
+            height: 30,
+            child: PopupMenuButton<_MeasureAction>(
+              // Addressed rather than positional, so a test — and a screen reader
+              // — names the bar it means.
+              key: Key('measure-menu-${address.verse}-${address.measure}'),
+              icon: const Icon(Icons.more_vert, size: 18),
+              padding: EdgeInsets.zero,
+              tooltip: l10n.measureActions,
+              onSelected: (action) => onAction(action, address, measure),
+              itemBuilder: (context) => [
+                if (canMerge)
+                  PopupMenuItem(
+                      value: _MeasureAction.merge,
+                      child: Text(l10n.measureMerge)),
+                PopupMenuItem(
+                    value: _MeasureAction.insertAfter,
+                    child: Text(l10n.measureInsertAfter)),
+                PopupMenuItem(
+                    value: _MeasureAction.insertBefore,
+                    child: Text(l10n.measureInsertBefore)),
+                PopupMenuItem(
+                    value: _MeasureAction.delete,
+                    child: Text(l10n.measureDelete)),
+                PopupMenuItem(
+                    value: _MeasureAction.properties,
+                    child: Text(l10n.measureProperties)),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+/// Heading above the score's voices that are not the engraved line.
+class _OtherVoicesHeader extends StatelessWidget {
+  const _OtherVoicesHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      width: double.infinity,
+      color: theme.colorScheme.surfaceContainerHighest,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.notationOtherVoices,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              )),
+          const SizedBox(height: 4),
+          Text(
+            l10n.notationOtherVoicesHint,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One of the score's other voices: its label and how many bars it holds.
+///
+/// No beats. Only one line is engraved at a time, and correcting a bass note is
+/// what switching the engraved voice is for — listing 68 more rows per voice
+/// would bury the melody this screen exists to fix.
+///
+/// The measure count is shown because it is the contract that matters: the voices
+/// are aligned bar for bar with the melody, and a count that disagrees is the
+/// visible symptom of a score whose voices have drifted.
+class _VoiceRow extends StatelessWidget {
+  final int index;
+  final NotatedVoice voice;
+  final void Function(_VoiceAction, int, NotatedVoice) onAction;
+
+  const _VoiceRow({
+    required this.index,
+    required this.voice,
+    required this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return ListTile(
+      dense: true,
+      leading: Icon(Icons.music_note_outlined,
+          size: 18, color: theme.colorScheme.onSurfaceVariant),
+      title: Text(voice.name),
+      subtitle: Text(l10n.notationVoiceMeasures(voice.measures.length)),
+      trailing: PopupMenuButton<_VoiceAction>(
+        key: Key('voice-menu-$index'),
+        icon: const Icon(Icons.more_vert, size: 18),
+        tooltip: l10n.voiceActions,
+        onSelected: (action) => onAction(action, index, voice),
+        itemBuilder: (context) => [
+          PopupMenuItem(
+              value: _VoiceAction.rename, child: Text(l10n.actionRename)),
+          PopupMenuItem(
+              value: _VoiceAction.remove, child: Text(l10n.actionDelete)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Renames one voice. The label the song controls' voice picker offers.
+class _VoiceNameDialog extends StatefulWidget {
+  final String name;
+
+  const _VoiceNameDialog({required this.name});
+
+  @override
+  State<_VoiceNameDialog> createState() => _VoiceNameDialogState();
+}
+
+class _VoiceNameDialogState extends State<_VoiceNameDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.name);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.voiceRenameTitle),
+      content: TextField(
+        key: const Key('voice-name'),
+        controller: _controller,
+        autofocus: true,
+        decoration: InputDecoration(
+          labelText: l10n.voiceName,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.actionCancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: Text(l10n.actionApply),
+        ),
+      ],
+    );
+  }
+}
+
+/// The five things about a measure that are not notes.
+///
+/// Repeat signs, a volta bracket, a system break and the pickup declaration.
+/// `MusicXmlImporter` had no `<barline>` case at all until recently, so every
+/// repeat in an older import was simply dropped — and the editor preserved what
+/// survived without being able to change any of it, which left no way to put one
+/// back.
+class _MeasureFieldsSheet extends StatefulWidget {
+  final NotatedMeasure measure;
+
+  const _MeasureFieldsSheet({required this.measure});
+
+  @override
+  State<_MeasureFieldsSheet> createState() => _MeasureFieldsSheetState();
+}
+
+class _MeasureFieldsSheetState extends State<_MeasureFieldsSheet> {
+  /// How many endings a repeated section is offered. Three covers every hymn in
+  /// the bundled catalogue and every one Audiveris has produced; a fourth ending
+  /// is vanishingly rare and would still import and render, just not be editable
+  /// here.
+  static const _voltaChoices = [null, 1, 2, 3];
+
+  late bool _repeatStart;
+  late bool _repeatEnd;
+  late bool _lineBreakAfter;
+  late bool _isPickup;
+  late int? _volta;
+
+  @override
+  void initState() {
+    super.initState();
+    final measure = widget.measure;
+    _repeatStart = measure.repeatStart;
+    _repeatEnd = measure.repeatEnd;
+    _lineBreakAfter = measure.lineBreakAfter;
+    _isPickup = measure.isPickup;
+    // A volta the file gave that this sheet cannot offer is shown as no bracket
+    // rather than crashing the dropdown on a value not in its item list. Applying
+    // would then clear it, which is visible and undoable, and better than a screen
+    // that will not open.
+    _volta = _voltaChoices.contains(measure.volta) ? measure.volta : null;
+  }
+
+  void _apply() {
+    Navigator.of(context).pop(_MeasureFlags(
+      repeatStart: _repeatStart,
+      repeatEnd: _repeatEnd,
+      lineBreakAfter: _lineBreakAfter,
+      isPickup: _isPickup,
+      volta: _volta,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: 16 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.measureEditTitle,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  )),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                key: const Key('measure-repeat-start'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.measureRepeatStart),
+                value: _repeatStart,
+                onChanged: (value) => setState(() => _repeatStart = value),
+              ),
+              SwitchListTile(
+                key: const Key('measure-repeat-end'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.measureRepeatEnd),
+                value: _repeatEnd,
+                onChanged: (value) => setState(() => _repeatEnd = value),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<int?>(
+                key: const Key('measure-volta'),
+                initialValue: _volta,
+                decoration: InputDecoration(labelText: l10n.measureVolta),
+                items: [
+                  for (final choice in _voltaChoices)
+                    DropdownMenuItem(
+                      value: choice,
+                      child: Text(choice == null
+                          ? l10n.measureVoltaNone
+                          : l10n.measureVoltaEnding(choice)),
+                    ),
+                ],
+                onChanged: (value) => setState(() => _volta = value),
+              ),
+              SwitchListTile(
+                key: const Key('measure-line-break'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.measureLineBreak),
+                value: _lineBreakAfter,
+                onChanged: (value) => setState(() => _lineBreakAfter = value),
+              ),
+              SwitchListTile(
+                key: const Key('measure-pickup'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.measurePickup),
+                // Both directions matter and the hint says why: declaring a short
+                // bar an upbeat silences the warning, and un-declaring one puts it
+                // back. An `isPickup` the importer got wrong would otherwise hide
+                // a lost beat for good.
+                subtitle: Text(l10n.measurePickupHint),
+                value: _isPickup,
+                onChanged: (value) => setState(() => _isPickup = value),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(l10n.actionCancel),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(onPressed: _apply, child: Text(l10n.actionApply)),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -409,11 +876,17 @@ class _PickupNotice extends StatelessWidget {
 class _BeatRow extends StatelessWidget {
   final BeatAddress address;
   final NotatedBeat beat;
+
+  /// False on the first beat of a bar: a bar line in front of it would leave an
+  /// empty first half and move nothing.
+  final bool canSplit;
+
   final void Function(_BeatAction, BeatAddress, NotatedBeat) onAction;
 
   const _BeatRow({
     required this.address,
     required this.beat,
+    required this.canSplit,
     required this.onAction,
   });
 
@@ -490,6 +963,14 @@ class _BeatRow extends StatelessWidget {
               child: Text(l10n.beatInsertAfter)),
           PopupMenuItem(
               value: _BeatAction.delete, child: Text(l10n.actionDelete)),
+          // A bar-level operation, offered here because the beat is the answer:
+          // the user is choosing which note begins the next measure, and this is
+          // the fix for the commonest OMR failure of all — a whole system read as
+          // one 18-beat bar.
+          if (canSplit)
+            PopupMenuItem(
+                value: _BeatAction.splitHere,
+                child: Text(l10n.measureSplitHere)),
         ],
       ),
     );
