@@ -453,6 +453,84 @@ class AppLocalizationsRo extends AppLocalizations {
   }
 
   @override
+  String get measureActions => 'Acțiuni pentru măsură';
+
+  @override
+  String get measureProperties => 'Proprietățile măsurii';
+
+  @override
+  String get measureEditTitle => 'PROPRIETĂȚILE MĂSURII';
+
+  @override
+  String get measureInsertBefore => 'Inserează măsură înainte';
+
+  @override
+  String get measureInsertAfter => 'Inserează măsură după';
+
+  @override
+  String get measureMerge => 'Unește cu măsura anterioară';
+
+  @override
+  String get measureDelete => 'Șterge măsura';
+
+  @override
+  String get measureSplitHere => 'Începe o măsură nouă aici';
+
+  @override
+  String get measureRepeatStart => 'Semn de repetiție la început';
+
+  @override
+  String get measureRepeatEnd => 'Semn de repetiție la sfârșit';
+
+  @override
+  String get measureLineBreak => 'Rând nou după această măsură';
+
+  @override
+  String get measurePickup => 'Măsură de anacruză';
+
+  @override
+  String get measurePickupHint =>
+      'Scurtă intenționat: nu se numerotează și nu se verifică față de măsură';
+
+  @override
+  String get measureVolta => 'Paranteză de repetiție';
+
+  @override
+  String get measureVoltaNone => 'Niciuna';
+
+  @override
+  String measureVoltaEnding(int number) {
+    return 'Finalul $number';
+  }
+
+  @override
+  String get notationOtherVoices => 'ALTE VOCI';
+
+  @override
+  String get notationOtherVoicesHint =>
+      'Se păstrează cu cântecul și nu sunt scrise pe portativ aici. Alege vocea de citit din setările cântecului.';
+
+  @override
+  String notationVoiceMeasures(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count măsuri',
+      one: '1 măsură',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get voiceActions => 'Acțiuni pentru voce';
+
+  @override
+  String get voiceRenameTitle => 'Redenumește vocea';
+
+  @override
+  String get voiceName => 'Numele vocii';
+
+  @override
   String get durationWhole => 'întreagă';
 
   @override
