@@ -10,6 +10,8 @@ import '../../providers/providers.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../auth/auth_screen.dart';
+import '../moderation/moderation_queue_screen.dart';
+import '../moderation/my_submissions_screen.dart';
 
 /// Settings screen
 class SettingsScreen extends ConsumerWidget {
@@ -55,6 +57,30 @@ class SettingsScreen extends ConsumerWidget {
               child: Text(l10n.signOut),
             ),
           ),
+          ListTile(
+            leading: const Icon(Icons.outbox_outlined),
+            title: Text(l10n.mySubmissionsTitle),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MySubmissionsScreen()),
+            ),
+          ),
+          // Moderation appears only for an admin. This hides the entry; it is
+          // not what stops anyone else deciding anything — RLS and the status
+          // trigger do that, server-side, on every write.
+          ref.watch(isAdminProvider).maybeWhen(
+                data: (isAdmin) => isAdmin
+                    ? ListTile(
+                        leading: const Icon(Icons.rule),
+                        title: Text(l10n.moderationQueueTitle),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ModerationQueueScreen(),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+                orElse: () => const SizedBox.shrink(),
+              ),
           // Holding a session is not the same as having confirmed the address,
           // and contributing a song requires the latter.
           if (!confirmed)

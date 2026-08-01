@@ -937,4 +937,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authErrorUnknown => 'Something went wrong. Try again.';
+
+  @override
+  String get signInWithGoogle => 'Continue with Google';
+
+  @override
+  String get authOrDivider => 'or';
+
+  @override
+  String get moderationQueueTitle => 'Waiting for review';
+
+  @override
+  String get moderationQueueEmpty => 'Nothing is waiting.';
+
+  @override
+  String get mySubmissionsTitle => 'Songs I sent in';
+
+  @override
+  String get mySubmissionsEmpty => 'You have not sent in any songs yet.';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get reject => 'Turn down';
+
+  @override
+  String get rejectReasonLabel => 'Why? The contributor will see this.';
+
+  @override
+  String get rejectReasonRequired => 'Give a reason so they can fix it.';
+
+  @override
+  String get withdraw => 'Withdraw';
+
+  @override
+  String get statusDraft => 'Draft';
+
+  @override
+  String get statusPending => 'Waiting for review';
+
+  @override
+  String get statusApproved => 'In the shared songbook';
+
+  @override
+  String get statusRejected => 'Turned down';
+
+  @override
+  String get moderationDecided => 'Done.';
 }

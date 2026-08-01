@@ -131,6 +131,38 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 24),
+                      // Google first: for most people it is one tap versus
+                      // inventing another password.
+                      //
+                      // Note this does NOT await a session. signInWithOAuth
+                      // returns once the browser has been handed off, not when
+                      // sign-in succeeds — the session arrives later on the auth
+                      // state stream, which the Settings entry watches. Closing
+                      // this screen here would be closing it before anything
+                      // had happened.
+                      OutlinedButton.icon(
+                        onPressed: _busy
+                            ? null
+                            : () => _run(() => _auth!.signInWithGoogle()),
+                        icon: const Icon(Icons.login),
+                        label: Text(l10n.signInWithGoogle),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Expanded(child: Divider()),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              l10n.authOrDivider,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          const Expanded(child: Divider()),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                       TextFormField(
                         controller: _email,
                         decoration: InputDecoration(labelText: l10n.emailLabel),

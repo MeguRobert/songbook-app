@@ -78,6 +78,22 @@ class AuthRepository {
     );
   }
 
+  /// Starts Google sign-in.
+  ///
+  /// Returns as soon as the browser has been handed off, **not** when sign-in
+  /// succeeds — `signInWithOAuth` explicitly does not return the auth result.
+  /// The session arrives later on [authStateChanges], so callers must not treat
+  /// a normal return as "signed in"; watch the stream instead. Getting this
+  /// wrong produces a UI that closes the sign-in screen before anything happened.
+  ///
+  /// `redirectTo` is deliberately omitted on web: Supabase then uses the Site
+  /// URL configured in the dashboard, which avoids maintaining the deployed
+  /// origin in two places and avoids the "redirect not allowlisted" failure.
+  /// A native build would need a deep-link scheme here instead.
+  Future<void> signInWithGoogle() async {
+    await _guard(() => _auth.signInWithOAuth(OAuthProvider.google));
+  }
+
   Future<void> signOut() async {
     await _guard(() => _auth.signOut());
   }

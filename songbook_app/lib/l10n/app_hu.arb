@@ -256,5 +256,21 @@
   "authErrorRateLimited": "Túl sok kísérlet. Várj egy percet, majd próbáld újra.",
   "authErrorServerRejected": "A kiszolgáló elutasította. Próbáld később.",
   "authErrorNetwork": "Nem sikerült elérni a kiszolgálót. Ellenőrizd a kapcsolatot.",
-  "authErrorUnknown": "Valami hiba történt. Próbáld újra."
+  "authErrorUnknown": "Valami hiba történt. Próbáld újra.",
+  "signInWithGoogle": "Folytatás Google-fiókkal",
+  "authOrDivider": "vagy",
+  "moderationQueueTitle": "Jóváhagyásra vár",
+  "moderationQueueEmpty": "Nincs jóváhagyásra váró ének.",
+  "mySubmissionsTitle": "Beküldött énekeim",
+  "mySubmissionsEmpty": "Még nem küldtél be éneket.",
+  "approve": "Jóváhagyás",
+  "reject": "Elutasítás",
+  "rejectReasonLabel": "Miért? A beküldő látni fogja.",
+  "rejectReasonRequired": "Adj meg okot, hogy javíthassa.",
+  "withdraw": "Visszavonás",
+  "statusDraft": "Piszkozat",
+  "statusPending": "Jóváhagyásra vár",
+  "statusApproved": "Bekerült a közös énekeskönyvbe",
+  "statusRejected": "Elutasítva",
+  "moderationDecided": "Kész."
 }

@@ -256,5 +256,21 @@
   "authErrorRateLimited": "Prea multe încercări. Așteaptă un minut și încearcă din nou.",
   "authErrorServerRejected": "Serverul a refuzat. Încearcă mai târziu.",
   "authErrorNetwork": "Nu am putut contacta serverul. Verifică conexiunea.",
-  "authErrorUnknown": "A apărut o eroare. Încearcă din nou."
+  "authErrorUnknown": "A apărut o eroare. Încearcă din nou.",
+  "signInWithGoogle": "Continuă cu Google",
+  "authOrDivider": "sau",
+  "moderationQueueTitle": "În așteptare",
+  "moderationQueueEmpty": "Nu așteaptă nimic.",
+  "mySubmissionsTitle": "Cântecele trimise de mine",
+  "mySubmissionsEmpty": "Nu ai trimis încă niciun cântec.",
+  "approve": "Aprobă",
+  "reject": "Respinge",
+  "rejectReasonLabel": "De ce? Cel care a trimis va vedea acest mesaj.",
+  "rejectReasonRequired": "Dă un motiv, ca să poată corecta.",
+  "withdraw": "Retrage",
+  "statusDraft": "Ciornă",
+  "statusPending": "În așteptare",
+  "statusApproved": "În cartea de cântece comună",
+  "statusRejected": "Respins",
+  "moderationDecided": "Gata."
 }

@@ -1641,6 +1641,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Try again.'**
   String get authErrorUnknown;
+
+  /// Google OAuth button
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get signInWithGoogle;
+
+  /// Separates the Google button from the email form
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get authOrDivider;
+
+  /// Admin-only screen listing submissions awaiting a decision
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for review'**
+  String get moderationQueueTitle;
+
+  /// Empty moderation queue
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is waiting.'**
+  String get moderationQueueEmpty;
+
+  /// Screen listing the user's own submissions and their state
+  ///
+  /// In en, this message translates to:
+  /// **'Songs I sent in'**
+  String get mySubmissionsTitle;
+
+  /// Empty own-submissions list
+  ///
+  /// In en, this message translates to:
+  /// **'You have not sent in any songs yet.'**
+  String get mySubmissionsEmpty;
+
+  /// Accepts a submission into the shared catalogue
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approve;
+
+  /// Declines a submission. Softer than 'Reject' because a person wrote the thing.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn down'**
+  String get reject;
+
+  /// Label on the rejection reason field. Says who reads it, because a reason nobody sees is pointless.
+  ///
+  /// In en, this message translates to:
+  /// **'Why? The contributor will see this.'**
+  String get rejectReasonLabel;
+
+  /// Validation when a rejection has no reason
+  ///
+  /// In en, this message translates to:
+  /// **'Give a reason so they can fix it.'**
+  String get rejectReasonRequired;
+
+  /// Takes back a submission that has not been decided yet
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw'**
+  String get withdraw;
+
+  /// Submission state: saved but not sent
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get statusDraft;
+
+  /// Submission state: sent, no decision yet
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for review'**
+  String get statusPending;
+
+  /// Submission state: accepted. Phrased as the outcome rather than 'Approved', which says nothing to a contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'In the shared songbook'**
+  String get statusApproved;
+
+  /// Submission state: declined, with a reason shown alongside
+  ///
+  /// In en, this message translates to:
+  /// **'Turned down'**
+  String get statusRejected;
+
+  /// Brief acknowledgement after approving or turning down a submission
+  ///
+  /// In en, this message translates to:
+  /// **'Done.'**
+  String get moderationDecided;
 }
 
 class _AppLocalizationsDelegate

@@ -1253,5 +1253,69 @@
   "authErrorUnknown": "Something went wrong. Try again.",
   "@authErrorUnknown": {
     "description": "Last-resort auth failure message"
+  },
+  "signInWithGoogle": "Continue with Google",
+  "@signInWithGoogle": {
+    "description": "Google OAuth button"
+  },
+  "authOrDivider": "or",
+  "@authOrDivider": {
+    "description": "Separates the Google button from the email form"
+  },
+  "moderationQueueTitle": "Waiting for review",
+  "@moderationQueueTitle": {
+    "description": "Admin-only screen listing submissions awaiting a decision"
+  },
+  "moderationQueueEmpty": "Nothing is waiting.",
+  "@moderationQueueEmpty": {
+    "description": "Empty moderation queue"
+  },
+  "mySubmissionsTitle": "Songs I sent in",
+  "@mySubmissionsTitle": {
+    "description": "Screen listing the user's own submissions and their state"
+  },
+  "mySubmissionsEmpty": "You have not sent in any songs yet.",
+  "@mySubmissionsEmpty": {
+    "description": "Empty own-submissions list"
+  },
+  "approve": "Approve",
+  "@approve": {
+    "description": "Accepts a submission into the shared catalogue"
+  },
+  "reject": "Turn down",
+  "@reject": {
+    "description": "Declines a submission. Softer than 'Reject' because a person wrote the thing."
+  },
+  "rejectReasonLabel": "Why? The contributor will see this.",
+  "@rejectReasonLabel": {
+    "description": "Label on the rejection reason field. Says who reads it, because a reason nobody sees is pointless."
+  },
+  "rejectReasonRequired": "Give a reason so they can fix it.",
+  "@rejectReasonRequired": {
+    "description": "Validation when a rejection has no reason"
+  },
+  "withdraw": "Withdraw",
+  "@withdraw": {
+    "description": "Takes back a submission that has not been decided yet"
+  },
+  "statusDraft": "Draft",
+  "@statusDraft": {
+    "description": "Submission state: saved but not sent"
+  },
+  "statusPending": "Waiting for review",
+  "@statusPending": {
+    "description": "Submission state: sent, no decision yet"
+  },
+  "statusApproved": "In the shared songbook",
+  "@statusApproved": {
+    "description": "Submission state: accepted. Phrased as the outcome rather than 'Approved', which says nothing to a contributor."
+  },
+  "statusRejected": "Turned down",
+  "@statusRejected": {
+    "description": "Submission state: declined, with a reason shown alongside"
+  },
+  "moderationDecided": "Done.",
+  "@moderationDecided": {
+    "description": "Brief acknowledgement after approving or turning down a submission"
   }
 }

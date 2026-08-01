@@ -941,4 +941,52 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get authErrorUnknown => 'Valami hiba történt. Próbáld újra.';
+
+  @override
+  String get signInWithGoogle => 'Folytatás Google-fiókkal';
+
+  @override
+  String get authOrDivider => 'vagy';
+
+  @override
+  String get moderationQueueTitle => 'Jóváhagyásra vár';
+
+  @override
+  String get moderationQueueEmpty => 'Nincs jóváhagyásra váró ének.';
+
+  @override
+  String get mySubmissionsTitle => 'Beküldött énekeim';
+
+  @override
+  String get mySubmissionsEmpty => 'Még nem küldtél be éneket.';
+
+  @override
+  String get approve => 'Jóváhagyás';
+
+  @override
+  String get reject => 'Elutasítás';
+
+  @override
+  String get rejectReasonLabel => 'Miért? A beküldő látni fogja.';
+
+  @override
+  String get rejectReasonRequired => 'Adj meg okot, hogy javíthassa.';
+
+  @override
+  String get withdraw => 'Visszavonás';
+
+  @override
+  String get statusDraft => 'Piszkozat';
+
+  @override
+  String get statusPending => 'Jóváhagyásra vár';
+
+  @override
+  String get statusApproved => 'Bekerült a közös énekeskönyvbe';
+
+  @override
+  String get statusRejected => 'Elutasítva';
+
+  @override
+  String get moderationDecided => 'Kész.';
 }

@@ -943,4 +943,53 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get authErrorUnknown => 'A apărut o eroare. Încearcă din nou.';
+
+  @override
+  String get signInWithGoogle => 'Continuă cu Google';
+
+  @override
+  String get authOrDivider => 'sau';
+
+  @override
+  String get moderationQueueTitle => 'În așteptare';
+
+  @override
+  String get moderationQueueEmpty => 'Nu așteaptă nimic.';
+
+  @override
+  String get mySubmissionsTitle => 'Cântecele trimise de mine';
+
+  @override
+  String get mySubmissionsEmpty => 'Nu ai trimis încă niciun cântec.';
+
+  @override
+  String get approve => 'Aprobă';
+
+  @override
+  String get reject => 'Respinge';
+
+  @override
+  String get rejectReasonLabel =>
+      'De ce? Cel care a trimis va vedea acest mesaj.';
+
+  @override
+  String get rejectReasonRequired => 'Dă un motiv, ca să poată corecta.';
+
+  @override
+  String get withdraw => 'Retrage';
+
+  @override
+  String get statusDraft => 'Ciornă';
+
+  @override
+  String get statusPending => 'În așteptare';
+
+  @override
+  String get statusApproved => 'În cartea de cântece comună';
+
+  @override
+  String get statusRejected => 'Respins';
+
+  @override
+  String get moderationDecided => 'Gata.';
 }

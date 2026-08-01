@@ -4,8 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart' show AuthState, User;
 
 import '../../data/datasources/local/local_datasource.dart';
 import '../../data/datasources/remote/remote_song_datasource.dart';
+import '../../data/models/submission.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/song_repository.dart';
+import '../../data/repositories/submission_repository.dart';
 import '../../data/repositories/favorites_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../data/repositories/setlist_repository.dart';
@@ -87,6 +89,44 @@ final isSignedInProvider = Provider<bool>((ref) {
 final isEmailConfirmedProvider = Provider<bool>((ref) {
   ref.watch(authStateChangesProvider);
   return ref.watch(authRepositoryProvider)?.isEmailConfirmed ?? false;
+});
+
+// --- Submissions and moderation ---
+
+/// Submission repository, or null with no backend. Overridden in main.
+final submissionRepositoryProvider =
+    Provider<SubmissionRepository?>((ref) => null);
+
+/// Whether to show moderation UI.
+///
+/// **For visibility only.** Forcing this true grants nothing: approving a song
+/// is an UPDATE that RLS and the status trigger re-check server-side, so a
+/// non-admin who reaches the queue screen still cannot decide anything.
+///
+/// Recomputed on every auth transition, so signing out hides the queue.
+final isAdminProvider = FutureProvider<bool>((ref) async {
+  ref.watch(authStateChangesProvider);
+  if (!ref.watch(isSignedInProvider)) return false;
+  final repository = ref.watch(submissionRepositoryProvider);
+  if (repository == null) return false;
+  return repository.isAdmin();
+});
+
+/// The signed-in user's own submissions and their review state.
+final mySubmissionsProvider = FutureProvider<List<Submission>>((ref) async {
+  ref.watch(authStateChangesProvider);
+  final repository = ref.watch(submissionRepositoryProvider);
+  if (repository == null) return const [];
+  return repository.mySubmissions();
+});
+
+/// The moderation queue. Empty for a non-admin, because that is all RLS shows
+/// them — not because this filtered it.
+final moderationQueueProvider = FutureProvider<List<Submission>>((ref) async {
+  ref.watch(authStateChangesProvider);
+  final repository = ref.watch(submissionRepositoryProvider);
+  if (repository == null) return const [];
+  return repository.pendingQueue();
 });
 
 /// Song repository provider
