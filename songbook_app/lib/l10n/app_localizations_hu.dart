@@ -847,4 +847,98 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get importMusicXmlHint =>
       'Csak ez a mód hoz be kottát is. Előbb exportáld a MuseScore-ból.';
+
+  @override
+  String get accountSection => 'FIÓK';
+
+  @override
+  String get signIn => 'Bejelentkezés';
+
+  @override
+  String get signUp => 'Fiók létrehozása';
+
+  @override
+  String get signOut => 'Kijelentkezés';
+
+  @override
+  String get emailLabel => 'E-mail';
+
+  @override
+  String get passwordLabel => 'Jelszó';
+
+  @override
+  String get forgotPassword => 'Elfelejtetted a jelszavad?';
+
+  @override
+  String get passwordResetSent =>
+      'Ha ehhez a címhez tartozik fiók, elküldtük a jelszó-visszaállító linket.';
+
+  @override
+  String signedInAs(String email) {
+    return 'Bejelentkezve: $email';
+  }
+
+  @override
+  String get notSignedIn => 'Nincs bejelentkezve';
+
+  @override
+  String get accountOptional =>
+      'Fiók nem szükséges. Az ezen az eszközön lévő énekek offline is működnek.';
+
+  @override
+  String get accountsUnavailable => 'A fiókok most nem érhetők el.';
+
+  @override
+  String get verifyEmailTitle => 'Igazold vissza az e-mail címed';
+
+  @override
+  String verifyEmailBody(String email) {
+    return 'Küldtünk egy linket erre a címre: $email. Igazold vissza, mielőtt éneket töltesz fel.';
+  }
+
+  @override
+  String get resendConfirmation => 'Küldd újra';
+
+  @override
+  String get confirmationResent => 'Elküldve.';
+
+  @override
+  String get haveAccountPrompt => 'Van már fiókod?';
+
+  @override
+  String get needAccountPrompt => 'Nincs még fiókod?';
+
+  @override
+  String get authErrorInvalidCredentials =>
+      'Az e-mail cím és a jelszó nem egyezik.';
+
+  @override
+  String get authErrorEmailNotConfirmed =>
+      'Először igazold vissza az e-mail címed.';
+
+  @override
+  String get authErrorEmailAlreadyRegistered =>
+      'Ehhez a címhez már tartozik fiók.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'Válassz hosszabb jelszót – legalább 6 karakter.';
+
+  @override
+  String get authErrorInvalidEmail => 'Ez nem tűnik e-mail címnek.';
+
+  @override
+  String get authErrorRateLimited =>
+      'Túl sok kísérlet. Várj egy percet, majd próbáld újra.';
+
+  @override
+  String get authErrorServerRejected =>
+      'A kiszolgáló elutasította. Próbáld később.';
+
+  @override
+  String get authErrorNetwork =>
+      'Nem sikerült elérni a kiszolgálót. Ellenőrizd a kapcsolatot.';
+
+  @override
+  String get authErrorUnknown => 'Valami hiba történt. Próbáld újra.';
 }

@@ -6,12 +6,75 @@ import '../../../data/models/view_config.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../providers/app_info_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../providers/providers.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../auth/auth_screen.dart';
 
 /// Settings screen
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  /// The optional account.
+  ///
+  /// Renders nothing at all when there is no backend — an account row that
+  /// cannot work is worse than no row, and a build with no Supabase configured
+  /// should look exactly like the app did before accounts existed.
+  Widget _buildAccountSection(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
+    if (!ref.watch(authAvailableProvider)) return const SizedBox.shrink();
+
+    final user = ref.watch(currentUserProvider);
+    final confirmed = ref.watch(isEmailConfirmedProvider);
+    final email = user?.email ?? '';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildSectionHeader(context, l10n.accountSection),
+        if (user == null)
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: Text(l10n.signIn),
+            subtitle: Text(l10n.accountOptional),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AuthScreen()),
+            ),
+          )
+        else ...[
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: Text(l10n.signedInAs(email)),
+            subtitle: confirmed ? null : Text(l10n.verifyEmailTitle),
+            trailing: TextButton(
+              onPressed: () =>
+                  ref.read(authRepositoryProvider)?.signOut(),
+              child: Text(l10n.signOut),
+            ),
+          ),
+          // Holding a session is not the same as having confirmed the address,
+          // and contributing a song requires the latter.
+          if (!confirmed)
+            ListTile(
+              leading: const Icon(Icons.mark_email_unread_outlined),
+              title: Text(l10n.verifyEmailBody(email)),
+              trailing: TextButton(
+                onPressed: () => ref
+                    .read(authRepositoryProvider)
+                    ?.resendConfirmation(email)
+                    // Failure here is not worth interrupting Settings for; the
+                    // user can simply tap again.
+                    .catchError((_) {}),
+                child: Text(l10n.resendConfirmation),
+              ),
+            ),
+        ],
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,9 +89,14 @@ class SettingsScreen extends ConsumerWidget {
       ),
       body: ListView(
         children: [
-          // Language first: it changes every other label on this screen, so
-          // burying it under Appearance would mean hunting for it in a language
-          // you cannot read.
+          // Account, and deliberately not first. An optional feature placed at
+          // the top of Settings reads as something you are expected to do; the
+          // app works signed-out and nothing here gates on a session.
+          _buildAccountSection(context, ref, l10n),
+
+          // Language first among the real settings: it changes every other label
+          // on this screen, so burying it under Appearance would mean hunting for
+          // it in a language you cannot read.
           _buildSectionHeader(context, l10n.settingsLanguage),
           ListTile(
             leading: const Icon(Icons.language),

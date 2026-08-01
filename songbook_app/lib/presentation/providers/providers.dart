@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthState, User;
 
 import '../../data/datasources/local/local_datasource.dart';
 import '../../data/datasources/remote/remote_song_datasource.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/song_repository.dart';
 import '../../data/repositories/favorites_repository.dart';
 import '../../data/repositories/settings_repository.dart';
@@ -34,6 +36,57 @@ final localDataSourceProvider = Provider<LocalDataSource>((ref) {
 /// for a network.
 final remoteSongDataSourceProvider = Provider<RemoteSongDataSource?>((ref) {
   return null;
+});
+
+// --- Auth ---
+//
+// Accounts are strictly additive. There are deliberately no route guards and no
+// redirect-to-sign-in anywhere in the app: Songbook works signed-out, and that
+// is a hard requirement rather than a default. Every provider below therefore
+// tolerates a null repository, which is what a build with no backend, or a
+// failed Supabase init, produces.
+
+/// Auth repository, or null when there is no backend available.
+/// Overridden in main; null here so tests and offline builds need no network.
+final authRepositoryProvider = Provider<AuthRepository?>((ref) => null);
+
+/// Whether accounts are available at all in this build.
+final authAvailableProvider = Provider<bool>((ref) {
+  return ref.watch(authRepositoryProvider) != null;
+});
+
+/// Auth state as a stream, so the UI reacts to sign-in and sign-out.
+///
+/// When there is no backend this never emits rather than erroring — "no
+/// accounts" is a normal configuration, not a fault.
+final authStateChangesProvider = StreamProvider<AuthState>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  if (repository == null) return const Stream<AuthState>.empty();
+  return repository.authStateChanges;
+});
+
+/// The signed-in user, or null.
+///
+/// Reads the synchronous `currentUser` but watches the stream, so it recomputes
+/// on every auth transition. The SDK restores a persisted session during
+/// initialize, so this is already correct on the first frame.
+final currentUserProvider = Provider<User?>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(authRepositoryProvider)?.currentUser;
+});
+
+final isSignedInProvider = Provider<bool>((ref) {
+  return ref.watch(currentUserProvider) != null;
+});
+
+/// Whether the signed-in account has confirmed its email address.
+///
+/// Separate from [isSignedInProvider] because possessing a session is not proof
+/// of verification: contributing a song should require a confirmed address,
+/// reading the catalogue should not.
+final isEmailConfirmedProvider = Provider<bool>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(authRepositoryProvider)?.isEmailConfirmed ?? false;
 });
 
 /// Song repository provider

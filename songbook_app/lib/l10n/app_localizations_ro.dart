@@ -849,4 +849,98 @@ class AppLocalizationsRo extends AppLocalizations {
   @override
   String get importMusicXmlHint =>
       'Singura cale care aduce și partitura. Exportă mai întâi din MuseScore.';
+
+  @override
+  String get accountSection => 'CONT';
+
+  @override
+  String get signIn => 'Conectare';
+
+  @override
+  String get signUp => 'Creează cont';
+
+  @override
+  String get signOut => 'Deconectare';
+
+  @override
+  String get emailLabel => 'E-mail';
+
+  @override
+  String get passwordLabel => 'Parolă';
+
+  @override
+  String get forgotPassword => 'Ai uitat parola?';
+
+  @override
+  String get passwordResetSent =>
+      'Dacă există un cont pentru această adresă, am trimis linkul de resetare.';
+
+  @override
+  String signedInAs(String email) {
+    return 'Conectat ca $email';
+  }
+
+  @override
+  String get notSignedIn => 'Neconectat';
+
+  @override
+  String get accountOptional =>
+      'Nu ai nevoie de cont. Cântecele de pe acest dispozitiv funcționează și offline.';
+
+  @override
+  String get accountsUnavailable => 'Conturile nu sunt disponibile momentan.';
+
+  @override
+  String get verifyEmailTitle => 'Confirmă adresa de e-mail';
+
+  @override
+  String verifyEmailBody(String email) {
+    return 'Am trimis un link către $email. Confirmă-l înainte de a contribui cu cântece.';
+  }
+
+  @override
+  String get resendConfirmation => 'Trimite din nou';
+
+  @override
+  String get confirmationResent => 'Trimis.';
+
+  @override
+  String get haveAccountPrompt => 'Ai deja un cont?';
+
+  @override
+  String get needAccountPrompt => 'Ai nevoie de un cont?';
+
+  @override
+  String get authErrorInvalidCredentials =>
+      'Adresa de e-mail și parola nu corespund.';
+
+  @override
+  String get authErrorEmailNotConfirmed =>
+      'Confirmă mai întâi adresa de e-mail.';
+
+  @override
+  String get authErrorEmailAlreadyRegistered =>
+      'Există deja un cont pentru această adresă.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'Alege o parolă mai lungă – cel puțin 6 caractere.';
+
+  @override
+  String get authErrorInvalidEmail => 'Aceasta nu pare o adresă de e-mail.';
+
+  @override
+  String get authErrorRateLimited =>
+      'Prea multe încercări. Așteaptă un minut și încearcă din nou.';
+
+  @override
+  String get authErrorServerRejected =>
+      'Serverul a refuzat. Încearcă mai târziu.';
+
+  @override
+  String get authErrorNetwork =>
+      'Nu am putut contacta serverul. Verifică conexiunea.';
+
+  @override
+  String get authErrorUnknown => 'A apărut o eroare. Încearcă din nou.';
 }

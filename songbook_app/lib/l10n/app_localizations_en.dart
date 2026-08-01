@@ -843,4 +843,98 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get importMusicXmlHint =>
       'The only path that brings in engraved notation. Export from MuseScore first.';
+
+  @override
+  String get accountSection => 'ACCOUNT';
+
+  @override
+  String get signIn => 'Sign in';
+
+  @override
+  String get signUp => 'Create account';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get emailLabel => 'Email';
+
+  @override
+  String get passwordLabel => 'Password';
+
+  @override
+  String get forgotPassword => 'Forgot your password?';
+
+  @override
+  String get passwordResetSent =>
+      'If that address has an account, a reset link is on its way.';
+
+  @override
+  String signedInAs(String email) {
+    return 'Signed in as $email';
+  }
+
+  @override
+  String get notSignedIn => 'Not signed in';
+
+  @override
+  String get accountOptional =>
+      'You do not need an account. The songs on this device work offline either way.';
+
+  @override
+  String get accountsUnavailable => 'Accounts are unavailable right now.';
+
+  @override
+  String get verifyEmailTitle => 'Confirm your email';
+
+  @override
+  String verifyEmailBody(String email) {
+    return 'We sent a link to $email. Confirm it before contributing songs.';
+  }
+
+  @override
+  String get resendConfirmation => 'Send it again';
+
+  @override
+  String get confirmationResent => 'Sent.';
+
+  @override
+  String get haveAccountPrompt => 'Already have an account?';
+
+  @override
+  String get needAccountPrompt => 'Need an account?';
+
+  @override
+  String get authErrorInvalidCredentials =>
+      'That email and password do not match.';
+
+  @override
+  String get authErrorEmailNotConfirmed => 'Confirm your email address first.';
+
+  @override
+  String get authErrorEmailAlreadyRegistered =>
+      'That address already has an account.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'Choose a longer password — at least 6 characters.';
+
+  @override
+  String get authErrorInvalidEmail =>
+      'That does not look like an email address.';
+
+  @override
+  String get authErrorRateLimited =>
+      'Too many attempts. Wait a minute and try again.';
+
+  @override
+  String get authErrorServerRejected =>
+      'The server refused that. Try again later.';
+
+  @override
+  String get authErrorNetwork =>
+      'Could not reach the server. Check your connection.';
+
+  @override
+  String get authErrorUnknown => 'Something went wrong. Try again.';
 }

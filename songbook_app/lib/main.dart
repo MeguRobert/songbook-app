@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'data/datasources/remote/remote_song_datasource.dart';
 import 'data/datasources/remote/supabase_config.dart';
+import 'data/repositories/auth_repository.dart';
 import 'presentation/providers/providers.dart';
 
 void main() async {
@@ -35,17 +36,20 @@ void main() async {
   // "bundled songs only" rather than a blank screen. Hence the try/catch and
   // the null datasource on failure.
   RemoteSongDataSource? remoteSongs;
+  AuthRepository? auth;
   try {
     await Supabase.initialize(
       url: SupabaseConfig.url,
       publishableKey: SupabaseConfig.publishableKey,
     );
     remoteSongs = RemoteSongDataSource(Supabase.instance.client);
+    auth = AuthRepository(Supabase.instance.client.auth);
   } catch (error, stack) {
     // Worth reporting in debug, not worth interrupting anyone's use of the app.
     debugPrint('Supabase init failed; using bundled catalogue only: $error');
     if (kDebugMode) debugPrintStack(stackTrace: stack);
     remoteSongs = null;
+    auth = null;
   }
 
   // Run the app with Riverpod
@@ -55,6 +59,7 @@ void main() async {
         // Override SharedPreferences provider with initialized instance
         sharedPreferencesProvider.overrideWithValue(prefs),
         remoteSongDataSourceProvider.overrideWithValue(remoteSongs),
+        authRepositoryProvider.overrideWithValue(auth),
       ],
       child: const SongbookApp(),
     ),

@@ -1135,5 +1135,123 @@
   "importMusicXmlHint": "The only path that brings in engraved notation. Export from MuseScore first.",
   "@importMusicXmlHint": {
     "description": "Says what the file path is for, so demoting it does not make it look like a lesser version of paste"
+  },
+  "accountSection": "ACCOUNT",
+  "@accountSection": {
+    "description": "Settings section header for the optional account"
+  },
+  "signIn": "Sign in",
+  "@signIn": {
+    "description": "Button and screen title for signing in to an existing account"
+  },
+  "signUp": "Create account",
+  "@signUp": {
+    "description": "Button for registering a new account"
+  },
+  "signOut": "Sign out",
+  "@signOut": {
+    "description": "Button that ends the session"
+  },
+  "emailLabel": "Email",
+  "@emailLabel": {
+    "description": "Label for the email field"
+  },
+  "passwordLabel": "Password",
+  "@passwordLabel": {
+    "description": "Label for the password field"
+  },
+  "forgotPassword": "Forgot your password?",
+  "@forgotPassword": {
+    "description": "Starts the password reset flow"
+  },
+  "passwordResetSent": "If that address has an account, a reset link is on its way.",
+  "@passwordResetSent": {
+    "description": "Confirmation after requesting a reset. Deliberately does not say whether the account exists, because that would let anyone test which addresses are registered."
+  },
+  "signedInAs": "Signed in as {email}",
+  "@signedInAs": {
+    "description": "Shown in settings when a session exists",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "notSignedIn": "Not signed in",
+  "@notSignedIn": {
+    "description": "Shown in settings when there is no session"
+  },
+  "accountOptional": "You do not need an account. The songs on this device work offline either way.",
+  "@accountOptional": {
+    "description": "Says plainly that accounts are additive. Songbook works fully signed-out and that must never look like a degraded mode."
+  },
+  "accountsUnavailable": "Accounts are unavailable right now.",
+  "@accountsUnavailable": {
+    "description": "Shown when there is no backend reachable, so the account section cannot do anything"
+  },
+  "verifyEmailTitle": "Confirm your email",
+  "@verifyEmailTitle": {
+    "description": "Title of the notice shown to a signed-in but unverified account"
+  },
+  "verifyEmailBody": "We sent a link to {email}. Confirm it before contributing songs.",
+  "@verifyEmailBody": {
+    "description": "Explains why verification matters: reading needs no account, contributing needs a confirmed one",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "resendConfirmation": "Send it again",
+  "@resendConfirmation": {
+    "description": "Re-sends the confirmation email"
+  },
+  "confirmationResent": "Sent.",
+  "@confirmationResent": {
+    "description": "Brief acknowledgement after re-sending the confirmation email"
+  },
+  "haveAccountPrompt": "Already have an account?",
+  "@haveAccountPrompt": {
+    "description": "Switches the auth screen from register to sign in"
+  },
+  "needAccountPrompt": "Need an account?",
+  "@needAccountPrompt": {
+    "description": "Switches the auth screen from sign in to register"
+  },
+  "authErrorInvalidCredentials": "That email and password do not match.",
+  "@authErrorInvalidCredentials": {
+    "description": "Wrong password or unknown address. Deliberately does not say which, so it cannot be used to discover registered addresses."
+  },
+  "authErrorEmailNotConfirmed": "Confirm your email address first.",
+  "@authErrorEmailNotConfirmed": {
+    "description": "Sign-in blocked pending email confirmation"
+  },
+  "authErrorEmailAlreadyRegistered": "That address already has an account.",
+  "@authErrorEmailAlreadyRegistered": {
+    "description": "Registration failed because the address is taken"
+  },
+  "authErrorWeakPassword": "Choose a longer password — at least 6 characters.",
+  "@authErrorWeakPassword": {
+    "description": "Registration failed on password strength"
+  },
+  "authErrorInvalidEmail": "That does not look like an email address.",
+  "@authErrorInvalidEmail": {
+    "description": "The address failed server-side validation"
+  },
+  "authErrorRateLimited": "Too many attempts. Wait a minute and try again.",
+  "@authErrorRateLimited": {
+    "description": "The server is rate limiting this address or device"
+  },
+  "authErrorServerRejected": "The server refused that. Try again later.",
+  "@authErrorServerRejected": {
+    "description": "Reached the server and it declined, for a reason not worth its own message"
+  },
+  "authErrorNetwork": "Could not reach the server. Check your connection.",
+  "@authErrorNetwork": {
+    "description": "Never reached the server. Distinct from a refusal because the advice differs: check the connection rather than what you typed."
+  },
+  "authErrorUnknown": "Something went wrong. Try again.",
+  "@authErrorUnknown": {
+    "description": "Last-resort auth failure message"
   }
 }

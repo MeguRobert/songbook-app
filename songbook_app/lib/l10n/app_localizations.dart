@@ -1479,6 +1479,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The only path that brings in engraved notation. Export from MuseScore first.'**
   String get importMusicXmlHint;
+
+  /// Settings section header for the optional account
+  ///
+  /// In en, this message translates to:
+  /// **'ACCOUNT'**
+  String get accountSection;
+
+  /// Button and screen title for signing in to an existing account
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signIn;
+
+  /// Button for registering a new account
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get signUp;
+
+  /// Button that ends the session
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// Label for the email field
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get emailLabel;
+
+  /// Label for the password field
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordLabel;
+
+  /// Starts the password reset flow
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot your password?'**
+  String get forgotPassword;
+
+  /// Confirmation after requesting a reset. Deliberately does not say whether the account exists, because that would let anyone test which addresses are registered.
+  ///
+  /// In en, this message translates to:
+  /// **'If that address has an account, a reset link is on its way.'**
+  String get passwordResetSent;
+
+  /// Shown in settings when a session exists
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as {email}'**
+  String signedInAs(String email);
+
+  /// Shown in settings when there is no session
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get notSignedIn;
+
+  /// Says plainly that accounts are additive. Songbook works fully signed-out and that must never look like a degraded mode.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not need an account. The songs on this device work offline either way.'**
+  String get accountOptional;
+
+  /// Shown when there is no backend reachable, so the account section cannot do anything
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts are unavailable right now.'**
+  String get accountsUnavailable;
+
+  /// Title of the notice shown to a signed-in but unverified account
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your email'**
+  String get verifyEmailTitle;
+
+  /// Explains why verification matters: reading needs no account, contributing needs a confirmed one
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a link to {email}. Confirm it before contributing songs.'**
+  String verifyEmailBody(String email);
+
+  /// Re-sends the confirmation email
+  ///
+  /// In en, this message translates to:
+  /// **'Send it again'**
+  String get resendConfirmation;
+
+  /// Brief acknowledgement after re-sending the confirmation email
+  ///
+  /// In en, this message translates to:
+  /// **'Sent.'**
+  String get confirmationResent;
+
+  /// Switches the auth screen from register to sign in
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get haveAccountPrompt;
+
+  /// Switches the auth screen from sign in to register
+  ///
+  /// In en, this message translates to:
+  /// **'Need an account?'**
+  String get needAccountPrompt;
+
+  /// Wrong password or unknown address. Deliberately does not say which, so it cannot be used to discover registered addresses.
+  ///
+  /// In en, this message translates to:
+  /// **'That email and password do not match.'**
+  String get authErrorInvalidCredentials;
+
+  /// Sign-in blocked pending email confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your email address first.'**
+  String get authErrorEmailNotConfirmed;
+
+  /// Registration failed because the address is taken
+  ///
+  /// In en, this message translates to:
+  /// **'That address already has an account.'**
+  String get authErrorEmailAlreadyRegistered;
+
+  /// Registration failed on password strength
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a longer password — at least 6 characters.'**
+  String get authErrorWeakPassword;
+
+  /// The address failed server-side validation
+  ///
+  /// In en, this message translates to:
+  /// **'That does not look like an email address.'**
+  String get authErrorInvalidEmail;
+
+  /// The server is rate limiting this address or device
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a minute and try again.'**
+  String get authErrorRateLimited;
+
+  /// Reached the server and it declined, for a reason not worth its own message
+  ///
+  /// In en, this message translates to:
+  /// **'The server refused that. Try again later.'**
+  String get authErrorServerRejected;
+
+  /// Never reached the server. Distinct from a refusal because the advice differs: check the connection rather than what you typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the server. Check your connection.'**
+  String get authErrorNetwork;
+
+  /// Last-resort auth failure message
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get authErrorUnknown;
 }
 
 class _AppLocalizationsDelegate
