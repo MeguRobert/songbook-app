@@ -5,6 +5,18 @@ import 'package:songbook_app/presentation/screens/settings/settings_screen.dart'
 
 import 'helpers.dart';
 
+/// Scrolls [label] into view.
+///
+/// The settings list grew a Photo import section, which pushed About and the
+/// version below the fold. Every `find.*` skips offstage widgets by default, so
+/// without this the assertions look at an empty viewport and report content
+/// missing when it is built and correct.
+Future<void> reveal(WidgetTester tester, String label) async {
+  await tester.scrollUntilVisible(find.text(label), 200,
+      scrollable: find.byType(Scrollable).first);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(() {
     PackageInfo.setMockInitialValues(
@@ -23,6 +35,7 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('APPEARANCE'), findsOneWidget);
     expect(find.text('DISPLAY'), findsOneWidget);
+    await reveal(tester, 'ABOUT');
     expect(find.text('ABOUT'), findsOneWidget);
     expect(find.text('Theme'), findsOneWidget);
     expect(find.text('Font Size'), findsOneWidget);
@@ -39,6 +52,7 @@ void main() {
     await pumpScreen(tester, const SettingsScreen());
     await tester.pumpAndSettle();
 
+    await reveal(tester, '1.1.0 (build 143)');
     expect(find.text('1.1.0 (build 143)'), findsOneWidget);
   });
 
@@ -54,6 +68,7 @@ void main() {
     await pumpScreen(tester, const SettingsScreen());
     await tester.pumpAndSettle();
 
+    await reveal(tester, '2.0.0');
     expect(find.text('2.0.0'), findsOneWidget);
   });
 

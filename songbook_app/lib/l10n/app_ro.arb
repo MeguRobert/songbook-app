@@ -272,5 +272,18 @@
   "statusPending": "În așteptare",
   "statusApproved": "În cartea de cântece comună",
   "statusRejected": "Respins",
-  "moderationDecided": "Gata."
+  "moderationDecided": "Gata.",
+  "importPhoto": "Fotografie",
+  "importSourcePhoto": "fotografie",
+  "importPhotoReading": "Se citește fotografia…",
+  "importPhotoNotConfigured": "Configurează mai întâi importul din fotografie în Setări.",
+  "settingsPhotoImport": "Import din fotografie",
+  "settingsPhotoImportEndpoint": "Adresa serviciului",
+  "settingsPhotoImportEndpointHint": "Adresa care îți citește fotografiile. Lasă gol pentru a dezactiva.",
+  "settingsPhotoImportToken": "Cheie de acces",
+  "settingsPhotoImportTokenHint": "Opțional.",
+  "settingsPhotoImportNotSet": "Neconfigurat",
+  "settingsPhotoImportInvalid": "Aceasta nu pare o adresă web validă.",
+  "commonSave": "Salvează",
+  "commonCancel": "Anulează"
 }

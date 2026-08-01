@@ -985,4 +985,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moderationDecided => 'Done.';
+
+  @override
+  String get importPhoto => 'Photo';
+
+  @override
+  String get importSourcePhoto => 'photo';
+
+  @override
+  String get importPhotoReading => 'Reading the photo…';
+
+  @override
+  String get importPhotoNotConfigured =>
+      'Set up photo import in Settings first.';
+
+  @override
+  String get settingsPhotoImport => 'Photo import';
+
+  @override
+  String get settingsPhotoImportEndpoint => 'Service address';
+
+  @override
+  String get settingsPhotoImportEndpointHint =>
+      'The address that reads your photos. Leave empty to turn photo import off.';
+
+  @override
+  String get settingsPhotoImportToken => 'Access token';
+
+  @override
+  String get settingsPhotoImportTokenHint => 'Optional.';
+
+  @override
+  String get settingsPhotoImportNotSet => 'Not set up';
+
+  @override
+  String get settingsPhotoImportInvalid =>
+      'That does not look like a web address.';
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String get commonCancel => 'Cancel';
 }

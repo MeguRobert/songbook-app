@@ -272,5 +272,18 @@
   "statusPending": "Jóváhagyásra vár",
   "statusApproved": "Bekerült a közös énekeskönyvbe",
   "statusRejected": "Elutasítva",
-  "moderationDecided": "Kész."
+  "moderationDecided": "Kész.",
+  "importPhoto": "Fénykép",
+  "importSourcePhoto": "fénykép",
+  "importPhotoReading": "Fénykép beolvasása…",
+  "importPhotoNotConfigured": "Előbb állítsd be a fényképes beolvasást a Beállításokban.",
+  "settingsPhotoImport": "Fényképes beolvasás",
+  "settingsPhotoImportEndpoint": "Szolgáltatás címe",
+  "settingsPhotoImportEndpointHint": "Az a cím, amely beolvassa a fényképeidet. Hagyd üresen a kikapcsoláshoz.",
+  "settingsPhotoImportToken": "Hozzáférési kulcs",
+  "settingsPhotoImportTokenHint": "Nem kötelező.",
+  "settingsPhotoImportNotSet": "Nincs beállítva",
+  "settingsPhotoImportInvalid": "Ez nem tűnik érvényes webcímnek.",
+  "commonSave": "Mentés",
+  "commonCancel": "Mégse"
 }

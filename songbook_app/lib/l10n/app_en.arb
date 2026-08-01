@@ -1317,5 +1317,57 @@
   "moderationDecided": "Done.",
   "@moderationDecided": {
     "description": "Brief acknowledgement after approving or turning down a submission"
+  },
+  "importPhoto": "Photo",
+  "@importPhoto": {
+    "description": "Button that picks a photo of a song to extract lyrics and chords from"
+  },
+  "importSourcePhoto": "photo",
+  "@importSourcePhoto": {
+    "description": "Source label when the preview came from a photo"
+  },
+  "importPhotoReading": "Reading the photo…",
+  "@importPhotoReading": {
+    "description": "Progress text while the photo is being sent and read"
+  },
+  "importPhotoNotConfigured": "Set up photo import in Settings first.",
+  "@importPhotoNotConfigured": {
+    "description": "Shown when no photo-import endpoint has been configured"
+  },
+  "settingsPhotoImport": "Photo import",
+  "@settingsPhotoImport": {
+    "description": "Settings section heading for the photo import service"
+  },
+  "settingsPhotoImportEndpoint": "Service address",
+  "@settingsPhotoImportEndpoint": {
+    "description": "Label for the URL the photo is sent to"
+  },
+  "settingsPhotoImportEndpointHint": "The address that reads your photos. Leave empty to turn photo import off.",
+  "@settingsPhotoImportEndpointHint": {
+    "description": "Explains what the endpoint field is for"
+  },
+  "settingsPhotoImportToken": "Access token",
+  "@settingsPhotoImportToken": {
+    "description": "Label for the optional bearer token sent with the photo"
+  },
+  "settingsPhotoImportTokenHint": "Optional.",
+  "@settingsPhotoImportTokenHint": {
+    "description": "Notes that the access token may be left empty"
+  },
+  "settingsPhotoImportNotSet": "Not set up",
+  "@settingsPhotoImportNotSet": {
+    "description": "Subtitle shown when no photo-import service is configured"
+  },
+  "settingsPhotoImportInvalid": "That does not look like a web address.",
+  "@settingsPhotoImportInvalid": {
+    "description": "Validation message for a malformed photo-import URL"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Generic confirm button in a settings dialog"
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic dismiss button in a settings dialog"
   }
 }

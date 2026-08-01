@@ -1737,6 +1737,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done.'**
   String get moderationDecided;
+
+  /// Button that picks a photo of a song to extract lyrics and chords from
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get importPhoto;
+
+  /// Source label when the preview came from a photo
+  ///
+  /// In en, this message translates to:
+  /// **'photo'**
+  String get importSourcePhoto;
+
+  /// Progress text while the photo is being sent and read
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the photo…'**
+  String get importPhotoReading;
+
+  /// Shown when no photo-import endpoint has been configured
+  ///
+  /// In en, this message translates to:
+  /// **'Set up photo import in Settings first.'**
+  String get importPhotoNotConfigured;
+
+  /// Settings section heading for the photo import service
+  ///
+  /// In en, this message translates to:
+  /// **'Photo import'**
+  String get settingsPhotoImport;
+
+  /// Label for the URL the photo is sent to
+  ///
+  /// In en, this message translates to:
+  /// **'Service address'**
+  String get settingsPhotoImportEndpoint;
+
+  /// Explains what the endpoint field is for
+  ///
+  /// In en, this message translates to:
+  /// **'The address that reads your photos. Leave empty to turn photo import off.'**
+  String get settingsPhotoImportEndpointHint;
+
+  /// Label for the optional bearer token sent with the photo
+  ///
+  /// In en, this message translates to:
+  /// **'Access token'**
+  String get settingsPhotoImportToken;
+
+  /// Notes that the access token may be left empty
+  ///
+  /// In en, this message translates to:
+  /// **'Optional.'**
+  String get settingsPhotoImportTokenHint;
+
+  /// Subtitle shown when no photo-import service is configured
+  ///
+  /// In en, this message translates to:
+  /// **'Not set up'**
+  String get settingsPhotoImportNotSet;
+
+  /// Validation message for a malformed photo-import URL
+  ///
+  /// In en, this message translates to:
+  /// **'That does not look like a web address.'**
+  String get settingsPhotoImportInvalid;
+
+  /// Generic confirm button in a settings dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get commonSave;
+
+  /// Generic dismiss button in a settings dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
 }
 
 class _AppLocalizationsDelegate

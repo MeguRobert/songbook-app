@@ -12,6 +12,7 @@ import '../../../data/models/verse.dart';
 import '../../../domain/services/chord_sheet_exporter.dart';
 import '../../../domain/services/chord_sheet_parser.dart';
 import '../../../domain/services/musicxml_importer.dart';
+import '../../../domain/services/photo_import_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../providers/book_provider.dart';
 import '../../providers/providers.dart';
@@ -27,7 +28,7 @@ import '../song_view/widgets/sheet_music_view.dart';
 /// would freeze whichever language happened to be active when Parse was
 /// pressed, and `initState` is the wrong place to reach for an inherited widget
 /// anyway.
-enum _ImportSource { savedSong, pastedText, file }
+enum _ImportSource { savedSong, pastedText, file, photo }
 
 /// What an importer produced, whatever the source.
 ///
@@ -67,6 +68,7 @@ class _PendingImport {
         // A file name is the same in every language; the fallback only fires if
         // the picker ever returns a file with no name.
         _ImportSource.file => fileName ?? l10n.importMusicXmlFile,
+        _ImportSource.photo => fileName ?? l10n.importSourcePhoto,
       };
 }
 
@@ -200,6 +202,83 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       warnings: result.warnings,
       source: _ImportSource.pastedText,
     ));
+  }
+
+  /// Photographs a song, sends it to the configured service, and treats the
+  /// answer as any other import.
+  ///
+  /// The returned ChordPro is also written into the paste box, not just the
+  /// preview. Extraction is a transcription like every other source here, so it
+  /// is wrong somewhere — and the box is where a wrong word gets fixed. Leaving
+  /// it empty would have made a photo the one import you could see but not
+  /// correct.
+  Future<void> _pickPhoto() async {
+    final l10n = AppLocalizations.of(context);
+    final service = ref.read(photoImportServiceProvider);
+    if (service == null) {
+      // Not an error: pointing the app at a service is a setup step, and
+      // saying where to do it beats a dead button.
+      setState(() => _fileError = l10n.importPhotoNotConfigured);
+      return;
+    }
+
+    setState(() {
+      _picking = true;
+      _fileError = null;
+    });
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+      if (picked == null || picked.files.isEmpty) return; // cancelled
+      final file = picked.files.single;
+      final bytes = file.bytes;
+      if (bytes == null) {
+        setState(() => _fileError = l10n.importErrorUnreadable(file.name));
+        return;
+      }
+
+      final payload = await service.extract(bytes, fileName: file.name);
+      switch (payload) {
+        case ChordProPayload(text: final text, warnings: final warnings):
+          final parsed = _parser.parse(text);
+          _sheetController.text = text;
+          _accept(_PendingImport(
+            verses: parsed.verses,
+            title: parsed.title,
+            key: parsed.key,
+            // Both sets: the service reports what it could not read, the
+            // parser what it could not classify. Either can be the reason a
+            // line looks wrong.
+            warnings: [...warnings, ...parsed.warnings],
+            source: _ImportSource.photo,
+            fileName: file.name,
+          ));
+        case MusicXmlPayload(xml: final xml, warnings: final warnings):
+          // A service that can engrave answers with this instead; the app
+          // already knows how to read it.
+          final result = _musicXml.importXml(xml);
+          _accept(_PendingImport(
+            verses: result.verses,
+            notation: result.notation,
+            title: result.title,
+            key: result.key,
+            timeSignature: result.timeSignature,
+            warnings: [...warnings, ...result.warnings],
+            source: _ImportSource.photo,
+            fileName: file.name,
+          ));
+      }
+    } on PhotoImportException catch (e) {
+      setState(() => _fileError = e.message);
+    } on MusicXmlImportException catch (e) {
+      setState(() => _fileError = e.message);
+    } catch (e) {
+      setState(() => _fileError = '$e');
+    } finally {
+      if (mounted) setState(() => _picking = false);
+    }
   }
 
   Future<void> _pickMusicXmlFile() async {
@@ -461,15 +540,30 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
               alignment: Alignment.centerLeft,
               child: Padding(
                 padding: const EdgeInsets.only(left: 8),
-                child: OutlinedButton.icon(
-                  onPressed: _picking ? null : _pickMusicXmlFile,
-                  icon: _picking
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.piano_outlined),
-                  label: Text(l10n.importMusicXmlFile),
+                // Wrap, not Row: two buttons plus a Hungarian label overflow a
+                // narrow phone, and this is the one place both live.
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    // The only path that yields real notation, and the lyrics
+                    // come free from <lyric> elements.
+                    OutlinedButton.icon(
+                      onPressed: _picking ? null : _pickMusicXmlFile,
+                      icon: _picking
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.piano_outlined),
+                      label: Text(l10n.importMusicXmlFile),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _picking ? null : _pickPhoto,
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      label: Text(l10n.importPhoto),
+                    ),
+                  ],
                 ),
               ),
             ),

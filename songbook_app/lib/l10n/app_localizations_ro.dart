@@ -992,4 +992,46 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get moderationDecided => 'Gata.';
+
+  @override
+  String get importPhoto => 'Fotografie';
+
+  @override
+  String get importSourcePhoto => 'fotografie';
+
+  @override
+  String get importPhotoReading => 'Se citește fotografia…';
+
+  @override
+  String get importPhotoNotConfigured =>
+      'Configurează mai întâi importul din fotografie în Setări.';
+
+  @override
+  String get settingsPhotoImport => 'Import din fotografie';
+
+  @override
+  String get settingsPhotoImportEndpoint => 'Adresa serviciului';
+
+  @override
+  String get settingsPhotoImportEndpointHint =>
+      'Adresa care îți citește fotografiile. Lasă gol pentru a dezactiva.';
+
+  @override
+  String get settingsPhotoImportToken => 'Cheie de acces';
+
+  @override
+  String get settingsPhotoImportTokenHint => 'Opțional.';
+
+  @override
+  String get settingsPhotoImportNotSet => 'Neconfigurat';
+
+  @override
+  String get settingsPhotoImportInvalid =>
+      'Aceasta nu pare o adresă web validă.';
+
+  @override
+  String get commonSave => 'Salvează';
+
+  @override
+  String get commonCancel => 'Anulează';
 }

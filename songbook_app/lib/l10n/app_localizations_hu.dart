@@ -989,4 +989,45 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get moderationDecided => 'Kész.';
+
+  @override
+  String get importPhoto => 'Fénykép';
+
+  @override
+  String get importSourcePhoto => 'fénykép';
+
+  @override
+  String get importPhotoReading => 'Fénykép beolvasása…';
+
+  @override
+  String get importPhotoNotConfigured =>
+      'Előbb állítsd be a fényképes beolvasást a Beállításokban.';
+
+  @override
+  String get settingsPhotoImport => 'Fényképes beolvasás';
+
+  @override
+  String get settingsPhotoImportEndpoint => 'Szolgáltatás címe';
+
+  @override
+  String get settingsPhotoImportEndpointHint =>
+      'Az a cím, amely beolvassa a fényképeidet. Hagyd üresen a kikapcsoláshoz.';
+
+  @override
+  String get settingsPhotoImportToken => 'Hozzáférési kulcs';
+
+  @override
+  String get settingsPhotoImportTokenHint => 'Nem kötelező.';
+
+  @override
+  String get settingsPhotoImportNotSet => 'Nincs beállítva';
+
+  @override
+  String get settingsPhotoImportInvalid => 'Ez nem tűnik érvényes webcímnek.';
+
+  @override
+  String get commonSave => 'Mentés';
+
+  @override
+  String get commonCancel => 'Mégse';
 }
