@@ -98,12 +98,13 @@ class SearchService {
 
   /// The first individual line of [song] containing [normalizedQuery].
   ///
-  /// Verses come in two shapes — structured [LyricLine]s or a `plainText`
-  /// blob — and `displayText` flattens both to newline-joined text, so
-  /// splitting on newlines gives one comparable unit either way.
+  /// Verses come in two shapes — structured [LyricLine]s or a `plainText` blob —
+  /// and `displayLines` gives one comparable unit either way. It reads the lines
+  /// directly rather than joining them into `displayText` and splitting that back
+  /// apart, which this used to do once per verse per song per keystroke.
   String? _firstMatchingLine(Song song, String normalizedQuery) {
     for (final verse in song.verses) {
-      for (final line in verse.displayText.split('\n')) {
+      for (final line in verse.displayLines) {
         final trimmed = line.trim();
         if (trimmed.isEmpty) continue;
         if (trimmed.normalizeForSearch().contains(normalizedQuery)) {

@@ -56,6 +56,30 @@ void main() {
       expect('café'.removeDiacritics(), 'cafe'); // é is mapped
       expect('çñ'.removeDiacritics(), 'çñ'); // not in the map
     });
+
+    // The three below guard a rewrite: this used to be split('')/map/join, which
+    // allocated a one-character string per character of every string it saw, on
+    // every keystroke of a search. It is now a single pass over code units, and
+    // that is exactly the change that can break characters wider than one unit.
+    test('characters outside the BMP survive intact', () {
+      // An emoji is a surrogate PAIR — two code units — so a per-code-unit pass
+      // that reassembles carelessly would corrupt it or drop half.
+      expect('a🎵b'.removeDiacritics(), 'a🎵b');
+      expect('🎵'.removeDiacritics(), '🎵');
+      expect('Áldjad 🎵 én'.removeDiacritics(), 'Aldjad 🎵 en');
+    });
+
+    test('is idempotent', () {
+      const text = 'Áldjad én lelkem 🎵 café çñ';
+      expect(text.removeDiacritics().removeDiacritics(),
+          text.removeDiacritics());
+    });
+
+    test('a string needing no change comes back equal', () {
+      for (final text in ['', 'plain ascii', '123 !?', 'çñ', '🎵🎶']) {
+        expect(text.removeDiacritics(), text, reason: 'for "$text"');
+      }
+    });
   });
 
   group('normalizeForSearch', () {

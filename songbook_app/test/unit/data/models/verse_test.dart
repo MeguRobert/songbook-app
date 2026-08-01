@@ -80,6 +80,55 @@ void main() {
     });
   });
 
+  group('displayLines', () {
+    // Exists because searching per line was joining every verse into one string
+    // and splitting it straight back apart — per song, on every keystroke. The
+    // lines were already separate. `displayText` is now derived from this, so the
+    // plainText-wins rule lives in one place rather than two that can drift.
+    test('is one entry per line when plainText is null', () {
+      const verse = Verse(
+        number: 1,
+        lines: [LyricLine(text: 'one'), LyricLine(text: 'two')],
+      );
+      expect(verse.displayLines, ['one', 'two']);
+    });
+
+    test('splits plainText, which wins when present', () {
+      const verse = Verse(
+        number: 1,
+        plainText: 'plain one\nplain two',
+        lines: [LyricLine(text: 'ignored')],
+      );
+      expect(verse.displayLines, ['plain one', 'plain two']);
+    });
+
+    test('falls back to lines when plainText is empty', () {
+      const verse = Verse(number: 1, plainText: '', lines: [
+        LyricLine(text: 'fallback'),
+      ]);
+      expect(verse.displayLines, ['fallback']);
+    });
+
+    test('is empty for a verse with no content', () {
+      expect(const Verse(number: 1).displayLines, isEmpty);
+    });
+
+    test('agrees with displayText for every shape', () {
+      // The invariant that makes reading one instead of the other safe.
+      const verses = [
+        Verse(number: 1, lines: [LyricLine(text: 'a'), LyricLine(text: 'b')]),
+        Verse(number: 2, plainText: 'x\ny'),
+        Verse(number: 3, plainText: 'single'),
+        Verse(number: 4, plainText: '', lines: [LyricLine(text: 'z')]),
+        Verse(number: 5),
+      ];
+      for (final verse in verses) {
+        expect(verse.displayLines.join('\n'), verse.displayText,
+            reason: 'verse ${verse.number}');
+      }
+    });
+  });
+
   group('hasChordData', () {
     test('true when any line has chords', () {
       const verse = Verse(
