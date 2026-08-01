@@ -46,15 +46,28 @@ row, once the AUTO-SCROLL header, both invisible to the suite.
   coordinate, which passes against broken code as happily as against working code.
 - **The tree is polled until it stops changing** after every navigation. It lags a
   beat, so one snapshot taken straight after a tap finds almost nothing.
-- **Labels are matched exactly, not by substring.** Flutter also emits merged
-  ancestor nodes whose label is every descendant's text concatenated, so a
-  substring match finds the whole app bar and proves nothing.
-- **The sheet is scrolled with wheel events** before its lower sections are used.
-  It opens at 72% of the screen, so VOICE starts under the fold, and a click on an
-  off-screen chip lands outside the sheet's clip and quietly misses.
+- **Labels are matched exactly — but per part of a merged label.** A substring
+  match finds the whole app bar and proves nothing. Flutter does, however, merge a
+  compound row into one node: a notation-editor bar header arrives as a single
+  label reading `1. ütem\n4 / 4 ütés`. So `hasLabel` matches the whole label *or*
+  any one of its newline-separated parts, exactly. Matching the whole label only
+  reported working rows as broken.
+- **Anything below the fold must be scrolled to first.** The semantics tree carries
+  only what is laid out, so asking for an off-screen section reports it missing.
+  That bit twice: the controls sheet opens at 72% of the screen so VOICE starts
+  under the fold, and the editor's OTHER VOICES section sits after every verse. A
+  click on an off-screen chip also lands outside its clip and quietly misses.
 - **Interface strings live in `WORDS` in the script**, not read from the ARBs. A
   typo shared between the app and its own test is invisible; this way a changed
-  translation is noticed.
+  translation is noticed. It earns its keep — it caught that the English view chip
+  reads `Sheet` while the settings row for the same view reads `Sheet Music`.
+
+**Overflow is measured, not reported.** A **release** build emits no `RenderFlex`
+overflow at all: both the assertion and the yellow stripe are debug-only. So
+`overflowing()` reads the semantics bounding boxes and flags anything reaching past
+the viewport — which is also closer to the real question, since a label can be
+clipped or ellipsized without any RenderFlex complaining. Run it at every width you
+care about; `--width 360` is the one that has actually broken.
 
 Two things this cannot do, both from the same cause — a headless browser renders
 at roughly 1.3 fps here:
