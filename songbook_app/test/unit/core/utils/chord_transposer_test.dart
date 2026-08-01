@@ -28,11 +28,30 @@ void main() {
 
     test('returns null for invalid input', () {
       expect(ChordTransposer.parseChord(''), isNull);
-      expect(ChordTransposer.parseChord('H'), isNull); // no German notation
       expect(ChordTransposer.parseChord('c'), isNull); // lowercase not a chord
       expect(ChordTransposer.parseChord('7'), isNull);
       expect(ChordTransposer.parseChord('#C'), isNull);
       expect(ChordTransposer.parseChord(' C'), isNull); // leading whitespace
+    });
+
+    test('reads H as B natural, the way most of Europe writes it', () {
+      expect(ChordTransposer.parseChord('H'), ('B', ''));
+      expect(ChordTransposer.parseChord('Hm'), ('B', 'm'));
+      expect(ChordTransposer.parseChord('H7'), ('B', '7'));
+      expect(ChordTransposer.parseChord('Hm7'), ('B', 'm7'));
+    });
+
+    test('reads a German bass note too', () {
+      expect(ChordTransposer.parseChord('H/D#'), ('B', '/D#'));
+      expect(ChordTransposer.parseChord('G/H'), ('G', '/B'));
+    });
+
+    test('B keeps meaning B natural', () {
+      // Strict German notation reads `B` as B flat, but every song already
+      // stored here reads it as B natural. Redefining it would silently
+      // re-tune the library, so only `H` is added.
+      expect(ChordTransposer.parseChord('B'), ('B', ''));
+      expect(ChordTransposer.parseChord('Bb'), ('Bb', ''));
     });
   });
 
@@ -179,15 +198,25 @@ void main() {
 
     test('an unresolvable side leaves the whole slash chord alone', () {
       // Half-transposing would quietly change the harmony.
-      expect(ChordTransposer.transposeChord('G/H', 2), 'G/H');
+      // `G/H` used to belong here; H is now a readable root, so the example
+      // has to be something that really is unreadable.
+      expect(ChordTransposer.transposeChord('G/x', 2), 'G/x');
       expect(ChordTransposer.transposeChord('x/G', 2), 'x/G');
       expect(ChordTransposer.transposeChord('Cb/G', 2), 'Cb/G');
     });
 
     test('returns unparseable chords unchanged', () {
-      expect(ChordTransposer.transposeChord('H', 2), 'H');
       expect(ChordTransposer.transposeChord('', 2), '');
       expect(ChordTransposer.transposeChord('x7', 2), 'x7');
+    });
+
+    test('transposes a German chord, and answers in English', () {
+      // The app has one spelling for a pitch; H is accepted on the way in, not
+      // carried through. B + 2 is C#.
+      expect(ChordTransposer.transposeChord('H', 2), 'C#');
+      expect(ChordTransposer.transposeChord('Hm', 2), 'C#m');
+      expect(ChordTransposer.transposeChord('H', -1), 'A#');
+      expect(ChordTransposer.transposeChord('G/H', 2), 'A/C#');
     });
 
     test('returns chords with unknown roots unchanged', () {
@@ -236,9 +265,14 @@ void main() {
     });
 
     test('returns 0 when either key is invalid', () {
-      expect(ChordTransposer.semitonesBetween('H', 'C'), 0);
-      expect(ChordTransposer.semitonesBetween('C', 'H'), 0);
       expect(ChordTransposer.semitonesBetween('', ''), 0);
+      expect(ChordTransposer.semitonesBetween('xyz', 'C'), 0);
+    });
+
+    test('reads a German key name', () {
+      expect(ChordTransposer.semitonesBetween('H', 'C'), 1);
+      expect(ChordTransposer.semitonesBetween('C', 'H'), -1);
+      expect(ChordTransposer.semitonesBetween('H', 'B'), 0);
     });
   });
 

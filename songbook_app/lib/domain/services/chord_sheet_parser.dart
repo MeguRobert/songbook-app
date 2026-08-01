@@ -1,3 +1,4 @@
+import '../../core/utils/chord_transposer.dart';
 import '../../data/models/chord_position.dart';
 import '../../data/models/lyric_line.dart';
 import '../../data/models/verse.dart';
@@ -72,18 +73,26 @@ class ChordSheetParser {
 
   /// Strict chord token, used only to DECIDE WHETHER a token is a chord.
   ///
-  /// This must never be merged with `ChordTransposer`'s `^([A-G][#b]?)(.*)$`.
+  /// This must never be merged with `ChordTransposer`'s `^([A-GH][#b]?)(.*)$`.
   /// There, quality is `.*` — correct for transposing a token already known to
   /// be a chord, and catastrophic as a detector, because every word starting
-  /// with A–G "matches". Hungarian lyrics are full of them: `Csak Egy Az`
+  /// with A–H "matches". Hungarian lyrics are full of them: `Csak Egy Az`
   /// reads as C+"sak", E+"gy", A+"z", so the whole line would be classified as
   /// chords and its words silently destroyed. Hence the quality whitelist.
+  /// (`ChordTransposer` is imported here only to rename `H`, never to detect.)
+  ///
+  /// `H` is B natural in Hungarian, German and Polish notation, so it is a root
+  /// like any other; [ChordTransposer.toEnglishNotation] renames it on the way
+  /// into storage. Admitting it costs one collision: `Hadd` is a Hungarian word
+  /// that parses as H+add. The all-or-nothing rule in [isChordLine] contains
+  /// it — a line needs *every* token to be chord-shaped — so only a line
+  /// consisting of that single word is misread, which no real song produces.
   ///
   /// Extensions may carry their own accidental (`Em7b5`, `C7#9`) — that `b` is
   /// part of a numbered extension, which is why it is only allowed in front of
   /// digits and not as a bare trailing letter (`Bbb` is not a chord here).
   static final RegExp _chordToken = RegExp(
-    r'^[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*(?:/[A-G][#b]?)?$',
+    r'^[A-GH][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*(?:/[A-GH][#b]?)?$',
   );
 
   /// A lone root letter with no accidental and no quality.
@@ -91,8 +100,10 @@ class ChordSheetParser {
   /// `A` and `E` are both plausible one-chord lines and plausible lyrics (in
   /// Hungarian `A` is the definite article), so a single-token line of this
   /// shape is resolved towards lyrics — losing a chord is recoverable, losing
-  /// a line of words is not.
-  static final RegExp _bareRoot = RegExp(r'^[A-G]$');
+  /// a line of words is not. `H` is included for the same shape rather than the
+  /// same ambiguity: one bare root alone is too weak a signal to call a line
+  /// music, whichever letter it is.
+  static final RegExp _bareRoot = RegExp(r'^[A-GH]$');
 
   /// Punctuation a chord row may carry that is not itself a chord.
   ///
@@ -291,7 +302,10 @@ class ChordSheetParser {
         if (close != -1) {
           final token = raw.substring(i + 1, close).trim();
           if (isChordToken(token)) {
-            chords.add(ChordPosition(chord: token, position: text.length));
+            chords.add(ChordPosition(
+              chord: ChordTransposer.toEnglishNotation(token),
+              position: text.length,
+            ));
             i = close + 1;
             continue;
           }
@@ -320,9 +334,10 @@ class ChordSheetParser {
     for (final match in _token.allMatches(chordLine)) {
       final token = match.group(0)!;
       if (_separator.hasMatch(token)) continue;
-      chords.add(
-        ChordPosition(chord: _unwrap(token), position: match.start),
-      );
+      chords.add(ChordPosition(
+        chord: ChordTransposer.toEnglishNotation(_unwrap(token)),
+        position: match.start,
+      ));
     }
     return LyricLine(text: lyricLine.trimRight(), chords: chords);
   }

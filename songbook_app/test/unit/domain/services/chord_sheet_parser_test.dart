@@ -33,10 +33,33 @@ void main() {
     });
 
     test('rejects near-misses and non-chords', () {
-      for (final token in ['', 'H', 'c', 'g7', '7', '#C', 'Bbb', 'Chorus',
-        '2x', 'G/H', 'Amen']) {
+      for (final token in ['', 'c', 'g7', '7', '#C', 'Bbb', 'Chorus',
+        '2x', 'Amen']) {
         expect(parser.isChordToken(token), isFalse, reason: token);
       }
+    });
+
+    test('accepts H, which is B natural across central Europe', () {
+      for (final token in ['H', 'Hm', 'H7', 'Hm7', 'Hsus4', 'H/D#', 'G/H']) {
+        expect(parser.isChordToken(token), isTrue, reason: token);
+      }
+    });
+
+    test('still rejects Hungarian words that begin with H', () {
+      // The same trap as `Csak Egy Az`, now with a root that is a common
+      // first letter in Hungarian.
+      for (final word in ['Hogy', 'Hozzád', 'Ha', 'Hív', 'Halld']) {
+        expect(parser.isChordToken(word), isFalse, reason: word);
+      }
+    });
+
+    test('`Hadd` is the one collision admitting H costs', () {
+      // H+add is a legal chord shape and `hadd` is a Hungarian word, so the
+      // token alone is ambiguous. Pinned so the trade-off stays visible.
+      expect(parser.isChordToken('Hadd'), isTrue);
+      // It does not matter in practice: `hadd` introduces a clause, so it is
+      // never alone on a line, and one ordinary word makes the line lyrics.
+      expect(parser.isChordLine('Hadd menjek el'), isFalse);
     });
   });
 
@@ -148,6 +171,17 @@ void main() {
       expect(line.chords, const [ChordPosition(chord: 'G', position: 5)]);
     });
 
+    test('a German chord is stored under its English name', () {
+      // Accepted on the way in, not carried through: the app keeps one
+      // spelling per pitch so transposition and capo have one thing to read.
+      final line = parser.parse('[Hm]Csak [G/H]egy').verses.single.lines.single;
+      expect(line.text, 'Csak egy');
+      expect(line.chords, const [
+        ChordPosition(chord: 'Bm', position: 0),
+        ChordPosition(chord: 'G/B', position: 5),
+      ]);
+    });
+
     test('a bracket-only line yields chords over empty text', () {
       final line = parser.parse('[G] [C]').verses.single.lines.single;
       expect(line.text, '');
@@ -190,6 +224,21 @@ void main() {
       final twoLine = parser.parse('G       C\nAmazing grace');
       final inline = parser.parse('[G]Amazing [C]grace');
       expect(twoLine.verses.single.lines, inline.verses.single.lines);
+    });
+
+    test('a Hungarian chord row survives and is stored in English', () {
+      // Exactly what photographing a Hungarian songbook produces. Before H was
+      // accepted this row was not a chord row at all, so every chord on it
+      // entered the song as a word.
+      final result = parser.parse('D       A    Hm\nCsak egy az út, mely');
+      final line = result.verses.single.lines.single;
+
+      expect(line.text, 'Csak egy az út, mely');
+      expect(line.chords, const [
+        ChordPosition(chord: 'D', position: 0),
+        ChordPosition(chord: 'A', position: 8),
+        ChordPosition(chord: 'Bm', position: 13),
+      ]);
     });
 
     test('a chord past the end of the lyric keeps its column', () {

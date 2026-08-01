@@ -64,8 +64,14 @@ void main() {
 
     test('invalid / empty key returns no suggestions', () {
       expect(service.suggestionsFor(''), isEmpty);
-      expect(service.suggestionsFor('H'), isEmpty);
+      expect(service.suggestionsFor('Hogy'), isEmpty);
       expect(service.recommendedFor('xyz'), isNull);
+    });
+
+    test('a German key gets the same suggestions as its English name', () {
+      expect(service.suggestionsFor('H'), service.suggestionsFor('B'));
+      expect(service.suggestionsFor('Hm'), service.suggestionsFor('Bm'));
+      expect(service.suggestionsFor('H'), isNotEmpty);
     });
 
     test('label reads naturally', () {

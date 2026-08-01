@@ -40,8 +40,12 @@ void main() {
     });
 
     test('invalid chords pass through unchanged', () {
-      expect(service.transposeChord('H', 3), 'H');
+      expect(service.transposeChord('xyz', 3), 'xyz');
       expect(service.transposeChord('', 3), '');
+    });
+
+    test('a German chord transposes as B natural', () {
+      expect(service.transposeChord('H', 3), 'D');
     });
   });
 

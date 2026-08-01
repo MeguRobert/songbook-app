@@ -4,7 +4,30 @@ import '../constants/music_constants.dart';
 class ChordTransposer {
   ChordTransposer._();
 
-  static final _chordPattern = RegExp(r'^([A-G][#b]?)(.*)$');
+  static final _chordPattern = RegExp(r'^([A-GH][#b]?)(.*)$');
+
+  /// A German root note: `H` opening the chord, or `H` as a slash bass.
+  static final _germanRoot = RegExp(r'(^|/)H');
+
+  /// [chord] with German note names rewritten to the ones the app stores.
+  ///
+  /// `H` is B natural across Hungary, Germany, Poland, Czechia, the Balkans,
+  /// Scandinavia and Russia — a medieval scribal accident, where the square `b`
+  /// that meant B natural was written in a hand that later readers took for an
+  /// `h`. A Hungarian songbook is full of `H` and `Hm`, so a page that is
+  /// pasted or photographed has to be readable.
+  ///
+  /// `B` is deliberately left alone. Strict German notation reads it as B flat,
+  /// but every song already stored here reads it as B natural, and redefining
+  /// it would silently re-tune the library. Accepting `H` only ever adds
+  /// information: unlike `B`, `H` names the same pitch in every system that
+  /// uses it at all.
+  ///
+  /// The app keeps one spelling per pitch, so `H` is accepted on the way in and
+  /// not carried through — otherwise transposition would have to decide, with
+  /// nothing to go on, whether a song reaching B natural should say `B` or `H`.
+  static String toEnglishNotation(String chord) =>
+      chord.replaceAllMapped(_germanRoot, (m) => '${m.group(1)}B');
 
   /// Transposes a single chord by the given number of semitones
   ///
@@ -61,7 +84,12 @@ class ChordTransposer {
   static (String, String)? parseChord(String chord) {
     final match = _chordPattern.firstMatch(chord);
     if (match == null) return null;
-    return (match.group(1)!, match.group(2)!);
+    // Both halves: the root may be `H`, and the quality carries the slash bass,
+    // which may be `/H`.
+    return (
+      toEnglishNotation(match.group(1)!),
+      toEnglishNotation(match.group(2)!),
+    );
   }
 
   /// Calculates the number of semitones between two keys
@@ -101,7 +129,7 @@ class ChordTransposer {
 
   static int _keyToIndex(String key) {
     // Remove minor indicator for index lookup
-    final root = key.replaceAll('m', '');
+    final root = toEnglishNotation(key.replaceAll('m', ''));
     int index = MusicConstants.sharpNotes.indexOf(root);
     if (index == -1) index = MusicConstants.flatNotes.indexOf(root);
     return index;
