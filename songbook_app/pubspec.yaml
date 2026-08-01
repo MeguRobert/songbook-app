@@ -48,6 +48,12 @@ dependencies:
   # which is the platform this is deployed on.
   file_picker: ^10.0.0
 
+  # The shared catalogue and (later) accounts. The app stays fully usable
+  # without this: the bundled asset is the offline floor and the server is
+  # merged over it, so a failed init or a paused project degrades to
+  # bundled-only rather than breaking startup. See song_repository.dart.
+  supabase_flutter: ^2.8.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

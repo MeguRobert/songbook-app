@@ -46,9 +46,13 @@ For overnight runs, keep entries **self-contained** so an agent doesn't stall mi
 
 ## Someday
 
-- [ ] **B3b — photo import (NICE TO HAVE).** Digitise a hymn by photographing it. Deferred
-  because it is the only part of the import work that cannot be done in the app alone, and it
-  decides whether this stays a zero-cost static site.
+- [ ] **B3b — photo import (NICE TO HAVE).** Digitise a hymn by photographing it. It is the only
+  part of the import work that cannot be done in the app alone. **It no longer decides whether this
+  stays a zero-cost static site — that was settled separately on 2026-07-28, when Songbook was
+  decided to become a multi-user platform with accounts + moderation on Supabase** (see
+  `HANDOFF-platform.md`; the backend schema, RLS policies and a passing 15-assertion security test
+  are already built under `supabase/`). Photo import is now one feature of that platform rather than
+  the thing forcing the question.
 
   **The app side is nearly free already.** `file_picker` is in the app and proven (B2), so
   picking a JPEG from the gallery needs no new plugin and no camera permission, and behaves the
@@ -58,17 +62,35 @@ For overnight runs, keep entries **self-contained** so an agent doesn't stall mi
 
   **What is missing is compute**, and it splits in two:
 
-  - *Photo → lyrics + chords.* Achievable. Cheapest route is a ~20-line serverless proxy whose
-    only job is holding an API key and forwarding the image to a vision model. Fast cold start,
-    pennies at this volume. The key cannot live in the bundle: this is a static PWA on GitHub
-    Pages, so a shipped key is public.
-  - *Photo → engraved notation.* Needs Audiveris, a JVM desktop app that cannot run in Flutter
-    on web or mobile. `tools/convert_hymn.py` already does this well; do not rebuild it.
-    Either (a) run it on a **GitHub Actions** `workflow_dispatch` — free, since this repo is
-    public, latency in minutes, which is fine for a one-off digitisation — or (b) wrap it in
-    ~30 lines of FastAPI on Robert's own PC behind a Cloudflare Tunnel / Tailscale.
-    *Unverified:* Audiveris has a `-batch` mode but is a JVM GUI app; a headless runner may
-    need `xvfb`. Spike that before committing to (a).
+  - *Photo → lyrics + chords.* Achievable, and **proven 2026-07-28**: a vision model read a hymn
+    page at 99.8% character similarity with Hungarian diacritics correct, which replaces EasyOCR.
+    A ~20-line serverless proxy holds the API key and forwards the image. **Decided: an auth-gated
+    Supabase Edge Function**, on the same Supabase project as accounts — Supabase Auth is the gate,
+    so only signed-in users can spend the API budget. Verified cost per photo: ~$0.007 on
+    Haiku 4.5, ~$0.03 on Sonnet 5 (which also has high-res 2576px vision), ~$0.05 on Opus 5 — at 20
+    photos/month, $0.14–$1.08. The key cannot live in the bundle: this is a static PWA on GitHub
+    Pages, so a *shipped* key is public (a key the user types in and that is stored locally is not —
+    that distinction was previously stated too broadly).
+  - *Photo → engraved notation.* Needs an OMR engine. `tools/convert_hymn.py` already does this
+    well; do not rebuild it. **Decided 2026-07-28: GitHub Actions `workflow_dispatch`** — free on
+    this public repo, latency in minutes, which is fine for a one-off digitisation. It is a
+    *maintainer* path, not an in-app button: `workflow_dispatch` cannot be triggered anonymously
+    (needs `repo` scope even on a public repo), so the flow is run-workflow → download the `.mxl`
+    artifact → open it with the in-app MusicXML importer. Zero new app code. Robert's own PC was
+    rejected once Songbook went multi-user: a home box is a single point of failure that degrades a
+    feature for *other* users.
+    *Verified 2026-07-28 (was "unverified: may need xvfb"):* **Audiveris 5.11 `-batch -export` runs
+    fully headless — no X server, no xvfb.** The one landmine is a JNA `libgtk-3.so` load from a
+    static initializer, throwing `UnsatisfiedLinkError` (an `Error`, so Audiveris's own
+    `catch (Exception)` misses it). Fix with `apt install libgtk-3-0` **or** `-Dsun.java2d.uiScale=1`
+    (which short-circuits the guard and needs no GTK at all — better for CI). Official
+    `ubuntu22.04`/`ubuntu24.04` x86_64 `.deb` builds exist as of 5.11.0. Audiveris requests the
+    *legacy* Tesseract engine, so its in-score OCR no-ops against Ubuntu's LSTM-only traineddata;
+    notation export is unaffected.
+    *Still open:* whether an OMR engine is needed at all — a vision model may read pitches directly
+    at full photo resolution. See Decision 0 in `HANDOFF-platform.md`; blocked on a full-resolution
+    hymn page. If an engine is kept, prefer `oemer` (pure Python, no JVM, ARM-friendly, already
+    wired as `--engine oemer`) and choose on accuracy alone, since headless deployment is now solved.
 
   **Where it could run, costed.** Money is NOT the blocker — an earlier note in this repo said
   it was, wrongly. Lambda and Azure Functions both have perpetual free tiers of ~1M invocations
@@ -79,7 +101,7 @@ For overnight runs, keep entries **self-contained** so an agent doesn't stall mi
 
   | Option | Monthly | Notes |
   |---|---|---|
-  | Robert's old always-on x86 PC | ~€1 electricity (10 W × 24 h) | Best fit. x86 means the Audiveris installer and Tesseract just work |
+  | Robert's old always-on x86 PC | ~€1 electricity (10 W × 24 h) | **Rejected 2026-07-28** once multi-user was chosen — a home box degrades a feature for other users, and the paste-a-token-into-Settings trick works for one operator only. Was the right answer while single-user |
   | Oracle Cloud Always Free (4 ARM cores, 24 GB) | $0 | A real always-on box, but ARM — see the Pi caveat. Capacity is famously hard to obtain |
   | Hugging Face Spaces, free CPU (2 vCPU, 16 GB) | $0 | Docker Spaces allow Java. Sleeps when idle. Best zero-cost cloud option |
   | GitHub Actions `workflow_dispatch` | $0 | Free for this public repo; minutes of latency, fine for one-off digitisation |

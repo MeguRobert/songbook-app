@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/datasources/local/local_datasource.dart';
+import '../../data/datasources/remote/remote_song_datasource.dart';
 import '../../data/repositories/song_repository.dart';
 import '../../data/repositories/favorites_repository.dart';
 import '../../data/repositories/settings_repository.dart';
@@ -26,9 +27,21 @@ final localDataSourceProvider = Provider<LocalDataSource>((ref) {
 
 // --- Repository Providers ---
 
+/// Remote song data source.
+///
+/// Null when Supabase failed to initialise — the app must still run, just with
+/// the bundled catalogue only. Overridden with null in tests so nothing reaches
+/// for a network.
+final remoteSongDataSourceProvider = Provider<RemoteSongDataSource?>((ref) {
+  return null;
+});
+
 /// Song repository provider
 final songRepositoryProvider = Provider<SongRepository>((ref) {
-  return SongRepository(ref.watch(localDataSourceProvider));
+  return SongRepository(
+    ref.watch(localDataSourceProvider),
+    ref.watch(remoteSongDataSourceProvider),
+  );
 });
 
 /// Favorites repository provider

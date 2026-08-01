@@ -16,6 +16,17 @@
 __pycache__/
 *.pyc
 
+# Supabase CLI is pinned as a devDependency in the root package.json, so the
+# repo controls its version. Only the tool lives here — no app JS.
+node_modules/
+
+# Local Supabase secrets. supabase/config.toml and supabase/migrations/ ARE
+# tracked; the linked-project ref and any .env are not.
+supabase/.temp/
+supabase/.branches/
+.env
+.env.local
+
 # Build outputs
 songbook_app/build/
 songbook_app/.dart_tool/
