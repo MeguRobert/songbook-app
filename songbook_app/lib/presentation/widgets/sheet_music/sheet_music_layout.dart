@@ -704,6 +704,13 @@ class SheetMusicLayoutEngine {
   /// middle the voice's median pitch is nearer — the treble staff centres on B4
   /// and the bass staff on D3, and a line put in the wrong one is nothing but
   /// ledger lines.
+  ///
+  /// Read from the STORED pitches, deliberately, not the transposed ones. The
+  /// clef then stays put as the singer transposes, which is worth more than the
+  /// couple of ledger lines it can cost: the range is ±6 semitones, about three
+  /// and a half diatonic steps, and a staff plus its ledger room absorbs that. A
+  /// clef that flipped halfway through transposing would read as the app changing
+  /// its mind about the music.
   StaffClef _clefFor(List<NotatedMeasure> measures) {
     final steps = <int>[];
     for (final measure in measures) {
