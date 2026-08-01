@@ -56,6 +56,19 @@ void main() async {
     submissions = null;
   }
 
+  // One-time setup by link: ?photoEndpoint=... configures photo import.
+  //
+  // The setting lives in the browser's own storage, so it cannot be set for a
+  // device from anywhere else — and typing a URL like
+  // http://192.168.0.102:8790/extract on a phone keyboard is both tedious and
+  // easy to get subtly wrong. Opening one link instead does it exactly.
+  //
+  // Read before runApp so the app never starts in the unconfigured state and
+  // then flips. The parameter must sit BEFORE the fragment
+  // (`http://host/?photoEndpoint=...#/`) because routing is hash-based and
+  // Uri.base does not see query parameters that follow a `#`.
+  await _applySetupLink(prefs);
+
   // Run the app with Riverpod
   runApp(
     ProviderScope(
@@ -69,4 +82,21 @@ void main() async {
       child: const SongbookApp(),
     ),
   );
+}
+
+/// Applies `?photoEndpoint=` from the launch URL, if present.
+///
+/// Validated the same way [SettingsRepository] validates it, so a mistyped link
+/// is ignored rather than stored as a value that silently reads back as "not
+/// configured". Silent on success: this runs before any UI exists.
+Future<void> _applySetupLink(SharedPreferences prefs) async {
+  if (!kIsWeb) return;
+  final raw = Uri.base.queryParameters['photoEndpoint']?.trim();
+  if (raw == null || raw.isEmpty) return;
+  final uri = Uri.tryParse(raw);
+  if (uri == null || uri.host.isEmpty) return;
+  if (uri.scheme != 'http' && uri.scheme != 'https') return;
+  // The same key SettingsRepository reads, via the same settings_ prefix
+  // LocalDataSource applies.
+  await prefs.setString('settings_photo_import_endpoint', uri.toString());
 }

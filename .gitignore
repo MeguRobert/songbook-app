@@ -38,3 +38,6 @@ tools/audiveris_output/*.log
 # OS files
 .DS_Store
 Thumbs.db
+
+# Photo-import worker API key — never commit.
+tools/.anthropic_key

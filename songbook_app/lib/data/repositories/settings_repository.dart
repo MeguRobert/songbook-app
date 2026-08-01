@@ -131,6 +131,17 @@ class SettingsRepository {
 
   // --- Photo import ---
 
+  /// Build-time default for the photo-import endpoint.
+  ///
+  /// Set with `--dart-define=PHOTO_IMPORT_ENDPOINT=...` so a local or
+  /// self-hosted build can arrive already configured — typing a URL like
+  /// `http://192.168.0.102:8790/extract` on a phone keyboard is tedious and
+  /// easy to get subtly wrong. Empty in a normal build, so the public
+  /// deployment ships pointing at nothing, and a value saved in Settings
+  /// always wins over this.
+  static const _defaultEndpoint =
+      String.fromEnvironment('PHOTO_IMPORT_ENDPOINT');
+
   /// The configured photo-import endpoint, or null when unset or unusable.
   ///
   /// Parsing here rather than at the call site so a typo saved months ago
@@ -138,10 +149,14 @@ class SettingsRepository {
   /// reads the same as "not configured", which is the state the UI already
   /// has to explain.
   Uri? getPhotoImportEndpoint() {
-    final raw = _localDataSource
+    final stored = _localDataSource
         .getStringSetting(SettingsKeys.photoImportEndpoint)
         ?.trim();
-    if (raw == null || raw.isEmpty) return null;
+    // A stored value wins; the build-time default only fills the gap.
+    final raw = (stored == null || stored.isEmpty)
+        ? _defaultEndpoint.trim()
+        : stored;
+    if (raw.isEmpty) return null;
     final uri = Uri.tryParse(raw);
     if (uri == null) return null;
     // `host.isNotEmpty`, not `hasAuthority`: `https://` has an authority
