@@ -687,6 +687,13 @@ class AppLocalizationsHu extends AppLocalizations {
   String get importBlockerNoTitle => 'Adj címet az éneknek.';
 
   @override
+  String get importBlockerNoNumber => 'Adj sorszámot az éneknek.';
+
+  @override
+  String get importBlockerBadNumber =>
+      'A sorszám csak nullánál nagyobb egész szám lehet.';
+
+  @override
   String importErrorNotMusicXml(String name) {
     return 'A(z) $name nem MusicXML fájl. Elfogadott: .xml, .musicxml vagy .mxl — a MuseScore .mscz fájlt előbb exportálni kell.';
   }

@@ -41,3 +41,6 @@ Thumbs.db
 
 # Photo-import worker API key — never commit.
 tools/.anthropic_key
+
+# Photos kept by `photo_import_worker.py --save-dir` while debugging a reading.
+tools/photo_debug/

@@ -9,6 +9,7 @@ import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
 import '../../../data/models/verse.dart';
+import '../../../domain/services/chord_carry.dart';
 import '../../../domain/services/chord_sheet_exporter.dart';
 import '../../../domain/services/chord_sheet_parser.dart';
 import '../../../domain/services/musicxml_importer.dart';
@@ -62,6 +63,18 @@ class _PendingImport {
     this.warnings = const [],
   });
 
+  /// A copy carrying [verses] instead, everything else unchanged.
+  _PendingImport withVerses(List<Verse> verses) => _PendingImport(
+        verses: verses,
+        source: source,
+        fileName: fileName,
+        notation: notation,
+        title: title,
+        key: key,
+        timeSignature: timeSignature,
+        warnings: warnings,
+      );
+
   String sourceLabel(AppLocalizations l10n) => switch (source) {
         _ImportSource.savedSong => l10n.importSourceSaved,
         _ImportSource.pastedText => l10n.importSourcePasted,
@@ -102,6 +115,7 @@ class ImportSongScreen extends ConsumerStatefulWidget {
 class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   static const _parser = ChordSheetParser();
   static const _musicXml = MusicXmlImporter();
+  static const _chordCarry = ChordCarry();
 
   final _sheetController = TextEditingController();
   final _titleController = TextEditingController();
@@ -182,13 +196,37 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     super.dispose();
   }
 
+  /// A songbook number worn at the front of a title — `147. Isten fénye`.
+  ///
+  /// A photographed page carries it because the page prints it that way, and
+  /// other sources tend to as well. Left alone it became part of the title, so
+  /// the song sorted under its first letter and the number box stayed empty.
+  ///
+  /// A separator is required, so `10 000 angyal` keeps its number intact: a run
+  /// of digits followed by more digits is a quantity, not a hymn number.
+  static final _numberedTitle = RegExp(r'^\s*(\d{1,4})\s*[.):]\s*(\S.*)$');
+
   void _accept(_PendingImport pending) {
     setState(() {
-      _pending = pending;
+      // Every import lands here, and only imports do — a song opened for
+      // editing is assigned straight to _pending in initState, so nothing
+      // below can rewrite what is already stored.
+      _pending = pending.withVerses(_chordCarry.carry(pending.verses));
       _fileError = null;
       _key = pending.key ?? _firstChord(pending.verses);
-      if (!_titleEdited && (pending.title ?? '').isNotEmpty) {
-        _titleController.text = pending.title!;
+
+      var title = pending.title ?? '';
+      final numbered = _numberedTitle.firstMatch(title);
+      if (numbered != null) {
+        title = numbered.group(2)!.trim();
+        // Only into an empty box: a number already typed is the user's answer,
+        // and a guess read off the page must not overwrite it.
+        if (_numberController.text.trim().isEmpty) {
+          _numberController.text = numbered.group(1)!;
+        }
+      }
+      if (!_titleEdited && title.isNotEmpty) {
+        _titleController.text = title;
       }
     });
   }
@@ -410,6 +448,17 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     }
     if (_titleController.text.trim().isEmpty) {
       return [l10n.importBlockerNoTitle];
+    }
+    // A missing number used to be stored as 0, and 0 is not "no number" to
+    // anything downstream — it sorts ahead of every real song and prints as a
+    // number in the list. Here is the one moment someone knows the answer.
+    final number = _numberController.text.trim();
+    if (number.isEmpty) {
+      return [l10n.importBlockerNoNumber];
+    }
+    final asInt = int.tryParse(number);
+    if (asInt == null || asInt <= 0) {
+      return [l10n.importBlockerBadNumber];
     }
     return const [];
   }

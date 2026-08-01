@@ -684,6 +684,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importBlockerNoTitle => 'Give the song a title.';
 
   @override
+  String get importBlockerNoNumber => 'Give the song a number.';
+
+  @override
+  String get importBlockerBadNumber =>
+      'The number has to be a whole number above zero.';
+
+  @override
   String importErrorNotMusicXml(String name) {
     return '$name is not a MusicXML file. Expected .xml, .musicxml or .mxl — a MuseScore .mscz has to be exported first.';
   }

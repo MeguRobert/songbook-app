@@ -621,6 +621,37 @@ def extract_with_easyocr(image_bytes: bytes) -> tuple[str, list]:
     return chordpro_from_boxes(boxes_from_easyocr(results))
 
 
+def save_upload(directory, filename: str, image_bytes: bytes,
+                content: str, warnings) -> pathlib.Path:
+    """Keep an upload beside what was read from it. Returns the image's path.
+
+    A photo posted from a phone exists only for the length of the request, so
+    a report of "it read this song badly" leaves nothing to reproduce with.
+    Both halves together turn that report into a test case.
+    """
+    directory = pathlib.Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+
+    # Only the base name, and only its safe characters: this arrives off the
+    # wire, so `../../etc/passwd` must land in the directory like anything else.
+    stem = pathlib.PurePosixPath(filename.replace("\\", "/")).name
+    stem = re.sub(r"[^A-Za-z0-9._-]", "_", stem) or "photo"
+    suffix = pathlib.Path(stem).suffix or ".jpg"
+    stem = pathlib.Path(stem).stem
+
+    # A phone sends the same name again and again, so number them rather than
+    # let the second reading erase the first.
+    number = 1 + sum(1 for _ in directory.glob("[0-9][0-9][0-9]-*" + suffix))
+    base = f"{number:03d}-{stem}"
+
+    image_path = directory / (base + suffix)
+    image_path.write_bytes(image_bytes)
+    reading = content if not warnings else (
+        content + "\n\n--- warnings ---\n" + "\n".join(warnings))
+    (directory / (base + ".txt")).write_text(reading, encoding="utf-8")
+    return image_path
+
+
 def parse_multipart(body: bytes, content_type: str):
     """Returns (field_name -> bytes, field_name -> filename)."""
     headers = b"Content-Type: " + content_type.encode("latin-1") + b"\r\n\r\n"
@@ -638,6 +669,7 @@ def parse_multipart(body: bytes, content_type: str):
 
 class Handler(BaseHTTPRequestHandler):
     mode = "stub"  # "stub" | "easyocr" | "live"
+    save_dir = None  # set by --save-dir; keeps every upload for debugging
 
     def _cors(self):
         # The app is served from a different origin (a local file server, or
@@ -724,6 +756,16 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, {"kind": "chordpro", "content": "", "warnings": []})
             return
 
+        if self.save_dir:
+            try:
+                kept = save_upload(self.save_dir, filename, image,
+                                   content, warnings)
+                sys.stderr.write(f"[worker] kept {kept}\n")
+            except OSError as exc:  # noqa: BLE001 - never fail the import
+                # A debugging aid must not be able to break the feature it is
+                # there to debug.
+                sys.stderr.write(f"[worker] could not keep upload: {exc}\n")
+
         self._json(200, {
             "kind": "chordpro",
             "content": content,
@@ -749,6 +791,11 @@ def main():
     how.add_argument("--easyocr", action="store_true",
                      help="read the photo with EasyOCR on this machine — free, "
                           "offline, no API key")
+    parser.add_argument(
+        "--save-dir",
+        help="keep every uploaded photo here, beside the ChordPro it produced. "
+             "A photo posted from a phone is gone the moment the request ends, "
+             "so without this a bad reading cannot be reproduced.")
     args = parser.parse_args()
 
     if args.live and not read_api_key():
@@ -757,6 +804,7 @@ def main():
             "(one line, nothing else) or set ANTHROPIC_API_KEY.")
 
     Handler.mode = "live" if args.live else "easyocr" if args.easyocr else "stub"
+    Handler.save_dir = args.save_dir
     banner = {
         "live": "LIVE (calls a model)",
         "easyocr": "EASYOCR (offline, no key)",
@@ -772,6 +820,8 @@ def main():
 
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"photo-import worker on http://{args.host}:{args.port}/extract  [{banner}]")
+    if args.save_dir:
+        print(f"  keeping every upload in {args.save_dir}")
     if args.host != "127.0.0.1":
         print("  reachable from the LAN, and UNAUTHENTICATED — see --host help")
     print("Paste that URL into Settings -> Photo import.")

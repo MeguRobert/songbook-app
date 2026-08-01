@@ -191,6 +191,8 @@
   "importBlockerNothing": "Illessz be egy éneket, vagy nyiss meg egy MusicXML fájlt.",
   "importBlockerEmpty": "Nem található szöveg vagy kotta ebben a forrásban.",
   "importBlockerNoTitle": "Adj címet az éneknek.",
+  "importBlockerNoNumber": "Adj sorszámot az éneknek.",
+  "importBlockerBadNumber": "A sorszám csak nullánál nagyobb egész szám lehet.",
   "importErrorNotMusicXml": "A(z) {name} nem MusicXML fájl. Elfogadott: .xml, .musicxml vagy .mxl — a MuseScore .mscz fájlt előbb exportálni kell.",
   "importErrorUnreadable": "A(z) {name} nem olvasható.",
   "importErrorFailed": "A fájl nem importálható: {detail}",

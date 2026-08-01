@@ -17,6 +17,9 @@ what a chord is or the app re-reads our output differently than we wrote it.
 """
 
 import math
+import pathlib
+import shutil
+import tempfile
 import unittest
 
 import photo_import_worker as worker
@@ -411,6 +414,51 @@ class NotationNoiseTests(unittest.TestCase):
         content, warnings = worker.chordpro_from_boxes(row(100, 20, ('4=', 0, 20)))
         self.assertEqual(content, '')
         self.assertTrue(warnings)
+
+
+class SaveUploadTests(unittest.TestCase):
+    """`--save-dir` keeps what was sent next to what it produced.
+
+    A photo posted from a phone lives only in the request, so when someone
+    reports "it read this song badly" there is nothing left to reproduce with.
+    Keeping both halves turns a report into a test case.
+    """
+
+    def setUp(self):
+        self.directory = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.directory, ignore_errors=True)
+
+    def test_the_image_and_its_reading_are_kept_together(self):
+        worker.save_upload(self.directory, '7569.jpg', b'\xff\xd8jpeg',
+                           '{title: Isten fénye}', [])
+        self.assertEqual(
+            sorted(p.name for p in self.directory.iterdir()),
+            ['001-7569.jpg', '001-7569.txt'])
+        self.assertEqual((self.directory / '001-7569.jpg').read_bytes(),
+                         b'\xff\xd8jpeg')
+        self.assertIn('Isten fénye',
+                      (self.directory / '001-7569.txt').read_text('utf-8'))
+
+    def test_the_warnings_are_kept_with_the_reading(self):
+        worker.save_upload(self.directory, 'a.jpg', b'x', 'text',
+                           ['H was renamed'])
+        self.assertIn('H was renamed',
+                      (self.directory / '001-a.txt').read_text('utf-8'))
+
+    def test_a_second_upload_does_not_overwrite_the_first(self):
+        # The same phone sends the same name twice; 7568 was sent twice.
+        worker.save_upload(self.directory, '7568.jpg', b'one', 'first', [])
+        worker.save_upload(self.directory, '7568.jpg', b'two', 'second', [])
+        self.assertEqual((self.directory / '001-7568.jpg').read_bytes(), b'one')
+        self.assertEqual((self.directory / '002-7568.jpg').read_bytes(), b'two')
+
+    def test_a_hostile_filename_cannot_escape_the_directory(self):
+        # The name arrives off the wire, so it is not to be trusted as a path.
+        worker.save_upload(self.directory, '../../etc/passwd', b'x', 't', [])
+        written = list(self.directory.iterdir())
+        self.assertEqual(len(written), 2)
+        for path in written:
+            self.assertEqual(path.parent, self.directory)
 
 
 class EmptyPageTests(unittest.TestCase):

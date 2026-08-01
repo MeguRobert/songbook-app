@@ -902,6 +902,14 @@
   "@importBlockerNoTitle": {
     "description": "Why Save is disabled: the title box is empty"
   },
+  "importBlockerNoNumber": "Give the song a number.",
+  "@importBlockerNoNumber": {
+    "description": "Why Save is disabled: the number box is empty. Saving without one used to store the song as number 0, which then reads as a real number everywhere else."
+  },
+  "importBlockerBadNumber": "The number has to be a whole number above zero.",
+  "@importBlockerBadNumber": {
+    "description": "Why Save is disabled: the number box holds something that is not a positive whole number"
+  },
   "importErrorNotMusicXml": "{name} is not a MusicXML file. Expected .xml, .musicxml or .mxl — a MuseScore .mscz has to be exported first.",
   "@importErrorNotMusicXml": {
     "description": "Rejects a picked file by extension, and says what to do about the commonest wrong one",

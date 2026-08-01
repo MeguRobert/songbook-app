@@ -1246,6 +1246,18 @@ abstract class AppLocalizations {
   /// **'Give the song a title.'**
   String get importBlockerNoTitle;
 
+  /// Why Save is disabled: the number box is empty. Saving without one used to store the song as number 0, which then reads as a real number everywhere else.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the song a number.'**
+  String get importBlockerNoNumber;
+
+  /// Why Save is disabled: the number box holds something that is not a positive whole number
+  ///
+  /// In en, this message translates to:
+  /// **'The number has to be a whole number above zero.'**
+  String get importBlockerBadNumber;
+
   /// Rejects a picked file by extension, and says what to do about the commonest wrong one
   ///
   /// In en, this message translates to:

@@ -124,21 +124,69 @@ void main() {
     expect(find.textContaining('Csak Egy Az'), findsWidgets);
   });
 
-  testWidgets('Save becomes available once a title is given', (tester) async {
+  TextButton saveButtonIn(WidgetTester tester) => tester.widget<TextButton>(
+        find.ancestor(of: find.text('Save'), matching: find.byType(TextButton)),
+      );
+
+  String fieldText(WidgetTester tester, String label) => tester
+      .widget<TextField>(find.widgetWithText(TextField, label))
+      .controller!
+      .text;
+
+  testWidgets('Save needs a number as well as a title', (tester) async {
+    // The number used to be optional, and a missing one was stored as 0 —
+    // which is not "no number" to anything downstream. It sorts ahead of every
+    // real song and prints as a number in the list.
     await pumpImport(tester);
     await pasteAndParse(tester, _twoLine);
 
-    TextButton saveButton() => tester.widget<TextButton>(
-          find.ancestor(
-              of: find.text('Save'), matching: find.byType(TextButton)),
-        );
-    expect(saveButton().onPressed, isNull, reason: 'no title yet');
+    expect(saveButtonIn(tester).onPressed, isNull, reason: 'no title yet');
 
     await tester.enterText(
         find.widgetWithText(TextField, 'Title'), 'Az Úrra bízom életem');
     await tester.pumpAndSettle();
+    expect(saveButtonIn(tester).onPressed, isNull,
+        reason: 'title but still no number');
 
-    expect(saveButton().onPressed, isNotNull);
+    await tester.enterText(find.widgetWithText(TextField, 'Number'), '147');
+    await tester.pumpAndSettle();
+    expect(saveButtonIn(tester).onPressed, isNotNull);
+  });
+
+  testWidgets('a number that is not a whole number above zero is refused',
+      (tester) async {
+    await pumpImport(tester);
+    await pasteAndParse(tester, _twoLine);
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Title'), 'Az Úrra bízom életem');
+
+    for (final bad in ['0', '-3', 'abc']) {
+      await tester.enterText(find.widgetWithText(TextField, 'Number'), bad);
+      await tester.pumpAndSettle();
+      expect(saveButtonIn(tester).onPressed, isNull, reason: bad);
+    }
+  });
+
+  testWidgets('a number worn at the front of the title moves to the number box',
+      (tester) async {
+    // What a photographed page gives you: "147. Isten fénye". Kept whole it
+    // became the title, and the number box stayed empty.
+    await pumpImport(tester);
+    await pasteAndParse(tester, '{title: 147. Isten fénye}\n[G]Fény ragyog');
+    await tester.pumpAndSettle();
+
+    expect(fieldText(tester, 'Title'), 'Isten fénye');
+    expect(fieldText(tester, 'Number'), '147');
+  });
+
+  testWidgets('a title that merely begins with digits keeps them',
+      (tester) async {
+    await pumpImport(tester);
+    await pasteAndParse(tester, '{title: 10 000 angyal}\n[G]Fény ragyog');
+    await tester.pumpAndSettle();
+
+    expect(fieldText(tester, 'Title'), '10 000 angyal');
+    expect(fieldText(tester, 'Number'), isEmpty);
   });
 
   testWidgets('the preview actually renders the chords, not just the lyrics',

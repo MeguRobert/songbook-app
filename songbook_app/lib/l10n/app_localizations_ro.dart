@@ -689,6 +689,13 @@ class AppLocalizationsRo extends AppLocalizations {
   String get importBlockerNoTitle => 'Dă un titlu cântecului.';
 
   @override
+  String get importBlockerNoNumber => 'Dă un număr cântecului.';
+
+  @override
+  String get importBlockerBadNumber =>
+      'Numărul trebuie să fie un întreg mai mare decât zero.';
+
+  @override
   String importErrorNotMusicXml(String name) {
     return '$name nu este un fișier MusicXML. Se acceptă .xml, .musicxml sau .mxl — un fișier MuseScore .mscz trebuie exportat mai întâi.';
   }

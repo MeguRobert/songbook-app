@@ -191,6 +191,8 @@
   "importBlockerNothing": "Lipește un cântec sau deschide un fișier MusicXML.",
   "importBlockerEmpty": "Nu s-a găsit text sau partitură în această sursă.",
   "importBlockerNoTitle": "Dă un titlu cântecului.",
+  "importBlockerNoNumber": "Dă un număr cântecului.",
+  "importBlockerBadNumber": "Numărul trebuie să fie un întreg mai mare decât zero.",
   "importErrorNotMusicXml": "{name} nu este un fișier MusicXML. Se acceptă .xml, .musicxml sau .mxl — un fișier MuseScore .mscz trebuie exportat mai întâi.",
   "importErrorUnreadable": "{name} nu poate fi citit.",
   "importErrorFailed": "Fișierul nu poate fi importat: {detail}",
