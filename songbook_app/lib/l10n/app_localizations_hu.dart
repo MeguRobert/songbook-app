@@ -451,6 +451,84 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
+  String get measureActions => 'Ütem műveletei';
+
+  @override
+  String get measureProperties => 'Ütem tulajdonságai';
+
+  @override
+  String get measureEditTitle => 'ÜTEM TULAJDONSÁGAI';
+
+  @override
+  String get measureInsertBefore => 'Ütem beszúrása elé';
+
+  @override
+  String get measureInsertAfter => 'Ütem beszúrása utána';
+
+  @override
+  String get measureMerge => 'Összevonás az előző ütemmel';
+
+  @override
+  String get measureDelete => 'Ütem törlése';
+
+  @override
+  String get measureSplitHere => 'Új ütem kezdése itt';
+
+  @override
+  String get measureRepeatStart => 'Ismétlőjel az elején';
+
+  @override
+  String get measureRepeatEnd => 'Ismétlőjel a végén';
+
+  @override
+  String get measureLineBreak => 'Sortörés az ütem után';
+
+  @override
+  String get measurePickup => 'Felütés ütem';
+
+  @override
+  String get measurePickupHint =>
+      'Szándékosan rövid: nem kap sorszámot, és nem ellenőrzöm az ütemmutatóhoz';
+
+  @override
+  String get measureVolta => 'Ismétlőzárójel';
+
+  @override
+  String get measureVoltaNone => 'Nincs';
+
+  @override
+  String measureVoltaEnding(int number) {
+    return '$number. befejezés';
+  }
+
+  @override
+  String get notationOtherVoices => 'TOVÁBBI SZÓLAMOK';
+
+  @override
+  String get notationOtherVoicesHint =>
+      'Az énekkel együtt megmaradnak, itt nincsenek lekottázva. Az ének beállításaiban választhatod ki, melyiket olvasod.';
+
+  @override
+  String notationVoiceMeasures(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ütem',
+      one: '1 ütem',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get voiceActions => 'Szólam műveletei';
+
+  @override
+  String get voiceRenameTitle => 'Szólam átnevezése';
+
+  @override
+  String get voiceName => 'Szólam neve';
+
+  @override
   String get durationWhole => 'egész';
 
   @override

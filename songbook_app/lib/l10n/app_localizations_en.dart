@@ -449,6 +449,84 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get measureActions => 'Measure actions';
+
+  @override
+  String get measureProperties => 'Measure properties';
+
+  @override
+  String get measureEditTitle => 'MEASURE PROPERTIES';
+
+  @override
+  String get measureInsertBefore => 'Insert measure before';
+
+  @override
+  String get measureInsertAfter => 'Insert measure after';
+
+  @override
+  String get measureMerge => 'Merge into previous measure';
+
+  @override
+  String get measureDelete => 'Delete measure';
+
+  @override
+  String get measureSplitHere => 'Start a new measure here';
+
+  @override
+  String get measureRepeatStart => 'Repeat sign at the start';
+
+  @override
+  String get measureRepeatEnd => 'Repeat sign at the end';
+
+  @override
+  String get measureLineBreak => 'Break the staff after this measure';
+
+  @override
+  String get measurePickup => 'Pickup measure';
+
+  @override
+  String get measurePickupHint =>
+      'Short on purpose: not numbered, and not checked against the time signature';
+
+  @override
+  String get measureVolta => 'Volta bracket';
+
+  @override
+  String get measureVoltaNone => 'None';
+
+  @override
+  String measureVoltaEnding(int number) {
+    return 'Ending $number';
+  }
+
+  @override
+  String get notationOtherVoices => 'OTHER VOICES';
+
+  @override
+  String get notationOtherVoicesHint =>
+      'Kept with the song and not engraved here. Pick the line to read in the song controls.';
+
+  @override
+  String notationVoiceMeasures(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count measures',
+      one: '1 measure',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get voiceActions => 'Voice actions';
+
+  @override
+  String get voiceRenameTitle => 'Rename voice';
+
+  @override
+  String get voiceName => 'Voice name';
+
+  @override
   String get durationWhole => 'whole';
 
   @override
