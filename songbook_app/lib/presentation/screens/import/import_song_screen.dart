@@ -526,25 +526,18 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
               label: Text(l10n.importMoreWays),
             ),
           ),
+          // Each path with its own explanation directly under it, rather than
+          // one line of prose over both. `importMusicXmlHint` says "export
+          // from MuseScore first", which was written when the file picker was
+          // alone in here — read as a heading over the Photo button too, it
+          // claims a requirement that photos do not have.
           if (_showMoreWays) ...[
-            Padding(
-              padding: const EdgeInsets.only(left: 8, bottom: 4),
-              child: Text(
-                l10n.importMusicXmlHint,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
                 padding: const EdgeInsets.only(left: 8),
-                // Wrap, not Row: two buttons plus a Hungarian label overflow a
-                // narrow phone, and this is the one place both live.
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // The only path that yields real notation, and the lyrics
                     // come free from <lyric> elements.
@@ -557,6 +550,15 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.piano_outlined),
                       label: Text(l10n.importMusicXmlFile),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, bottom: 12),
+                      child: Text(
+                        l10n.importMusicXmlHint,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                     OutlinedButton.icon(
                       onPressed: _picking ? null : _pickPhoto,
