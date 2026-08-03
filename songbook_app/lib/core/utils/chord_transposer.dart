@@ -4,10 +4,25 @@ import '../constants/music_constants.dart';
 class ChordTransposer {
   ChordTransposer._();
 
-  static final _chordPattern = RegExp(r'^([A-GH][#b]?)(.*)$');
+  static final _chordPattern = RegExp(r'^([A-GHa-gh][#b]?)(.*)$');
 
   /// A German root note: `H` opening the chord, or `H` as a slash bass.
-  static final _germanRoot = RegExp(r'(^|/)H');
+  static final _germanRoot = RegExp(r'(^|/)[Hh]');
+
+  /// A lowercase root — Central European for "minor" — and what follows it.
+  ///
+  /// Anchored at the start, and deliberately NOT applied after a slash: a slash
+  /// bass is a single note with no quality of its own, so `G/h` is `G/B` and
+  /// never `G/Bm`. Anchoring also keeps it away from the quality, where a
+  /// lowercase letter is ordinary — unanchored, the `d` of `F#dim` read as a
+  /// root and produced `F#Dmim`.
+  static final _minorRoot = RegExp(r'^([a-gh])([#b]?)(.*)$');
+
+  /// A lowercase slash bass: raised, never made minor.
+  static final _lowercaseBass = RegExp(r'/([a-gh])([#b]?)$');
+
+  /// Quality that already states what the chord is, so `m` must not be added.
+  static final _statedQuality = RegExp(r'^(?:m|maj|min|dim|aug|sus|\+|°)');
 
   /// [chord] with German note names rewritten to the ones the app stores.
   ///
@@ -26,8 +41,29 @@ class ChordTransposer {
   /// The app keeps one spelling per pitch, so `H` is accepted on the way in and
   /// not carried through — otherwise transposition would have to decide, with
   /// nothing to go on, whether a song reaching B natural should say `B` or `H`.
-  static String toEnglishNotation(String chord) =>
-      chord.replaceAllMapped(_germanRoot, (m) => '${m.group(1)}B');
+  /// [chord] with a lowercase root raised and marked minor.
+  ///
+  /// Central European songbooks write case for quality: `C` is C major and `c`
+  /// is C minor. Robert's book prints `em` on every chord row, and a row
+  /// carrying one used to be classified as lyrics, so all of its chords entered
+  /// the song as words.
+  ///
+  /// `m` is only added when the quality does not already state one: `em` is
+  /// already minor and must not become `Emm`, and `asus4` is neither major nor
+  /// minor — a suspended chord has no third to lower.
+  static String _minorFromCase(String chord) {
+    final bassRaised = chord.replaceAllMapped(
+        _lowercaseBass, (m) => '/${m.group(1)!.toUpperCase()}${m.group(2)}');
+    final match = _minorRoot.firstMatch(bassRaised);
+    if (match == null) return bassRaised;
+    final quality = match.group(3)!;
+    final needsM = quality.isEmpty || !_statedQuality.hasMatch(quality);
+    return '${match.group(1)!.toUpperCase()}${match.group(2)}'
+        '${needsM ? 'm' : ''}$quality';
+  }
+
+  static String toEnglishNotation(String chord) => _minorFromCase(chord)
+      .replaceAllMapped(_germanRoot, (m) => '${m.group(1)}B');
 
   /// Transposes a single chord by the given number of semitones
   ///
@@ -82,14 +118,12 @@ class ChordTransposer {
   /// A slash bass note stays inside the quality ("C/G" -> ("C", "/G"));
   /// [transposeChord] splits it off so both pitches move together.
   static (String, String)? parseChord(String chord) {
-    final match = _chordPattern.firstMatch(chord);
+    // Normalised whole, then split. Splitting first and normalising each half
+    // let the quality be read as though it began with a root: the `d` of
+    // `F#dim` became a lowercase minor and the chord came out `F#Dmim`.
+    final match = _chordPattern.firstMatch(toEnglishNotation(chord));
     if (match == null) return null;
-    // Both halves: the root may be `H`, and the quality carries the slash bass,
-    // which may be `/H`.
-    return (
-      toEnglishNotation(match.group(1)!),
-      toEnglishNotation(match.group(2)!),
-    );
+    return (match.group(1)!, match.group(2)!);
   }
 
   /// Calculates the number of semitones between two keys

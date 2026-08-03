@@ -28,10 +28,41 @@ void main() {
 
     test('returns null for invalid input', () {
       expect(ChordTransposer.parseChord(''), isNull);
-      expect(ChordTransposer.parseChord('c'), isNull); // lowercase not a chord
       expect(ChordTransposer.parseChord('7'), isNull);
       expect(ChordTransposer.parseChord('#C'), isNull);
       expect(ChordTransposer.parseChord(' C'), isNull); // leading whitespace
+    });
+
+    test('a lowercase root is minor, raised into storage', () {
+      // Central European notation: `C` major, `c` minor. Hungarian songbooks
+      // print it this way, and `em` is on every chord row of Robert's.
+      expect(ChordTransposer.parseChord('c'), ('C', 'm'));
+      expect(ChordTransposer.parseChord('em'), ('E', 'm'));
+      expect(ChordTransposer.parseChord('c7'), ('C', 'm7'));
+      expect(ChordTransposer.parseChord('c#m'), ('C#', 'm'));
+      expect(ChordTransposer.parseChord('h'), ('B', 'm'));
+    });
+
+    test('a quality that already states itself gains no second m', () {
+      expect(ChordTransposer.parseChord('em7'), ('E', 'm7'));
+      expect(ChordTransposer.parseChord('cdim'), ('C', 'dim'));
+      // A suspended chord has no third to lower, so it is neither.
+      expect(ChordTransposer.parseChord('asus4'), ('A', 'sus4'));
+    });
+
+    test('a lowercase quality is not mistaken for a root', () {
+      // Regression: normalising the halves separately read the `d` of `dim` as
+      // a lowercase root and produced `F#Dmim`.
+      expect(ChordTransposer.parseChord('F#dim'), ('F#', 'dim'));
+      expect(ChordTransposer.parseChord('Cdim7'), ('C', 'dim7'));
+      expect(ChordTransposer.parseChord('Gsus4'), ('G', 'sus4'));
+      expect(ChordTransposer.parseChord('Bbmaj7'), ('Bb', 'maj7'));
+    });
+
+    test('a lowercase slash bass is raised but never made minor', () {
+      // The bass is one note; it carries no quality of its own.
+      expect(ChordTransposer.parseChord('G/h'), ('G', '/B'));
+      expect(ChordTransposer.parseChord('C/g'), ('C', '/G'));
     });
 
     test('reads H as B natural, the way most of Europe writes it', () {

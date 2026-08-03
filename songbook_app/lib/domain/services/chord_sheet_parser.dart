@@ -91,9 +91,23 @@ class ChordSheetParser {
   /// Extensions may carry their own accidental (`Em7b5`, `C7#9`) — that `b` is
   /// part of a numbered extension, which is why it is only allowed in front of
   /// digits and not as a bare trailing letter (`Bbb` is not a chord here).
+  /// A lowercase root means minor in Central European notation — `em` is E
+  /// minor — and Hungarian songbooks print it that way throughout. Admitting it
+  /// is what stopped every row carrying an `em` from importing as lyrics.
+  /// [ChordTransposer.toEnglishNotation] raises the case and marks the chord
+  /// minor on the way into storage.
   static final RegExp _chordToken = RegExp(
-    r'^[A-GH][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*(?:/[A-GH][#b]?)?$',
+    r'^[A-GHa-gh][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*'
+    r'(?:/[A-GHa-gh][#b]?)?$',
   );
+
+  /// `-7`, `-m` — the chord before this one, with something added.
+  ///
+  /// The songbook writes `A  -7  D` where `-7` is the same A carrying a
+  /// seventh, which saves reprinting the letter. It names no pitch by itself,
+  /// so it is not a chord token: without the chord to its left it means nothing
+  /// and is dropped rather than guessed at.
+  static final RegExp _continuation = RegExp(r'^[-–—](.+)$');
 
   /// A lone root letter with no accidental and no quality.
   ///
@@ -103,7 +117,7 @@ class ChordSheetParser {
   /// a line of words is not. `H` is included for the same shape rather than the
   /// same ambiguity: one bare root alone is too weak a signal to call a line
   /// music, whichever letter it is.
-  static final RegExp _bareRoot = RegExp(r'^[A-GH]$');
+  static final RegExp _bareRoot = RegExp(r'^[A-GHa-gh]$');
 
   /// Punctuation a chord row may carry that is not itself a chord.
   ///
@@ -142,6 +156,12 @@ class ChordSheetParser {
   /// Whitespace is not: callers split lines into tokens first.
   bool isChordToken(String token) => _chordToken.hasMatch(_unwrap(token));
 
+  /// Returns true when [token] is `-7`-style shorthand for the chord before it.
+  ///
+  /// A lone dash is excluded: that is filler between two chords (`C - D`) and
+  /// carries nothing to add.
+  bool isContinuation(String token) => _continuation.hasMatch(_unwrap(token));
+
   /// Returns true when [line] should be read as a row of chords.
   ///
   /// Every token must be either a chord or bar-line/dash/repeat punctuation
@@ -160,6 +180,11 @@ class ChordSheetParser {
     final chords = <String>[];
     for (final token in tokens) {
       if (_separator.hasMatch(token)) continue;
+      // Tolerated like punctuation. An orphan one — CRAFT drops lone glyphs, so
+      // the `A` before a `-7` really can go missing — is dropped downstream
+      // rather than costing the row its real chords. The "at least one chord"
+      // rule below still keeps a lyric line of dashes out.
+      if (isContinuation(token)) continue;
       if (!isChordToken(token)) return false;
       chords.add(token);
     }
@@ -249,13 +274,13 @@ class ChordSheetParser {
       if (isChordLine(raw)) {
         final next = i + 1 < lines.length ? lines[i + 1] : null;
         if (next != null && _isLyricLine(next)) {
-          pending.add(_parseChordsOverLyrics(raw, next));
+          pending.add(_parseChordsOverLyrics(raw, next, lineNo, warnings));
           i++; // the lyric line was consumed as part of this pair
         } else {
           // Instrumental / intro run with nothing underneath. Positions past
           // the end of an empty text are fine: the renderer uses them for
           // horizontal offset only, it never indexes into the text.
-          pending.add(_parseChordsOverLyrics(raw, ''));
+          pending.add(_parseChordsOverLyrics(raw, '', lineNo, warnings));
         }
         continue;
       }
@@ -329,11 +354,30 @@ class ChordSheetParser {
   /// `ChordView` would print it above the lyric as if it were one. The columns
   /// of the chords around it are untouched, because each chord's position is its
   /// own match offset and never a running total.
-  LyricLine _parseChordsOverLyrics(String chordLine, String lyricLine) {
+  LyricLine _parseChordsOverLyrics(String chordLine, String lyricLine,
+      [int lineNo = 0, List<String>? warnings]) {
     final chords = <ChordPosition>[];
     for (final match in _token.allMatches(chordLine)) {
       final token = match.group(0)!;
       if (_separator.hasMatch(token)) continue;
+
+      // `-7` after an `A` is that A carrying a seventh. Built from the whole
+      // previous chord rather than its root, so `Em` followed by `-7` gives
+      // `Em7` and not `E7` — the book is adding to the chord, not respelling it.
+      final continued = _continuation.firstMatch(_unwrap(token));
+      if (continued != null) {
+        if (chords.isEmpty) {
+          warnings?.add('Line $lineNo: "$token" has no chord before it to '
+              'continue; dropped.');
+          continue;
+        }
+        chords.add(ChordPosition(
+          chord: chords.last.chord + continued.group(1)!,
+          position: match.start,
+        ));
+        continue;
+      }
+
       chords.add(ChordPosition(
         chord: ChordTransposer.toEnglishNotation(_unwrap(token)),
         position: match.start,

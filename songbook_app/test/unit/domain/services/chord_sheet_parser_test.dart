@@ -33,8 +33,7 @@ void main() {
     });
 
     test('rejects near-misses and non-chords', () {
-      for (final token in ['', 'c', 'g7', '7', '#C', 'Bbb', 'Chorus',
-        '2x', 'Amen']) {
+      for (final token in ['', '7', '#C', 'Bbb', 'Chorus', '2x', 'Amen']) {
         expect(parser.isChordToken(token), isFalse, reason: token);
       }
     });
@@ -51,6 +50,31 @@ void main() {
       for (final word in ['Hogy', 'Hozzád', 'Ha', 'Hív', 'Halld']) {
         expect(parser.isChordToken(word), isFalse, reason: word);
       }
+    });
+
+    test('a lowercase root is a minor chord', () {
+      // Central European notation: uppercase is major, lowercase is minor.
+      // Robert's songbook prints `em` throughout, and every chord row carrying
+      // one used to import as lyrics.
+      for (final token in ['em', 'a', 'c', 'c7', 'c#m', 'gm7', 'h', 'hm']) {
+        expect(parser.isChordToken(token), isTrue, reason: token);
+      }
+    });
+
+    test('a lowercase word is still not a chord', () {
+      for (final token in ['az', 'ad', 'egy', 'hogy', 'ki', 'nekem']) {
+        expect(parser.isChordToken(token), isFalse, reason: token);
+      }
+    });
+
+    test('a dash before an extension is not a chord on its own', () {
+      // `-7` means "the chord before me, with a seventh". Alone it names no
+      // pitch, so it is a continuation rather than a chord.
+      expect(parser.isChordToken('-7'), isFalse);
+      expect(parser.isContinuation('-7'), isTrue);
+      expect(parser.isContinuation('-m'), isTrue);
+      expect(parser.isContinuation('-'), isFalse, reason: 'plain filler dash');
+      expect(parser.isContinuation('D'), isFalse);
     });
 
     test('`Hadd` is the one collision admitting H costs', () {
@@ -224,6 +248,45 @@ void main() {
       final twoLine = parser.parse('G       C\nAmazing grace');
       final inline = parser.parse('[G]Amazing [C]grace');
       expect(twoLine.verses.single.lines, inline.verses.single.lines);
+    });
+
+    test('the songbook row `em A -7 D` becomes four real chords', () {
+      // Verbatim from song 149. Every chord on this row used to be imported as
+      // a word: `em` was not a chord because of its case, and `-7` was not one
+      // either, so the all-or-nothing rule made the whole row lyrics.
+      final result = parser.parse(
+          'em        A       -7        D\n'
+          'Mondd, ki az egész világ Királya, s ki a Királyom nekem?');
+      final line = result.verses.single.lines.single;
+
+      expect(line.text,
+          'Mondd, ki az egész világ Királya, s ki a Királyom nekem?');
+      expect(line.chords.map((c) => c.chord), ['Em', 'A', 'A7', 'D']);
+    });
+
+    test('a continuation keeps the quality of the chord it follows', () {
+      final line = parser
+          .parse('Em      -7\nMondd, ki az egész')
+          .verses
+          .single
+          .lines
+          .single;
+      expect(line.chords.map((c) => c.chord), ['Em', 'Em7']);
+    });
+
+    test('a continuation with nothing before it is dropped, not invented', () {
+      // CRAFT drops lone glyphs, so the `A` before a `-7` really can go
+      // missing. The row keeps its real chords rather than being demoted whole.
+      // `Em` rather than `D`, because a row whose only chord is a bare root
+      // resolves to lyrics on its own account — see the bare-root rule.
+      final result = parser.parse('-7      Em\nMondd, ki az egész');
+      final line = result.verses.single.lines.single;
+      expect(line.chords.map((c) => c.chord), ['Em']);
+      expect(result.warnings.join(), contains('-7'));
+    });
+
+    test('a row of nothing but dashes is still lyrics', () {
+      expect(parser.isChordLine('-7  -m'), isFalse);
     });
 
     test('a Hungarian chord row survives and is stored in English', () {
