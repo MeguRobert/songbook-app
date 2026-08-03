@@ -173,6 +173,22 @@ class GroupRowsTests(unittest.TestCase):
         self.assertEqual([[b.text for b in r] for r in rows],
                          [['first'], ['line', 'second']])
 
+    def test_one_overtall_box_does_not_swallow_the_row_above(self):
+        """A region can arrive far taller than the text in it.
+
+        Measured on song 149: the page is thin enough to show the reverse side
+        through, and CRAFT merged that show-through into the real lyric line,
+        giving a region 132px tall for ~60px letters. The tolerance used to be a
+        fraction of the row's *own* height, so an inflated box widened its own
+        gate and pulled the chord row above it in — which is why every chord on
+        that line was imported as a word.
+        """
+        boxes = row(70, 62, ('D', 0, 60), ('A', 1300, 1360)) \
+            + [Box('Mondd, ki a dzsungel Királya? n bbod', 0, 105, 1600, 237)]
+        rows = worker.group_rows(boxes)
+        self.assertEqual(len(rows), 2, [[b.text for b in r] for r in rows])
+        self.assertEqual([b.text for b in rows[0]], ['D', 'A'])
+
     def test_a_slightly_wavy_baseline_stays_one_row(self):
         # A phone photo is never square-on; tokens on one line differ by a few
         # pixels of y. Splitting on that would put every word on its own line.
@@ -280,6 +296,27 @@ class GermanNotationTests(unittest.TestCase):
     same reading: the worker emits what the page says, and the app owns the
     rename, so a photographed `Hm` reaches the song as `Bm`.
     """
+
+    def test_a_lowercase_root_is_a_chord(self):
+        # Central European notation: uppercase major, lowercase minor. The app
+        # raises the case on the way into storage; the worker only has to agree
+        # that these are chords, or the row is emitted as lyrics.
+        for token in ('em', 'a', 'c', 'c7', 'c#m', 'gm7', 'h', 'hm'):
+            self.assertTrue(worker.is_chord_token(token), token)
+
+    def test_a_lowercase_hungarian_word_is_not_a_chord(self):
+        for token in ('az', 'ad', 'egy', 'hogy', 'ki', 'nekem'):
+            self.assertFalse(worker.is_chord_token(token), token)
+
+    def test_a_dash_before_an_extension_continues_the_chord_before_it(self):
+        # `A  -7  D` — the book's shorthand for "that A, with a seventh".
+        self.assertFalse(worker.is_chord_token('-7'))
+        self.assertTrue(worker.is_continuation('-7'))
+        self.assertFalse(worker.is_continuation('-'), 'plain filler dash')
+        self.assertTrue(worker.is_chord_row(['em', 'A', '-7', 'D']))
+
+    def test_dashes_alone_are_still_not_a_chord_row(self):
+        self.assertFalse(worker.is_chord_row(['-7', '-m']))
 
     def test_h_is_a_chord(self):
         for token in ('H', 'Hm', 'H7', 'Hm7', 'Hsus4', '(Hm)', 'G/H'):

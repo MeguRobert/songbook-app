@@ -183,10 +183,20 @@ Box = collections.namedtuple("Box", "text x0 y0 x1 y1")
 # `H` is B natural in Hungarian notation. The worker emits it as written and
 # the app renames it to `B` on the way into storage, so a photographed page
 # stays a faithful transcription and one side owns the spelling.
+# A lowercase root means minor in Central European notation — `em` is E minor,
+# and Hungarian songbooks print it that way throughout. The app raises the case
+# on the way into storage; the worker only has to agree that these are chords,
+# because a row it does not recognise is emitted as lyrics and the chords on it
+# reach the song as words.
 _CHORD_TOKEN = re.compile(
-    r"^[A-GH][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*"
-    r"(?:/[A-GH][#b]?)?$")
-_BARE_ROOT = re.compile(r"^[A-GH]$")
+    r"^[A-GHa-gh][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*"
+    r"(?:/[A-GHa-gh][#b]?)?$")
+_BARE_ROOT = re.compile(r"^[A-GHa-gh]$")
+
+# `-7`, `-m` — the chord before this one with something added, which is how the
+# book avoids reprinting the letter. Names no pitch alone, so it is not a chord
+# token; a lone dash stays plain filler.
+_CONTINUATION = re.compile(r"^[-–—](.+)$")
 _SEPARATOR = re.compile(r"^(?:[-–—]+|\|+|:\||\|:|\|\||[xX]\d+|\d+[xX])$")
 _PARENTHESISED = re.compile(r"^\((.+)\)$")
 
@@ -250,6 +260,11 @@ def is_chord_token(token: str) -> bool:
     return bool(_CHORD_TOKEN.match(_unwrap(token)))
 
 
+def is_continuation(token: str) -> bool:
+    """True when [token] is `-7`-style shorthand for the chord before it."""
+    return bool(_CONTINUATION.match(_unwrap(token)))
+
+
 def is_chord_row(texts) -> bool:
     """True when [texts] should be read as a row of chords.
 
@@ -260,7 +275,7 @@ def is_chord_row(texts) -> bool:
     """
     chords = []
     for text in texts:
-        if _SEPARATOR.match(text):
+        if _SEPARATOR.match(text) or is_continuation(text):
             continue
         if not is_chord_token(text):
             return False
@@ -400,15 +415,25 @@ def _is_noise_row(texts) -> bool:
 
 def group_rows(boxes):
     """[boxes] clustered into lines, top to bottom, each sorted left to right."""
+    if not boxes:
+        return []
+    # The gate is a fraction of the PAGE's typical glyph height, not of the
+    # row's own. A region can arrive far taller than its letters — on a thin
+    # page the reverse side shows through and CRAFT merges it into the real
+    # line, giving a 132px region for 60px text. Sized from the row, such a box
+    # widened its own gate and pulled the chord row above it in, which is how a
+    # whole line of chords ended up in the song as words.
+    gate = _SAME_ROW * statistics.median(b.y1 - b.y0 for b in boxes)
+
     rows = []
     for box in sorted(boxes, key=lambda b: (b.y0 + b.y1) / 2):
         centre = (box.y0 + box.y1) / 2
-        height = box.y1 - box.y0
         if rows:
             current = rows[-1]
+            # Still a running mean, so a slowly drifting baseline — a curled or
+            # tilted page — is followed rather than split.
             mean_centre = sum((b.y0 + b.y1) / 2 for b in current) / len(current)
-            mean_height = sum(b.y1 - b.y0 for b in current) / len(current)
-            if abs(centre - mean_centre) <= _SAME_ROW * max(mean_height, height):
+            if abs(centre - mean_centre) <= gate:
                 current.append(box)
                 continue
         rows.append([box])
@@ -602,6 +627,81 @@ def easyocr_reader():
     return _reader
 
 
+# Show-through suppression. A hymnal is printed on thin paper, so the reverse
+# page reads through it — and the recogniser dutifully returns that mirrored text
+# as words. Measured on song 149: it came back as `n bbod`, `$`, `drnisdl ,Edtt`
+# stuck to the real lyrics, and worse, CRAFT merged it into the real regions,
+# which both inflated their boxes and destroyed a whole chord row.
+#
+# The ghost is always LIGHTER than the print, so it can be erased on brightness
+# alone once uneven lighting is out of the way. `_BACKGROUND_RADIUS` estimates
+# the local paper colour to divide out; the levels window then sends anything
+# above it to white. A median blur rather than a Gaussian: it does not bleed the
+# letters into their own background estimate.
+_BACKGROUND_RADIUS = 51
+_GHOST_LEVELS = (110, 190)
+
+# What counts as a page with show-through, and how much of it there has to be.
+#
+# Measured after flattening: the ghosted page of song 149 has 2.17% of its
+# pixels in this band, against 0.00%-0.60% for seven clean scans, renders and
+# simulated photographs. The threshold sits between the two with margin either
+# side. Antialiasing along the edge of real print lands in the same band, which
+# is why a fraction rather than a presence test.
+#
+# Calibrated on one ghosted page, so err towards not firing: a page that misses
+# the gate is read exactly as it was before this existed, while a clean page
+# that trips it loses a chord or two to eroded strokes.
+_PALE_BAND = (170, 235)
+_PALE_FRACTION = 0.012
+
+
+def _flatten(grey):
+    """[grey] divided by its own local background, so lighting stops mattering.
+
+    Without this, one global brightness window either keeps the ghost in the
+    bright half of a photographed page or eats the real print in the shadowed
+    half. A median rather than a Gaussian: it does not bleed the letters into
+    their own background estimate.
+    """
+    import cv2
+
+    shortest = min(grey.shape[:2])
+    radius = min(_BACKGROUND_RADIUS, shortest if shortest % 2 else shortest - 1)
+    if radius < 3:
+        return grey
+    return cv2.divide(grey, cv2.medianBlur(grey, radius), scale=255)
+
+
+def has_show_through(rgb) -> bool:
+    """True when [rgb] carries a second, paler population of ink.
+
+    Suppression costs sharpness, and on a page that does not need it that shows
+    up as dropped chords — so it is asked for rather than always applied.
+    """
+    import cv2
+
+    flattened = _flatten(cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY))
+    low, high = _PALE_BAND
+    pale = ((flattened >= low) & (flattened <= high)).sum()
+    return bool(pale / flattened.size >= _PALE_FRACTION)
+
+
+def suppress_show_through(rgb):
+    """[rgb] with the reverse page's bleed-through erased.
+
+    Returns a 3-channel array, since that is what the reader expects.
+    """
+    import cv2
+    import numpy
+
+    flattened = _flatten(cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY))
+    low, high = _GHOST_LEVELS
+    stretched = (flattened.astype(numpy.float32) - low) * (255.0 / (high - low))
+    cleaned = numpy.clip(stretched, 0, 255).astype(numpy.uint8)
+    return cv2.cvtColor(cleaned, cv2.COLOR_GRAY2RGB)
+
+
 def extract_with_easyocr(image_bytes: bytes) -> tuple[str, list]:
     """Read a photo with EasyOCR. Returns (content, warnings)."""
     import io
@@ -615,10 +715,21 @@ def extract_with_easyocr(image_bytes: bytes) -> tuple[str, list]:
     image = ImageOps.exif_transpose(image)
     if image.mode != "RGB":
         image = image.convert("RGB")
+    pixels = numpy.array(image)
+    ghosted = has_show_through(pixels)
+    if ghosted:
+        pixels = suppress_show_through(pixels)
     results = easyocr_reader().readtext(
-        numpy.array(image), paragraph=False,
+        pixels, paragraph=False,
         text_threshold=_TEXT_THRESHOLD, low_text=_LOW_TEXT)
-    return chordpro_from_boxes(boxes_from_easyocr(results))
+    content, warnings = chordpro_from_boxes(boxes_from_easyocr(results))
+    if ghosted:
+        # Said out loud because it changes what was read: the page was cleaned
+        # up before anyone looked at it, and that is worth knowing when a line
+        # comes out wrong anyway.
+        warnings.insert(0, "The reverse side of the page showed through; it was "
+                           "removed before reading.")
+    return content, warnings
 
 
 def save_upload(directory, filename: str, image_bytes: bytes,
