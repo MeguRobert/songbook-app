@@ -442,6 +442,56 @@ def group_rows(boxes):
     return rows
 
 
+# A gutter has to be this many typical glyph widths across, and each column
+# needs at least this many boxes to count as a column rather than a stray mark.
+_GUTTER_WIDTH = 4.0
+_MIN_COLUMN_BOXES = 3
+
+
+def split_columns(boxes):
+    """[boxes] split into columns, left to right, on the gutters between them.
+
+    A hymnal sets two songs side by side, and rows are clustered by y — so
+    without this a line in the left column and an unrelated line at the same
+    height in the right one become one row, and the two songs interleave.
+
+    The gutter is a vertical band that NO box crosses anywhere on the page.
+    Taking the union of every box's x-extent is what makes this safe: a chord
+    row is mostly whitespace and full of wide gaps of its own, but some lyric
+    line below always covers them, so only a genuine column break survives.
+    """
+    if len(boxes) < 2 * _MIN_COLUMN_BOXES:
+        return [list(boxes)]
+
+    widths = [(b.x1 - b.x0) / len(b.text) for b in boxes if b.text]
+    gutter = _GUTTER_WIDTH * (statistics.median(widths) if widths else 1.0)
+
+    # Walk the x-extents in order, closing each run of overlap as it ends.
+    spans = sorted((b.x0, b.x1) for b in boxes)
+    edges = []
+    reach = spans[0][1]
+    for start, end in spans[1:]:
+        if start - reach > gutter:
+            edges.append((reach + start) / 2)
+        reach = max(reach, end)
+
+    if not edges:
+        return [list(boxes)]
+
+    columns = []
+    for lower, upper in zip([float("-inf")] + edges, edges + [float("inf")]):
+        column = [b for b in boxes if lower <= (b.x0 + b.x1) / 2 < upper]
+        # A stray speck in the margin is not a column; fold it back rather than
+        # letting it become a song of its own.
+        if len(column) >= _MIN_COLUMN_BOXES:
+            columns.append(column)
+        elif columns:
+            columns[-1].extend(column)
+        elif column:
+            columns.append(column)
+    return columns or [list(boxes)]
+
+
 def _char_width(row) -> float:
     """The row's typical glyph width, in pixels."""
     widths = [(b.x1 - b.x0) / len(b.text) for b in row if b.text]
@@ -548,19 +598,61 @@ def _row_height(row) -> float:
 
 def chordpro_from_boxes(boxes) -> tuple[str, list]:
     """ChordPro for a page of OCR [boxes]. Returns (content, warnings)."""
-    # Straightened before grouping, because grouping is what tilt breaks.
+    # Straightened before anything reads it, because grouping is what tilt
+    # breaks, and columns are found on x once the page is square.
     boxes = deskew(boxes, estimate_skew(boxes))
+    columns = split_columns(boxes)
+
+    lines, german, chord_rows = [], [], 0
+    for index, column in enumerate(columns):
+        # Only the first column may name the song: two `{title:}` directives in
+        # one paste would leave the parser keeping whichever came last.
+        block, block_german, block_chords = _lay_out_column(
+            column, titled=(index == 0))
+        if not block:
+            continue
+        if lines:
+            lines.append("")
+        lines.extend(block)
+        german.extend(block_german)
+        chord_rows += block_chords
+
+    warnings = []
+    if not lines:
+        return "", ["Nothing legible was found in that photo."]
+    if len(columns) > 1:
+        # Honest rather than clever: a page holding two songs cannot become one
+        # song, and the review box is where the unwanted half gets deleted.
+        warnings.append(
+            f"That page holds {len(columns)} songs side by side. Both were read, "
+            "in reading order — delete the one you did not want.")
+    if not chord_rows:
+        warnings.append(
+            "No chords were recognised — the words were imported on their own.")
+    if german:
+        # Not a failure — the app understands these. Said out loud anyway,
+        # because someone who photographed `Hm` and is shown `Bm` should be
+        # told why rather than left to wonder whether the import went wrong.
+        names = ", ".join(sorted(set(german)))
+        warnings.append(
+            f"{names} will be stored under the English name (H is B natural). "
+            "The app keeps one spelling per pitch so transposing stays exact.")
+    return "\n".join(lines), warnings
+
+
+def _lay_out_column(boxes, titled: bool) -> tuple[list, list, int]:
+    """One column as ChordPro lines. Returns (lines, german chords, chord rows)."""
     # Noise dropped before anything else reads the rows, so verse spacing is
     # measured between real lines rather than across a stray time signature.
     rows = [row for row in group_rows(boxes)
             if not _is_noise_row([b.text for b in row])]
     if not rows:
-        return "", ["Nothing legible was found in that photo."]
+        return [], [], 0
 
     lines = []
     # A title is set larger than the body, which is the only signal available
     # here — so a page that merely opens with a long line is left as a lyric.
-    if len(rows) > 1 and not is_chord_row([b.text for b in rows[0]]) \
+    if titled and len(rows) > 1 and not is_chord_row([b.text for b in rows[0]]) \
             and _row_height(rows[0]) >= _TITLE_HEIGHT * statistics.median(
                 _row_height(row) for row in rows[1:]):
         lines.append("{title: %s}" % " ".join(b.text for b in rows[0]))
@@ -598,19 +690,7 @@ def chordpro_from_boxes(boxes) -> tuple[str, list]:
         lines.append(lyrics)
         index += 2
 
-    warnings = []
-    if not chord_rows:
-        warnings.append(
-            "No chords were recognised — the words were imported on their own.")
-    if german:
-        # Not a failure — the app understands these. Said out loud anyway,
-        # because someone who photographed `Hm` and is shown `Bm` should be
-        # told why rather than left to wonder whether the import went wrong.
-        names = ", ".join(sorted(set(german)))
-        warnings.append(
-            f"{names} will be stored under the English name (H is B natural). "
-            "The app keeps one spelling per pitch so transposing stays exact.")
-    return "\n".join(lines), warnings
+    return lines, german, chord_rows
 
 
 # Building the reader loads torch and the language models, which takes seconds

@@ -108,6 +108,67 @@ class SkewTests(unittest.TestCase):
         self.assertEqual(render(boxes), 'Amazing')
 
 
+class ColumnTests(unittest.TestCase):
+    """A hymnal sets two songs side by side, and rows are clustered by y.
+
+    So a line in the left column and an unrelated line at the same height in the
+    right one become a single row: the two songs interleave and every lyric ends
+    up holding half of another song. Measured on a rendered two-column page, the
+    titles merged into `{title: 148 Az Úr ... 149 Mondd, ki ...}`.
+
+    The gutter is found from the union of every box's x-extent. Using the union
+    is what makes it safe: a chord row has huge gaps of its own, but some lyric
+    line below always covers them, so only a gap that NO box crosses anywhere on
+    the page counts as a column break.
+    """
+
+    @staticmethod
+    def two_columns():
+        return (row(100, 20, ('Az', 0, 40), ('Úr', 50, 90))
+                + row(100, 20, ('Mondd,', 900, 1010), ('ki', 1020, 1050))
+                + row(140, 20, ('irgalma', 0, 120))
+                + row(140, 20, ('egész', 900, 1000)))
+
+    def test_a_gutter_splits_the_page(self):
+        columns = worker.split_columns(self.two_columns())
+        self.assertEqual(len(columns), 2)
+        self.assertEqual([b.text for b in columns[0]],
+                         ['Az', 'Úr', 'irgalma'])
+        self.assertEqual([b.text for b in columns[1]],
+                         ['Mondd,', 'ki', 'egész'])
+
+    def test_the_left_column_is_read_first(self):
+        text = render(self.two_columns())
+        self.assertLess(text.index('irgalma'), text.index('Mondd,'))
+
+    def test_the_two_songs_stop_sharing_lines(self):
+        for line in render(self.two_columns()).split('\n'):
+            self.assertFalse('Az' in line and 'Mondd,' in line, line)
+
+    def test_a_wide_chord_gap_is_not_a_gutter(self):
+        # A chord row is nearly all whitespace. The lyric line beneath covers
+        # the same x, so the union has no hole and the page stays whole.
+        boxes = row(70, 16, ('D', 0, 20), ('A', 900, 920)) \
+            + row(100, 20, ('Az Úr irgalma végtelen, minden reggel', 0, 950))
+        self.assertEqual(len(worker.split_columns(boxes)), 1)
+
+    def test_empty_space_at_the_edge_is_not_a_gutter(self):
+        # Short left-aligned lines leave the right of the page bare; that is
+        # margin, not a column break.
+        boxes = row(100, 20, ('rövid', 0, 90)) + row(140, 20, ('sor', 0, 60))
+        self.assertEqual(len(worker.split_columns(boxes)), 1)
+
+    def test_a_single_stray_mark_does_not_become_a_column(self):
+        boxes = row(100, 20, ('Az', 0, 40), ('Úr', 50, 90)) \
+            + row(140, 20, ('irgalma', 0, 120)) \
+            + [Box('.', 2000, 100, 2008, 108)]
+        self.assertEqual(len(worker.split_columns(boxes)), 1)
+
+    def test_two_songs_on_one_page_are_reported(self):
+        _, warnings = worker.chordpro_from_boxes(self.two_columns())
+        self.assertTrue(any('side by side' in w for w in warnings), warnings)
+
+
 class ChordTokenTests(unittest.TestCase):
     """Mirrors ChordSheetParser.isChordToken's whitelist."""
 
