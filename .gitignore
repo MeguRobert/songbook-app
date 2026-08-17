@@ -27,6 +27,14 @@ supabase/.branches/
 .env
 .env.local
 
+# Database dumps. NEVER commit these -- this repo is public and
+# `supabase db dump --data-only` includes the whole `auth` schema:
+# auth.users (email, encrypted_password, confirmation_token, recovery_token)
+# plus auth.sessions and auth.refresh_tokens. Treat every file here as a secret.
+backups/
+*.dump
+*.backup
+
 # Build outputs
 songbook_app/build/
 songbook_app/.dart_tool/
