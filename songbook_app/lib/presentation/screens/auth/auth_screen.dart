@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../data/repositories/auth_repository.dart';
 import '../../../l10n/app_localizations.dart';
@@ -148,7 +149,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           onPressed: _busy
                               ? null
                               : () => _run(() => _auth!.signInWithGoogle()),
-                          icon: const Icon(Icons.login),
+                          // The real Google mark, not a generic login glyph.
+                          // Deliberately no colorFilter: Google's branding
+                          // guidelines forbid recolouring the G, so it keeps its
+                          // four brand colours on both the light and dark theme.
+                          // 18dp is Google's specified size for a button this
+                          // height; the SVG's own 48px box is scaled down.
+                          icon: SvgPicture.asset(
+                            'assets/icons/google_g.svg',
+                            width: 18,
+                            height: 18,
+                          ),
                           label: Text(l10n.signInWithGoogle),
                         ),
                         const SizedBox(height: 16),
