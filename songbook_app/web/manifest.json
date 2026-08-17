@@ -1,7 +1,8 @@
 {
     "name": "Songbook — Worship Hymnal",
     "short_name": "Songbook",
-    "start_url": ".",
+    "start_url": "/songbook-app/",
+    "scope": "/songbook-app/",
     "display": "standalone",
     "background_color": "#4338CA",
     "theme_color": "#4338CA",
