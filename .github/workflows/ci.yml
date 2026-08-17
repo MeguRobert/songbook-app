@@ -32,6 +32,14 @@ jobs:
   verify:
     name: Analyze and test
     runs-on: ubuntu-latest
+    # A pull request from a branch in this repo already got a run from the `push`
+    # trigger above, and `pull_request` would fire again on every synchronize —
+    # two runs, two identical statuses, twice the minutes. Fork pull requests are
+    # the case that genuinely needs the `pull_request` trigger: their pushes are
+    # to somebody else's repo, so nothing else here ever sees them.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - uses: actions/checkout@v4
 
