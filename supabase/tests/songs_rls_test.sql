@@ -13,7 +13,7 @@
 -- before each switch restores the privilege needed to make the next one.
 
 begin;
-select plan(20);
+select plan(21);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures: two ordinary users and one admin.
@@ -80,10 +80,15 @@ select is(
   'Bob CANNOT see Alice''s pending song (the old app''s defect)'
 );
 
+-- Deliberately NOT `count(*) = 1`. The hymnal seed migration loads 8 approved
+-- songs, so any absolute count is brittle and would have to be re-tuned every
+-- time the seed grows. Counting *unapproved rows visible to Bob* is both
+-- seed-independent and a stricter statement of the actual requirement: it fails
+-- if any unapproved row leaks, not merely if the total is unexpected.
 select is(
-  (select count(*)::int from public.songs),
-  1,
-  'Bob sees exactly the one approved song, not the whole table'
+  (select count(*)::int from public.songs where status <> 'approved'),
+  0,
+  'Bob sees ZERO unapproved rows, whatever else the table holds'
 );
 
 -- Signed-out visitor.
@@ -100,9 +105,18 @@ select is(
 );
 
 select is(
-  (select count(*)::int from public.songs),
+  (select count(*)::int from public.songs where status <> 'approved'),
+  0,
+  'A signed-out visitor sees ZERO unapproved rows'
+);
+
+-- The positive half: prove the policy is permitting, not just denying. Scoped to
+-- the approved fixture by id so the seed size is irrelevant.
+select is(
+  (select count(*)::int from public.songs
+   where id = 'aaaaaaaa-0000-0000-0000-000000000002'),
   1,
-  'A signed-out visitor CAN read the approved catalogue (signed-out stays functional)'
+  'A signed-out visitor CAN read an approved song (signed-out stays functional)'
 );
 
 -- ---------------------------------------------------------------------------
@@ -128,9 +142,11 @@ select set_config('request.jwt.claims',
 set local role authenticated;
 
 select is(
-  (select count(*)::int from public.songs),
+  (select count(*)::int from public.songs
+   where id in ('aaaaaaaa-0000-0000-0000-000000000001',
+                'aaaaaaaa-0000-0000-0000-000000000002')),
   2,
-  'An admin sees both the pending and the approved song'
+  'An admin sees both the pending and the approved fixture song'
 );
 
 -- ---------------------------------------------------------------------------
@@ -228,19 +244,25 @@ select throws_ok(
 -- ---------------------------------------------------------------------------
 set local role postgres;
 
+-- Number 9990 in a test-only book, NOT ('Zsoltárok', 90). The seed migration
+-- already ships psalm 90 as approved canonical content, and
+-- songs_approved_number_unique is a real constraint, so reusing that pair aborts
+-- the whole transaction and every later assertion silently never runs.
 insert into public.songs (id, owner_id, source, status, number, book, title, payload) values (
   'cccccccc-0000-0000-0000-000000000001',
-  null, 'hymnal', 'approved', 90, 'Zsoltárok',
+  null, 'hymnal', 'approved', 9990, 'Teszt',
   'Tebenned bíztunk eleitől fogva',
-  '{"number":90,"originalKey":"Bb","verses":[{"number":1,"lines":[{"text":"Tebenned bíztunk"}]}]}'::jsonb
+  '{"number":9990,"originalKey":"Bb","verses":[{"number":1,"lines":[{"text":"Tebenned bíztunk"}]}]}'::jsonb
 );
 
 select set_config('request.jwt.claim.sub', '', true);
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 
+-- By id, not `where source = 'hymnal'`: the seed already holds 8 canonical rows.
 select is(
-  (select count(*)::int from public.songs where source = 'hymnal'),
+  (select count(*)::int from public.songs
+   where id = 'cccccccc-0000-0000-0000-000000000001'),
   1,
   'A signed-out visitor CAN read canonical hymnal songs'
 );
