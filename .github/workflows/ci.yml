@@ -1,0 +1,65 @@
+name: CI
+
+# The gate for work that is NOT a push to master.
+#
+# `deploy-pages.yml` already runs analyze and test before it builds, so master is
+# covered — but only master. A pull request, or a push to a working branch, ran
+# nothing at all: the first thing that ever checked a branch was the deploy that
+# happened after it was merged, which is the one place a red build is expensive.
+#
+# Deliberately the same three checks as the deploy job and no more, so "CI is
+# green" means the same thing on a branch as it does on master. If a check is
+# added here it belongs there too.
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      # master is gated by the deploy workflow. Running both would double the
+      # minutes and give two statuses that can only ever agree.
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Per branch, so a force-push supersedes its own run and not somebody else's.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned to the version the deploy uses, and to the local dev
+          # environment. A branch that passes here on a different SDK than the
+          # one that will build it is not a gate.
+          flutter-version: '3.35.2'
+          channel: stable
+          cache: true
+          # `cache` is the SDK only; the pub dependencies are a separate input.
+          pub-cache: true
+
+      - name: Install dependencies
+        working-directory: songbook_app
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: songbook_app
+        # Same threshold as the deploy: errors and warnings fail, the
+        # pre-existing info-level RadioListTile deprecations do not.
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        working-directory: songbook_app
+        run: flutter test
+
+      - name: Test import tooling (Python)
+        working-directory: tools
+        run: python -m unittest test_song_validator test_batch_import
