@@ -9,6 +9,7 @@ import '../../../domain/services/notation_editor.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
+import '../../widgets/content_pane.dart';
 import '../../widgets/sheet_music/sheet_music_renderer.dart';
 
 /// What a beat row's overflow menu offers.
@@ -208,7 +209,15 @@ class _NotationEditorScreenState extends ConsumerState<NotationEditorScreen> {
             const Divider(height: 1),
             if (notation.pickup?.isNotEmpty ?? false)
               _PickupNotice(count: notation.pickup!.length),
-            Expanded(child: ListView(children: _rows(notation))),
+            // The preview above stays full width — the renderer scales music to
+            // fit — but a beat row is table-shaped, so on a desktop window its
+            // syllable column would balloon and push the overflow menu a metre
+            // away from the pitch it edits.
+            Expanded(
+              child: ContentPane.list(
+                child: ListView(children: _rows(notation)),
+              ),
+            ),
           ],
         ),
       ),

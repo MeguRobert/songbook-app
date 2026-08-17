@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../router/app_router.dart';
 import '../../providers/favorites_provider.dart';
+import '../../widgets/content_pane.dart';
 import '../song_list/widgets/song_list_tile.dart';
 
 /// Screen showing favorite songs
@@ -57,39 +58,41 @@ class FavoritesScreen extends ConsumerWidget {
             );
           }
 
-          return ReorderableListView.builder(
-            itemCount: songs.length,
-            // Same reason as the setlist list: the automatic handle is injected
-            // at the trailing edge on desktop/web, on top of the tile's
-            // favourite button. Supply our own leading handle instead.
-            buildDefaultDragHandles: false,
-            onReorder: (oldIndex, newIndex) {
-              if (newIndex > oldIndex) newIndex--;
-              final songIds = songs.map((s) => s.id).toList();
-              songIds.insert(newIndex, songIds.removeAt(oldIndex));
-              ref.read(favoritesProvider.notifier).reorder(songIds);
-            },
-            itemBuilder: (context, index) {
-              final song = songs[index];
-              return Row(
-                key: ValueKey(song.number),
-                children: [
-                  ReorderableDragStartListener(
-                    index: index,
-                    child: const Padding(
-                      padding: EdgeInsets.only(left: 16),
-                      child: Icon(Icons.drag_handle),
+          return ContentPane.list(
+            child: ReorderableListView.builder(
+              itemCount: songs.length,
+              // Same reason as the setlist list: the automatic handle is injected
+              // at the trailing edge on desktop/web, on top of the tile's
+              // favourite button. Supply our own leading handle instead.
+              buildDefaultDragHandles: false,
+              onReorder: (oldIndex, newIndex) {
+                if (newIndex > oldIndex) newIndex--;
+                final songIds = songs.map((s) => s.id).toList();
+                songIds.insert(newIndex, songIds.removeAt(oldIndex));
+                ref.read(favoritesProvider.notifier).reorder(songIds);
+              },
+              itemBuilder: (context, index) {
+                final song = songs[index];
+                return Row(
+                  key: ValueKey(song.number),
+                  children: [
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 16),
+                        child: Icon(Icons.drag_handle),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: SongListTile(
-                      song: song,
-                      onTap: () => context.push(AppRoutes.songPath(song.id)),
+                    Expanded(
+                      child: SongListTile(
+                        song: song,
+                        onTap: () => context.push(AppRoutes.songPath(song.id)),
+                      ),
                     ),
-                  ),
-                ],
-              );
-            },
+                  ],
+                );
+              },
+            ),
           );
         },
         loading: () => const Center(

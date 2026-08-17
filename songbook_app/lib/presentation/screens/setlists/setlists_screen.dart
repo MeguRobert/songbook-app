@@ -6,6 +6,7 @@ import '../../../data/models/setlist.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../router/app_router.dart';
 import '../../providers/setlist_provider.dart';
+import '../../widgets/content_pane.dart';
 
 /// Screen listing all setlists, with create / rename / delete.
 class SetlistsScreen extends ConsumerWidget {
@@ -20,34 +21,36 @@ class SetlistsScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(l10n.navSetlists)),
       body: setlists.isEmpty
           ? _EmptyState(onCreate: () => _showCreateDialog(context, ref))
-          : ListView.builder(
-              itemCount: setlists.length,
-              itemBuilder: (context, index) {
-                final setlist = setlists[index];
-                return ListTile(
-                  leading: const Icon(Icons.queue_music),
-                  title: Text(setlist.name),
-                  subtitle: Text(l10n.setlistSongCount(setlist.length)),
-                  onTap: () =>
-                      context.push(AppRoutes.setlistDetailPath(setlist.id)),
-                  trailing: PopupMenuButton<String>(
-                    tooltip: l10n.setlistOptions,
-                    onSelected: (value) {
-                      if (value == 'rename') {
-                        _showRenameDialog(context, ref, setlist);
-                      } else if (value == 'delete') {
-                        _showDeleteDialog(context, ref, setlist);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                          value: 'rename', child: Text(l10n.actionRename)),
-                      PopupMenuItem(
-                          value: 'delete', child: Text(l10n.actionDelete)),
-                    ],
-                  ),
-                );
-              },
+          : ContentPane.list(
+              child: ListView.builder(
+                itemCount: setlists.length,
+                itemBuilder: (context, index) {
+                  final setlist = setlists[index];
+                  return ListTile(
+                    leading: const Icon(Icons.queue_music),
+                    title: Text(setlist.name),
+                    subtitle: Text(l10n.setlistSongCount(setlist.length)),
+                    onTap: () =>
+                        context.push(AppRoutes.setlistDetailPath(setlist.id)),
+                    trailing: PopupMenuButton<String>(
+                      tooltip: l10n.setlistOptions,
+                      onSelected: (value) {
+                        if (value == 'rename') {
+                          _showRenameDialog(context, ref, setlist);
+                        } else if (value == 'delete') {
+                          _showDeleteDialog(context, ref, setlist);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                            value: 'rename', child: Text(l10n.actionRename)),
+                        PopupMenuItem(
+                            value: 'delete', child: Text(l10n.actionDelete)),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateDialog(context, ref),

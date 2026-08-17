@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/submission.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
+import '../../widgets/content_pane.dart';
 
 /// The moderation queue: submissions awaiting a decision.
 ///
@@ -36,11 +37,13 @@ class ModerationQueueScreen extends ConsumerWidget {
             ? Center(child: Text(l10n.moderationQueueEmpty))
             : RefreshIndicator(
                 onRefresh: () async => ref.refresh(moderationQueueProvider),
-                child: ListView.separated(
-                  itemCount: submissions.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) => _QueueRow(
-                    submission: submissions[index],
+                child: ContentPane.list(
+                  child: ListView.separated(
+                    itemCount: submissions.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) => _QueueRow(
+                      submission: submissions[index],
+                    ),
                   ),
                 ),
               ),

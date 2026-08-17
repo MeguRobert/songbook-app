@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/submission.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
+import '../../widgets/content_pane.dart';
 
 /// What the user sent in, and what happened to it.
 ///
@@ -45,41 +46,43 @@ class MySubmissionsScreen extends ConsumerWidget {
             ? Center(child: Text(l10n.mySubmissionsEmpty))
             : RefreshIndicator(
                 onRefresh: () async => ref.refresh(mySubmissionsProvider),
-                child: ListView.separated(
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final submission = items[index];
-                    final theme = Theme.of(context);
+                child: ContentPane.list(
+                  child: ListView.separated(
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final submission = items[index];
+                      final theme = Theme.of(context);
 
-                    return ListTile(
-                      title: Text(submission.song.title),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(statusLabel(l10n, submission.status)),
-                          // The reason is the point of the whole screen, so it
-                          // gets the error colour and its own line rather than
-                          // being tucked into a tooltip.
-                          if (submission.isRejected &&
-                              submission.rejectionReason != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                submission.rejectionReason!,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.error,
+                      return ListTile(
+                        title: Text(submission.song.title),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(statusLabel(l10n, submission.status)),
+                            // The reason is the point of the whole screen, so it
+                            // gets the error colour and its own line rather than
+                            // being tucked into a tooltip.
+                            if (submission.isRejected &&
+                                submission.rejectionReason != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  submission.rejectionReason!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.error,
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                      isThreeLine: submission.isRejected,
-                      trailing: submission.isPending
-                          ? _WithdrawButton(submission: submission)
-                          : null,
-                    );
-                  },
+                          ],
+                        ),
+                        isThreeLine: submission.isRejected,
+                        trailing: submission.isPending
+                            ? _WithdrawButton(submission: submission)
+                            : null,
+                      );
+                    },
+                  ),
                 ),
               ),
       ),
