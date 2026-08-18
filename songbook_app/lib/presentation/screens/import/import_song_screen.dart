@@ -265,20 +265,19 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       _fileError = null;
     });
     try {
-      // Extensions rather than `FileType.image`, which asks the browser for
-      // `accept="image/*"`. On Android that routes the chooser to the gallery,
-      // and the gallery hands back a re-encoded copy: measured at 2048px wide,
-      // roughly JPEG quality 35, EXIF stripped. That compression erases the
-      // strokes on `ő` and `ű`, so the page came back saying `erót` for `erőt`
-      // and there is nothing downstream that can recover them.
+      // `image/*`, which gives Android its photo grid — the picker someone
+      // reaching for a photo expects.
       //
-      // An extension-based accept routes to the Files picker instead, which
-      // hands over the original bytes. `heic` is deliberately absent: the
-      // reader here cannot decode it, so offering it would only produce a file
-      // that fails later.
+      // This was briefly changed to an extension list, on the theory that
+      // `image/*` routes to a gallery that hands back a scaled copy. The
+      // evidence for that turned out to be a red herring: the degraded uploads
+      // (2048px, EXIF stripped, 0.026 bytes per pixel) had been through a
+      // messenger before they were ever picked. An extension list swaps the
+      // photo grid for a file browser, which is worse to use, so it is not
+      // worth keeping without evidence this device actually needs it — and
+      // `resolutionNote` in the worker now says so out loud if it does.
       final picked = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp'],
+        type: FileType.image,
         withData: true,
       );
       if (picked == null || picked.files.isEmpty) return; // cancelled
