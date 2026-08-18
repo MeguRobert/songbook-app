@@ -569,3 +569,30 @@ class EmptyPageTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ResolutionNoteTests(unittest.TestCase):
+    """Tell the user when the upload itself is the limiting factor.
+
+    Robert's phone handed over 2048x1532 at roughly JPEG quality 35 with the
+    EXIF stripped — the gallery's re-encoded copy, not the camera original. At
+    that size the two strokes over `ő` are gone, so the page read `erót` for
+    `erőt` and no parser change can recover it. Worth saying out loud, because
+    the fix is on the phone rather than in here.
+    """
+
+    def test_a_small_upload_is_reported_with_its_size(self):
+        note = worker.resolution_note(2048, 1532, 80372)
+        self.assertIsNotNone(note)
+        self.assertIn('2048', note)
+
+    def test_a_full_resolution_upload_says_nothing(self):
+        self.assertIsNone(worker.resolution_note(4032, 3024, 3_500_000))
+
+    def test_heavy_compression_is_reported_even_at_a_good_size(self):
+        # Plenty of pixels, but squeezed hard enough to erase the accents.
+        self.assertIsNotNone(worker.resolution_note(4032, 3024, 90_000))
+
+    def test_a_generous_file_at_a_modest_size_is_accepted(self):
+        # A lightly compressed 2048px scan has the detail; do not nag.
+        self.assertIsNone(worker.resolution_note(2048, 1532, 1_200_000))

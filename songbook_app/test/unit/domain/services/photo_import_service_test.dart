@@ -160,10 +160,30 @@ void main() {
       expect(called, isFalse, reason: 'no point posting nothing');
     });
 
-    test('a non-200 names the status', () async {
+    test('a non-200 with no explanation names the status', () async {
       final service = serviceReturning('nope', status: 502);
       expect(await messageFrom(() => service.extract(_image)),
           contains('502'));
+    });
+
+    test('a non-200 prefers the explanation to the status code',
+        () async {
+      // The backend explains itself: "No API key", "cannot decode that
+      // image". Reporting only the number threw that away and left whoever
+      // wrote the backend guessing at their own error message.
+      final service = serviceReturning(
+          json.encode({'error': 'No API key. Put one in tools/.anthropic_key.'}),
+          status: 502);
+      final message = await messageFrom(() => service.extract(_image));
+      expect(message, contains('tools/.anthropic_key'));
+      expect(message, isNot(contains('502')));
+    });
+
+    test('an empty explanation falls back to the status code', () async {
+      final service =
+          serviceReturning(json.encode({'error': '   '}), status: 500);
+      expect(await messageFrom(() => service.extract(_image)),
+          contains('500'));
     });
 
     test('a non-JSON body says so rather than throwing FormatException',

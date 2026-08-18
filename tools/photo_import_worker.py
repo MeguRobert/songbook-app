@@ -736,6 +736,41 @@ _PALE_BAND = (170, 235)
 _PALE_FRACTION = 0.012
 
 
+# What a page of text needs to keep its accents. A Hungarian `ő` differs from
+# `ó` by two hairline strokes, and they are the first thing a hard JPEG throws
+# away — measured on a real upload: 2048x1532 at 0.026 bytes per pixel came back
+# reading `erót` for `erőt`, and `-7` as `27`.
+#
+# Both halves matter. Pixels alone are not enough (a 4000px image squeezed to
+# 90KB has lost the same detail) and bytes alone are not either, so the test is
+# bytes per pixel with a floor on the long edge.
+# A page smaller than this cannot hold legible text at all, whatever its
+# compression; below the density, the pixels are there but the fine strokes have
+# been quantised away. Either alone is enough to lose the accents, so the test is
+# an OR — and a lightly compressed 2048px scan passes both, because it genuinely
+# has the detail.
+_MIN_LONG_EDGE = 1200
+_MIN_BYTES_PER_PIXEL = 0.08
+
+
+def resolution_note(width: int, height: int, size: int):
+    """A sentence about the upload's own quality, or None when it is fine.
+
+    The single biggest lever on accuracy is not in this file: a phone gallery
+    hands over a re-encoded copy, and no amount of parsing recovers a diacritic
+    the compression deleted. Worth saying so, because the fix is on the phone.
+    """
+    pixels = max(1, width * height)
+    density = size / pixels
+    if max(width, height) >= _MIN_LONG_EDGE and density >= _MIN_BYTES_PER_PIXEL:
+        return None
+    return (f"That photo arrived at {width}x{height} in {size // 1024} KB — "
+            "too compressed to hold the fine strokes. Accents like ő and ű are "
+            "the first thing to go, so expect a few wrong letters. A phone "
+            "gallery hands over a shrunken copy; picking the same photo through "
+            "Files usually gives the full-quality original.")
+
+
 def _flatten(grey):
     """[grey] divided by its own local background, so lighting stops mattering.
 
@@ -796,6 +831,7 @@ def extract_with_easyocr(image_bytes: bytes) -> tuple[str, list]:
     if image.mode != "RGB":
         image = image.convert("RGB")
     pixels = numpy.array(image)
+    quality = resolution_note(image.width, image.height, len(image_bytes))
     ghosted = has_show_through(pixels)
     if ghosted:
         pixels = suppress_show_through(pixels)
@@ -809,6 +845,10 @@ def extract_with_easyocr(image_bytes: bytes) -> tuple[str, list]:
         # comes out wrong anyway.
         warnings.insert(0, "The reverse side of the page showed through; it was "
                            "removed before reading.")
+    if quality:
+        # First, because it is the one problem the person holding the phone can
+        # actually fix, and it caps how good anything below it can be.
+        warnings.insert(0, quality)
     return content, warnings
 
 

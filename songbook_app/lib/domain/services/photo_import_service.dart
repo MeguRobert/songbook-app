@@ -122,12 +122,29 @@ class HttpPhotoImportService implements PhotoImportService {
     }
 
     if (response.statusCode != 200) {
-      throw PhotoImportException(
-        'The import service returned ${response.statusCode}.',
-      );
+      // The backend explains itself in `error` — "No API key", "cannot decode
+      // that image". Reporting only the number threw that away and left the
+      // person who wrote the backend guessing at their own error message.
+      throw PhotoImportException(_reason(response));
     }
 
     return _decode(response.body);
+  }
+
+  /// What went wrong, preferring the service's own words to its status code.
+  String _reason(http.Response response) {
+    try {
+      final decoded = json.decode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final error = decoded['error'];
+        if (error is String && error.trim().isNotEmpty) {
+          return error.trim();
+        }
+      }
+    } catch (_) {
+      // Not JSON, or no `error` in it. Fall through to the status code.
+    }
+    return 'The import service returned ${response.statusCode}.';
   }
 
   PhotoImportPayload _decode(String body) {

@@ -265,8 +265,20 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       _fileError = null;
     });
     try {
+      // Extensions rather than `FileType.image`, which asks the browser for
+      // `accept="image/*"`. On Android that routes the chooser to the gallery,
+      // and the gallery hands back a re-encoded copy: measured at 2048px wide,
+      // roughly JPEG quality 35, EXIF stripped. That compression erases the
+      // strokes on `ő` and `ű`, so the page came back saying `erót` for `erőt`
+      // and there is nothing downstream that can recover them.
+      //
+      // An extension-based accept routes to the Files picker instead, which
+      // hands over the original bytes. `heic` is deliberately absent: the
+      // reader here cannot decode it, so offering it would only produce a file
+      // that fails later.
       final picked = await FilePicker.platform.pickFiles(
-        type: FileType.image,
+        type: FileType.custom,
+        allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp'],
         withData: true,
       );
       if (picked == null || picked.files.isEmpty) return; // cancelled
