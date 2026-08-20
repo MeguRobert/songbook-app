@@ -126,6 +126,33 @@ async function isEnabled(page, label) {
   }, label);
 }
 
+/**
+ * The rectangle below the label matching `pattern`, down to the page bottom.
+ *
+ * For clipping a screenshot to the part of the screen under test. The notation
+ * is painted into a canvas and has no node of its own, so its position is taken
+ * from the heading above it.
+ */
+async function regionBelow(page, pattern) {
+  return page.evaluate((source) => {
+    const re = new RegExp(source);
+    for (const n of document.querySelectorAll('flt-semantics')) {
+      const own = (n.textContent || '').trim();
+      if (!re.test(own)) continue;
+      const r = n.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) continue;
+      return {
+        x: 0,
+        y: Math.round(r.bottom),
+        width: Math.round(window.innerWidth),
+        height: Math.round(window.innerHeight - r.bottom),
+      };
+    }
+    return null;
+  }, pattern.source);
+}
+
 module.exports = {
   enableSemantics, texts, clickLabel, waitForText, expand, isEnabled,
+  regionBelow,
 };

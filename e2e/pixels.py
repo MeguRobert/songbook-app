@@ -55,12 +55,22 @@ def rows(path):
     return out
 
 counts = collections.Counter()
+ink = 0
 for line, ch in rows(sys.argv[1]):
     for i in range(0, len(line), ch):
-        counts[line[i:i + 3]] += 1
+        px = line[i:i + 3]
+        counts[px] += 1
+        # Rec. 601 luma. "Ink" is anything appreciably darker than paper:
+        # staff lines, note heads, stems, text.
+        if (px[0] * 299 + px[1] * 587 + px[2] * 114) // 1000 < 128:
+            ink += 1
 total = sum(counts.values())
 dominant = counts.most_common(1)[0][1]
 print(json.dumps({
     'distinct': len(counts),
     'dominantShare': round(dominant * 100 / total, 1),
+    # The measure that actually distinguishes a drawn staff from a blank box.
+    # A region of paper is ~97% one colour whether or not anything is on it, so
+    # dominance says almost nothing; ink says whether marks were made.
+    'inkShare': round(ink * 100 / total, 3),
 }))

@@ -36,9 +36,14 @@ const fs = require('fs');
 const path = require('path');
 const {
   enableSemantics, texts, clickLabel, waitForText, expand, isEnabled,
+  regionBelow,
 } = require('./dom.cjs');
 
 const APP = process.env.APP_URL || 'http://127.0.0.1:8912';
+// The sheet-music reader needs a signed-in session, which this has no way to
+// hold, so a run against a deployed origin covers the device path only. Against
+// the local build it is the stub answering, and both paths run.
+const SERVICE_PATH = !process.env.APP_URL;
 const HERE = __dirname;
 const SHOTS = path.join(HERE, 'shots');
 
@@ -104,7 +109,14 @@ async function importPhoto(browser, errors, { sheetMusic, photo, shot }) {
   const settled = await waitForText(page,
     /\d+\s+(bars?|verses?)|could not|cannot|too long|Nothing/i);
   await page.waitForTimeout(2500); // let the first paint of the staff land
-  await page.screenshot({ path: path.join(SHOTS, shot + '.png') });
+  await page.screenshot({ path: path.join(SHOTS, shot + '-full.png') });
+  // And again, clipped to the preview. The full page is no use for the
+  // flat-colour check: it passes on any page with text on it, including one
+  // whose preview never rendered.
+  const region = await regionBelow(page, /^PREVIEW/);
+  if (region && region.height > 40) {
+    await page.screenshot({ path: path.join(SHOTS, shot + '.png'), clip: region });
+  }
   const seen = await texts(page);
   const canSave = await saveable(page);
   await page.close();
@@ -137,8 +149,20 @@ async function importPhoto(browser, errors, { sheetMusic, photo, shot }) {
     check('chord sheet: the words are the song',
       chords.seen.some((t) => /dzsungel Kir/i.test(t)),
       'lyrics present');
+    const chordInk = pixels(path.join(SHOTS, 'chord-sheet.png'));
+    check('chord sheet: the preview has something in it',
+      chordInk.inkShare > 0.2,
+      `${chordInk.inkShare}% ink in the preview`);
 
     // ---- A page of sheet music, answered by the stub ---------------------
+    if (!SERVICE_PATH) {
+      console.log('\nskipped: the sheet-music half needs the local stub, ' +
+        'because the deployed reader requires a signed-in session');
+      await browser.close();
+      const failedSoFar = results.filter((r) => !r.ok);
+      console.log(`\n${results.length - failedSoFar.length}/${results.length} passed`);
+      process.exit(failedSoFar.length === 0 ? 0 : 1);
+    }
     const score = await importPhoto(browser, consoleErrors, {
       sheetMusic: true,
       photo: path.join(HERE, 'score-page.png'),
@@ -158,10 +182,15 @@ async function importPhoto(browser, errors, { sheetMusic, photo, shot }) {
       !score.seen.some((t) => /^[A-Za-z]$/.test(t.trim())),
       'a one-letter title is OCR noise, not a heading');
 
-    const px = pixels(path.join(SHOTS, 'score.png'));
+    // Ink, not colour variety. A preview is mostly white paper either way, so
+    // "how dominant is the commonest colour" says almost nothing — 97% for a
+    // drawn staff and 99.9% for a blank box, which is far too close to assert
+    // on. Ink separates them cleanly: measured 0.99% for this staff, 0.64% for
+    // the chord sheet, and 0.03% when nothing rendered at all.
+    const staff = pixels(path.join(SHOTS, 'score.png'));
     check('sheet music: the staff is drawn, not a flat grey box',
-      px.distinct > 200 && px.dominantShare < 97,
-      `${px.distinct} distinct colours, commonest covers ${px.dominantShare}%`);
+      staff.inkShare > 0.2,
+      `${staff.inkShare}% ink in the preview (0.2% is the floor; a blank box measured 0.03%)`);
 
     check('no console errors in either run', consoleErrors.length === 0,
       consoleErrors.slice(0, 4).join('\n        ') || 'clean');

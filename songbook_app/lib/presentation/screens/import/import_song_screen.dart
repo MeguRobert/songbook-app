@@ -514,11 +514,24 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   /// the `??` and keeps the old value, so emptying the songbook box would
   /// silently do nothing. The cost of building afresh is that anything the form
   /// does not show has to be carried over explicitly — see below.
-  Song? get _draft {
+  /// What Save would store, or null when it would not be allowed to.
+  Song? get _draft =>
+      _titleController.text.trim().isEmpty ? null : _songFromFields();
+
+  /// What the preview shows — which is not the same question.
+  ///
+  /// The two used to be one getter, so a photographed page that had been read
+  /// perfectly well showed "Give the song a title" and nothing else until a
+  /// title was typed. That is backwards: the reason to look at the preview is
+  /// to decide whether the reading is worth keeping, and being asked to name it
+  /// first means naming something you have not seen. A title is needed to
+  /// *save*; it is not needed to *look*.
+  Song? get _preview => _songFromFields();
+
+  Song? _songFromFields() {
     final pending = _pending;
     if (pending == null || !_hasContent(pending)) return null;
     final title = _titleController.text.trim();
-    if (title.isEmpty) return null;
     final book = _bookController.text.trim();
     final editing = _editing;
     return Song(
@@ -600,7 +613,10 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final pending = _pending;
-    final draft = _draft;
+    // Only the preview here. Save gates on [_blockersIn], and `_draft` is what
+    // `_save` builds when it is pressed — reading it during build would be a
+    // third answer to the same question.
+    final preview = _preview;
     final blockers = _blockersIn(l10n);
 
     return Scaffold(
@@ -905,17 +921,19 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              if (draft != null)
-                // The real view widgets, chosen the same way the song view
-                // chooses them, so this is not an approximation that can drift.
+              // Shown as soon as anything was read, titled or not. The real view
+              // widgets, chosen the same way the song view chooses them, so this
+              // is not an approximation that can drift.
+              if (preview != null)
                 SizedBox(
                   height: 340,
-                  child: draft.hasNotation
+                  child: preview.hasNotation
                       ? SheetMusicView(
-                          song: draft, transpose: 0, showChords: true)
-                      : ChordView(song: draft, transpose: 0),
-                )
-              else
+                          song: preview, transpose: 0, showChords: true)
+                      : ChordView(song: preview, transpose: 0),
+                ),
+              // And still say what Save is waiting for, underneath it.
+              if (blockers.isNotEmpty)
                 Text(
                   blockers.first,
                   style: theme.textTheme.bodyMedium?.copyWith(
