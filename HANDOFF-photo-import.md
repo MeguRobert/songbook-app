@@ -27,7 +27,8 @@ at all: **press the book flat**.
 
 - **Worktree:** `C:\Users\rober\source\repos\songbook-app-worktrees\v1-polish` (branch `claude/v1-polish`)
 - **Main checkout:** `C:\Users\rober\source\repos\songbook-app` (branch `master`)
-- **Branch state: 25 commits ahead of master, 7 BEHIND.** Master moved and its history was
+- **Branch state: well ahead of master, 7 BEHIND.** `git rev-list --count master..HEAD`
+  is the count; chasing it in prose only ever produces an off-by-one. Master moved and its history was
   rewritten — the merge-base is `0a2d46b` and master carries 7 commits on top of it (CI
   gating, Supabase keep-awake, RLS test fixes, Google sign-in mark, PWA start_url).
   **Rebase before merging.** There are also four other `claude/*` worktrees on this repo;
@@ -133,7 +134,7 @@ first time someone photographs something, pinned to an exact version.
 - **There is no hard spend cap in GCP.** A $2 budget was created but it *warns only*. The real
   cap is auth plus `max-instances 2` plus `timeout 120`.
 
-## Done — 25 commits on `claude/v1-polish`, NOT pushed, NOT merged
+## Done — on `claude/v1-polish`, NOT pushed, NOT merged
 
 Listed by subject: this branch has been rebased three times and every SHA changed each time.
 `git log --oneline master..HEAD` is the authority.
@@ -296,7 +297,7 @@ notation path is live on Cloud Run behind Supabase ES256 auth
 (https://songbook-omr-541713551179.europe-central2.run.app, 96.2% pitch accuracy), reached by
 a "this page has sheet music" checkbox that also tells the user to press the book flat, and
 carrying the signed-in account's access token as a Bearer header. 1009 Flutter tests, 159
-Python, 14 deploy, analyze 0, web build green. 25 commits, unpushed.
+Python, 14 deploy, analyze 0, web build green. Unpushed and unmerged.
 
 Next: (1) rebase onto master — it is 7 ahead AND its history was rewritten; expect conflicts
 in import_song_screen.dart and all seven l10n files. (2) merge and deploy. (3) then the one
