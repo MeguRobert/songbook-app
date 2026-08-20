@@ -247,6 +247,39 @@ void main() {
     });
   });
 
+  group('the heading', () {
+    // Found end to end in a browser, on the real photograph of song 149: this
+    // book prints its heading barely larger than its lyrics, so a
+    // height-only test made the heading the first line of the song. The Title
+    // box stayed empty, the number was lost, and a two-verse song imported
+    // with three.
+    test('a first row opening with a hymn number is a title at body size',
+        () async {
+      final page = row(100, 20, [('149', 0, 30), ('Mondd,', 40, 100)]) +
+          row(140, 20, lyrics) +
+          row(180, 20, lyrics);
+      expect(render(page), startsWith('{title: 149 Mondd,}'));
+    });
+
+    test('a plain opening line of the same size stays a lyric', () async {
+      // The guard that keeps this from swallowing first lines: no number, no
+      // extra height, no title.
+      final page = row(100, 20, lyrics) +
+          row(140, 20, lyrics) +
+          row(180, 20, lyrics);
+      expect(render(page), isNot(contains('{title:')));
+    });
+
+    test('a quantity is not a hymn number', () async {
+      // `10 000 angyal` — digits followed by more digits are a count, and the
+      // title has to survive intact.
+      final page = row(100, 20, [('10', 0, 20), ('000', 30, 60), ('angyal', 70, 130)]) +
+          row(140, 20, lyrics) +
+          row(180, 20, lyrics);
+      expect(render(page), isNot(contains('{title:')));
+    });
+  });
+
   group('empty and degenerate input', () {
     test('no words produce no content, with a warning', () {
       final reading = bridge.read(const []);

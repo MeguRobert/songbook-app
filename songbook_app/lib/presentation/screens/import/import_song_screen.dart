@@ -218,9 +218,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   /// other sources tend to as well. Left alone it became part of the title, so
   /// the song sorted under its first letter and the number box stayed empty.
   ///
-  /// A separator is required, so `10 000 angyal` keeps its number intact: a run
-  /// of digits followed by more digits is a quantity, not a hymn number.
-  static final _numberedTitle = RegExp(r'^\s*(\d{1,4})\s*[.):]\s*(\S.*)$');
+  /// The separator is optional, because a recogniser reading a photographed
+  /// page drops the printed full stop often enough to matter — `149 Mondd, ki a
+  /// dzsungel királya` has to split as surely as `149. Isten fénye` does. What
+  /// follows the number must not be another digit, which is what keeps
+  /// `10 000 angyal` intact: a run of digits followed by more digits is a
+  /// quantity, not a hymn number.
+  static final _numberedTitle =
+      RegExp(r'^\s*(\d{1,4})\s*(?:[.):]\s*|\s+)(\D.*)$');
 
   void _accept(_PendingImport pending) {
     setState(() {
@@ -407,7 +412,13 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       if (payload is! ChordProPayload) return null;
       for (final line in payload.text.split('\n')) {
         final trimmed = line.trim();
-        if (trimmed.isNotEmpty) return trimmed;
+        if (trimmed.isEmpty) continue;
+        // It has to look like a hymnal heading — a number, then words. Reading
+        // a page of engraved music for text finds fragments of the notation
+        // first, and on a real score this returned "J". One stray letter in the
+        // Title box is worse than an empty one: empty is visibly unfinished and
+        // Save refuses it, while "J" looks like an answer somebody gave.
+        return _numberedTitle.hasMatch(trimmed) ? trimmed : null;
       }
     } catch (_) {
       // The notation is already in hand. A heading is a convenience, and a
@@ -751,20 +762,28 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                               ? null
                               : () => setState(() =>
                                   _photoHasSheetMusic = !_photoHasSheetMusic),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Checkbox(
-                                value: _photoHasSheetMusic,
-                                onChanged: _picking
-                                    ? null
-                                    : (on) => setState(() =>
-                                        _photoHasSheetMusic = on ?? false),
-                              ),
-                              Flexible(
-                                child: Text(l10n.importPhotoSheetMusic),
-                              ),
-                            ],
+                          // The box and its words are one control, and without
+                          // this they are not: the label was swept up into the
+                          // surrounding group and the checkbox itself was left
+                          // with no accessible name, so a screen reader
+                          // announced "checkbox, not checked" and nothing about
+                          // what it does.
+                          child: MergeSemantics(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Checkbox(
+                                  value: _photoHasSheetMusic,
+                                  onChanged: _picking
+                                      ? null
+                                      : (on) => setState(() =>
+                                          _photoHasSheetMusic = on ?? false),
+                                ),
+                                Flexible(
+                                  child: Text(l10n.importPhotoSheetMusic),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

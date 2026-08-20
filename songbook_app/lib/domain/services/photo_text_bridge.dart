@@ -87,6 +87,19 @@ class PhotoTextBridge {
   /// How much taller than the body the first line must be to be a title.
   static const _titleHeight = 1.25;
 
+  /// A first row that opens with a hymn number is a heading at any size.
+  ///
+  /// Height alone was the only signal, and on a real photograph of song 149 it
+  /// was not enough: that book prints its heading barely larger than its
+  /// lyrics, so `149 Mondd, ki a dzsungel királya` came through as a line of
+  /// the song. The number is the stronger signal anyway — every page of this
+  /// songbook opens with one, and no lyric does.
+  ///
+  /// A separator is optional because the recogniser drops the printed full stop
+  /// often enough to matter, but what follows the number must not itself be a
+  /// digit: that is what keeps `10 000 angyal` a title rather than song 10.
+  static final _numberedHeading = RegExp(r'^\s*\d{1,4}\s*[.):]?\s+\D');
+
   /// How far off square a handheld photo is worth correcting, and how finely to
   /// look. Beyond this the page is not a photograph of a song.
   static const _maxSkew = 12.0;
@@ -292,14 +305,18 @@ class PhotoTextBridge {
     if (rows.isEmpty) return const _Block([], {}, 0);
 
     final lines = <String>[];
-    // A title is set larger than the body, which is the only signal available
-    // here — so a page that merely opens with a long line stays a lyric.
+    // Either signal will do: set larger than the body, or opening with a hymn
+    // number. Height alone let a heading printed at body size become a lyric,
+    // and a page that merely opens with a long line still stays a lyric because
+    // neither test passes for it.
+    final firstRow = rows.first.map((w) => w.text).join(' ');
     if (titled &&
         rows.length > 1 &&
-        !parser.isChordLine(rows.first.map((w) => w.text).join(' ')) &&
-        _rowHeight(rows.first) >=
-            _titleHeight * _median(rows.skip(1).map(_rowHeight))) {
-      lines.add('{title: ${rows.first.map((w) => w.text).join(' ')}}');
+        !parser.isChordLine(firstRow) &&
+        (_numberedHeading.hasMatch(firstRow) ||
+            _rowHeight(rows.first) >=
+                _titleHeight * _median(rows.skip(1).map(_rowHeight)))) {
+      lines.add('{title: $firstRow}');
       lines.add('');
       rows.removeAt(0);
     }
