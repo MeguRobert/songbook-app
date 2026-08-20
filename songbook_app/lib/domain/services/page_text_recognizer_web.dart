@@ -17,8 +17,7 @@ import 'photo_text_bridge.dart';
 /// because the measurement said so: on a real photograph of song 149 this
 /// engine found 4 of 4 chord rows in about two seconds and read `Ő` correctly,
 /// where the server engine it replaced found 3 of 4 in forty seconds and
-/// returned `Ó`. Nothing is uploaded, nothing is hosted, and it keeps working
-/// offline once the browser has the model.
+/// returned `Ó`. Nothing is uploaded and nothing is hosted.
 PageTextRecognizer createPageTextRecognizer() =>
     const TesseractPageTextRecognizer();
 
@@ -31,11 +30,57 @@ PageTextRecognizer createPageTextRecognizer() =>
 /// worse: Flutter's service worker pre-caches what it finds there, which would
 /// put those megabytes into the install of a user who never takes a photo.
 ///
-/// The cost is that the *first* photo on a device needs a network. The browser
-/// caches both files afterwards, so later ones do not — and the server path
-/// this replaces needed a network every single time.
+/// The cost is that the *first* photo on a device needs a network, and that
+/// "offline afterwards" is a likelihood rather than a promise: the script, the
+/// worker and the WebAssembly core sit in the ordinary HTTP cache, which the
+/// browser may evict and which the app's own service worker does not manage
+/// (it passes cross-origin requests straight through). Only the language model
+/// gets durable storage, from Tesseract itself. Against a server path that
+/// needed a network every single time, this is still strictly better.
 const _tesseractScript =
     'https://unpkg.com/tesseract.js@7.0.0/dist/tesseract.min.js';
+
+/// The hash the fetched script must match, or the browser refuses to run it.
+///
+/// Pinning the version says which bytes are wanted; this says the bytes
+/// arriving are those. Without it, anyone able to answer for that URL — a CDN
+/// compromise, not a hypothetical for a free public CDN — runs their own code
+/// inside this app's origin, where the Supabase session is stored and readable
+/// by any script. Recompute when the version moves:
+///
+/// ```
+/// curl -sL <the URL above> | openssl dgst -sha384 -binary | openssl base64 -A
+/// ```
+///
+/// This covers the script this file injects. The worker and WebAssembly core
+/// that Tesseract then fetches for itself are not covered — they are chosen
+/// inside the script and land in a Web Worker, which has no DOM and no access
+/// to the session, so the page-level script is the part worth hashing.
+const _tesseractIntegrity =
+    'sha384-2BQ3U3OdKOb0Uczxqr41I9UvZkzr4V9Hv8uSzMMZAlmhsFClvdZX5wi5fDCzG+tM';
+
+/// How long each stage may take before the person is told it did not work.
+///
+/// Nothing here can fail on its own. A stalled connection fires no `error`
+/// event — the request simply never finishes — so before these the observable
+/// behaviour of bad Wi-Fi was a spinner that span until the page was reloaded,
+/// with no way back. The wire path has had a 90-second bound since it was
+/// written; this is the same idea for the path that replaced it as the default.
+///
+/// The engine gets the longest budget because the first read on a device pulls
+/// roughly ten megabytes — the worker, the WebAssembly core and the Hungarian
+/// model — before it can start.
+const _scriptBudget = Duration(seconds: 30);
+const _engineBudget = Duration(seconds: 120);
+const _readBudget = Duration(seconds: 60);
+
+/// What the user is told when a stage runs out of time.
+///
+/// One sentence for all three, because from the outside they are one
+/// situation: it did not load.
+Never _tooSlow() => throw const PhotoImportException(
+      'Reading the photo took too long. Check your connection and try again.',
+    );
 
 /// The longest edge the photo is scaled to before it is read.
 ///
@@ -67,7 +112,9 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
     // the WebAssembly heap and the language model for as long as it lives, and
     // a second photo is minutes away at best — the model is cached by then, so
     // starting over costs little.
-    final worker = await _createWorker(language).toDart;
+    final worker = await _createWorker(language)
+        .toDart
+        .timeout(_engineBudget, onTimeout: _tooSlow);
     try {
       // Exactly the pair the bench measured. `text` is not read here — the
       // words and their boxes are — but asking for the same outputs as the
@@ -76,7 +123,10 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
       final output = JSObject()
         ..setProperty('blocks'.toJS, true.toJS)
         ..setProperty('text'.toJS, true.toJS);
-      final result = await worker.recognize(canvas, JSObject(), output).toDart;
+      final result = await worker
+          .recognize(canvas, JSObject(), output)
+          .toDart
+          .timeout(_readBudget, onTimeout: _tooSlow);
       return _wordsIn(result.data);
     } finally {
       await worker.terminate().toDart;
@@ -191,25 +241,51 @@ Future<void> _injectTesseract() {
   final done = Completer<void>();
   final script = web.document.createElement('script') as web.HTMLScriptElement
     ..src = _tesseractScript
+    ..integrity = _tesseractIntegrity
+    // Required for `integrity` to be checked at all on a cross-origin script:
+    // without it the response is opaque and there is nothing to hash.
+    ..crossOrigin = 'anonymous'
     ..async = true;
+
+  void fail() {
+    // Cleared so a later attempt — once there is a network again — is not
+    // handed this same failed future for the rest of the session.
+    _tesseractLoading = null;
+    script.remove();
+    if (!done.isCompleted) {
+      done.completeError(const PhotoImportException(
+        'The reader could not be downloaded. The first photo on a device '
+        'needs a connection.',
+      ));
+    }
+  }
+
+  // A stalled request fires neither `load` nor `error`, so a clock is the only
+  // way out of one.
+  final giveUp = Timer(_scriptBudget, fail);
+
   script.addEventListener(
       'load',
       ((web.Event _) {
+        giveUp.cancel();
+        // `load` fires for any successful response, and a captive portal's
+        // sign-in page or a proxy's block page is a successful response. Both
+        // arrive as HTML that defines no `Tesseract`, and a script that fails
+        // to parse does not fire `error` either. Completing here without
+        // checking left a *successfully completed* future in the singleton
+        // below, which every later attempt was then handed — so one airport
+        // Wi-Fi broke the feature until the page was reloaded.
+        if (!globalContext.has('Tesseract')) {
+          fail();
+          return;
+        }
         if (!done.isCompleted) done.complete();
       }).toJS);
   script.addEventListener(
       'error',
       ((web.Event _) {
-        // Cleared so a later attempt — once there is a network again — is not
-        // handed this same failed future for the rest of the session.
-        _tesseractLoading = null;
-        script.remove();
-        if (!done.isCompleted) {
-          done.completeError(const PhotoImportException(
-            'The reader could not be downloaded. The first photo on a device '
-            'needs a connection.',
-          ));
-        }
+        giveUp.cancel();
+        fail();
       }).toJS);
   web.document.head!.append(script);
   return done.future;

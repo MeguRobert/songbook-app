@@ -42,10 +42,16 @@ class BrowserPhotoImportService implements PhotoImportService {
     } on PhotoImportException {
       // Already a sentence meant for the person holding the phone.
       rethrow;
-    } catch (error) {
+    } catch (_) {
       // A missing engine, a blocked download, an image the browser refused to
       // decode. One situation from the user's side: it did not read.
-      throw PhotoImportException('That photo could not be read. $error');
+      //
+      // The cause is deliberately not appended. These arrive as JavaScript
+      // objects, and interpolating one put "[object Object]" — or a raw
+      // TypeError — in front of somebody holding a phone.
+      throw const PhotoImportException(
+        'That photo could not be read. Try again, or type the words in.',
+      );
     }
 
     final reading = bridge.read(words);

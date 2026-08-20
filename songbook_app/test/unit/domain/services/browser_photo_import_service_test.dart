@@ -21,6 +21,7 @@ class _FakeRecognizer implements PageTextRecognizer {
 
   int calls = 0;
   Uint8List? sawBytes;
+  String? sawLanguage;
 
   @override
   bool get isSupported => true;
@@ -30,6 +31,7 @@ class _FakeRecognizer implements PageTextRecognizer {
       {String language = PageTextRecognizer.hungarian}) async {
     calls++;
     sawBytes = imageBytes;
+    sawLanguage = language;
     if (error != null) throw error!;
     return words;
   }
@@ -63,6 +65,10 @@ void main() {
 
     expect(recognizer.calls, 1);
     expect(recognizer.sawBytes, same(bytes));
+    // Hungarian, and it matters more than it looks: the songbook is Hungarian,
+    // and the wrong model reads `ő` as `6` and `ű` as `ii` — a page of
+    // mangled words rather than a visible failure.
+    expect(recognizer.sawLanguage, 'hun');
     expect(payload, isA<ChordProPayload>());
     final lines = (payload as ChordProPayload).text.split('\n');
     // The chords row over the lyric row, each chord above its own word.
