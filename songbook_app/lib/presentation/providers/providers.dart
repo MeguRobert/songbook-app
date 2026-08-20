@@ -179,7 +179,7 @@ final userSongRepositoryProvider = Provider<UserSongRepository>((ref) {
 // --- Photo import: two engines, because neither does the other's job ---
 //
 // A photographed hymnal page is words with chord names above them, and reading
-// that is text OCR, which the browser can do in about two seconds for free.
+// that is text OCR, which the browser does in about a second for free.
 // Engraved notation is music recognition, which needs Audiveris — a container,
 // not a phone — and which returns no lyrics at all. So the page is read by one
 // or the other, and the person holding the camera is the only one who knows
@@ -187,11 +187,12 @@ final userSongRepositoryProvider = Provider<UserSongRepository>((ref) {
 
 /// Reading a photographed chord sheet. The common case, and the default.
 ///
-/// No endpoint, no account and no network: the engine, the page cleaning and
-/// the chords-over-lyrics arithmetic are all on the device. A service address
-/// saved in Settings is deliberately *not* consulted here — it belongs to the
-/// sheet-music reader below — because the local path measured faster and more
-/// accurate than the server one it replaced.
+/// No endpoint and no account, and no network once the engine has been fetched
+/// once: the page cleaning, the reading and the chords-over-lyrics arithmetic
+/// all happen on the device. A service address saved in Settings is
+/// deliberately *not* consulted here — it belongs to the sheet-music reader
+/// below — because the local path measured faster and more accurate than the
+/// server one it replaced.
 ///
 /// Null only where there is no browser to run the engine in, which the import
 /// screen explains rather than failing on tap.
