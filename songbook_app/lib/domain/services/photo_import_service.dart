@@ -124,10 +124,18 @@ class HttpPhotoImportService implements PhotoImportService {
     try {
       final streamed = await _client.send(request).timeout(timeout);
       response = await http.Response.fromStream(streamed);
-    } on Exception catch (e) {
+    } on Exception catch (_) {
       // Covers no network, DNS failure, refused connection and the timeout —
       // from the user's side these are one situation: it did not answer.
-      throw PhotoImportException('Could not reach the import service. $e');
+      //
+      // The exception itself is deliberately not appended. `ClientException`
+      // carries the URI it failed on, which put the reader's address in front
+      // of a user who has no use for it, and read as a fault in the app rather
+      // than in the connection.
+      throw const PhotoImportException(
+        'Could not reach the reading service. Check your connection and try '
+        'again.',
+      );
     }
 
     if (response.statusCode != 200) {

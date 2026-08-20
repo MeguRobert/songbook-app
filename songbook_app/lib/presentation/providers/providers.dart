@@ -204,38 +204,28 @@ final photoTextImportServiceProvider = Provider<PhotoImportService?>((ref) {
 
 /// Reading engraved notation off a photographed page. Opt-in, and a server.
 ///
-/// Null when no address has been configured, rather than a throwing stub, so
-/// the UI can offer the feature honestly: "point this at a service" is a setup
-/// step, not an error.
+/// Null when this build ships no reader, rather than a throwing stub, so the
+/// import screen can say so instead of failing on tap.
+///
+/// The address is compiled in and cannot be changed from inside the app, which
+/// is why the signed-in account's access token can simply be attached: there is
+/// exactly one place it can go, and it is ours. When the address was settable —
+/// including from a URL parameter — that token needed withholding from
+/// everywhere else, because it is a bearer credential for the whole account.
 ///
 /// [authStateChangesProvider] is watched for the token, not for the user: the
-/// deployed service verifies a Supabase access token, those expire, and the SDK
-/// replaces them on that stream. Watching it means the next import carries the
-/// live token instead of the one that happened to be current when this screen
-/// was first built — which the service would answer with a 401.
+/// service verifies a Supabase access token, those expire, and the SDK replaces
+/// them on that stream. Watching it means the next import carries the live token
+/// rather than whichever one was current when this was first built — which the
+/// service would answer with a 401.
 final photoNotationImportServiceProvider =
     Provider<PhotoImportService?>((ref) {
-  final settings = ref.watch(settingsRepositoryProvider);
-  final endpoint = settings.getPhotoImportEndpoint();
+  final endpoint = ref.watch(settingsRepositoryProvider).getPhotoImportEndpoint();
   if (endpoint == null) return null;
   ref.watch(authStateChangesProvider);
   return HttpPhotoImportService(
     endpoint: endpoint,
-    // A token typed into Settings wins wherever it points: it is an explicit
-    // answer about this particular service, and the person who typed it is the
-    // person who set that service up.
-    //
-    // The signed-in account's own token is different, and is sent ONLY to the
-    // service this build was compiled to talk to. It is a bearer credential
-    // for the whole Supabase account, and the address it would be sent to can
-    // be set by a URL parameter — so attaching it to whatever happens to be
-    // configured meant a link to the real app could redirect it to any host
-    // and be handed one. Somewhere else may be configured; it does not get
-    // this.
-    token: settings.getPhotoImportToken() ??
-        (settings.isBuiltInPhotoImportService(endpoint)
-            ? ref.watch(authRepositoryProvider)?.accessToken
-            : null),
+    token: ref.watch(authRepositoryProvider)?.accessToken,
   );
 });
 

@@ -1768,10 +1768,10 @@ abstract class AppLocalizations {
   /// **'Reading the photo…'**
   String get importPhotoReading;
 
-  /// Shown when the sheet-music service has no address configured
+  /// Shown when this build carries no sheet-music reader, so the toggle cannot work
   ///
   /// In en, this message translates to:
-  /// **'Set up the sheet-music service in Settings first.'**
+  /// **'This version of Songbook cannot read sheet music.'**
   String get importPhotoNotConfigured;
 
   /// Explanation under the Photo button for the ordinary chord-sheet path
@@ -1803,48 +1803,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Photos can only be read in the browser version of Songbook.'**
   String get importPhotoNoReader;
-
-  /// Settings section heading for the photo import service
-  ///
-  /// In en, this message translates to:
-  /// **'Photo import'**
-  String get settingsPhotoImport;
-
-  /// Label for the URL the photo is sent to
-  ///
-  /// In en, this message translates to:
-  /// **'Sheet-music service'**
-  String get settingsPhotoImportEndpoint;
-
-  /// Explains what the endpoint field is for
-  ///
-  /// In en, this message translates to:
-  /// **'The address that reads sheet music. Leave it empty to use the built-in one. Words and chords are read on your device and need no address.'**
-  String get settingsPhotoImportEndpointHint;
-
-  /// Label for the optional bearer token sent with the photo
-  ///
-  /// In en, this message translates to:
-  /// **'Access token'**
-  String get settingsPhotoImportToken;
-
-  /// Notes that the access token may be left empty
-  ///
-  /// In en, this message translates to:
-  /// **'Optional.'**
-  String get settingsPhotoImportTokenHint;
-
-  /// Subtitle shown when no photo-import service is configured
-  ///
-  /// In en, this message translates to:
-  /// **'Not set up'**
-  String get settingsPhotoImportNotSet;
-
-  /// Validation message for a malformed photo-import URL
-  ///
-  /// In en, this message translates to:
-  /// **'That does not look like a web address.'**
-  String get settingsPhotoImportInvalid;
 
   /// Generic confirm button in a settings dialog
   ///

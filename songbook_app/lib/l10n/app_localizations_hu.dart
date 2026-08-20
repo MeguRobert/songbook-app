@@ -1008,7 +1008,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get importPhotoNotConfigured =>
-      'Előbb állítsd be a kottaszolgáltatást a Beállításokban.';
+      'Ebben a Songbook-változatban a kotta beolvasása nem működik.';
 
   @override
   String get importPhotoHint =>
@@ -1028,28 +1028,6 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get importPhotoNoReader =>
       'Fényképet csak a Songbook böngészős változata tud beolvasni.';
-
-  @override
-  String get settingsPhotoImport => 'Fényképes beolvasás';
-
-  @override
-  String get settingsPhotoImportEndpoint => 'Kottaszolgáltatás címe';
-
-  @override
-  String get settingsPhotoImportEndpointHint =>
-      'Az a cím, amely a kottát beolvassa. Hagyd üresen a beépített szolgáltatáshoz. A szöveget és az akkordokat az eszközöd olvassa be, ahhoz nem kell cím.';
-
-  @override
-  String get settingsPhotoImportToken => 'Hozzáférési kulcs';
-
-  @override
-  String get settingsPhotoImportTokenHint => 'Nem kötelező.';
-
-  @override
-  String get settingsPhotoImportNotSet => 'Nincs beállítva';
-
-  @override
-  String get settingsPhotoImportInvalid => 'Ez nem tűnik érvényes webcímnek.';
 
   @override
   String get commonSave => 'Mentés';

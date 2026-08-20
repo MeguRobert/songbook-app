@@ -133,23 +133,6 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => _showLanguageDialog(context, ref, locale),
             ),
 
-            // Photo import. Its own section rather than a line under
-            // Appearance: it is the only setting that points the app at
-            // something outside itself.
-            _buildSectionHeader(context, l10n.settingsPhotoImport),
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: Text(l10n.settingsPhotoImport),
-              subtitle: Text(
-                ref
-                        .watch(settingsRepositoryProvider)
-                        .getPhotoImportEndpoint()
-                        ?.host ??
-                    l10n.settingsPhotoImportNotSet,
-              ),
-              onTap: () => _showPhotoImportDialog(context, ref),
-            ),
-
             // Appearance section
             _buildSectionHeader(context, l10n.settingsAppearance),
             ListTile(
@@ -278,100 +261,6 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  /// Where photo import sends an image, and the token it presents.
-  ///
-  /// Two plain fields rather than a wizard: the value is a URL the user was
-  /// given by whatever service they set up, and the only thing the app can
-  /// usefully check is that it looks like one.
-  void _showPhotoImportDialog(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final settings = ref.read(settingsRepositoryProvider);
-    // The stored value, not the resolved one: an empty field means "use
-    // whatever this build was compiled with", and prefilling the built-in
-    // address would turn opening this dialog into pinning it.
-    final endpointController = TextEditingController(
-      text: settings.getStoredPhotoImportEndpoint() ?? '',
-    );
-    final tokenController =
-        TextEditingController(text: settings.getPhotoImportToken() ?? '');
-
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          final raw = endpointController.text.trim();
-          // Empty is valid — it turns the feature off. Only a non-empty value
-          // that cannot be a URL is worth complaining about.
-          final invalid = raw.isNotEmpty && !_looksLikeUrl(raw);
-          return AlertDialog(
-            title: Text(l10n.settingsPhotoImport),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: endpointController,
-                  autofocus: true,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    labelText: l10n.settingsPhotoImportEndpoint,
-                    helperText: l10n.settingsPhotoImportEndpointHint,
-                    helperMaxLines: 3,
-                    errorText:
-                        invalid ? l10n.settingsPhotoImportInvalid : null,
-                    border: const OutlineInputBorder(),
-                  ),
-                  onChanged: (_) => setDialogState(() {}),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: tokenController,
-                  decoration: InputDecoration(
-                    labelText: l10n.settingsPhotoImportToken,
-                    helperText: l10n.settingsPhotoImportTokenHint,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: Text(l10n.commonCancel),
-              ),
-              TextButton(
-                onPressed: invalid
-                    ? null
-                    : () async {
-                        await settings
-                            .setPhotoImportEndpoint(endpointController.text);
-                        await settings
-                            .setPhotoImportToken(tokenController.text);
-                        // The provider reads storage, which is not reactive,
-                        // so nothing would notice the change otherwise.
-                        ref.invalidate(photoNotationImportServiceProvider);
-                        if (dialogContext.mounted) {
-                          Navigator.of(dialogContext).pop();
-                        }
-                      },
-                child: Text(l10n.commonSave),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  /// Mirrors SettingsRepository's own check, so the dialog refuses exactly what
-  /// storage would have discarded rather than accepting a value that silently
-  /// reads back as "not configured".
-  static bool _looksLikeUrl(String raw) {
-    final uri = Uri.tryParse(raw);
-    if (uri == null || uri.host.isEmpty) return false;
-    return uri.scheme == 'http' || uri.scheme == 'https';
   }
 
   String _getThemeModeLabel(AppLocalizations l10n, AppThemeMode mode) {

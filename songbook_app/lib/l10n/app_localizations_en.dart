@@ -1004,7 +1004,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importPhotoNotConfigured =>
-      'Set up the sheet-music service in Settings first.';
+      'This version of Songbook cannot read sheet music.';
 
   @override
   String get importPhotoHint =>
@@ -1024,29 +1024,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get importPhotoNoReader =>
       'Photos can only be read in the browser version of Songbook.';
-
-  @override
-  String get settingsPhotoImport => 'Photo import';
-
-  @override
-  String get settingsPhotoImportEndpoint => 'Sheet-music service';
-
-  @override
-  String get settingsPhotoImportEndpointHint =>
-      'The address that reads sheet music. Leave it empty to use the built-in one. Words and chords are read on your device and need no address.';
-
-  @override
-  String get settingsPhotoImportToken => 'Access token';
-
-  @override
-  String get settingsPhotoImportTokenHint => 'Optional.';
-
-  @override
-  String get settingsPhotoImportNotSet => 'Not set up';
-
-  @override
-  String get settingsPhotoImportInvalid =>
-      'That does not look like a web address.';
 
   @override
   String get commonSave => 'Save';

@@ -96,7 +96,7 @@ void main() {
     // It then opens a real file picker, which this harness cannot satisfy, so
     // extraction itself is covered in the services' own tests.
     expect(find.textContaining('browser version'), findsNothing);
-    expect(find.textContaining('Settings first'), findsNothing);
+    expect(find.textContaining('cannot read sheet music'), findsNothing);
   });
 
   testWidgets('ticking "this page has sheet music" shows the instruction that '
@@ -116,11 +116,13 @@ void main() {
     expect(find.textContaining('Press the book flat'), findsOneWidget);
   });
 
-  testWidgets('with sheet music ticked and no service configured, the screen '
-      'points at Settings', (tester) async {
+  testWidgets('with sheet music ticked and no reader in this build, the screen '
+      'says so', (tester) async {
     // The words engine is unavailable here too, so this also pins that the
     // toggle really does change which engine is asked for: the message is the
-    // sheet-music one, not the no-browser one.
+    // sheet-music one, not the no-browser one. Neither message offers a fix in
+    // Settings any more — the reader is compiled in and there is nothing there
+    // to point at.
     await pumpScreen(tester, const ImportSongScreen());
     await tester.pumpAndSettle();
     await openMoreWays(tester);
@@ -130,7 +132,7 @@ void main() {
     await tester.tap(find.text('Photo'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Settings first'), findsOneWidget);
+    expect(find.textContaining('cannot read sheet music'), findsOneWidget);
     expect(find.textContaining('browser version'), findsNothing);
   });
 

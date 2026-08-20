@@ -12,28 +12,13 @@ class SettingsKeys {
   static const projectionMode = 'projection_mode';
   static const selectedBook = 'selected_book';
 
-  /// Where photo import sends the image, and the token it presents.
-  ///
-  /// Configured rather than compiled in: this ships as a static PWA, so a key
-  /// in the bundle would be public, and which service does the extraction is
-  /// deliberately the user's choice.
-  static const photoImportEndpoint = 'photo_import_endpoint';
-  static const photoImportToken = 'photo_import_token';
 }
 
 /// Repository for app settings
 class SettingsRepository {
   final LocalDataSource _localDataSource;
 
-  /// Stands in for the build-time sheet-music address.
-  ///
-  /// Only tests pass this. A test build carries no `--dart-define`, so the
-  /// build-time value is empty and the branch that trusts the project's own
-  /// service with an access token would be unreachable — the one branch most
-  /// worth pinning.
-  final String? builtInPhotoEndpoint;
-
-  SettingsRepository(this._localDataSource, {this.builtInPhotoEndpoint});
+  SettingsRepository(this._localDataSource, {this.photoImportEndpointOverride});
 
   // --- Theme ---
 
@@ -139,39 +124,31 @@ class SettingsRepository {
 
   // --- Photo import ---
 
-  /// Build-time default for the sheet-music reader.
+  /// The sheet-music reader, or null when this build has none.
   ///
-  /// This is the address of the *notation* half of photo import, and only that
-  /// half: a photographed chord sheet is read in the browser now, so the common
-  /// case needs no address at all and works with this empty. What needs a
-  /// server is music recognition, which is Audiveris in a container — far too
-  /// large to run in a phone browser.
+  /// Compiled in, and deliberately not configurable. Two reasons. Nobody
+  /// reading a hymnal has any use for a service address — it is infrastructure,
+  /// and it was the only setting in the app that pointed somewhere outside
+  /// itself. And a settable address is an address that can be pointed
+  /// somewhere hostile: it used to be writable from a URL parameter, and the
+  /// notation request carries the signed-in user's Supabase access token, so
+  /// the two together were a way to be handed somebody's account. Removing the
+  /// setting removes that, rather than guarding it.
   ///
-  /// Set with `--dart-define=PHOTO_IMPORT_ENDPOINT=...` so a build arrives
-  /// already pointed at a reader — typing a URL like
-  /// `http://192.168.0.102:8790/extract` on a phone keyboard is tedious and
-  /// easy to get subtly wrong. The deployed build passes the project's own
-  /// Cloud Run service here (see `.github/workflows/deploy-pages.yml`); it is
-  /// empty everywhere else, which is what keeps a test from reaching for a
-  /// network. A value saved in Settings always wins over it.
-  static const _defaultEndpoint =
-      String.fromEnvironment('PHOTO_IMPORT_ENDPOINT');
-
-  /// The build-time address, or whatever a test substituted for it.
-  String get _builtIn => builtInPhotoEndpoint ?? _defaultEndpoint;
-
-  /// The configured sheet-music endpoint, or null when unset or unusable.
+  /// Only the notation half needs an address at all. A photographed chord sheet
+  /// is read on the device.
   ///
-  /// Parsing here rather than at the call site so a typo saved months ago
-  /// cannot surface as a crash mid-import: an unparseable or non-http value
-  /// reads the same as "not configured", which is the state the UI already
-  /// has to explain.
+  /// Set with `--dart-define=PHOTO_IMPORT_ENDPOINT=...`; the deployed build
+  /// passes the project's Cloud Run service (see
+  /// `.github/workflows/deploy-pages.yml`). Empty everywhere else, which is
+  /// what keeps a test from reaching for a network, and which the import screen
+  /// explains rather than offering a dead button.
+  ///
+  /// Parsed here rather than at the call site so a bad `--dart-define` cannot
+  /// surface as a crash mid-import: unparseable or non-http reads as "no
+  /// reader", a state the UI already has to explain.
   Uri? getPhotoImportEndpoint() {
-    final stored = _localDataSource
-        .getStringSetting(SettingsKeys.photoImportEndpoint)
-        ?.trim();
-    // A stored value wins; the build-time default only fills the gap.
-    final raw = (stored == null || stored.isEmpty) ? _builtIn.trim() : stored;
+    final raw = _photoImportEndpoint.trim();
     if (raw.isEmpty) return null;
     final uri = Uri.tryParse(raw);
     if (uri == null) return null;
@@ -183,68 +160,14 @@ class SettingsRepository {
     return uri;
   }
 
-  /// The address exactly as it is stored, with no build-time default behind it.
-  ///
-  /// What the Settings field must show. Prefilling the *resolved* address means
-  /// opening the dialog and pressing Save silently pins today's built-in
-  /// address as a stored one — and that user would keep talking to the old
-  /// service after it moved, while everyone else followed the new build.
-  String? getStoredPhotoImportEndpoint() {
-    final raw = _localDataSource
-        .getStringSetting(SettingsKeys.photoImportEndpoint)
-        ?.trim();
-    return (raw == null || raw.isEmpty) ? null : raw;
-  }
+  /// Substituted by tests, which compile without any `--dart-define`.
+  final String? photoImportEndpointOverride;
 
-  /// Whether [endpoint] is the reader this build was compiled to talk to.
-  ///
-  /// This is the gate on sending the signed-in user's Supabase access token,
-  /// and it exists because that token is a bearer credential for the whole
-  /// account — enough to change the password on it. The address is settable by
-  /// a URL parameter (`?photoEndpoint=`, see main.dart), so without this check
-  /// a link to the real app could point it at any host and hand that host a
-  /// token. Everything else may be configured freely; only *who gets the
-  /// token* is restricted.
-  ///
-  /// Compared by origin rather than by whole URL, so moving the path on the
-  /// project's own service does not quietly stop authenticating. False when the
-  /// build has no built-in service, which is every build except the deployed
-  /// one — those must use an explicitly typed token.
-  bool isBuiltInPhotoImportService(Uri endpoint) {
-    final builtIn = Uri.tryParse(_builtIn.trim());
-    if (builtIn == null || builtIn.host.isEmpty) return false;
-    return endpoint.scheme == builtIn.scheme &&
-        endpoint.host.toLowerCase() == builtIn.host.toLowerCase() &&
-        endpoint.port == builtIn.port;
-  }
+  String get _photoImportEndpoint =>
+      photoImportEndpointOverride ?? _compiledEndpoint;
 
-  /// Stores the endpoint. An empty value clears it.
-  Future<bool> setPhotoImportEndpoint(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) {
-      return _localDataSource
-          .removeStringSetting(SettingsKeys.photoImportEndpoint);
-    }
-    return _localDataSource
-        .setStringSetting(SettingsKeys.photoImportEndpoint, trimmed);
-  }
-
-  /// The bearer token, or null when none is set. Optional: a service on the
-  /// user's own network may not want one.
-  String? getPhotoImportToken() {
-    final raw =
-        _localDataSource.getStringSetting(SettingsKeys.photoImportToken)?.trim();
-    return (raw == null || raw.isEmpty) ? null : raw;
-  }
-
-  Future<bool> setPhotoImportToken(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) {
-      return _localDataSource.removeStringSetting(SettingsKeys.photoImportToken);
-    }
-    return _localDataSource
-        .setStringSetting(SettingsKeys.photoImportToken, trimmed);
-  }
+  static const _compiledEndpoint =
+      String.fromEnvironment('PHOTO_IMPORT_ENDPOINT');
 
   // --- Projection Mode ---
 

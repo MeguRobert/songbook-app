@@ -11,15 +11,14 @@ import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;
 
-/// Configuring photo import.
+/// Which engine reads a photographed page, and what it is trusted with.
 ///
-/// The stored address configures the *sheet-music* half only. Reading words and
-/// chords moved into the browser, so it needs no address at all — which is why
-/// there are two providers here, and why only one of them can be unconfigured.
-///
-/// The address is stored rather than compiled in, so everything a user can
-/// mistype has to degrade into "not configured" — a state the UI explains —
-/// rather than into a crash partway through an import.
+/// The address of the sheet-music reader is compiled in and cannot be changed
+/// from inside the app. That is the point of these tests as much as the wiring
+/// is: there is one reader, it is ours, and it is the only thing the signed-in
+/// account's access token is ever handed to. It used to be a setting — writable
+/// from a URL parameter, no less — while the notation request carried that
+/// token, which together was a way to be given somebody's whole account.
 
 /// An account that exists only to hold a token.
 ///
@@ -44,122 +43,82 @@ class _TokenOnlyAuth implements AuthRepository {
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError(
       'The notation provider needs only the access token.');
 }
-Future<SettingsRepository> settingsWith(Map<String, Object> prefs) async {
-  SharedPreferences.setMockInitialValues(prefs);
-  return SettingsRepository(LocalDataSource(await SharedPreferences.getInstance()));
-}
 
-Future<ProviderContainer> containerWith(Map<String, Object> prefs) async {
-  SharedPreferences.setMockInitialValues(prefs);
-  final sp = await SharedPreferences.getInstance();
-  return ProviderContainer(
-    overrides: [sharedPreferencesProvider.overrideWithValue(sp)],
+/// The address a deployed build carries. A test build has none, because it
+/// compiles without --dart-define — which is what keeps a test from reaching
+/// for a network, and why it has to be substituted here.
+const compiledIn = 'https://songbook-omr.example/extract';
+
+Future<SettingsRepository> settingsWith({String? endpoint}) async {
+  SharedPreferences.setMockInitialValues({});
+  return SettingsRepository(
+    LocalDataSource(await SharedPreferences.getInstance()),
+    photoImportEndpointOverride: endpoint,
   );
 }
 
-/// The same, with somebody signed in.
-Future<ProviderContainer> containerWithAuth(
-    Map<String, Object> prefs, String token) async {
-  SharedPreferences.setMockInitialValues(prefs);
+/// A container built as the deployed app is: a compiled-in reader, and
+/// optionally somebody signed in.
+Future<ProviderContainer> containerWith({
+  String? endpoint = compiledIn,
+  AuthRepository? auth,
+}) async {
+  SharedPreferences.setMockInitialValues({});
   final sp = await SharedPreferences.getInstance();
   return ProviderContainer(overrides: [
     sharedPreferencesProvider.overrideWithValue(sp),
-    authRepositoryProvider.overrideWithValue(_TokenOnlyAuth(token)),
-  ]);
-}
-
-/// The address a deployed build would carry, for the tests about who may be
-/// sent the signed-in account's token.
-const builtIn = 'https://songbook-omr.example/extract';
-
-/// A container that believes it was built to talk to [builtIn], with [auth]
-/// signed in.
-Future<ProviderContainer> containerWithBuiltIn(
-    Map<String, Object> prefs, AuthRepository auth) async {
-  SharedPreferences.setMockInitialValues(prefs);
-  final sp = await SharedPreferences.getInstance();
-  return ProviderContainer(overrides: [
-    sharedPreferencesProvider.overrideWithValue(sp),
-    authRepositoryProvider.overrideWithValue(auth),
+    if (auth != null) authRepositoryProvider.overrideWithValue(auth),
     settingsRepositoryProvider.overrideWithValue(SettingsRepository(
       LocalDataSource(sp),
-      builtInPhotoEndpoint: builtIn,
+      photoImportEndpointOverride: endpoint,
     )),
   ]);
 }
 
 void main() {
-  group('endpoint storage', () {
-    test('is null until configured', () async {
-      final settings = await settingsWith({});
+  group('the compiled-in address', () {
+    test('is absent in a build with no --dart-define', () async {
+      // Every build except the deployed one. The import screen explains it
+      // rather than offering a button that cannot work.
+      final settings = await settingsWith();
       expect(settings.getPhotoImportEndpoint(), isNull);
-      expect(settings.getPhotoImportToken(), isNull);
     });
 
-    test('round-trips a valid https endpoint', () async {
-      final settings = await settingsWith({});
-      await settings.setPhotoImportEndpoint(' https://example.test/extract ');
-      expect(settings.getPhotoImportEndpoint().toString(),
-          'https://example.test/extract');
+    test('is used when the build carries one', () async {
+      final settings = await settingsWith(endpoint: compiledIn);
+      expect(settings.getPhotoImportEndpoint().toString(), compiledIn);
     });
 
-    test('accepts plain http, for a service on your own network', () async {
-      final settings = await settingsWith({});
-      await settings.setPhotoImportEndpoint('http://192.168.1.20:8000/extract');
-      expect(settings.getPhotoImportEndpoint(), isNotNull);
-    });
-
-    test('a malformed value reads as not configured, not as a crash', () async {
-      // Each of these is a plausible typo. None may reach http.
+    test('a malformed value reads as no reader, not as a crash', () async {
+      // Each of these is a plausible mistake in a --dart-define. None may
+      // reach http.
       for (final bad in [
         'not a url',
         'example.test/extract', // no scheme
         'ftp://example.test/x', // wrong scheme
         'https://', // no authority
+        '   ',
       ]) {
-        final settings = await settingsWith({
-          'settings_photo_import_endpoint': bad,
-        });
+        final settings = await settingsWith(endpoint: bad);
         expect(settings.getPhotoImportEndpoint(), isNull, reason: bad);
       }
     });
 
-    test('an empty value clears rather than storing blank', () async {
-      final settings = await settingsWith({});
-      await settings.setPhotoImportEndpoint('https://example.test/x');
-      await settings.setPhotoImportEndpoint('   ');
-      expect(settings.getPhotoImportEndpoint(), isNull);
-    });
-
-    test('the stored address is reported apart from the resolved one',
-        () async {
-      // What the Settings field shows. Resolved would include the build-time
-      // default, so opening the dialog and saving would pin it.
-      final settings = await settingsWith({});
-      expect(settings.getStoredPhotoImportEndpoint(), isNull);
-      await settings.setPhotoImportEndpoint('https://example.test/extract');
-      expect(settings.getStoredPhotoImportEndpoint(),
-          'https://example.test/extract');
-    });
-
-    test('with no build-time address, nothing is the built-in service',
-        () async {
-      // Which is every build except the deployed one — so a local build sends
-      // no account token anywhere, and must use a typed one.
-      final settings = await settingsWith({});
-      expect(
-        settings.isBuiltInPhotoImportService(
-            Uri.parse('https://songbook-omr.example/extract')),
-        isFalse,
+    test('nothing a user does can change it', () async {
+      // The whole point. There is no setter, no stored key, and nothing reads
+      // shared preferences for it — so a URL parameter, a settings screen or a
+      // stale stored value cannot point this anywhere. If a setter is ever
+      // added back, the token in photoNotationImportServiceProvider needs
+      // withholding from anywhere that is not this address.
+      SharedPreferences.setMockInitialValues({
+        'settings_photo_import_endpoint': 'https://evil.example/extract',
+        'photo_import_endpoint': 'https://evil.example/extract',
+      });
+      final settings = SettingsRepository(
+        LocalDataSource(await SharedPreferences.getInstance()),
+        photoImportEndpointOverride: compiledIn,
       );
-    });
-
-    test('the token is optional and clearable', () async {
-      final settings = await settingsWith({});
-      await settings.setPhotoImportToken('  abc123  ');
-      expect(settings.getPhotoImportToken(), 'abc123');
-      await settings.setPhotoImportToken('');
-      expect(settings.getPhotoImportToken(), isNull);
+      expect(settings.getPhotoImportEndpoint().toString(), compiledIn);
     });
   });
 
@@ -169,156 +128,57 @@ void main() {
       // reports itself unsupported. That is the honest answer for a build with
       // no browser in it, and the import screen says so rather than failing on
       // tap. In a web build this is a BrowserPhotoImportService.
-      final container = await containerWith({});
+      final container = await containerWith();
       addTearDown(container.dispose);
       expect(container.read(photoTextImportServiceProvider), isNull);
     });
 
-    test('a stored address does not divert it', () async {
-      // The address belongs to the sheet-music reader. Words and chords are
-      // read locally, measured faster and more accurate than the server path
-      // this replaced, so a stored address must not quietly take that back.
-      final container = await containerWith({
-        'settings_photo_import_endpoint': 'https://example.test/extract',
-      });
+    test('a compiled-in reader does not divert it', () async {
+      // Words and chords are read on the device, measured faster and more
+      // accurate than the server path this replaced. The notation address must
+      // not quietly take that back.
+      final container = await containerWith(endpoint: compiledIn);
       addTearDown(container.dispose);
       expect(container.read(photoTextImportServiceProvider), isNull);
     });
   });
 
   group('photoNotationImportServiceProvider', () {
-    test('is null when nothing is configured', () async {
-      final container = await containerWith({});
-      addTearDown(container.dispose);
-      // Null, not a throwing stub: "point this at a service" is a setup step
-      // the UI can explain, not an error to fail on tap.
-      expect(container.read(photoNotationImportServiceProvider), isNull);
-    });
-
-    test('is null when the stored endpoint is unusable', () async {
-      final container = await containerWith({
-        'settings_photo_import_endpoint': 'nonsense',
-      });
+    test('is null when this build ships no reader', () async {
+      final container = await containerWith(endpoint: null);
       addTearDown(container.dispose);
       expect(container.read(photoNotationImportServiceProvider), isNull);
     });
 
-    test('builds a service once an endpoint is stored', () async {
-      final container = await containerWith({
-        'settings_photo_import_endpoint': 'https://example.test/extract',
-        'settings_photo_import_token': 'tok',
-      });
+    test('is null when the compiled-in address is unusable', () async {
+      final container = await containerWith(endpoint: 'nonsense');
       addTearDown(container.dispose);
-
-      final service = container.read(photoNotationImportServiceProvider);
-      expect(service, isA<HttpPhotoImportService>());
-      expect((service! as HttpPhotoImportService).endpoint.toString(),
-          'https://example.test/extract');
-      expect((service as HttpPhotoImportService).token, 'tok');
+      expect(container.read(photoNotationImportServiceProvider), isNull);
     });
 
-    test('a token typed into Settings wins over the session one', () async {
-      // Someone running their own reader has no Supabase session to offer it,
-      // and has answered the question explicitly.
-      final container = await containerWithAuth(
-        {
-          'settings_photo_import_endpoint': 'http://192.168.1.20:8000/extract',
-          'settings_photo_import_token': 'my-own-key',
-        },
-        'live-session-token',
-      );
-      addTearDown(container.dispose);
-
-      final service = container.read(photoNotationImportServiceProvider)!
-          as HttpPhotoImportService;
-      expect(service.token, 'my-own-key');
-    });
-
-    test('the account token goes to the reader this build ships with',
+    test('points at the compiled-in reader and carries the account token',
         () async {
-      final container = await containerWithBuiltIn(
-          {}, _TokenOnlyAuth('live-session-token'));
+      // Without the token the service answers 401: it verifies a Supabase
+      // access token against the project's public keys, and the app is the only
+      // thing holding one.
+      final container =
+          await containerWith(auth: _TokenOnlyAuth('live-session-token'));
       addTearDown(container.dispose);
 
       final service = container.read(photoNotationImportServiceProvider)!
           as HttpPhotoImportService;
-      expect(service.endpoint.toString(), builtIn);
+      expect(service.endpoint.toString(), compiledIn);
       expect(service.token, 'live-session-token');
     });
 
-    test('the account token does NOT go anywhere else', () async {
-      // The reason this gate exists. `?photoEndpoint=` can set the address, so
-      // without the check a link to the real app could point it at any host and
-      // hand that host a bearer credential for the whole Supabase account —
-      // enough to change the password on it.
-      final container = await containerWithBuiltIn(
-        {'settings_photo_import_endpoint': 'https://evil.example/extract'},
-        _TokenOnlyAuth('live-session-token'),
-      );
+    test('signed out, it still builds and sends no header', () async {
+      final container = await containerWith();
       addTearDown(container.dispose);
 
       final service = container.read(photoNotationImportServiceProvider)!
           as HttpPhotoImportService;
-      expect(service.endpoint.host, 'evil.example');
-      expect(service.token, isNull,
-          reason: 'the account token must never leave the project service');
-    });
-
-    test('a different port on the same host is not the same service',
-        () async {
-      // Origin, not host: a service on another port is another service.
-      final container = await containerWithBuiltIn(
-        {
-          'settings_photo_import_endpoint':
-              'https://songbook-omr.example:8443/extract'
-        },
-        _TokenOnlyAuth('live-session-token'),
-      );
-      addTearDown(container.dispose);
-
-      expect(
-        (container.read(photoNotationImportServiceProvider)!
-                as HttpPhotoImportService)
-            .token,
-        isNull,
-      );
-    });
-
-    test('a different path on the same service still authenticates', () async {
-      // Compared by origin so moving the path does not quietly stop
-      // authenticating.
-      final container = await containerWithBuiltIn(
-        {'settings_photo_import_endpoint': 'https://songbook-omr.example/v2'},
-        _TokenOnlyAuth('live-session-token'),
-      );
-      addTearDown(container.dispose);
-
-      expect(
-        (container.read(photoNotationImportServiceProvider)!
-                as HttpPhotoImportService)
-            .token,
-        'live-session-token',
-      );
-    });
-
-    test('a typed token still goes wherever it was pointed', () async {
-      // The gate is about the account token only. Somebody who typed a token
-      // for their own service has said where it belongs.
-      final container = await containerWithBuiltIn(
-        {
-          'settings_photo_import_endpoint': 'https://elsewhere.example/extract',
-          'settings_photo_import_token': 'their-own-key',
-        },
-        _TokenOnlyAuth('live-session-token'),
-      );
-      addTearDown(container.dispose);
-
-      expect(
-        (container.read(photoNotationImportServiceProvider)!
-                as HttpPhotoImportService)
-            .token,
-        'their-own-key',
-      );
+      // The service refuses it with a 401 the screen re-words as "sign in".
+      expect(service.token, isNull);
     });
 
     test('a refreshed session is what the next import carries', () async {
@@ -328,7 +188,7 @@ void main() {
       final changes = StreamController<AuthState>();
       addTearDown(changes.close);
       final auth = _TokenOnlyAuth('first-token', changes: changes.stream);
-      final container = await containerWithBuiltIn({}, auth);
+      final container = await containerWith(auth: auth);
       addTearDown(container.dispose);
 
       // Kept alive, or the provider is disposed between reads and would
@@ -355,21 +215,6 @@ void main() {
         'second-token',
         reason: 'the refresh must have rebuilt the service',
       );
-    });
-
-    test('signed out and nothing typed still builds, and sends no header',
-        () async {
-      final container = await containerWith({
-        'settings_photo_import_endpoint': 'https://example.test/extract',
-      });
-      addTearDown(container.dispose);
-
-      final service = container.read(photoNotationImportServiceProvider)!
-          as HttpPhotoImportService;
-      // The service refuses it with a 401 that the screen re-words as "sign
-      // in". Blocking it here instead would break a self-hosted reader that
-      // wants no token at all.
-      expect(service.token, isNull);
     });
   });
 }

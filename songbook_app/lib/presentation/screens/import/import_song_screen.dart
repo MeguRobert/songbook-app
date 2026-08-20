@@ -358,11 +358,12 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       // A refused sign-in is the one failure worth re-wording: the service
       // answers in English, and this knows which language is on screen. Only
       // the project's own reader, though — see [_refusedForWantOfSignIn].
+      // A refused sign-in is the one failure worth re-wording: the service
+      // answers in English, and this knows which language is on screen. There
+      // is only one reader and it is ours, so a 401 has only one cause.
       if (mounted) {
-        setState(() => _fileError = e.statusCode == 401 &&
-                _refusedForWantOfSignIn()
-            ? l10n.importPhotoSignIn
-            : e.message);
+        setState(() => _fileError =
+            e.statusCode == 401 ? l10n.importPhotoSignIn : e.message);
       }
     } on MusicXmlImportException catch (e) {
       if (mounted) setState(() => _fileError = e.message);
@@ -376,21 +377,6 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
         });
       }
     }
-  }
-
-  /// Whether a 401 means the person simply is not signed in.
-  ///
-  /// True only for the reader this build ships with, whose 401 has exactly one
-  /// cause. A service somebody else runs can answer 401 about a token typed
-  /// into Settings, or because its own sign-in checking is misconfigured — and
-  /// "sign in to Songbook" would then be advice about the wrong thing
-  /// entirely, replacing a message that said what was actually wrong.
-  bool _refusedForWantOfSignIn() {
-    final settings = ref.read(settingsRepositoryProvider);
-    final endpoint = settings.getPhotoImportEndpoint();
-    return endpoint != null &&
-        settings.getPhotoImportToken() == null &&
-        settings.isBuiltInPhotoImportService(endpoint);
   }
 
   Future<void> _pickMusicXmlFile() async {
