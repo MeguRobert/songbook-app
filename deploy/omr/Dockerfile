@@ -34,7 +34,13 @@ ARG MAVEN=https://repo1.maven.org/maven2/org/bytedeco
 # python3 only for the HTTP wrapper: it reuses the multipart parsing and the
 # CORS handling already proven in tools/photo_import_worker.py, and a stdlib
 # server is less code than a Java one for the same job.
-RUN apt-get update  && apt-get install -y --no-install-recommends python3  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update  && apt-get install -y --no-install-recommends python3 python3-pip  && rm -rf /var/lib/apt/lists/*
+
+# PyJWT + cryptography verify the Supabase access token. The project signs with
+# ES256, which the standard library cannot check — there is no ECDSA in it — and
+# hand-rolling signature verification is not a thing to do. The key comes from
+# the project's public JWKS, so nothing secret lives in this image.
+RUN pip3 install --no-cache-dir --break-system-packages "PyJWT[crypto]==2.13.0"
 
 WORKDIR /opt/audiveris
 

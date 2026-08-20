@@ -13,9 +13,6 @@ running in the browser. Sending a chord sheet here would waste 10 seconds and
 return nothing useful, which is why the app asks before using it.
 """
 
-import base64
-import hashlib
-import hmac
 import json
 import os
 import pathlib
@@ -36,16 +33,30 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 # the caller is a person's browser, not a service account. The gate is instead
 # the Supabase access token the app already holds for a signed-in user.
 #
-# Supabase signs with HS256, so verifying one needs nothing beyond hmac and
-# hashlib. If SUPABASE_JWT_SECRET is unset the service refuses everything: a
-# misconfigured deployment that quietly accepts all callers is worse than one
-# that refuses them, because the bill is the owner's and the failure is silent.
+# The project signs with ES256: its JWT keys were rotated to ECC (P-256), and
+# the legacy HS256 shared secret is now only a "previous key". Verification is
+# therefore against the project's PUBLIC JWKS — which means there is no secret
+# to deploy, nothing to rotate here, and nothing that can leak. Strictly better
+# than the shared-secret arrangement this replaced.
+#
+# With no JWKS URL configured the service refuses everything. A misconfigured
+# deployment that quietly accepts all callers is worse than one that refuses
+# them: the bill is the owner's, and the failure is silent.
 # ---------------------------------------------------------------------------
 
-JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
+# Either the project URL (the usual case) or a full JWKS URL.
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+JWKS_URL = os.environ.get("SUPABASE_JWKS_URL") or (
+    f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json" if SUPABASE_URL else "")
+
+# Pinned, never read from the token. Reading `alg` from the thing you are
+# checking is how a verifier is talked out of verifying: `alg: none` removes the
+# signature, and HS256 with the public key as the shared secret turns a public
+# key into a password everyone already has.
+ALLOWED_ALGORITHMS = ["ES256"]
 
 # Supabase issues these to signed-in users. `anon` is the key that ships inside
-# the app itself, so anyone can read it — it must not open the door.
+# the app itself, where anyone can read it — it must not open the door.
 REQUIRED_AUDIENCE = "authenticated"
 ALLOWED_ROLES = {"authenticated", "service_role"}
 
@@ -54,8 +65,27 @@ class AuthError(Exception):
     """The caller is not a signed-in user of this app."""
 
 
-def _b64(segment: str) -> bytes:
-    return base64.urlsafe_b64decode(segment + "=" * (-len(segment) % 4))
+_jwks_client = None
+
+
+def signing_key_resolver():
+    """A callable giving the project's public key for a token, or None.
+
+    Built once and reused: PyJWKClient caches the fetched keys and re-fetches
+    when it meets a `kid` it has not seen, which is what makes key rotation a
+    non-event here.
+    """
+    global _jwks_client
+    if not JWKS_URL:
+        return None
+    if _jwks_client is None:
+        from jwt import PyJWKClient
+        _jwks_client = PyJWKClient(JWKS_URL, cache_keys=True, lifespan=600)
+
+    def resolve(token: str):
+        return _jwks_client.get_signing_key_from_jwt(token).key
+
+    return resolve
 
 
 def bearer(header) -> str:
@@ -68,34 +98,38 @@ def bearer(header) -> str:
     return token.strip()
 
 
-def verify_token(token: str, secret) -> dict:
-    """The claims of [token], or [AuthError] if it is not a signed-in user."""
-    if not secret:
+def verify_token(token: str, resolve) -> dict:
+    """The claims of [token], or [AuthError] if it is not a signed-in user.
+
+    [resolve] maps a token to the public key that should have signed it; None
+    means no key source is configured, which refuses everything.
+    """
+    import jwt as pyjwt
+
+    if resolve is None:
         raise AuthError("This service is not configured for sign-in yet.")
     try:
-        header_segment, payload_segment, signature_segment = token.split(".")
-        header = json.loads(_b64(header_segment))
-        claims = json.loads(_b64(payload_segment))
-        signature = _b64(signature_segment)
-    except Exception as exc:  # noqa: BLE001 - any malformed token lands here
+        key = resolve(token)
+    except Exception as exc:  # noqa: BLE001 - an unreachable JWKS must refuse
+        raise AuthError("Sign-in could not be checked right now.") from exc
+    if key is None:
+        raise AuthError("That sign-in is not valid here.")
+
+    try:
+        return _checked(pyjwt.decode(
+            token, key,
+            algorithms=ALLOWED_ALGORITHMS,
+            audience=REQUIRED_AUDIENCE,
+            options={"require": ["exp", "aud"]}))
+    except pyjwt.ExpiredSignatureError as exc:
+        raise AuthError("That sign-in has expired. Sign in again.") from exc
+    except pyjwt.InvalidAudienceError as exc:
+        raise AuthError("That sign-in is not valid here.") from exc
+    except pyjwt.PyJWTError as exc:
         raise AuthError("That sign-in could not be read.") from exc
 
-    # Pinned, not read from the token: `alg: none` and algorithm substitution
-    # are the classic ways a JWT check is talked out of checking anything.
-    if header.get("alg") != "HS256":
-        raise AuthError("That sign-in could not be read.")
 
-    expected = hmac.new(
-        secret.encode(),
-        f"{header_segment}.{payload_segment}".encode(),
-        hashlib.sha256).digest()
-    if not hmac.compare_digest(signature, expected):
-        raise AuthError("That sign-in is not valid here.")
-
-    if claims.get("exp") is not None and time.time() >= float(claims["exp"]):
-        raise AuthError("That sign-in has expired. Sign in again.")
-    if claims.get("aud") != REQUIRED_AUDIENCE:
-        raise AuthError("That sign-in is not valid here.")
+def _checked(claims: dict) -> dict:
     if claims.get("role") not in ALLOWED_ROLES:
         raise AuthError("Sign in to read a page.")
     return claims
@@ -202,7 +236,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):  # noqa: N802
         # Cloud Run health checks and anyone who opens the URL in a browser.
         self._json(200, {"service": "songbook-omr", "engine": "audiveris",
-                         "authenticated": bool(JWT_SECRET),
+                         "authenticated": bool(JWKS_URL),
                          "post": "/extract  multipart/form-data, "
                                  "image under `image`, "
                                  "Authorization: Bearer <supabase token>"})
@@ -214,7 +248,8 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             claims = verify_token(
-                bearer(self.headers.get("Authorization")), JWT_SECRET)
+                bearer(self.headers.get("Authorization")),
+                signing_key_resolver())
         except AuthError as denied:
             # 401 rather than 403: the app can act on this by sending the user
             # to sign in, which a 403 would not tell it to do.
@@ -267,10 +302,11 @@ def main():
     port = int(os.environ.get("PORT", "8080"))
     server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print(f"songbook-omr listening on {port}", flush=True)
-    if not JWT_SECRET:
-        print("WARNING: SUPABASE_JWT_SECRET is not set - every request will be "
+    if not JWKS_URL:
+        print("WARNING: SUPABASE_URL is not set - every request will be "
               "refused. Set it with:  gcloud run services update songbook-omr "
-              "--region europe-central2 --set-env-vars SUPABASE_JWT_SECRET=...",
+              "--region europe-central2 "
+              "--set-env-vars SUPABASE_URL=https://<ref>.supabase.co",
               flush=True)
     server.serve_forever()
 
