@@ -13,7 +13,7 @@
 -- before each switch restores the privilege needed to make the next one.
 
 begin;
-select plan(21);
+select plan(26);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures: two ordinary users and one admin.
@@ -307,7 +307,19 @@ select throws_ok(
 );
 
 -- Nor promote an existing submission of theirs to canonical.
+--
+-- Against a DRAFT row of Alice's, deliberately. Both of her earlier songs are
+-- approved by this point, and an owner has no write access to an approved row
+-- at all now -- so aiming this at one would affect zero rows, throw nothing,
+-- and quietly stop testing source immutability while still passing.
 set local role postgres;
+insert into public.songs (id, owner_id, status, title, payload) values (
+  'aaaaaaaa-0000-0000-0000-000000000003',
+  '11111111-1111-1111-1111-111111111111',
+  'draft',
+  'Draft, so the owner can still write to it',
+  '{"originalKey":"C","verses":[]}'::jsonb
+);
 select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
 select set_config('request.jwt.claims',
   '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
@@ -315,10 +327,92 @@ set local role authenticated;
 
 select throws_ok(
   $$ update public.songs set source = 'hymnal'
-     where id = 'aaaaaaaa-0000-0000-0000-000000000002' $$,
+     where id = 'aaaaaaaa-0000-0000-0000-000000000003' $$,
   'P0001',
   null,
   'A user CANNOT promote their own song to canonical hymnal content'
+);
+
+-- ---------------------------------------------------------------------------
+-- An approved song is out of its owner's hands.
+-- ---------------------------------------------------------------------------
+-- The gap this covers: approval used to gate the *transition* into 'approved'
+-- and nothing after it. A content-only UPDATE by the owner met no check in the
+-- trigger and satisfied the old policy, so the owner of an approved song could
+-- silently rewrite what the congregation reads -- title, hymn number, the
+-- verses themselves -- with no second review. Nothing tested it.
+--
+-- A fresh row, so these do not depend on what earlier sections left behind.
+set local role postgres;
+insert into public.songs (id, owner_id, status, number, book, title, payload) values (
+  'aaaaaaaa-0000-0000-0000-000000000004',
+  '11111111-1111-1111-1111-111111111111',
+  'approved', 9991, 'Teszt',
+  'Approved, and therefore the catalogue''s',
+  '{"originalKey":"D","verses":[{"number":1,"lines":[{"text":"eredeti"}]}]}'::jsonb
+);
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
+select set_config('request.jwt.claims',
+  '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+set local role authenticated;
+
+-- Zero rows, not an exception: the policy simply does not offer an approved row
+-- to its owner, exactly as songs_delete_own_undecided already did for DELETE.
+with touched as (
+  update public.songs set title = 'quietly rewritten'
+  where id = 'aaaaaaaa-0000-0000-0000-000000000004'
+  returning 1
+)
+select is(
+  (select count(*)::int from touched),
+  0,
+  'Alice CANNOT retitle her own approved song'
+);
+
+with touched as (
+  update public.songs
+     set number = 1, payload = '{"originalKey":"D","verses":[]}'::jsonb
+  where id = 'aaaaaaaa-0000-0000-0000-000000000004'
+  returning 1
+)
+select is(
+  (select count(*)::int from touched),
+  0,
+  'Nor renumber it, nor replace the verses in it'
+);
+
+select is(
+  (select title from public.songs
+   where id = 'aaaaaaaa-0000-0000-0000-000000000004'),
+  'Approved, and therefore the catalogue''s',
+  'and what the congregation reads is unchanged'
+);
+
+-- The trigger is the second lock, so prove it independently of the policy.
+-- `role postgres` bypasses RLS but still fires triggers, and auth.uid() still
+-- reads the claim -- so this is the same signed-in non-admin arriving with the
+-- policy out of the way, which is what a future edit to that policy would look
+-- like.
+set local role postgres;
+select throws_ok(
+  $$ update public.songs set title = 'past the policy'
+     where id = 'aaaaaaaa-0000-0000-0000-000000000004' $$,
+  'P0001',
+  null,
+  'and the trigger refuses it even with RLS bypassed'
+);
+
+-- Not simply denying everything: a moderator is how a typo in an approved song
+-- gets fixed, and that has to keep working.
+select set_config('request.jwt.claim.sub', '33333333-3333-3333-3333-333333333333', true);
+select set_config('request.jwt.claims',
+  '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
+set local role authenticated;
+
+select lives_ok(
+  $$ update public.songs set title = 'Approved, and corrected by a moderator'
+     where id = 'aaaaaaaa-0000-0000-0000-000000000004' $$,
+  'An admin CAN still correct an approved song'
 );
 
 select * from finish();
