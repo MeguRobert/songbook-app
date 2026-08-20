@@ -712,8 +712,18 @@ class SheetMusicLayoutEngine {
         x += noteSpacing;
       }
 
-      // Update global beam group counter for next measure
-      final maxLocalGroup = beamGroups.reduce((a, b) => a > b ? a : b);
+      // Update global beam group counter for next measure.
+      //
+      // `fold`, not `reduce`: a measure can have no beats in it at all, and
+      // reduce on an empty list throws. That is not a hypothetical shape — a
+      // page read by optical music recognition returns bars that are entirely
+      // rests, and bars whose staff lines were found but whose contents were
+      // not. One such bar used to take down the whole subtree, and in a release
+      // build a thrown exception is drawn as Flutter's default ErrorWidget: a
+      // plain grey rectangle where the music should be, with nothing said
+      // anywhere. -1 is the "no beam group" value the loop above already uses.
+      final maxLocalGroup =
+          beamGroups.fold<int>(-1, (best, g) => g > best ? g : best);
       if (maxLocalGroup >= 0) {
         globalBeamGroup += maxLocalGroup + 1;
       }
