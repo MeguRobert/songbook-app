@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -343,10 +344,19 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
           // A service that can engrave answers with this instead; the app
           // already knows how to read it.
           final result = _musicXml.importXml(xml);
+          // Audiveris reads staves, not headings: it returns no work title at
+          // all, so this used to arrive with Title and Number empty on a page
+          // that says "151. Hozsánna" in print across the top. The engine that
+          // can read that line is already on the device and takes about a
+          // second, so ask it — for the heading only, since the notation is
+          // what was wanted here.
+          final heading = result.title == null
+              ? await _headingFromPhoto(bytes)
+              : null;
           _accept(_PendingImport(
             verses: result.verses,
             notation: result.notation,
-            title: result.title,
+            title: result.title ?? heading,
             key: result.key,
             timeSignature: result.timeSignature,
             warnings: [...warnings, ...result.warnings],
@@ -377,6 +387,33 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
         });
       }
     }
+  }
+
+  /// The first line of a photographed page, read on the device.
+  ///
+  /// Used only to fill a heading the notation reader could not supply.
+  /// [PhotoTextBridge] already puts the largest line of a page first and
+  /// [_accept] already splits `151. Hozsánna` into a number and a title, so
+  /// this hands over that first line and lets the existing path do the rest.
+  ///
+  /// Best-effort by design: it runs after the notation has already succeeded,
+  /// so a failure here must cost nothing. Anything at all going wrong leaves
+  /// the boxes empty, exactly as before.
+  Future<String?> _headingFromPhoto(Uint8List bytes) async {
+    final reader = ref.read(photoTextImportServiceProvider);
+    if (reader == null) return null;
+    try {
+      final payload = await reader.extract(bytes);
+      if (payload is! ChordProPayload) return null;
+      for (final line in payload.text.split('\n')) {
+        final trimmed = line.trim();
+        if (trimmed.isNotEmpty) return trimmed;
+      }
+    } catch (_) {
+      // The notation is already in hand. A heading is a convenience, and a
+      // convenience must never turn a successful import into a failed one.
+    }
+    return null;
   }
 
   Future<void> _pickMusicXmlFile() async {

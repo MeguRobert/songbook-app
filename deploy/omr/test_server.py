@@ -17,6 +17,8 @@ and the attacks are real signatures rather than fixtures.
     python -m unittest discover -s deploy/omr
 """
 
+import io
+import sys
 import time
 import unittest
 
@@ -175,6 +177,49 @@ class FailClosedTests(unittest.TestCase):
     def test_no_key_source_configured_refuses_a_valid_token(self):
         with self.assertRaises(server.AuthError):
             server.verify_token(encode(), None)
+
+
+class LoggingTests(unittest.TestCase):
+    """What the service writes down about a request.
+
+    This matters more than it looks. An imported song is stored on the device,
+    so a page that was read badly and then abandoned exists nowhere except in
+    what this wrote to stderr — which Cloud Run keeps. If the log does not say
+    who asked, how long it took and what came out, the answer to "this page came
+    out wrong" is a shrug.
+    """
+
+    def capture(self, fn):
+        stream = io.StringIO()
+        original, sys.stderr = sys.stderr, stream
+        try:
+            fn()
+        finally:
+            sys.stderr = original
+        return stream.getvalue()
+
+    def test_a_line_carries_the_request_number_so_lines_can_be_paired(self):
+        # The interesting questions are about one request across time, so the
+        # before line and the after line have to be joinable.
+        first = self.capture(lambda: server.log(7, "reading page.png"))
+        self.assertIn("#7", first)
+        self.assertIn("reading page.png", first)
+
+    def test_request_numbers_advance(self):
+        a = next(server._request_numbers)
+        b = next(server._request_numbers)
+        self.assertEqual(b, a + 1)
+
+    def test_every_line_is_flushed(self):
+        # Cloud Run kills an instance without warning. An unflushed line is a
+        # line that never existed.
+        stream = io.StringIO()
+        original, sys.stderr = sys.stderr, stream
+        try:
+            server.log(1, "x")
+        finally:
+            sys.stderr = original
+        self.assertTrue(stream.getvalue().endswith("\n"))
 
 
 if __name__ == "__main__":

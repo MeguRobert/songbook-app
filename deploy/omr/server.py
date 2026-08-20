@@ -13,6 +13,7 @@ running in the browser. Sending a chord sheet here would waste 10 seconds and
 return nothing useful, which is why the app asks before using it.
 """
 
+import itertools
 import json
 import os
 import pathlib
@@ -63,6 +64,30 @@ ALLOWED_ROLES = {"authenticated", "service_role"}
 
 class AuthError(Exception):
     """The caller is not a signed-in user of this app."""
+
+
+# ---------------------------------------------------------------------------
+# What gets written down
+#
+# Cloud Run keeps whatever this puts on stderr, and that is the only record any
+# of this leaves: the app stores an imported song on the device, so a photograph
+# that was read badly and then abandoned exists nowhere else at all.
+#
+# Every line carries the same request number, because the interesting questions
+# are about a single request across time — how long it took, what came out, and
+# whether the answer matches the page somebody is complaining about. One line
+# before the work and one after is what makes that answerable.
+#
+# Deliberately not recorded: the image. It is somebody's photograph, it can be
+# several megabytes, and nothing about keeping it helps read the next one.
+# ---------------------------------------------------------------------------
+
+_request_numbers = itertools.count(1)
+
+
+def log(request: int, message: str):
+    sys.stderr.write(f"[omr #{request}] {message}\n")
+    sys.stderr.flush()
 
 
 _jwks_client = None
@@ -246,6 +271,9 @@ class Handler(BaseHTTPRequestHandler):
             self._json(404, {"error": "POST /extract"})
             return
 
+        request = next(_request_numbers)
+        started = time.monotonic()
+
         try:
             claims = verify_token(
                 bearer(self.headers.get("Authorization")),
@@ -253,7 +281,11 @@ class Handler(BaseHTTPRequestHandler):
         except AuthError as denied:
             # 401 rather than 403: the app can act on this by sending the user
             # to sign in, which a 403 would not tell it to do.
-            sys.stderr.write(f"[omr] refused: {denied}\n")
+            #
+            # Logged with the reason, because these separate "somebody is not
+            # signed in" from "the service cannot check sign-ins right now",
+            # and the second one is an outage wearing the first one's clothes.
+            log(request, f"refused: {denied}")
             self._json(401, {"error": str(denied)})
             return
 
@@ -266,21 +298,25 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         filename = names.get("image") or "page.png"
-        sys.stderr.write(
-            f"[omr] {filename}: {len(image)} bytes for {claims.get('sub')}\n")
+        # Who and what, before the work: if Audiveris hangs or the instance is
+        # killed mid-read, this is the only line that will exist.
+        log(request, f"reading {filename}, {len(image)} bytes, "
+                     f"for {claims.get('sub')}")
         try:
             content, warnings = musicxml_from(image, filename)
         except subprocess.TimeoutExpired:
+            log(request, f"timed out after {time.monotonic() - started:.1f}s")
             self._json(504, {"error": "Reading the notation took too long. A "
                                       "flat, sharp photo of a single page is "
                                       "read in about ten seconds."})
             return
         except Exception as exc:  # noqa: BLE001 - reported, not swallowed
-            sys.stderr.write(f"[omr] failed: {exc}\n")
+            log(request, f"failed after {time.monotonic() - started:.1f}s: {exc}")
             self._json(500, {"error": f"The notation could not be read. {exc}"})
             return
 
         if not content.strip():
+            log(request, f"read nothing in {time.monotonic() - started:.1f}s")
             self._json(200, {"kind": "musicxml", "content": "",
                              "warnings": warnings})
             return
@@ -291,10 +327,22 @@ class Handler(BaseHTTPRequestHandler):
             "Notation was read by OMR and is a transcription — check the "
             "pitches, and set the time signature, which Audiveris does not "
             "report. If a lot is missing, the page was probably not flat."]
+        # The outcome, in the two numbers that say whether a page was read well:
+        # how many notes came back, and across how many bars. A complaint about
+        # a page reduces to comparing these against what the page holds — six
+        # notes across thirty bars is a page that was not flat, and that can now
+        # be seen from the log alone, without the photograph.
+        log(request,
+            f"read {content.count('<note')} notes in "
+            f"{content.count('<measure ')} measures, "
+            f"{len(content)} bytes of MusicXML, "
+            f"in {time.monotonic() - started:.1f}s")
         self._json(200, {"kind": "musicxml", "content": content,
                          "warnings": warnings})
 
     def log_message(self, fmt, *args):
+        # The base class writes its own access line to stdout; keep everything
+        # this service says in one stream and one shape.
         sys.stderr.write("[omr] " + (fmt % args) + "\n")
 
 
