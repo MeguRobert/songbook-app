@@ -126,6 +126,20 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   String? _key;
   bool _saving = false;
   bool _picking = false;
+
+  /// Whether the photo about to be taken is of engraved notation.
+  ///
+  /// A question rather than a guess, because the two engines answer completely
+  /// different things and only the person holding the camera can see which kind
+  /// of page it is. Off by default: a hymnal page is words with chord names
+  /// above them far more often than it is a printed score.
+  bool _photoHasSheetMusic = false;
+
+  /// Whether a photo is being read right now, as opposed to a file being
+  /// picked. Both disable the buttons; only this one has something to say while
+  /// it waits, and the wait can be a minute.
+  bool _readingPhoto = false;
+
   String? _fileError;
 
   /// Whether the "More ways to add" expander is open.
@@ -242,8 +256,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     ));
   }
 
-  /// Photographs a song, sends it to the configured service, and treats the
-  /// answer as any other import.
+  /// Photographs a song and treats the answer as any other import.
+  ///
+  /// Which engine reads it is [_photoHasSheetMusic]'s doing, because the two
+  /// answer different questions: words with chord names above them are read
+  /// here on the device in about two seconds and cost nothing, while engraved
+  /// notation needs music recognition on a server, takes up to a minute, and
+  /// returns no lyrics at all. Neither can stand in for the other, so the
+  /// person holding the camera is asked which kind of page it is.
   ///
   /// The returned ChordPro is also written into the paste box, not just the
   /// preview. Extraction is a transcription like every other source here, so it
@@ -252,11 +272,19 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   /// correct.
   Future<void> _pickPhoto() async {
     final l10n = AppLocalizations.of(context);
-    final service = ref.read(photoImportServiceProvider);
+    // Read once, so a toggle flipped while the picker is open cannot send the
+    // photo to an engine the user did not choose for it.
+    final sheetMusic = _photoHasSheetMusic;
+    final service = sheetMusic
+        ? ref.read(photoNotationImportServiceProvider)
+        : ref.read(photoTextImportServiceProvider);
     if (service == null) {
-      // Not an error: pointing the app at a service is a setup step, and
-      // saying where to do it beats a dead button.
-      setState(() => _fileError = l10n.importPhotoNotConfigured);
+      // Neither case is an error. Sheet music needs a service address, which is
+      // a setup step; the words path needs a browser, which some platforms are
+      // not. Saying which beats a dead button.
+      setState(() => _fileError = sheetMusic
+          ? l10n.importPhotoNotConfigured
+          : l10n.importPhotoNoReader);
       return;
     }
 
@@ -288,6 +316,10 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
         return;
       }
 
+      // Only now: until the picker closes, nothing is being read, and a
+      // button claiming otherwise over an open picker would be a lie the user
+      // sees the moment they cancel.
+      if (mounted) setState(() => _readingPhoto = true);
       final payload = await service.extract(bytes, fileName: file.name);
       switch (payload) {
         case ChordProPayload(text: final text, warnings: final warnings):
@@ -320,13 +352,21 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
           ));
       }
     } on PhotoImportException catch (e) {
-      setState(() => _fileError = e.message);
+      // A refused sign-in is the one failure worth re-wording: the service
+      // answers in English, and this knows which language is on screen.
+      setState(() => _fileError =
+          e.statusCode == 401 ? l10n.importPhotoSignIn : e.message);
     } on MusicXmlImportException catch (e) {
       setState(() => _fileError = e.message);
     } catch (e) {
       setState(() => _fileError = '$e');
     } finally {
-      if (mounted) setState(() => _picking = false);
+      if (mounted) {
+        setState(() {
+          _picking = false;
+          _readingPhoto = false;
+        });
+      }
     }
   }
 
@@ -603,7 +643,11 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                     // come free from <lyric> elements.
                     OutlinedButton.icon(
                       onPressed: _picking ? null : _pickMusicXmlFile,
-                      icon: _picking
+                      // The spinner belongs to whichever path is actually
+                      // working. Both buttons are disabled while either runs,
+                      // but showing it here during a photo read said the file
+                      // picker was busy when it was not.
+                      icon: _picking && !_readingPhoto
                           ? const SizedBox(
                               width: 16,
                               height: 16,
@@ -622,9 +666,69 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                     ),
                     OutlinedButton.icon(
                       onPressed: _picking ? null : _pickPhoto,
-                      icon: const Icon(Icons.photo_camera_outlined),
-                      label: Text(l10n.importPhoto),
+                      icon: _readingPhoto
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.photo_camera_outlined),
+                      // Reading a page is seconds on the device and can be a
+                      // minute on the sheet-music service, so the button says
+                      // what it is doing rather than going quiet.
+                      label: Text(_readingPhoto
+                          ? l10n.importPhotoReading
+                          : l10n.importPhoto),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        l10n.importPhotoHint,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    // The one question the app cannot answer for itself. A
+                    // checkbox rather than two buttons: it is one gesture with
+                    // a property, not two features, and a second button would
+                    // have to explain what "notation" means to earn its place.
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: InkWell(
+                        onTap: _picking
+                            ? null
+                            : () => setState(() =>
+                                _photoHasSheetMusic = !_photoHasSheetMusic),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              value: _photoHasSheetMusic,
+                              onChanged: _picking
+                                  ? null
+                                  : (on) => setState(() =>
+                                      _photoHasSheetMusic = on ?? false),
+                            ),
+                            Flexible(
+                              child: Text(l10n.importPhotoSheetMusic),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Worth more than any code here: a curled page took the
+                    // reading from 63 notes to 6, because staff detection needs
+                    // straight lines. Tilt it survives; curl it does not.
+                    if (_photoHasSheetMusic)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 4),
+                        child: Text(
+                          l10n.importPhotoSheetMusicHint,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

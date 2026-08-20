@@ -1011,17 +1011,36 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get importPhotoNotConfigured =>
-      'Configurează mai întâi importul din fotografie în Setări.';
+      'Configurează mai întâi serviciul de partituri în Setări.';
+
+  @override
+  String get importPhotoHint =>
+      'Citește versurile și acordurile din pagină, pe dispozitivul tău.';
+
+  @override
+  String get importPhotoSheetMusic => 'Pagina aceasta are partitură';
+
+  @override
+  String get importPhotoSheetMusicHint =>
+      'Apasă cartea ca să stea plată și fotografiază-o din față — pe o pagină curbată notele se pierd. Citirea partiturii are nevoie de internet și poate dura un minut.';
+
+  @override
+  String get importPhotoSignIn =>
+      'Conectează-te mai întâi: partitura este citită de un serviciu comun, nu de dispozitivul tău.';
+
+  @override
+  String get importPhotoNoReader =>
+      'Fotografiile pot fi citite doar în versiunea de browser a Songbook.';
 
   @override
   String get settingsPhotoImport => 'Import din fotografie';
 
   @override
-  String get settingsPhotoImportEndpoint => 'Adresa serviciului';
+  String get settingsPhotoImportEndpoint => 'Serviciul de partituri';
 
   @override
   String get settingsPhotoImportEndpointHint =>
-      'Adresa care îți citește fotografiile. Lasă gol pentru a dezactiva.';
+      'Adresa care citește partitura. Versurile și acordurile sunt citite pe dispozitivul tău și nu au nevoie de adresă.';
 
   @override
   String get settingsPhotoImportToken => 'Cheie de acces';

@@ -1768,11 +1768,41 @@ abstract class AppLocalizations {
   /// **'Reading the photo…'**
   String get importPhotoReading;
 
-  /// Shown when no photo-import endpoint has been configured
+  /// Shown when the sheet-music service has no address configured
   ///
   /// In en, this message translates to:
-  /// **'Set up photo import in Settings first.'**
+  /// **'Set up the sheet-music service in Settings first.'**
   String get importPhotoNotConfigured;
+
+  /// Explanation under the Photo button for the ordinary chord-sheet path
+  ///
+  /// In en, this message translates to:
+  /// **'Reads the words and chords on the page, on your device.'**
+  String get importPhotoHint;
+
+  /// Toggle asking whether the photographed page carries engraved notation
+  ///
+  /// In en, this message translates to:
+  /// **'This page has sheet music'**
+  String get importPhotoSheetMusic;
+
+  /// The instruction that matters most: a curled page drops most of the notes
+  ///
+  /// In en, this message translates to:
+  /// **'Press the book flat and photograph it straight on — the notes are lost off a curved page. Reading music needs a connection and can take a minute.'**
+  String get importPhotoSheetMusicHint;
+
+  /// Shown when the sheet-music toggle is used while signed out
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in first: sheet music is read by a shared service, not on your device.'**
+  String get importPhotoSignIn;
+
+  /// Shown on a platform with no engine to read a photo with
+  ///
+  /// In en, this message translates to:
+  /// **'Photos can only be read in the browser version of Songbook.'**
+  String get importPhotoNoReader;
 
   /// Settings section heading for the photo import service
   ///
@@ -1783,13 +1813,13 @@ abstract class AppLocalizations {
   /// Label for the URL the photo is sent to
   ///
   /// In en, this message translates to:
-  /// **'Service address'**
+  /// **'Sheet-music service'**
   String get settingsPhotoImportEndpoint;
 
   /// Explains what the endpoint field is for
   ///
   /// In en, this message translates to:
-  /// **'The address that reads your photos. Leave empty to turn photo import off.'**
+  /// **'The address that reads sheet music. Words and chords are read on your device and need no address.'**
   String get settingsPhotoImportEndpointHint;
 
   /// Label for the optional bearer token sent with the photo

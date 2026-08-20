@@ -344,7 +344,7 @@ class SettingsScreen extends ConsumerWidget {
                             .setPhotoImportToken(tokenController.text);
                         // The provider reads storage, which is not reactive,
                         // so nothing would notice the change otherwise.
-                        ref.invalidate(photoImportServiceProvider);
+                        ref.invalidate(photoNotationImportServiceProvider);
                         if (dialogContext.mounted) {
                           Navigator.of(dialogContext).pop();
                         }

@@ -131,18 +131,25 @@ class SettingsRepository {
 
   // --- Photo import ---
 
-  /// Build-time default for the photo-import endpoint.
+  /// Build-time default for the sheet-music reader.
   ///
-  /// Set with `--dart-define=PHOTO_IMPORT_ENDPOINT=...` so a local or
-  /// self-hosted build can arrive already configured — typing a URL like
+  /// This is the address of the *notation* half of photo import, and only that
+  /// half: a photographed chord sheet is read in the browser now, so the common
+  /// case needs no address at all and works with this empty. What needs a
+  /// server is music recognition, which is Audiveris in a container — far too
+  /// large to run in a phone browser.
+  ///
+  /// Set with `--dart-define=PHOTO_IMPORT_ENDPOINT=...` so a build arrives
+  /// already pointed at a reader — typing a URL like
   /// `http://192.168.0.102:8790/extract` on a phone keyboard is tedious and
-  /// easy to get subtly wrong. Empty in a normal build, so the public
-  /// deployment ships pointing at nothing, and a value saved in Settings
-  /// always wins over this.
+  /// easy to get subtly wrong. The deployed build passes the project's own
+  /// Cloud Run service here (see `.github/workflows/deploy-pages.yml`); it is
+  /// empty everywhere else, which is what keeps a test from reaching for a
+  /// network. A value saved in Settings always wins over it.
   static const _defaultEndpoint =
       String.fromEnvironment('PHOTO_IMPORT_ENDPOINT');
 
-  /// The configured photo-import endpoint, or null when unset or unusable.
+  /// The configured sheet-music endpoint, or null when unset or unusable.
   ///
   /// Parsing here rather than at the call site so a typo saved months ago
   /// cannot surface as a crash mid-import: an unparseable or non-http value

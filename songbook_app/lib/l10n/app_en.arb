@@ -1338,19 +1338,39 @@
   "@importPhotoReading": {
     "description": "Progress text while the photo is being sent and read"
   },
-  "importPhotoNotConfigured": "Set up photo import in Settings first.",
+  "importPhotoNotConfigured": "Set up the sheet-music service in Settings first.",
   "@importPhotoNotConfigured": {
-    "description": "Shown when no photo-import endpoint has been configured"
+    "description": "Shown when the sheet-music service has no address configured"
+  },
+  "importPhotoHint": "Reads the words and chords on the page, on your device.",
+  "@importPhotoHint": {
+    "description": "Explanation under the Photo button for the ordinary chord-sheet path"
+  },
+  "importPhotoSheetMusic": "This page has sheet music",
+  "@importPhotoSheetMusic": {
+    "description": "Toggle asking whether the photographed page carries engraved notation"
+  },
+  "importPhotoSheetMusicHint": "Press the book flat and photograph it straight on — the notes are lost off a curved page. Reading music needs a connection and can take a minute.",
+  "@importPhotoSheetMusicHint": {
+    "description": "The instruction that matters most: a curled page drops most of the notes"
+  },
+  "importPhotoSignIn": "Sign in first: sheet music is read by a shared service, not on your device.",
+  "@importPhotoSignIn": {
+    "description": "Shown when the sheet-music toggle is used while signed out"
+  },
+  "importPhotoNoReader": "Photos can only be read in the browser version of Songbook.",
+  "@importPhotoNoReader": {
+    "description": "Shown on a platform with no engine to read a photo with"
   },
   "settingsPhotoImport": "Photo import",
   "@settingsPhotoImport": {
     "description": "Settings section heading for the photo import service"
   },
-  "settingsPhotoImportEndpoint": "Service address",
+  "settingsPhotoImportEndpoint": "Sheet-music service",
   "@settingsPhotoImportEndpoint": {
     "description": "Label for the URL the photo is sent to"
   },
-  "settingsPhotoImportEndpointHint": "The address that reads your photos. Leave empty to turn photo import off.",
+  "settingsPhotoImportEndpointHint": "The address that reads sheet music. Words and chords are read on your device and need no address.",
   "@settingsPhotoImportEndpointHint": {
     "description": "Explains what the endpoint field is for"
   },

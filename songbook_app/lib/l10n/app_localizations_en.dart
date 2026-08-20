@@ -1004,17 +1004,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importPhotoNotConfigured =>
-      'Set up photo import in Settings first.';
+      'Set up the sheet-music service in Settings first.';
+
+  @override
+  String get importPhotoHint =>
+      'Reads the words and chords on the page, on your device.';
+
+  @override
+  String get importPhotoSheetMusic => 'This page has sheet music';
+
+  @override
+  String get importPhotoSheetMusicHint =>
+      'Press the book flat and photograph it straight on — the notes are lost off a curved page. Reading music needs a connection and can take a minute.';
+
+  @override
+  String get importPhotoSignIn =>
+      'Sign in first: sheet music is read by a shared service, not on your device.';
+
+  @override
+  String get importPhotoNoReader =>
+      'Photos can only be read in the browser version of Songbook.';
 
   @override
   String get settingsPhotoImport => 'Photo import';
 
   @override
-  String get settingsPhotoImportEndpoint => 'Service address';
+  String get settingsPhotoImportEndpoint => 'Sheet-music service';
 
   @override
   String get settingsPhotoImportEndpointHint =>
-      'The address that reads your photos. Leave empty to turn photo import off.';
+      'The address that reads sheet music. Words and chords are read on your device and need no address.';
 
   @override
   String get settingsPhotoImportToken => 'Access token';

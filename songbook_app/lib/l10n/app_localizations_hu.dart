@@ -1008,17 +1008,36 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get importPhotoNotConfigured =>
-      'Előbb állítsd be a fényképes beolvasást a Beállításokban.';
+      'Előbb állítsd be a kottaszolgáltatást a Beállításokban.';
+
+  @override
+  String get importPhotoHint =>
+      'Beolvassa a lap szövegét és akkordjait, az eszközödön.';
+
+  @override
+  String get importPhotoSheetMusic => 'Ezen a lapon kotta van';
+
+  @override
+  String get importPhotoSheetMusicHint =>
+      'Nyomd le a könyvet laposra, és szemből fényképezd le — a görbült lapról elvesznek a hangjegyek. A kotta beolvasásához internet kell, és eltarthat egy percig.';
+
+  @override
+  String get importPhotoSignIn =>
+      'Előbb jelentkezz be: a kottát közös szolgáltatás olvassa be, nem az eszközöd.';
+
+  @override
+  String get importPhotoNoReader =>
+      'Fényképet csak a Songbook böngészős változata tud beolvasni.';
 
   @override
   String get settingsPhotoImport => 'Fényképes beolvasás';
 
   @override
-  String get settingsPhotoImportEndpoint => 'Szolgáltatás címe';
+  String get settingsPhotoImportEndpoint => 'Kottaszolgáltatás címe';
 
   @override
   String get settingsPhotoImportEndpointHint =>
-      'Az a cím, amely beolvassa a fényképeidet. Hagyd üresen a kikapcsoláshoz.';
+      'Az a cím, amely a kottát beolvassa. A szöveget és az akkordokat az eszközöd olvassa be, ahhoz nem kell cím.';
 
   @override
   String get settingsPhotoImportToken => 'Hozzáférési kulcs';

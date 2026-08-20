@@ -97,9 +97,17 @@ jobs:
 
       - name: Build web
         working-directory: songbook_app
+        # PHOTO_IMPORT_ENDPOINT points the sheet-music half of photo import at
+        # the project's Cloud Run service. Only that half: a photographed chord
+        # sheet is read in the browser and needs no address. It is passed here
+        # rather than defaulted in code so a test never has an address to reach
+        # for, and it is not a secret — the service is publicly reachable by
+        # design (a browser calls it directly, so Google IAM cannot gate it) and
+        # is instead gated by a signed-in user's Supabase token.
         run: |
           flutter build web --release \
             --base-href /songbook-app/ \
+            --dart-define=PHOTO_IMPORT_ENDPOINT=https://songbook-omr-541713551179.europe-central2.run.app/extract \
             --build-number=${{ steps.version.outputs.build }}
 
       - name: Report deployed version

@@ -13,6 +13,12 @@ import '../../data/repositories/settings_repository.dart';
 import '../../data/repositories/setlist_repository.dart';
 import '../../data/repositories/tag_repository.dart';
 import '../../data/repositories/user_song_repository.dart';
+import '../../domain/services/browser_photo_import_service.dart';
+// The recognizer is Tesseract in a web worker, so there is nothing to import
+// on a platform without a browser. The stub half exists to keep this file
+// compiling there, and reports itself unsupported rather than pretending.
+import '../../domain/services/page_text_recognizer_stub.dart'
+    if (dart.library.js_interop) '../../domain/services/page_text_recognizer_web.dart';
 import '../../domain/services/photo_import_service.dart';
 import '../../domain/services/transposition_service.dart';
 import '../../domain/services/search_service.dart';
@@ -170,18 +176,56 @@ final userSongRepositoryProvider = Provider<UserSongRepository>((ref) {
 // --- Service Providers ---
 
 /// Transposition service provider
-/// Photo import, or null when no endpoint has been configured.
+// --- Photo import: two engines, because neither does the other's job ---
+//
+// A photographed hymnal page is words with chord names above them, and reading
+// that is text OCR, which the browser can do in about two seconds for free.
+// Engraved notation is music recognition, which needs Audiveris — a container,
+// not a phone — and which returns no lyrics at all. So the page is read by one
+// or the other, and the person holding the camera is the only one who knows
+// which kind of page it is. Hence the toggle on the import screen.
+
+/// Reading a photographed chord sheet. The common case, and the default.
 ///
-/// Null rather than a throwing stub so the UI can offer the feature honestly:
-/// "point this at a service" is a setup step, not an error, and the import
-/// screen can say so instead of failing on tap.
-final photoImportServiceProvider = Provider<PhotoImportService?>((ref) {
+/// No endpoint, no account and no network: the engine, the page cleaning and
+/// the chords-over-lyrics arithmetic are all on the device. A service address
+/// saved in Settings is deliberately *not* consulted here — it belongs to the
+/// sheet-music reader below — because the local path measured faster and more
+/// accurate than the server one it replaced.
+///
+/// Null only where there is no browser to run the engine in, which the import
+/// screen explains rather than failing on tap.
+final photoTextImportServiceProvider = Provider<PhotoImportService?>((ref) {
+  final recognizer = createPageTextRecognizer();
+  if (!recognizer.isSupported) return null;
+  return BrowserPhotoImportService(recognizer: recognizer);
+});
+
+/// Reading engraved notation off a photographed page. Opt-in, and a server.
+///
+/// Null when no address has been configured, rather than a throwing stub, so
+/// the UI can offer the feature honestly: "point this at a service" is a setup
+/// step, not an error.
+///
+/// [authStateChangesProvider] is watched for the token, not for the user: the
+/// deployed service verifies a Supabase access token, those expire, and the SDK
+/// replaces them on that stream. Watching it means the next import carries the
+/// live token instead of the one that happened to be current when this screen
+/// was first built — which the service would answer with a 401.
+final photoNotationImportServiceProvider =
+    Provider<PhotoImportService?>((ref) {
   final settings = ref.watch(settingsRepositoryProvider);
   final endpoint = settings.getPhotoImportEndpoint();
   if (endpoint == null) return null;
+  ref.watch(authStateChangesProvider);
   return HttpPhotoImportService(
     endpoint: endpoint,
-    token: settings.getPhotoImportToken(),
+    // A token typed into Settings wins: it is an explicit answer about this
+    // particular service, and someone running their own has no Supabase
+    // session to offer it. Otherwise the signed-in user's own token, which is
+    // what the project's service checks.
+    token: settings.getPhotoImportToken() ??
+        ref.watch(authRepositoryProvider)?.accessToken,
   );
 });
 

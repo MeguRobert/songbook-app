@@ -186,6 +186,35 @@ void main() {
           contains('500'));
     });
 
+    test('a refused sign-in carries its status, so the app can re-word it',
+        () async {
+      // The sheet-music service answers "Sign in to read a page." in English.
+      // Songbook is read in Hungarian and Romanian too, so the screen replaces
+      // that one message with its own — and a status is the only thing it can
+      // recognise it by without matching on the service's prose.
+      final service = serviceReturning(
+          json.encode({'error': 'Sign in to read a page.'}), status: 401);
+      try {
+        await service.extract(_image);
+        fail('expected a PhotoImportException');
+      } on PhotoImportException catch (e) {
+        expect(e.statusCode, 401);
+        expect(e.message, contains('Sign in'));
+      }
+    });
+
+    test('a failure with no HTTP status behind it carries none', () async {
+      // An empty image never reaches the wire, so there is no status to report
+      // and nothing for the screen to re-word.
+      final service = serviceReturning('unused');
+      try {
+        await service.extract(Uint8List(0));
+        fail('expected a PhotoImportException');
+      } on PhotoImportException catch (e) {
+        expect(e.statusCode, isNull);
+      }
+    });
+
     test('a non-JSON body says so rather than throwing FormatException',
         () async {
       // A misconfigured URL pointing at a normal web page is the likely cause,

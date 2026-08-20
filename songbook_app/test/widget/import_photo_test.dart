@@ -10,9 +10,9 @@ import 'helpers.dart';
 /// The photo-import entry point.
 ///
 /// The picker itself is a platform channel and cannot be driven here, so these
-/// cover what surrounds it: the button exists, an unconfigured service explains
-/// itself instead of failing silently, and a configured one is what the screen
-/// reaches for.
+/// cover what surrounds it: the button exists, each of the two engines is asked
+/// for only when it is the one chosen, and neither being available says so
+/// instead of failing silently.
 class _FakePhotoImportService implements PhotoImportService {
   final PhotoImportPayload? payload;
   final PhotoImportException? error;
@@ -54,10 +54,11 @@ void main() {
     expect(find.text('MusicXML file'), findsOneWidget);
   });
 
-  testWidgets('with no service configured, tapping Photo says where to set '
-      'it up rather than doing nothing', (tester) async {
+  testWidgets('with no reader available, tapping Photo says why rather than '
+      'doing nothing', (tester) async {
     // The failure mode this guards: a button that looks live, does nothing on
-    // tap, and gives no hint that configuration is missing.
+    // tap, and gives no hint why. On the Dart VM there is no browser to run the
+    // engine in, which is exactly the state a non-web build is in.
     await pumpScreen(tester, const ImportSongScreen());
     await tester.pumpAndSettle();
     await openMoreWays(tester);
@@ -65,19 +66,25 @@ void main() {
     await tester.tap(find.text('Photo'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Settings'), findsWidgets);
+    expect(find.textContaining('browser version'), findsOneWidget);
   });
 
-  testWidgets('a configured service is the one the screen reaches for',
+  testWidgets('the words engine is the one a plain photo reaches for',
       (tester) async {
-    final fake = _FakePhotoImportService(
+    final words = _FakePhotoImportService(
       payload: const ChordProPayload('[G]Az Úrra [C]bízom életem'),
+    );
+    final notation = _FakePhotoImportService(
+      payload: const MusicXmlPayload('<score-partwise/>'),
     );
 
     await pumpScreen(
       tester,
       const ImportSongScreen(),
-      overrides: [photoImportServiceProvider.overrideWithValue(fake)],
+      overrides: [
+        photoTextImportServiceProvider.overrideWithValue(words),
+        photoNotationImportServiceProvider.overrideWithValue(notation),
+      ],
     );
     await tester.pumpAndSettle();
     await openMoreWays(tester);
@@ -85,10 +92,46 @@ void main() {
     await tester.tap(find.text('Photo'));
     await tester.pumpAndSettle();
 
-    // The not-configured message must NOT appear: the screen resolved a
-    // service. It then opens a real file picker, which this harness cannot
-    // satisfy, so extraction itself is covered in the service's own tests.
-    expect(find.text('Set up photo import in Settings first.'), findsNothing);
+    // Neither "no reader" nor "no service" may appear: the screen resolved one.
+    // It then opens a real file picker, which this harness cannot satisfy, so
+    // extraction itself is covered in the services' own tests.
+    expect(find.textContaining('browser version'), findsNothing);
+    expect(find.textContaining('Settings first'), findsNothing);
+  });
+
+  testWidgets('ticking "this page has sheet music" shows the instruction that '
+      'decides whether it works', (tester) async {
+    // A curled page took the notation reading from 63 notes to 6. Pressing the
+    // book flat is worth more than any code in this feature, so the toggle that
+    // routes to the notation engine is what says it.
+    await pumpScreen(tester, const ImportSongScreen());
+    await tester.pumpAndSettle();
+    await openMoreWays(tester);
+
+    expect(find.textContaining('Press the book flat'), findsNothing);
+
+    await tester.tap(find.text('This page has sheet music'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Press the book flat'), findsOneWidget);
+  });
+
+  testWidgets('with sheet music ticked and no service configured, the screen '
+      'points at Settings', (tester) async {
+    // The words engine is unavailable here too, so this also pins that the
+    // toggle really does change which engine is asked for: the message is the
+    // sheet-music one, not the no-browser one.
+    await pumpScreen(tester, const ImportSongScreen());
+    await tester.pumpAndSettle();
+    await openMoreWays(tester);
+
+    await tester.tap(find.text('This page has sheet music'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Photo'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Settings first'), findsOneWidget);
+    expect(find.textContaining('browser version'), findsNothing);
   });
 
   group('what the screen does with a payload', () {

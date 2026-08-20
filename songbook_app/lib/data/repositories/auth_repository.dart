@@ -61,6 +61,16 @@ class AuthRepository {
   /// Emits on sign-in, sign-out, token refresh and user updates.
   Stream<AuthState> get authStateChanges => _auth.onAuthStateChange;
 
+  /// The signed-in user's access token, or null when signed out.
+  ///
+  /// Read by the sheet-music reader, which is a service on the internet paid
+  /// for by the project owner: a browser calls it directly, so Google's own IAM
+  /// cannot gate it, and the gate is instead this token verified against the
+  /// project's public keys. Short-lived by design — the SDK refreshes it and
+  /// emits on [authStateChanges], so anything holding one must re-read rather
+  /// than keep it.
+  String? get accessToken => _auth.currentSession?.accessToken;
+
   /// Whether this account has confirmed its email address.
   ///
   /// Supabase can be configured to permit unconfirmed sign-in, so possessing a

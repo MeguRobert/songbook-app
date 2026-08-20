@@ -41,7 +41,16 @@ class MusicXmlPayload extends PhotoImportPayload {
 class PhotoImportException implements Exception {
   final String message;
 
-  const PhotoImportException(this.message);
+  /// The HTTP status behind this, where there was one.
+  ///
+  /// Carried for exactly one reason: a refused sign-in is the single failure the
+  /// app can word better than the service can. The service answers in English,
+  /// and the app knows which of three languages the person reading it speaks.
+  /// Everything else is shown as [message], because the backend's own words
+  /// beat any translation of a status code.
+  final int? statusCode;
+
+  const PhotoImportException(this.message, {this.statusCode});
 
   @override
   String toString() => 'PhotoImportException: $message';
@@ -125,7 +134,10 @@ class HttpPhotoImportService implements PhotoImportService {
       // The backend explains itself in `error` — "No API key", "cannot decode
       // that image". Reporting only the number threw that away and left the
       // person who wrote the backend guessing at their own error message.
-      throw PhotoImportException(_reason(response));
+      throw PhotoImportException(
+        _reason(response),
+        statusCode: response.statusCode,
+      );
     }
 
     return _decode(response.body);
