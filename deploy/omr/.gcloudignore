@@ -1,0 +1,7 @@
+# Without this file gcloud falls back to .gitignore — which excludes app/,
+# because those jars are copied from a local Audiveris install and are not ours
+# to commit. They ARE needed in the build context, so this file exists purely to
+# stop that fallback and keep them in the upload.
+.git/
+.gitignore
+*.log
