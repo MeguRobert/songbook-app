@@ -1015,14 +1015,14 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get importPhotoHint =>
-      'Citește versurile și acordurile din pagină, pe dispozitivul tău.';
+      'Citește versurile și acordurile de pe pagină, pe dispozitivul tău.';
 
   @override
   String get importPhotoSheetMusic => 'Pagina aceasta are partitură';
 
   @override
   String get importPhotoSheetMusicHint =>
-      'Apasă cartea ca să stea plată și fotografiază-o din față — pe o pagină curbată notele se pierd. Citirea partiturii are nevoie de internet și poate dura un minut.';
+      'Apasă cartea ca să stea plată și fotografiaz-o de sus, drept deasupra paginii — pe o pagină curbată notele se pierd. Citirea partiturii are nevoie de internet și poate dura un minut.';
 
   @override
   String get importPhotoSignIn =>
@@ -1030,7 +1030,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get importPhotoNoReader =>
-      'Fotografiile pot fi citite doar în versiunea de browser a Songbook.';
+      'Fotografiile pot fi citite doar în versiunea de browser a aplicației Songbook.';
 
   @override
   String get settingsPhotoImport => 'Import din fotografie';
@@ -1040,7 +1040,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get settingsPhotoImportEndpointHint =>
-      'Adresa care citește partitura. Versurile și acordurile sunt citite pe dispozitivul tău și nu au nevoie de adresă.';
+      'Adresa care citește partitura. Lasă gol pentru a folosi serviciul încorporat. Versurile și acordurile sunt citite pe dispozitivul tău și nu au nevoie de adresă.';
 
   @override
   String get settingsPhotoImportToken => 'Cheie de acces';

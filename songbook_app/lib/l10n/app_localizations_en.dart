@@ -1015,7 +1015,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importPhotoSheetMusicHint =>
-      'Press the book flat and photograph it straight on — the notes are lost off a curved page. Reading music needs a connection and can take a minute.';
+      'Press the book flat and photograph it straight from above — the notes are lost off a curved page. Reading music needs a connection and can take a minute.';
 
   @override
   String get importPhotoSignIn =>
@@ -1033,7 +1033,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsPhotoImportEndpointHint =>
-      'The address that reads sheet music. Words and chords are read on your device and need no address.';
+      'The address that reads sheet music. Leave it empty to use the built-in one. Words and chords are read on your device and need no address.';
 
   @override
   String get settingsPhotoImportToken => 'Access token';

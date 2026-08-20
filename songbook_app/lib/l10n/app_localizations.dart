@@ -1789,10 +1789,10 @@ abstract class AppLocalizations {
   /// The instruction that matters most: a curled page drops most of the notes
   ///
   /// In en, this message translates to:
-  /// **'Press the book flat and photograph it straight on — the notes are lost off a curved page. Reading music needs a connection and can take a minute.'**
+  /// **'Press the book flat and photograph it straight from above — the notes are lost off a curved page. Reading music needs a connection and can take a minute.'**
   String get importPhotoSheetMusicHint;
 
-  /// Shown when the sheet-music toggle is used while signed out
+  /// Shown when the sheet-music service refused the upload for want of a sign-in
   ///
   /// In en, this message translates to:
   /// **'Sign in first: sheet music is read by a shared service, not on your device.'**
@@ -1819,7 +1819,7 @@ abstract class AppLocalizations {
   /// Explains what the endpoint field is for
   ///
   /// In en, this message translates to:
-  /// **'The address that reads sheet music. Words and chords are read on your device and need no address.'**
+  /// **'The address that reads sheet music. Leave it empty to use the built-in one. Words and chords are read on your device and need no address.'**
   String get settingsPhotoImportEndpointHint;
 
   /// Label for the optional bearer token sent with the photo

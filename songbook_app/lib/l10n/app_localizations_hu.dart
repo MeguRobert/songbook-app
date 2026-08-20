@@ -1019,7 +1019,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get importPhotoSheetMusicHint =>
-      'Nyomd le a könyvet laposra, és szemből fényképezd le — a görbült lapról elvesznek a hangjegyek. A kotta beolvasásához internet kell, és eltarthat egy percig.';
+      'Nyomd laposra a könyvet, és pontosan felülről, a lapra merőlegesen fényképezd le — a görbült lapról elvesznek a hangjegyek. A kotta beolvasásához internet kell, és eltarthat egy percig.';
 
   @override
   String get importPhotoSignIn =>
@@ -1037,7 +1037,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get settingsPhotoImportEndpointHint =>
-      'Az a cím, amely a kottát beolvassa. A szöveget és az akkordokat az eszközöd olvassa be, ahhoz nem kell cím.';
+      'Az a cím, amely a kottát beolvassa. Hagyd üresen a beépített szolgáltatáshoz. A szöveget és az akkordokat az eszközöd olvassa be, ahhoz nem kell cím.';
 
   @override
   String get settingsPhotoImportToken => 'Hozzáférési kulcs';

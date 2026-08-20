@@ -1350,13 +1350,13 @@
   "@importPhotoSheetMusic": {
     "description": "Toggle asking whether the photographed page carries engraved notation"
   },
-  "importPhotoSheetMusicHint": "Press the book flat and photograph it straight on — the notes are lost off a curved page. Reading music needs a connection and can take a minute.",
+  "importPhotoSheetMusicHint": "Press the book flat and photograph it straight from above — the notes are lost off a curved page. Reading music needs a connection and can take a minute.",
   "@importPhotoSheetMusicHint": {
     "description": "The instruction that matters most: a curled page drops most of the notes"
   },
   "importPhotoSignIn": "Sign in first: sheet music is read by a shared service, not on your device.",
   "@importPhotoSignIn": {
-    "description": "Shown when the sheet-music toggle is used while signed out"
+    "description": "Shown when the sheet-music service refused the upload for want of a sign-in"
   },
   "importPhotoNoReader": "Photos can only be read in the browser version of Songbook.",
   "@importPhotoNoReader": {
@@ -1370,7 +1370,7 @@
   "@settingsPhotoImportEndpoint": {
     "description": "Label for the URL the photo is sent to"
   },
-  "settingsPhotoImportEndpointHint": "The address that reads sheet music. Words and chords are read on your device and need no address.",
+  "settingsPhotoImportEndpointHint": "The address that reads sheet music. Leave it empty to use the built-in one. Words and chords are read on your device and need no address.",
   "@settingsPhotoImportEndpointHint": {
     "description": "Explains what the endpoint field is for"
   },
