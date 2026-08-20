@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../data/repositories/auth_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
+import '../../widgets/content_pane.dart';
 import 'auth_messages.dart';
 
 /// Sign in, or create an account.
@@ -119,120 +121,137 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           : SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Says up front that this is optional. Nobody should feel
-                      // they must register to use a songbook.
-                      Text(
-                        l10n.accountOptional,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 24),
-                      // Google first: for most people it is one tap versus
-                      // inventing another password.
-                      //
-                      // Note this does NOT await a session. signInWithOAuth
-                      // returns once the browser has been handed off, not when
-                      // sign-in succeeds — the session arrives later on the auth
-                      // state stream, which the Settings entry watches. Closing
-                      // this screen here would be closing it before anything
-                      // had happened.
-                      OutlinedButton.icon(
-                        onPressed: _busy
-                            ? null
-                            : () => _run(() => _auth!.signInWithGoogle()),
-                        icon: const Icon(Icons.login),
-                        label: Text(l10n.signInWithGoogle),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          const Expanded(child: Divider()),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              l10n.authOrDivider,
-                              style: Theme.of(context).textTheme.bodySmall,
+                // Inside the scroll view, so the desktop scrollbar stays at the
+                // window edge rather than hugging the centred form.
+                child: ContentPane.form(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Says up front that this is optional. Nobody should
+                        // feel they must register to use a songbook.
+                        Text(
+                          l10n.accountOptional,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 24),
+                        // Google first: for most people it is one tap versus
+                        // inventing another password.
+                        //
+                        // Note this does NOT await a session. signInWithOAuth
+                        // returns once the browser has been handed off, not
+                        // when sign-in succeeds — the session arrives later on
+                        // the auth state stream, which the Settings entry
+                        // watches. Closing this screen here would be closing it
+                        // before anything had happened.
+                        OutlinedButton.icon(
+                          onPressed: _busy
+                              ? null
+                              : () => _run(() => _auth!.signInWithGoogle()),
+                          // The real Google mark, not a generic login glyph.
+                          // Deliberately no colorFilter: Google's branding
+                          // guidelines forbid recolouring the G, so it keeps its
+                          // four brand colours on both the light and dark theme.
+                          // 18dp is Google's specified size for a button this
+                          // height; the SVG's own 48px box is scaled down.
+                          icon: SvgPicture.asset(
+                            'assets/icons/google_g.svg',
+                            width: 18,
+                            height: 18,
+                          ),
+                          label: Text(l10n.signInWithGoogle),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                l10n.authOrDivider,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _email,
+                          decoration:
+                              InputDecoration(labelText: l10n.emailLabel),
+                          keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.email],
+                          autocorrect: false,
+                          enabled: !_busy,
+                          validator: (value) =>
+                              (value == null || !value.contains('@'))
+                                  ? l10n.authErrorInvalidEmail
+                                  : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _password,
+                          decoration:
+                              InputDecoration(labelText: l10n.passwordLabel),
+                          obscureText: true,
+                          enabled: !_busy,
+                          autofillHints: const [AutofillHints.password],
+                          // 6 is Supabase's own minimum; validating it here
+                          // saves a round trip to be told the same thing.
+                          validator: (value) =>
+                              (value == null || value.length < 6)
+                                  ? l10n.authErrorWeakPassword
+                                  : null,
+                          onFieldSubmitted: (_) => _submit(),
+                        ),
+                        if (_error != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            _error!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
                             ),
                           ),
-                          const Expanded(child: Divider()),
                         ],
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _email,
-                        decoration: InputDecoration(labelText: l10n.emailLabel),
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        autocorrect: false,
-                        enabled: !_busy,
-                        validator: (value) => (value == null || !value.contains('@'))
-                            ? l10n.authErrorInvalidEmail
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _password,
-                        decoration:
-                            InputDecoration(labelText: l10n.passwordLabel),
-                        obscureText: true,
-                        enabled: !_busy,
-                        autofillHints: const [AutofillHints.password],
-                        // 6 is Supabase's own minimum; validating it here saves a
-                        // round trip to be told the same thing.
-                        validator: (value) => (value == null || value.length < 6)
-                            ? l10n.authErrorWeakPassword
-                            : null,
-                        onFieldSubmitted: (_) => _submit(),
-                      ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          _error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                        if (_notice != null) ...[
+                          const SizedBox(height: 16),
+                          Text(_notice!),
+                        ],
+                        const SizedBox(height: 24),
+                        FilledButton(
+                          onPressed: _busy ? null : _submit,
+                          child: _busy
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Text(title),
                         ),
-                      ],
-                      if (_notice != null) ...[
-                        const SizedBox(height: 16),
-                        Text(_notice!),
-                      ],
-                      const SizedBox(height: 24),
-                      FilledButton(
-                        onPressed: _busy ? null : _submit,
-                        child: _busy
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(title),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: _busy
-                            ? null
-                            : () => setState(() {
-                                  _registering = !_registering;
-                                  _error = null;
-                                  _notice = null;
-                                }),
-                        child: Text(_registering
-                            ? l10n.haveAccountPrompt
-                            : l10n.needAccountPrompt),
-                      ),
-                      if (!_registering)
+                        const SizedBox(height: 8),
                         TextButton(
-                          onPressed: _busy ? null : _resetPassword,
-                          child: Text(l10n.forgotPassword),
+                          onPressed: _busy
+                              ? null
+                              : () => setState(() {
+                                    _registering = !_registering;
+                                    _error = null;
+                                    _notice = null;
+                                  }),
+                          child: Text(_registering
+                              ? l10n.haveAccountPrompt
+                              : l10n.needAccountPrompt),
                         ),
-                    ],
+                        if (!_registering)
+                          TextButton(
+                            onPressed: _busy ? null : _resetPassword,
+                            child: Text(l10n.forgotPassword),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),

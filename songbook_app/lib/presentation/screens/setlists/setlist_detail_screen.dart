@@ -9,6 +9,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../router/app_router.dart';
 import '../../providers/setlist_provider.dart';
 import '../../providers/song_provider.dart';
+import '../../widgets/content_pane.dart';
 
 /// Screen showing a single setlist's songs with reorder / add / remove / play.
 class SetlistDetailScreen extends ConsumerWidget {
@@ -58,53 +59,55 @@ class SetlistDetailScreen extends ConsumerWidget {
             );
           }
 
-          return ReorderableListView.builder(
-            itemCount: songs.length,
-            // Suppress the automatic trailing drag handle: on desktop/web it
-            // is injected at the trailing edge, where it collided with the
-            // Remove button. We supply our own handle as `leading` instead.
-            buildDefaultDragHandles: false,
-            onReorder: (oldIndex, newIndex) {
-              if (newIndex > oldIndex) newIndex--;
+          return ContentPane.list(
+            child: ReorderableListView.builder(
+              itemCount: songs.length,
+              // Suppress the automatic trailing drag handle: on desktop/web it
+              // is injected at the trailing edge, where it collided with the
+              // Remove button. We supply our own handle as `leading` instead.
+              buildDefaultDragHandles: false,
+              onReorder: (oldIndex, newIndex) {
+                if (newIndex > oldIndex) newIndex--;
 
-              // Reorder the VISIBLE rows, then write the change back into the
-              // full stored list. Writing `songs` directly would persist only
-              // the catalog-filtered subset, permanently deleting any setlist
-              // entry whose song is missing from songs.json.
-              final visible = songs.map((s) => s.id).toList();
-              final reordered = [...visible];
-              reordered.insert(newIndex, reordered.removeAt(oldIndex));
+                // Reorder the VISIBLE rows, then write the change back into the
+                // full stored list. Writing `songs` directly would persist only
+                // the catalog-filtered subset, permanently deleting any setlist
+                // entry whose song is missing from songs.json.
+                final visible = songs.map((s) => s.id).toList();
+                final reordered = [...visible];
+                reordered.insert(newIndex, reordered.removeAt(oldIndex));
 
-              final visibleIds = visible.toSet();
-              var next = 0;
-              final full = setlist.songIds
-                  .map((n) => visibleIds.contains(n) ? reordered[next++] : n)
-                  .toList();
+                final visibleIds = visible.toSet();
+                var next = 0;
+                final full = setlist.songIds
+                    .map((n) => visibleIds.contains(n) ? reordered[next++] : n)
+                    .toList();
 
-              ref.read(setlistsProvider.notifier).reorder(setlist.id, full);
-            },
-            itemBuilder: (context, index) {
-              final song = songs[index];
-              return ListTile(
-                key: ValueKey(song.number),
-                // Wrapped in a drag listener so the handle actually drags —
-                // previously this was a bare Icon that looked draggable but
-                // did nothing.
-                leading: ReorderableDragStartListener(
-                  index: index,
-                  child: const Icon(Icons.drag_handle),
-                ),
-                title: Text('${song.number}. ${song.title}'),
-                subtitle: song.reference != null ? Text(song.reference!) : null,
-                trailing: IconButton(
-                  icon: const Icon(Icons.remove_circle_outline),
-                  tooltip: l10n.setlistRemoveSong,
-                  onPressed: () => ref
-                      .read(setlistsProvider.notifier)
-                      .removeSong(setlist.id, song.id),
-                ),
-              );
-            },
+                ref.read(setlistsProvider.notifier).reorder(setlist.id, full);
+              },
+              itemBuilder: (context, index) {
+                final song = songs[index];
+                return ListTile(
+                  key: ValueKey(song.number),
+                  // Wrapped in a drag listener so the handle actually drags —
+                  // previously this was a bare Icon that looked draggable but
+                  // did nothing.
+                  leading: ReorderableDragStartListener(
+                    index: index,
+                    child: const Icon(Icons.drag_handle),
+                  ),
+                  title: Text('${song.number}. ${song.title}'),
+                  subtitle: song.reference != null ? Text(song.reference!) : null,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.remove_circle_outline),
+                    tooltip: l10n.setlistRemoveSong,
+                    onPressed: () => ref
+                        .read(setlistsProvider.notifier)
+                        .removeSong(setlist.id, song.id),
+                  ),
+                );
+              },
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

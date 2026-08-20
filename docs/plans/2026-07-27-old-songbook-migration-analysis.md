@@ -2,6 +2,18 @@
 
 _2026-07-27. Sources: `github.com/MeguRobert/Songbook` (2,196 lines Dart, 68 commits, last active Jan 2023) and `github.com/MeguRobert/wsongbook`._
 
+> **Backend superseded (2026-07-28): the platform runs on Supabase, not Firebase.**
+> This document was written assuming Firebase, and phases C/D/E below still say so. Read every
+> *forward-looking* Firebase reference as its Supabase equivalent — Firebase Auth → Supabase Auth,
+> Firestore security rules → Postgres row-level security, custom claims → the `user_roles` table
+> behind `is_admin()`. References to Firebase/Firestore describing **the old app** are historically
+> accurate and stand as written.
+>
+> The decision and its reasoning are in `HANDOFF-platform.md` → Decision 2. The short version: RLS
+> *filters* rows whereas Firestore rules *reject the whole query*, which makes the old app's headline
+> defect structurally hard to reproduce rather than a discipline to sustain. The schema, policies and
+> a passing 21-assertion pgTAP test now live in `supabase/`.
+
 ## Verdict
 
 **`wsongbook` contains no source** — it is the compiled web deploy of `Songbook` (one 2.4 MB `main.dart.js`). Everything below comes from `Songbook`.

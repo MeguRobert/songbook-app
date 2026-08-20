@@ -1,0 +1,122 @@
+name: Supabase keepalive
+
+# A Supabase free-tier project is paused after ~1 week without user database
+# activity. This does a real query once a day so that never happens while the
+# app has no users yet.
+#
+# Why a REST query and not a health-check ping: the pause criterion is *database*
+# activity. Hitting an endpoint that never touches Postgres may not count, so
+# this selects an actual row.
+#
+# Why GitHub Actions: this repo is public, so standard runners are free and
+# unmetered. See the `keep-workflow-enabled` job below for the one way this
+# arrangement can fail.
+
+on:
+  schedule:
+    # 07:14 UTC daily. Deliberately not on the hour -- GitHub delays cron jobs
+    # under load, and the top of the hour is the most contended slot.
+    - cron: '14 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Query the database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Select one row through PostgREST
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          # This project uses Supabase's newer key format (sb_publishable_...),
+          # not a legacy `anon` JWT. Named for what it actually is, so nobody
+          # later pastes a service key in because the name said "anon".
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_PUBLISHABLE_KEY:-}" ]; then
+            echo "::error::SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY is not set."
+            echo "Set both under Settings -> Secrets and variables -> Actions."
+            echo "Failing loudly on purpose: a keepalive that silently does"
+            echo "nothing is worse than no keepalive, because you would trust it."
+            exit 1
+          fi
+
+          # `songs` is readable by anon (approved rows only, per the RLS select
+          # policy), so this needs no privileged key.
+          code=$(curl -sS -o /tmp/body.txt -w '%{http_code}' \
+            -H "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_PUBLISHABLE_KEY}" \
+            "${SUPABASE_URL}/rest/v1/songs?select=id&limit=1")
+
+          echo "HTTP ${code}"
+          head -c 400 /tmp/body.txt || true
+          echo
+
+          case "${code}" in
+            200)
+              echo "::notice::Project is awake; database query succeeded."
+              ;;
+            540)
+              echo "::error::HTTP 540 -- the project is PAUSED. A keepalive"
+              echo "cannot un-pause it: resume it once from the dashboard, after"
+              echo "which this job keeps it awake."
+              exit 1
+              ;;
+            401|403)
+              echo "::error::Auth rejected (${code}). The publishable key is"
+              echo "probably stale -- keys can be reissued when a project is"
+              echo "restored from a pause. Refresh the secret and the app config."
+              exit 1
+              ;;
+            *)
+              echo "::error::Unexpected status ${code}."
+              exit 1
+              ;;
+          esac
+
+  keep-workflow-enabled:
+    name: Keep scheduled workflows from being auto-disabled
+    runs-on: ubuntu-latest
+    # GitHub disables scheduled workflows in a PUBLIC repo after 60 days with no
+    # repository activity, and a workflow *run* does not count as activity --
+    # only a push, release or merge does. So the keepalive would quietly die
+    # during exactly the long break it exists to cover, and the project would
+    # pause a week later.
+    #
+    # This pushes one commit a month so that cannot happen. It is a separate job
+    # so you can disable it if you would rather keep the history clean and accept
+    # having to resume manually after a two-month absence.
+    if: github.event_name == 'schedule' && github.event.repository.private == false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Touch the timestamp on the 1st of the month
+        run: |
+          set -euo pipefail
+          if [ "$(date -u +%d)" != "01" ]; then
+            echo "Not the 1st; nothing to do."
+            exit 0
+          fi
+
+          # A dated file rather than an empty commit: it is self-documenting, so
+          # nobody reading the log later has to guess what the commit was for.
+          mkdir -p .github
+          date -u +'%Y-%m-%dT%H:%M:%SZ' > .github/last-keepalive.txt
+
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .github/last-keepalive.txt
+
+          if git diff --cached --quiet; then
+            echo "No change to commit."
+            exit 0
+          fi
+
+          git commit -m 'chore: keep scheduled workflows enabled'
+          git push

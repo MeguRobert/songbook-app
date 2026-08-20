@@ -9,6 +9,7 @@ import '../../providers/locale_provider.dart';
 import '../../providers/providers.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../widgets/content_pane.dart';
 import '../auth/auth_screen.dart';
 import '../moderation/moderation_queue_screen.dart';
 import '../moderation/my_submissions_screen.dart';
@@ -113,103 +114,106 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.settingsTitle),
       ),
-      body: ListView(
-        children: [
-          // Account, and deliberately not first. An optional feature placed at
-          // the top of Settings reads as something you are expected to do; the
-          // app works signed-out and nothing here gates on a session.
-          _buildAccountSection(context, ref, l10n),
+      body: ContentPane.list(
+        child: ListView(
+          children: [
+            // Account, and deliberately not first. An optional feature placed at
+            // the top of Settings reads as something you are expected to do; the
+            // app works signed-out and nothing here gates on a session.
+            _buildAccountSection(context, ref, l10n),
 
-          // Language first among the real settings: it changes every other label
-          // on this screen, so burying it under Appearance would mean hunting for
-          // it in a language you cannot read.
-          _buildSectionHeader(context, l10n.settingsLanguage),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: Text(l10n.settingsLanguage),
-            subtitle: Text(_languageLabel(l10n, locale)),
-            onTap: () => _showLanguageDialog(context, ref, locale),
-          ),
-
-          // Photo import. Its own section rather than a line under Appearance:
-          // it is the only setting that points the app at something outside
-          // itself, and it is the difference between the Photo button working
-          // and explaining itself.
-          _buildSectionHeader(context, l10n.settingsPhotoImport),
-          ListTile(
-            leading: const Icon(Icons.photo_camera_outlined),
-            title: Text(l10n.settingsPhotoImport),
-            subtitle: Text(
-              ref.watch(settingsRepositoryProvider).getPhotoImportEndpoint()
-                      ?.host ??
-                  l10n.settingsPhotoImportNotSet,
+            // Language first among the real settings: it changes every other label
+            // on this screen, so burying it under Appearance would mean hunting for
+            // it in a language you cannot read.
+            _buildSectionHeader(context, l10n.settingsLanguage),
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: Text(l10n.settingsLanguage),
+              subtitle: Text(_languageLabel(l10n, locale)),
+              onTap: () => _showLanguageDialog(context, ref, locale),
             ),
-            onTap: () => _showPhotoImportDialog(context, ref),
-          ),
 
-          // Appearance section
-          _buildSectionHeader(context, l10n.settingsAppearance),
-          ListTile(
-            leading: const Icon(Icons.brightness_6),
-            title: Text(l10n.settingsTheme),
-            subtitle: Text(_getThemeModeLabel(l10n, themeMode)),
-            onTap: () => _showThemeDialog(context, ref, themeMode),
-          ),
-          ListTile(
-            leading: const Icon(Icons.text_fields),
-            title: Text(l10n.settingsFontSize),
-            subtitle: Text('${settings.fontSize.round()}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove),
-                  tooltip: l10n.fontSizeDecrease,
-                  onPressed: settings.fontSize > 12
-                      ? () => ref.read(settingsProvider.notifier).decreaseFontSize()
-                      : null,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  tooltip: l10n.fontSizeIncrease,
-                  onPressed: settings.fontSize < 32
-                      ? () => ref.read(settingsProvider.notifier).increaseFontSize()
-                      : null,
-                ),
-              ],
+            // Photo import. Its own section rather than a line under
+            // Appearance: it is the only setting that points the app at
+            // something outside itself.
+            _buildSectionHeader(context, l10n.settingsPhotoImport),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: Text(l10n.settingsPhotoImport),
+              subtitle: Text(
+                ref
+                        .watch(settingsRepositoryProvider)
+                        .getPhotoImportEndpoint()
+                        ?.host ??
+                    l10n.settingsPhotoImportNotSet,
+              ),
+              onTap: () => _showPhotoImportDialog(context, ref),
             ),
-          ),
 
-          const Divider(),
+            // Appearance section
+            _buildSectionHeader(context, l10n.settingsAppearance),
+            ListTile(
+              leading: const Icon(Icons.brightness_6),
+              title: Text(l10n.settingsTheme),
+              subtitle: Text(_getThemeModeLabel(l10n, themeMode)),
+              onTap: () => _showThemeDialog(context, ref, themeMode),
+            ),
+            ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: Text(l10n.settingsFontSize),
+              subtitle: Text('${settings.fontSize.round()}'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    tooltip: l10n.fontSizeDecrease,
+                    onPressed: settings.fontSize > 12
+                        ? () => ref.read(settingsProvider.notifier).decreaseFontSize()
+                        : null,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    tooltip: l10n.fontSizeIncrease,
+                    onPressed: settings.fontSize < 32
+                        ? () => ref.read(settingsProvider.notifier).increaseFontSize()
+                        : null,
+                  ),
+                ],
+              ),
+            ),
 
-          // Display section
-          _buildSectionHeader(context, l10n.settingsDisplay),
-          ListTile(
-            leading: const Icon(Icons.view_agenda),
-            title: Text(l10n.settingsDefaultView),
-            subtitle: Text(_getViewConfigLabel(l10n, settings.viewConfig)),
-            onTap: () => _showViewConfigDialog(context, ref, settings.viewConfig),
-          ),
+            const Divider(),
 
-          const Divider(),
+            // Display section
+            _buildSectionHeader(context, l10n.settingsDisplay),
+            ListTile(
+              leading: const Icon(Icons.view_agenda),
+              title: Text(l10n.settingsDefaultView),
+              subtitle: Text(_getViewConfigLabel(l10n, settings.viewConfig)),
+              onTap: () => _showViewConfigDialog(context, ref, settings.viewConfig),
+            ),
 
-          // About section
-          _buildSectionHeader(context, l10n.settingsAbout),
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: Text(l10n.settingsVersion),
-            subtitle: ref.watch(appVersionProvider).when(
-                  data: (version) => Text(version),
-                  loading: () => const Text('…'),
-                  error: (_, __) => Text(l10n.settingsVersionUnknown),
-                ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.library_books),
-            title: Text(l10n.appTitle),
-            subtitle: Text(l10n.settingsTagline),
-          ),
-        ],
+            const Divider(),
+
+            // About section
+            _buildSectionHeader(context, l10n.settingsAbout),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: Text(l10n.settingsVersion),
+              subtitle: ref.watch(appVersionProvider).when(
+                    data: (version) => Text(version),
+                    loading: () => const Text('…'),
+                    error: (_, __) => Text(l10n.settingsVersionUnknown),
+                  ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.library_books),
+              title: Text(l10n.appTitle),
+              subtitle: Text(l10n.settingsTagline),
+            ),
+          ],
+        ),
       ),
     );
   }

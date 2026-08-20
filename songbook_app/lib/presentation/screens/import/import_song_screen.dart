@@ -19,6 +19,7 @@ import '../../providers/book_provider.dart';
 import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 import '../../../router/app_router.dart';
+import '../../widgets/content_pane.dart';
 import '../song_view/widgets/chord_view.dart';
 import '../song_view/widgets/sheet_music_view.dart';
 
@@ -561,298 +562,306 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-              _isEditing
-                  ? l10n.importSectionReplace
-                  : l10n.importSectionPaste,
-              style: _sectionStyle(theme)),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _sheetController,
-            maxLines: 8,
-            minLines: 4,
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              alignLabelWithHint: true,
-              hintText: l10n.importPasteHint,
-            ),
-            // Always setState, not just when clearing a previous parse: the
-            // Parse button's enabled state depends on this field being
-            // non-empty, so skipping the rebuild left it greyed out after the
-            // very first paste.
-            //
-            // Falls back to the saved content when editing, not to nothing:
-            // typing here is an *offer* to replace, and until Parse is pressed
-            // the song still has its stored words. Resetting to null would have
-            // blanked the preview and disabled Save on the first keystroke.
-            onChanged: (_) => setState(() => _pending = _savedPending),
-          ),
-          const SizedBox(height: 8),
-          // Parse alone on its row. It used to share the row with the file
-          // picker, which gave equal billing to a path that needs a score
-          // exported from MuseScore first — while pasting a chord sheet is what
-          // actually happens most of the time.
-          Row(
-            children: [
-              const Spacer(),
-              FilledButton.tonalIcon(
-                onPressed:
-                    _sheetController.text.trim().isEmpty ? null : _parsePasted,
-                icon: const Icon(Icons.auto_fix_high),
-                label: Text(l10n.importParse),
+      // The list width, not the form width: this screen's paste box wants room
+      // for a chord sheet's longest line, and it carries a notation preview.
+      body: ContentPane.list(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+                _isEditing
+                    ? l10n.importSectionReplace
+                    : l10n.importSectionPaste,
+                style: _sectionStyle(theme)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _sheetController,
+              maxLines: 8,
+              minLines: 4,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                alignLabelWithHint: true,
+                hintText: l10n.importPasteHint,
               ),
-            ],
-          ),
-
-          // The file path, demoted but not hidden: it is the only one that
-          // produces engraved notation, and the landing point for a photo
-          // pipeline later, so the expander says what it is for rather than
-          // just tucking it away.
-          //
-          // A failed pick needs no special case — the button is inside here, so
-          // this is necessarily open when the error appears below.
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () =>
-                  setState(() => _showMoreWays = !_showMoreWays),
-              icon: Icon(_showMoreWays
-                  ? Icons.expand_less
-                  : Icons.expand_more),
-              label: Text(l10n.importMoreWays),
+              // Always setState, not just when clearing a previous parse: the
+              // Parse button's enabled state depends on this field being
+              // non-empty, so skipping the rebuild left it greyed out after the
+              // very first paste.
+              //
+              // Falls back to the saved content when editing, not to nothing:
+              // typing here is an *offer* to replace, and until Parse is pressed
+              // the song still has its stored words. Resetting to null would have
+              // blanked the preview and disabled Save on the first keystroke.
+              onChanged: (_) => setState(() => _pending = _savedPending),
             ),
-          ),
-          // Each path with its own explanation directly under it, rather than
-          // one line of prose over both. `importMusicXmlHint` says "export
-          // from MuseScore first", which was written when the file picker was
-          // alone in here — read as a heading over the Photo button too, it
-          // claims a requirement that photos do not have.
-          if (_showMoreWays) ...[
+            const SizedBox(height: 8),
+            // Parse alone on its row. It used to share the row with the file
+            // picker, which gave equal billing to a path that needs a score
+            // exported from MuseScore first — while pasting a chord sheet is what
+            // actually happens most of the time.
+            Row(
+              children: [
+                const Spacer(),
+                FilledButton.tonalIcon(
+                  onPressed:
+                      _sheetController.text.trim().isEmpty ? null : _parsePasted,
+                  icon: const Icon(Icons.auto_fix_high),
+                  label: Text(l10n.importParse),
+                ),
+              ],
+            ),
+
+            // The file path, demoted but not hidden: it is the only one that
+            // produces engraved notation, and the landing point for a photo
+            // pipeline later, so the expander says what it is for rather than
+            // just tucking it away.
+            //
+            // A failed pick needs no special case — the button is inside here, so
+            // this is necessarily open when the error appears below.
             Align(
               alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // The only path that yields real notation, and the lyrics
-                    // come free from <lyric> elements.
-                    OutlinedButton.icon(
-                      onPressed: _picking ? null : _pickMusicXmlFile,
-                      // The spinner belongs to whichever path is actually
-                      // working. Both buttons are disabled while either runs,
-                      // but showing it here during a photo read said the file
-                      // picker was busy when it was not.
-                      icon: _picking && !_readingPhoto
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.piano_outlined),
-                      label: Text(l10n.importMusicXmlFile),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4, bottom: 12),
-                      child: Text(
-                        l10n.importMusicXmlHint,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+              child: TextButton.icon(
+                onPressed: () =>
+                    setState(() => _showMoreWays = !_showMoreWays),
+                icon: Icon(_showMoreWays
+                    ? Icons.expand_less
+                    : Icons.expand_more),
+                label: Text(l10n.importMoreWays),
+              ),
+            ),
+            // Each path with its own explanation directly under it, rather
+            // than one line of prose over both. `importMusicXmlHint` says
+            // "export from MuseScore first", which was written when the file
+            // picker was alone in here — read as a heading over the Photo
+            // button too, it claims a requirement photos do not have.
+            if (_showMoreWays) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // The only path that yields real notation, and the lyrics
+                      // come free from <lyric> elements.
+                      OutlinedButton.icon(
+                        onPressed: _picking ? null : _pickMusicXmlFile,
+                        // The spinner belongs to whichever path is actually
+                        // working. Both buttons are disabled while either runs,
+                        // but showing it here during a photo read said the file
+                        // picker was busy when it was not.
+                        icon: _picking && !_readingPhoto
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.piano_outlined),
+                        label: Text(l10n.importMusicXmlFile),
                       ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _picking ? null : _pickPhoto,
-                      icon: _readingPhoto
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.photo_camera_outlined),
-                      // Reading a page is seconds on the device and can be a
-                      // minute on the sheet-music service, so the button says
-                      // what it is doing rather than going quiet.
-                      label: Text(_readingPhoto
-                          ? l10n.importPhotoReading
-                          : l10n.importPhoto),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        l10n.importPhotoHint,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    // The one question the app cannot answer for itself. A
-                    // checkbox rather than two buttons: it is one gesture with
-                    // a property, not two features, and a second button would
-                    // have to explain what "notation" means to earn its place.
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: InkWell(
-                        onTap: _picking
-                            ? null
-                            : () => setState(() =>
-                                _photoHasSheetMusic = !_photoHasSheetMusic),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Checkbox(
-                              value: _photoHasSheetMusic,
-                              onChanged: _picking
-                                  ? null
-                                  : (on) => setState(() =>
-                                      _photoHasSheetMusic = on ?? false),
-                            ),
-                            Flexible(
-                              child: Text(l10n.importPhotoSheetMusic),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Worth more than any code here: a curled page took the
-                    // reading from 63 notes to 6, because staff detection needs
-                    // straight lines. Tilt it survives; curl it does not.
-                    if (_photoHasSheetMusic)
                       Padding(
-                        padding: const EdgeInsets.only(left: 4, bottom: 4),
+                        padding: const EdgeInsets.only(top: 4, bottom: 12),
                         child: Text(
-                          l10n.importPhotoSheetMusicHint,
+                          l10n.importMusicXmlHint,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-
-          if (_fileError != null) ...[
-            const SizedBox(height: 12),
-            _Notice(
-              text: _fileError!,
-              icon: Icons.error_outline,
-              background: theme.colorScheme.errorContainer,
-              foreground: theme.colorScheme.onErrorContainer,
-            ),
-          ],
-
-          if (pending != null) ...[
-            const Divider(height: 32),
-            Row(
-              children: [
-                Text(l10n.importSectionDetails, style: _sectionStyle(theme)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l10n.importFromSource(pending.sourceLabel(l10n)),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                      OutlinedButton.icon(
+                        onPressed: _picking ? null : _pickPhoto,
+                        icon: _readingPhoto
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.photo_camera_outlined),
+                        // Reading a page is seconds on the device and can be a
+                        // minute on the sheet-music service, so the button says
+                        // what it is doing rather than going quiet.
+                        label: Text(_readingPhoto
+                            ? l10n.importPhotoReading
+                            : l10n.importPhoto),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          l10n.importPhotoHint,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      // The one question the app cannot answer for itself. A
+                      // checkbox rather than two buttons: it is one gesture
+                      // with a property, not two features, and a second button
+                      // would have to explain what "notation" means to earn
+                      // its place.
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: InkWell(
+                          onTap: _picking
+                              ? null
+                              : () => setState(() =>
+                                  _photoHasSheetMusic = !_photoHasSheetMusic),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _photoHasSheetMusic,
+                                onChanged: _picking
+                                    ? null
+                                    : (on) => setState(() =>
+                                        _photoHasSheetMusic = on ?? false),
+                              ),
+                              Flexible(
+                                child: Text(l10n.importPhotoSheetMusic),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Worth more than any code here: a curled page took the
+                      // reading from 63 notes to 6, because staff detection
+                      // needs straight lines. Tilt it survives; curl it does
+                      // not.
+                      if (_photoHasSheetMusic)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 4),
+                          child: Text(
+                            l10n.importPhotoSheetMusicHint,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                labelText: l10n.importTitleField,
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: (_) => setState(() => _titleEdited = true),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 96,
-                  child: TextField(
-                    controller: _numberController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: l10n.importNumberField,
-                      border: const OutlineInputBorder(),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _BookField(
-                    controller: _bookController,
-                    onChanged: () => setState(() {}),
-                  ),
-                ),
-              ],
-            ),
-            if (_key != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                pending.key != null
-                    ? l10n.importKeyFromFile(_key!)
-                    : l10n.importKeyGuessed(_key!),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
 
-            if (pending.warnings.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _Warnings(warnings: pending.warnings),
+            if (_fileError != null) ...[
+              const SizedBox(height: 12),
+              _Notice(
+                text: _fileError!,
+                icon: Icons.error_outline,
+                background: theme.colorScheme.errorContainer,
+                foreground: theme.colorScheme.onErrorContainer,
+              ),
             ],
 
-            const Divider(height: 32),
-            Row(
-              children: [
-                Text(l10n.importSectionPreview, style: _sectionStyle(theme)),
-                const SizedBox(width: 8),
+            if (pending != null) ...[
+              const Divider(height: 32),
+              Row(
+                children: [
+                  Text(l10n.importSectionDetails, style: _sectionStyle(theme)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.importFromSource(pending.sourceLabel(l10n)),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  labelText: l10n.importTitleField,
+                  border: const OutlineInputBorder(),
+                ),
+                onChanged: (_) => setState(() => _titleEdited = true),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 96,
+                    child: TextField(
+                      controller: _numberController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: l10n.importNumberField,
+                        border: const OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _BookField(
+                      controller: _bookController,
+                      onChanged: () => setState(() {}),
+                    ),
+                  ),
+                ],
+              ),
+              if (_key != null) ...[
+                const SizedBox(height: 8),
                 Text(
-                  [
-                    if (pending.verses.isNotEmpty)
-                      l10n.importVerseCount(pending.verses.length),
-                    if (pending.notation != null)
-                      l10n.importBarCount(pending.notation!.verses
-                          .fold<int>(0, (n, v) => n + v.measures.length)),
-                  ].join(' · '),
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  pending.key != null
+                      ? l10n.importKeyFromFile(_key!)
+                      : l10n.importKeyGuessed(_key!),
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            if (draft != null)
-              // The real view widgets, chosen the same way the song view
-              // chooses them, so this is not an approximation that can drift.
-              SizedBox(
-                height: 340,
-                child: draft.hasNotation
-                    ? SheetMusicView(
-                        song: draft, transpose: 0, showChords: true)
-                    : ChordView(song: draft, transpose: 0),
-              )
-            else
-              Text(
-                blockers.first,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+
+              if (pending.warnings.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _Warnings(warnings: pending.warnings),
+              ],
+
+              const Divider(height: 32),
+              Row(
+                children: [
+                  Text(l10n.importSectionPreview, style: _sectionStyle(theme)),
+                  const SizedBox(width: 8),
+                  Text(
+                    [
+                      if (pending.verses.isNotEmpty)
+                        l10n.importVerseCount(pending.verses.length),
+                      if (pending.notation != null)
+                        l10n.importBarCount(pending.notation!.verses
+                            .fold<int>(0, (n, v) => n + v.measures.length)),
+                    ].join(' · '),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 8),
+              if (draft != null)
+                // The real view widgets, chosen the same way the song view
+                // chooses them, so this is not an approximation that can drift.
+                SizedBox(
+                  height: 340,
+                  child: draft.hasNotation
+                      ? SheetMusicView(
+                          song: draft, transpose: 0, showChords: true)
+                      : ChordView(song: draft, transpose: 0),
+                )
+              else
+                Text(
+                  blockers.first,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+            ],
+            const SizedBox(height: 24),
           ],
-          const SizedBox(height: 24),
-        ],
+        ),
       ),
     );
   }

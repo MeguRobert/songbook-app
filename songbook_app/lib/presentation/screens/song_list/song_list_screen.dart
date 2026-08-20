@@ -12,6 +12,7 @@ import '../../providers/recent_searches_provider.dart';
 import 'widgets/recent_searches_list.dart';
 import 'widgets/searchable_app_bar.dart';
 import 'widgets/song_list_tile.dart';
+import '../../widgets/content_pane.dart';
 
 /// The one place songs are found.
 ///
@@ -111,26 +112,32 @@ class _SongListScreenState extends ConsumerState<SongListScreen> {
         tooltip: l10n.addSong,
         child: const Icon(Icons.add),
       ),
-      body: Column(
-        children: [
-          if (searchState.hasTags) const _ActiveTagChips(),
-          Expanded(
-            // With the field open and empty, previous queries are the useful
-            // thing to offer — but only if there are any. Otherwise the list,
-            // because clearing the field with the X and being left staring at a
-            // blank screen is worse than never having offered anything.
-            child: searchState.isFiltering
-                ? _SearchResults(state: searchState)
-                : (_searchOpen && ref.watch(recentSearchesProvider).isNotEmpty)
-                    ? RecentSearchesList(
-                        onSelected: (query) {
-                          _appBarKey.currentState?.setQuery(query);
-                          ref.read(searchProvider.notifier).search(query);
-                        },
-                      )
-                    : const _BrowseList(),
-          ),
-        ],
+      // Around the whole Column rather than each list inside it: one wrapper
+      // covers browse, search results and recent searches, and the active-tag
+      // band lines up with the rows it filters instead of running the full
+      // width of a desktop window on its own.
+      body: ContentPane.list(
+        child: Column(
+          children: [
+            if (searchState.hasTags) const _ActiveTagChips(),
+            Expanded(
+              // With the field open and empty, previous queries are the useful
+              // thing to offer — but only if there are any. Otherwise the list,
+              // because clearing the field with the X and being left staring at a
+              // blank screen is worse than never having offered anything.
+              child: searchState.isFiltering
+                  ? _SearchResults(state: searchState)
+                  : (_searchOpen && ref.watch(recentSearchesProvider).isNotEmpty)
+                      ? RecentSearchesList(
+                          onSelected: (query) {
+                            _appBarKey.currentState?.setQuery(query);
+                            ref.read(searchProvider.notifier).search(query);
+                          },
+                        )
+                      : const _BrowseList(),
+            ),
+          ],
+        ),
       ),
     );
   }
