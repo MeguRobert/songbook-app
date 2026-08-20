@@ -18,6 +18,50 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+
+  <!--
+    What this page is allowed to load and run.
+    ==========================================
+
+    A meta tag rather than a header because GitHub Pages serves static files
+    and cannot set headers. It is weaker than a header — it cannot restrict
+    what happened before the parser reached it, and it cannot use frame-
+    ancestors — but the directive that matters here is script-src, and that it
+    does enforce.
+
+    Why it matters: photo import fetches an OCR engine from a public CDN and
+    runs it in this origin, and the Supabase session lives in localStorage
+    where any script in this origin can read it. Without script-src, anything
+    that ever manages to inject a script tag has the account.
+
+    Every host below is here for a reason:
+      unpkg.com          the OCR engine this app injects (hash-pinned; see
+                         page_text_recognizer_web.dart)
+      cdn.jsdelivr.net   the worker and WebAssembly core that engine then
+                         fetches for itself
+      tessdata…          the Hungarian language model
+      *.supabase.co      the catalogue, accounts and submissions, over HTTPS
+                         and over a websocket for realtime
+      songbook-omr…      the sheet-music reader on Cloud Run
+      fonts.gstatic.com  Roboto, which CanvasKit fetches as its fallback face
+
+    CanvasKit itself is deliberately NOT on that list. Flutter fetches it from
+    www.gstatic.com by default, which would mean a Google CDN executing script
+    in this origin for every visit — so the build passes
+    `--no-web-resources-cdn` and serves the copy already sitting in the build
+    output instead. **That flag is now load-bearing:** build without it and the
+    app will not start, because this policy blocks the CDN it would fall back
+    to. See .github/workflows/deploy-pages.yml.
+
+    'wasm-unsafe-eval' is what CanvasKit needs to instantiate its WebAssembly;
+    it permits WebAssembly and nothing else, unlike 'unsafe-eval'.
+    'unsafe-inline' in style-src is unavoidable — Flutter positions everything
+    with inline styles.
+
+    Verified in a headless browser: the app boots and the whole OCR path runs
+    with no violations. If you add a host here, check both again.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; worker-src 'self' blob:; connect-src 'self' data: blob: https://unpkg.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com https://*.supabase.co wss://*.supabase.co https://songbook-omr-541713551179.europe-central2.run.app https://fonts.gstatic.com; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https://fonts.gstatic.com; manifest-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'">
   <meta name="description" content="Songbook — a worship hymnal with sheet music, chords, transposition and setlists.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 

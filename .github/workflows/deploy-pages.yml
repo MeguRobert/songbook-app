@@ -74,7 +74,7 @@ jobs:
 
       - name: Test import tooling (Python)
         working-directory: tools
-        run: python -m unittest test_song_validator test_batch_import
+        run: python -m unittest test_song_validator test_batch_import test_photo_import_worker
 
       # Every deployment must report a distinct, increasing version, so the
       # build number is derived rather than hand-maintained: nobody has to
@@ -106,6 +106,13 @@ jobs:
 
       - name: Build web
         working-directory: songbook_app
+        # --no-web-resources-cdn serves CanvasKit from our own origin rather
+        # than www.gstatic.com. Required, not an optimisation:
+        # web/index.html sets a Content-Security-Policy that does not let a
+        # Google CDN execute script in this origin, so a build without this
+        # flag produces an app that does not start at all. The files ship in
+        # the build output either way.
+        #
         # PHOTO_IMPORT_ENDPOINT points the sheet-music half of photo import at
         # the project's Cloud Run service. Only that half: a photographed chord
         # sheet is read in the browser and needs no address. It is passed here
@@ -116,6 +123,7 @@ jobs:
         run: |
           flutter build web --release \
             --base-href /songbook-app/ \
+            --no-web-resources-cdn \
             --dart-define=PHOTO_IMPORT_ENDPOINT=https://songbook-omr-541713551179.europe-central2.run.app/extract \
             --build-number=${{ steps.version.outputs.build }}
 

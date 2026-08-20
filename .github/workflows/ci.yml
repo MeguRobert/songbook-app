@@ -70,4 +70,4 @@ jobs:
 
       - name: Test import tooling (Python)
         working-directory: tools
-        run: python -m unittest test_song_validator test_batch_import
+        run: python -m unittest test_song_validator test_batch_import test_photo_import_worker
