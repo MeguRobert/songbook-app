@@ -59,6 +59,13 @@ dependencies:
   # the app is deployed.
   http: ^1.2.2
 
+  # Canvas and DOM access, for reading a photographed page in the browser
+  # itself: the image goes onto a canvas, the pixels are cleaned in Dart, and
+  # Tesseract reads the canvas. Already present transitively; named here
+  # because lib/ imports it directly, and only from the `_web` half of a
+  # conditional import, so no other platform pulls it in.
+  web: ^1.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
