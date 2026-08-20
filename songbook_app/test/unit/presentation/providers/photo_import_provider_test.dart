@@ -75,7 +75,7 @@ const builtIn = 'https://songbook-omr.example/extract';
 /// A container that believes it was built to talk to [builtIn], with [auth]
 /// signed in.
 Future<ProviderContainer> containerWithBuiltIn(
-    Map<String, Object> prefs, _TokenOnlyAuth auth) async {
+    Map<String, Object> prefs, AuthRepository auth) async {
   SharedPreferences.setMockInitialValues(prefs);
   final sp = await SharedPreferences.getInstance();
   return ProviderContainer(overrides: [

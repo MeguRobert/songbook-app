@@ -27,14 +27,19 @@ at all: **press the book flat**.
 
 - **Worktree:** `C:\Users\rober\source\repos\songbook-app-worktrees\v1-polish` (branch `claude/v1-polish`)
 - **Main checkout:** `C:\Users\rober\source\repos\songbook-app` (branch `master`)
-- **Branch state: well ahead of master, 7 BEHIND.** `git rev-list --count master..HEAD`
-  is the count; chasing it in prose only ever produces an off-by-one. Master moved and its history was
+- **Branch state: ahead of master, and master is MERGED IN — nothing behind.**
+  `git rev-list --count master..HEAD` is the count; chasing it in prose only ever
+  produces an off-by-one. Master was merged rather than rebased, because its
+  ContentPane reflow touches the same two screens and a rebase would replay six
+  commits through one conflict. Master still fast-forwards to this. Master moved and its history was
   rewritten — the merge-base is `0a2d46b` and master carries 7 commits on top of it (CI
   gating, Supabase keep-awake, RLS test fixes, Google sign-in mark, PWA start_url).
   **Rebase before merging.** There are also four other `claude/*` worktrees on this repo;
   master moves under you.
-- **Suite:** 1009 Flutter tests, 159 Python tests in `tools/`, 14 in `deploy/omr/`,
-  `flutter analyze` 0 issues, `flutter build web --release` succeeds.
+- **Suite:** 1020 Flutter tests, 159 Python tests in `tools/`, 14 in `deploy/omr/`,
+  `flutter analyze` 0 issues, `flutter build web --release --no-web-resources-cdn`
+  succeeds and the release build boots in a headless browser with no
+  Content-Security-Policy violations.
 
 ## What the browser path actually does, measured
 
@@ -71,6 +76,75 @@ exactly what the review screen exists to fix — the ChordPro is written into th
 just the preview, so a wrong word is one tap away from being right.
 
 For comparison, the server engine this replaces: 3 of 4 chord rows, ~40 seconds, `Ó` for `Ő`.
+
+## The review round, and what it found
+
+Four independent reviews were run over this branch before it was considered
+deployable: the browser reading path, the app wiring and token trust model, the
+deploy plan and trilingual copy, and a whole-system security pass over the app,
+Supabase, Cloud Run and CI. Everything below was found by them and is fixed on
+this branch, except where it says otherwise.
+
+**The one that mattered.** `?photoEndpoint=` accepted any host and stored it
+silently and permanently, and the notation request attached the signed-in user's
+Supabase access token to whatever was stored. A link to the *real* app, on the
+real origin, with nothing visibly different about it, could therefore point the
+app at any server and hand it a bearer credential for that person's whole
+account the next time they photographed a page of music — enough for GoTrue's
+`PUT /auth/v1/user` to change their password. Two reviewers found it
+independently. The token now goes only to the service the build was compiled
+with, compared by origin; the setup link only accepts a private or loopback
+address, which is all it was ever for.
+
+**Three ways the browser reader could fail silently.** No stage had a timeout,
+so a stalled CDN fetch span the spinner until the page was reloaded. A script
+that loaded but defined nothing — a captive portal answering 200 with HTML —
+completed the shared load future *successfully*, poisoning it for the whole
+session so no retry could ever re-inject. And there was no integrity hash, so
+pinning the version said which bytes were wanted without checking the bytes that
+arrived. All three fixed and verified in a real browser, the last one by
+corrupting the hash on purpose and watching the browser block it and the second
+attempt still fail cleanly.
+
+**The instruction the feature depends on argued against itself.** Hungarian said
+*szemből* and Romanian *din față* — head-on, from the front — under a sentence
+telling the reader to press the book flat on a table. That wording invites
+tilting the phone toward your face, which is the geometry that destroys staff
+detection. Both now say from directly above, perpendicular to the page. The
+Romanian imperative was also wrong (`fotografiază-o` for `fotografiaz-o`).
+
+**Setting a Content-Security-Policy revealed a dependency nobody had noticed:**
+the app was already fetching CanvasKit from `www.gstatic.com` on every visit, so
+a Google CDN was executing script in this origin all along. The build now passes
+`--no-web-resources-cdn` and serves the copy already in its own output.
+
+### Not fixed here — separate work, and both worse than the handoff used to say
+
+1. **An owner can silently rewrite their own already-approved song.**
+   `songs_update_own` (`supabase/migrations/20260728120100_songs_rls.sql`) is
+   `using (owner_id = auth.uid())` with no status constraint, and the trigger's
+   entire guard sits inside `if new.status <> old.status` — so a content-only
+   UPDATE on an approved row passes every check and republishes to the whole
+   congregation with no review. The tell that this is an oversight rather than a
+   decision: `songs_delete_own_undecided` *does* restrict to `draft`/`pending`.
+   No test covers the case. Needs a migration and a negative RLS test.
+2. **The legacy HS256 signing key is load-bearing, not retired.** The bundled
+   client key decodes to header `{"alg":"HS256"}`, payload `role: anon` — so the
+   project must keep HS256 verification enabled, and this document used to say
+   "nothing here depends on it", which was wrong. While it stays enabled,
+   anyone obtaining that one symmetric secret can mint a `service_role` token
+   and bypass all RLS. Nothing in the repo leaks it (history was swept). Fix is
+   to reissue the client key in the `sb_publishable_…` format, update
+   `supabase_config.dart`, then disable the legacy secret in the dashboard —
+   note the keep-alive workflow already *claims* the project uses that format.
+3. Smaller, left deliberately: an unauthenticated caller can make the OMR
+   service re-fetch the Supabase JWKS by sending junk tokens with novel `kid`s,
+   which ties up both instances (cap `kid` length before the lookup); the OMR
+   container runs as root (add a `USER` line); third-party GitHub Actions are
+   pinned to mutable tags rather than commit SHAs; sign-up reveals whether an
+   address is already registered while password reset carefully does not; and
+   `_pickMusicXmlFile` has the same unguarded `setState`-after-await that
+   `_pickPhoto` just had fixed.
 
 ## Live infrastructure
 
@@ -116,6 +190,16 @@ first time someone photographs something, pinned to an exact version.
   read locally whether or not an address is stored — a stored address must not quietly take
   back a path that measured better. `settingsPhotoImportEndpointHint` says so in all three
   languages.
+- **The account's token goes only to the service the build was compiled with.**
+  Compared by origin, so moving the path does not quietly stop authenticating.
+  This is the fix for the credential leak above, and it is why the build-time
+  address is now injectable: a test build carries no `--dart-define`, so without
+  a seam the trusted branch would be unreachable from a test.
+- **The setup link only points somewhere local.** Private ranges and loopback,
+  matched on the literal address — a name is not resolved, because a name
+  anybody can register can point anywhere and checking it would be trusting DNS
+  with the answer. A public service is typed into Settings, where doing it is
+  visible and deliberate.
 - **Token precedence: a token typed into Settings wins, otherwise the signed-in account's
   own.** Someone running their own reader has answered the question explicitly and has no
   Supabase session to offer it. Signed out with nothing typed still builds a service and sends
@@ -202,15 +286,14 @@ Nothing. Working tree is clean.
 
 ## Remaining work (ordered)
 
-1. **Rebase onto master** (7 behind, and it moves often). Previous rebases conflicted in
-   `import_song_screen.dart` and all seven `l10n/` files; `resolve_arb.py` in the scratchpad
-   handles the `.arb` merge and validates the JSON, then `flutter gen-l10n` regenerates the
-   four Dart files. Never hand-merge the generated ones.
-2. **Merge and deploy the app.** CI runs tests + analyze, deploys, tags `build-<n>`.
-3. **Photograph a page of each kind through the deployed PWA** — one chord sheet, one page of
+1. **Merge and deploy the app.** CI runs tests + analyze, deploys, tags `build-<n>`.
+2. **Photograph a page of each kind through the deployed PWA** — one chord sheet, one page of
    sheet music with the book pressed flat — and confirm the round trip. This is the only part
    of the feature that has never been exercised by a human.
-4. **Photograph `7569` and `7570`** and run them through, then tune per song.
+3. **Photograph `7569` and `7570`** and run them through, then tune per song.
+4. **The two items above that this branch did not fix** — the approved-song
+   edit gap and the HS256 key. Neither is caused by this work; the first gets
+   worse the more contributors there are.
 5. Optional: a genuine hard spend stop (budget → Pub/Sub → function that unlinks billing).
    Optional: put the OMR call behind a Supabase Edge Function if you ever want the Cloud Run
    URL private rather than merely authenticated.
@@ -254,12 +337,16 @@ Nothing. Working tree is clean.
 
 **Verify**
 ```bash
-cd songbook_app && flutter test        # expect 1009
+cd songbook_app && flutter test        # expect 1020
 cd songbook_app && flutter analyze     # expect 0 issues, exit 0
-cd songbook_app && flutter build web --release   # the only check that compiles the interop
 cd tools && python -m unittest discover -p "test_*.py"   # expect 159
 cd deploy/omr && python -m unittest discover             # expect 14
 python tools/fixtures/build.py && python tools/fixtures/score.py
+
+# The only check that compiles the JS interop. --no-web-resources-cdn is not
+# optional: web/index.html sets a Content-Security-Policy that blocks the
+# CanvasKit CDN, so a build without it produces an app that does not start.
+cd songbook_app && flutter build web --release --no-web-resources-cdn
 ```
 
 CI runs `flutter analyze --no-fatal-infos`, which downgrades **infos only** — a warning still
@@ -278,9 +365,19 @@ python -m http.server 8901 --bind 127.0.0.1
 node drive.cjs      # page.evaluate(() => window.runOcr('149-raw.png'))
 ```
 
-The harness used for the numbers above is in the session scratchpad under `ocrharness/`.
-Rebuilding it is a ten-minute job and worth it before touching
-`page_text_recognizer_web.dart`.
+The harness used for the numbers above is in the session scratchpad under
+`ocrharness/`. Rebuilding it is a ten-minute job and worth it before touching
+`page_text_recognizer_web.dart`. Give its page the same
+`Content-Security-Policy` meta tag the app uses, or it will prove the OCR works
+under a policy the app does not have. Two things it is uniquely good for: a
+deliberately wrong integrity hash (the browser must block the script and the
+*second* attempt must still fail cleanly), and confirming the language model is
+Hungarian.
+
+The release build itself is worth loading headless too — `flutter build web
+--release --no-web-resources-cdn`, serve `build/web`, and assert on
+`securitypolicyviolation` events plus console errors. That is what caught the
+CanvasKit CDN.
 
 ## Resume prompt
 
@@ -290,17 +387,23 @@ Continue photo import for Songbook.
 Repo: C:\Users\rober\source\repos\songbook-app-worktrees\v1-polish  (branch claude/v1-polish)
 Read the full handoff first: <worktree>\HANDOFF-photo-import.md
 
-Done: both engines are built, wired and measured. A photographed chord sheet is read entirely
-in the browser — Dart preprocessing, Tesseract.js, Dart bridge — verified headless against the
-real photo of song 149 at 4/4 chord rows in ~1s, beating the old server OCR (3/4, 40s). The
-notation path is live on Cloud Run behind Supabase ES256 auth
-(https://songbook-omr-541713551179.europe-central2.run.app, 96.2% pitch accuracy), reached by
-a "this page has sheet music" checkbox that also tells the user to press the book flat, and
-carrying the signed-in account's access token as a Bearer header. 1009 Flutter tests, 159
-Python, 14 deploy, analyze 0, web build green. Unpushed and unmerged.
+Done: both engines built, wired, measured, reviewed and hardened. A photographed
+chord sheet is read entirely in the browser — Dart preprocessing, Tesseract.js,
+Dart bridge — verified headless against the real photo of song 149 at 4/4 chord
+rows in about a second. The notation path is live on Cloud Run behind Supabase
+ES256 auth, reached by a "this page has sheet music" checkbox that tells the
+user to press the book flat and shoot from directly above. Four independent
+reviews found a credential leak (a crafted ?photoEndpoint= link could be handed
+the user's Supabase access token), three silent failure modes in the browser
+reader, and a wrong camera axis in two languages — all fixed here. Master is
+merged in. 1020 Flutter tests, 159 Python, 14 deploy, analyze 0, release build
+boots with no CSP violations.
 
-Next: (1) rebase onto master — it is 7 ahead AND its history was rewritten; expect conflicts
-in import_song_screen.dart and all seven l10n files. (2) merge and deploy. (3) then the one
-thing no test covers: photograph a chord sheet and a flattened sheet-music page through the
-deployed PWA and confirm both round trips.
+Next: (1) fast-forward master and deploy — CI gates the branch first, and the
+build must keep --no-web-resources-cdn or the CSP stops the app starting. (2)
+Then the thing no test covers: photograph a chord sheet and a flattened
+sheet-music page through the deployed PWA and confirm both round trips. (3) Two
+pre-existing holes this branch did not touch, both documented in the handoff: an
+owner can silently rewrite their own already-approved song, and the legacy HS256
+Supabase key is still load-bearing.
 """
