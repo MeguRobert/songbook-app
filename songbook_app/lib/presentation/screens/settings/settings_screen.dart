@@ -288,8 +288,11 @@ class SettingsScreen extends ConsumerWidget {
   void _showPhotoImportDialog(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final settings = ref.read(settingsRepositoryProvider);
+    // The stored value, not the resolved one: an empty field means "use
+    // whatever this build was compiled with", and prefilling the built-in
+    // address would turn opening this dialog into pinning it.
     final endpointController = TextEditingController(
-      text: settings.getPhotoImportEndpoint()?.toString() ?? '',
+      text: settings.getStoredPhotoImportEndpoint() ?? '',
     );
     final tokenController =
         TextEditingController(text: settings.getPhotoImportToken() ?? '');

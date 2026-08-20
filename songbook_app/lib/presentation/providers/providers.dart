@@ -221,12 +221,21 @@ final photoNotationImportServiceProvider =
   ref.watch(authStateChangesProvider);
   return HttpPhotoImportService(
     endpoint: endpoint,
-    // A token typed into Settings wins: it is an explicit answer about this
-    // particular service, and someone running their own has no Supabase
-    // session to offer it. Otherwise the signed-in user's own token, which is
-    // what the project's service checks.
+    // A token typed into Settings wins wherever it points: it is an explicit
+    // answer about this particular service, and the person who typed it is the
+    // person who set that service up.
+    //
+    // The signed-in account's own token is different, and is sent ONLY to the
+    // service this build was compiled to talk to. It is a bearer credential
+    // for the whole Supabase account, and the address it would be sent to can
+    // be set by a URL parameter — so attaching it to whatever happens to be
+    // configured meant a link to the real app could redirect it to any host
+    // and be handed one. Somewhere else may be configured; it does not get
+    // this.
     token: settings.getPhotoImportToken() ??
-        ref.watch(authRepositoryProvider)?.accessToken,
+        (settings.isBuiltInPhotoImportService(endpoint)
+            ? ref.watch(authRepositoryProvider)?.accessToken
+            : null),
   );
 });
 

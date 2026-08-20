@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,7 +8,8 @@ import 'package:songbook_app/data/repositories/auth_repository.dart';
 import 'package:songbook_app/data/repositories/settings_repository.dart';
 import 'package:songbook_app/domain/services/photo_import_service.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthChangeEvent, AuthState;
 
 /// Configuring photo import.
 ///
@@ -24,13 +27,18 @@ import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 /// notation provider ever starts calling something else on it, that is a change
 /// worth failing on rather than quietly answering null.
 class _TokenOnlyAuth implements AuthRepository {
-  _TokenOnlyAuth(this.accessToken);
+  _TokenOnlyAuth(this.accessToken, {this.changes});
+
+  /// Mutable, so a test can hand out a different token after a refresh.
+  @override
+  String? accessToken;
+
+  /// Supplied only by the test that emits a refresh.
+  final Stream<AuthState>? changes;
 
   @override
-  final String? accessToken;
-
-  @override
-  Stream<AuthState> get authStateChanges => const Stream<AuthState>.empty();
+  Stream<AuthState> get authStateChanges =>
+      changes ?? const Stream<AuthState>.empty();
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError(
@@ -57,6 +65,26 @@ Future<ProviderContainer> containerWithAuth(
   return ProviderContainer(overrides: [
     sharedPreferencesProvider.overrideWithValue(sp),
     authRepositoryProvider.overrideWithValue(_TokenOnlyAuth(token)),
+  ]);
+}
+
+/// The address a deployed build would carry, for the tests about who may be
+/// sent the signed-in account's token.
+const builtIn = 'https://songbook-omr.example/extract';
+
+/// A container that believes it was built to talk to [builtIn], with [auth]
+/// signed in.
+Future<ProviderContainer> containerWithBuiltIn(
+    Map<String, Object> prefs, _TokenOnlyAuth auth) async {
+  SharedPreferences.setMockInitialValues(prefs);
+  final sp = await SharedPreferences.getInstance();
+  return ProviderContainer(overrides: [
+    sharedPreferencesProvider.overrideWithValue(sp),
+    authRepositoryProvider.overrideWithValue(auth),
+    settingsRepositoryProvider.overrideWithValue(SettingsRepository(
+      LocalDataSource(sp),
+      builtInPhotoEndpoint: builtIn,
+    )),
   ]);
 }
 
@@ -101,6 +129,29 @@ void main() {
       await settings.setPhotoImportEndpoint('https://example.test/x');
       await settings.setPhotoImportEndpoint('   ');
       expect(settings.getPhotoImportEndpoint(), isNull);
+    });
+
+    test('the stored address is reported apart from the resolved one',
+        () async {
+      // What the Settings field shows. Resolved would include the build-time
+      // default, so opening the dialog and saving would pin it.
+      final settings = await settingsWith({});
+      expect(settings.getStoredPhotoImportEndpoint(), isNull);
+      await settings.setPhotoImportEndpoint('https://example.test/extract');
+      expect(settings.getStoredPhotoImportEndpoint(),
+          'https://example.test/extract');
+    });
+
+    test('with no build-time address, nothing is the built-in service',
+        () async {
+      // Which is every build except the deployed one — so a local build sends
+      // no account token anywhere, and must use a typed one.
+      final settings = await settingsWith({});
+      expect(
+        settings.isBuiltInPhotoImportService(
+            Uri.parse('https://songbook-omr.example/extract')),
+        isFalse,
+      );
     });
 
     test('the token is optional and clearable', () async {
@@ -166,21 +217,6 @@ void main() {
       expect((service as HttpPhotoImportService).token, 'tok');
     });
 
-    test('sends the signed-in account own token when none was typed', () async {
-      // Without this the deployed service answers 401: it verifies a Supabase
-      // access token against the project public keys, and the app is the only
-      // thing holding one.
-      final container = await containerWithAuth(
-        {'settings_photo_import_endpoint': 'https://example.test/extract'},
-        'live-session-token',
-      );
-      addTearDown(container.dispose);
-
-      final service = container.read(photoNotationImportServiceProvider)!
-          as HttpPhotoImportService;
-      expect(service.token, 'live-session-token');
-    });
-
     test('a token typed into Settings wins over the session one', () async {
       // Someone running their own reader has no Supabase session to offer it,
       // and has answered the question explicitly.
@@ -196,6 +232,129 @@ void main() {
       final service = container.read(photoNotationImportServiceProvider)!
           as HttpPhotoImportService;
       expect(service.token, 'my-own-key');
+    });
+
+    test('the account token goes to the reader this build ships with',
+        () async {
+      final container = await containerWithBuiltIn(
+          {}, _TokenOnlyAuth('live-session-token'));
+      addTearDown(container.dispose);
+
+      final service = container.read(photoNotationImportServiceProvider)!
+          as HttpPhotoImportService;
+      expect(service.endpoint.toString(), builtIn);
+      expect(service.token, 'live-session-token');
+    });
+
+    test('the account token does NOT go anywhere else', () async {
+      // The reason this gate exists. `?photoEndpoint=` can set the address, so
+      // without the check a link to the real app could point it at any host and
+      // hand that host a bearer credential for the whole Supabase account —
+      // enough to change the password on it.
+      final container = await containerWithBuiltIn(
+        {'settings_photo_import_endpoint': 'https://evil.example/extract'},
+        _TokenOnlyAuth('live-session-token'),
+      );
+      addTearDown(container.dispose);
+
+      final service = container.read(photoNotationImportServiceProvider)!
+          as HttpPhotoImportService;
+      expect(service.endpoint.host, 'evil.example');
+      expect(service.token, isNull,
+          reason: 'the account token must never leave the project service');
+    });
+
+    test('a different port on the same host is not the same service',
+        () async {
+      // Origin, not host: a service on another port is another service.
+      final container = await containerWithBuiltIn(
+        {
+          'settings_photo_import_endpoint':
+              'https://songbook-omr.example:8443/extract'
+        },
+        _TokenOnlyAuth('live-session-token'),
+      );
+      addTearDown(container.dispose);
+
+      expect(
+        (container.read(photoNotationImportServiceProvider)!
+                as HttpPhotoImportService)
+            .token,
+        isNull,
+      );
+    });
+
+    test('a different path on the same service still authenticates', () async {
+      // Compared by origin so moving the path does not quietly stop
+      // authenticating.
+      final container = await containerWithBuiltIn(
+        {'settings_photo_import_endpoint': 'https://songbook-omr.example/v2'},
+        _TokenOnlyAuth('live-session-token'),
+      );
+      addTearDown(container.dispose);
+
+      expect(
+        (container.read(photoNotationImportServiceProvider)!
+                as HttpPhotoImportService)
+            .token,
+        'live-session-token',
+      );
+    });
+
+    test('a typed token still goes wherever it was pointed', () async {
+      // The gate is about the account token only. Somebody who typed a token
+      // for their own service has said where it belongs.
+      final container = await containerWithBuiltIn(
+        {
+          'settings_photo_import_endpoint': 'https://elsewhere.example/extract',
+          'settings_photo_import_token': 'their-own-key',
+        },
+        _TokenOnlyAuth('live-session-token'),
+      );
+      addTearDown(container.dispose);
+
+      expect(
+        (container.read(photoNotationImportServiceProvider)!
+                as HttpPhotoImportService)
+            .token,
+        'their-own-key',
+      );
+    });
+
+    test('a refreshed session is what the next import carries', () async {
+      // The entire answer to token expiry is that this provider rebuilds when
+      // the auth stream emits. Nothing tested it, so moving the watch or
+      // turning it into a read would have passed.
+      final changes = StreamController<AuthState>();
+      addTearDown(changes.close);
+      final auth = _TokenOnlyAuth('first-token', changes: changes.stream);
+      final container = await containerWithBuiltIn({}, auth);
+      addTearDown(container.dispose);
+
+      // Kept alive, or the provider is disposed between reads and would
+      // rebuild for that reason instead of for the emission.
+      final subscription =
+          container.listen(photoNotationImportServiceProvider, (_, __) {});
+      addTearDown(subscription.close);
+
+      expect(
+        (container.read(photoNotationImportServiceProvider)!
+                as HttpPhotoImportService)
+            .token,
+        'first-token',
+      );
+
+      auth.accessToken = 'second-token';
+      changes.add(AuthState(AuthChangeEvent.tokenRefreshed, null));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        (container.read(photoNotationImportServiceProvider)!
+                as HttpPhotoImportService)
+            .token,
+        'second-token',
+        reason: 'the refresh must have rebuilt the service',
+      );
     });
 
     test('signed out and nothing typed still builds, and sends no header',

@@ -25,7 +25,15 @@ class SettingsKeys {
 class SettingsRepository {
   final LocalDataSource _localDataSource;
 
-  SettingsRepository(this._localDataSource);
+  /// Stands in for the build-time sheet-music address.
+  ///
+  /// Only tests pass this. A test build carries no `--dart-define`, so the
+  /// build-time value is empty and the branch that trusts the project's own
+  /// service with an access token would be unreachable — the one branch most
+  /// worth pinning.
+  final String? builtInPhotoEndpoint;
+
+  SettingsRepository(this._localDataSource, {this.builtInPhotoEndpoint});
 
   // --- Theme ---
 
@@ -149,6 +157,9 @@ class SettingsRepository {
   static const _defaultEndpoint =
       String.fromEnvironment('PHOTO_IMPORT_ENDPOINT');
 
+  /// The build-time address, or whatever a test substituted for it.
+  String get _builtIn => builtInPhotoEndpoint ?? _defaultEndpoint;
+
   /// The configured sheet-music endpoint, or null when unset or unusable.
   ///
   /// Parsing here rather than at the call site so a typo saved months ago
@@ -160,9 +171,7 @@ class SettingsRepository {
         .getStringSetting(SettingsKeys.photoImportEndpoint)
         ?.trim();
     // A stored value wins; the build-time default only fills the gap.
-    final raw = (stored == null || stored.isEmpty)
-        ? _defaultEndpoint.trim()
-        : stored;
+    final raw = (stored == null || stored.isEmpty) ? _builtIn.trim() : stored;
     if (raw.isEmpty) return null;
     final uri = Uri.tryParse(raw);
     if (uri == null) return null;
@@ -172,6 +181,41 @@ class SettingsRepository {
     if (uri.host.isEmpty) return null;
     if (uri.scheme != 'http' && uri.scheme != 'https') return null;
     return uri;
+  }
+
+  /// The address exactly as it is stored, with no build-time default behind it.
+  ///
+  /// What the Settings field must show. Prefilling the *resolved* address means
+  /// opening the dialog and pressing Save silently pins today's built-in
+  /// address as a stored one — and that user would keep talking to the old
+  /// service after it moved, while everyone else followed the new build.
+  String? getStoredPhotoImportEndpoint() {
+    final raw = _localDataSource
+        .getStringSetting(SettingsKeys.photoImportEndpoint)
+        ?.trim();
+    return (raw == null || raw.isEmpty) ? null : raw;
+  }
+
+  /// Whether [endpoint] is the reader this build was compiled to talk to.
+  ///
+  /// This is the gate on sending the signed-in user's Supabase access token,
+  /// and it exists because that token is a bearer credential for the whole
+  /// account — enough to change the password on it. The address is settable by
+  /// a URL parameter (`?photoEndpoint=`, see main.dart), so without this check
+  /// a link to the real app could point it at any host and hand that host a
+  /// token. Everything else may be configured freely; only *who gets the
+  /// token* is restricted.
+  ///
+  /// Compared by origin rather than by whole URL, so moving the path on the
+  /// project's own service does not quietly stop authenticating. False when the
+  /// build has no built-in service, which is every build except the deployed
+  /// one — those must use an explicitly typed token.
+  bool isBuiltInPhotoImportService(Uri endpoint) {
+    final builtIn = Uri.tryParse(_builtIn.trim());
+    if (builtIn == null || builtIn.host.isEmpty) return false;
+    return endpoint.scheme == builtIn.scheme &&
+        endpoint.host.toLowerCase() == builtIn.host.toLowerCase() &&
+        endpoint.port == builtIn.port;
   }
 
   /// Stores the endpoint. An empty value clears it.
