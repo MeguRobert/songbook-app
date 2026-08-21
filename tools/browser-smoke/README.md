@@ -16,10 +16,18 @@ is a test of the font.
 ## Running it
 
 ```bash
-# 1. Build. MUST be run from songbook_app/ — from the repo root it fails while
+# 1. Build. Two things matter here.
+#
+#    --no-web-resources-cdn is REQUIRED, and is what CI uses. Without it Flutter
+#    loads canvaskit from gstatic.com, which this app's own Content-Security-Policy
+#    blocks on purpose (web/index.html) — so the app never boots, and the walk
+#    reports twenty failures that look like broken features. It now detects that
+#    case and says so, but build it right and the question does not arise.
+#
+#    And it MUST run from songbook_app/ — from the repo root it fails while
 #    leaving the PREVIOUS build in place, which then serves happily and you
 #    verify hours-old code. Check the timestamp.
-cd songbook_app && flutter build web --release && ls -l build/web/main.dart.js
+cd songbook_app && flutter build web --release --no-web-resources-cdn   && ls -l build/web/main.dart.js
 
 # 2. Serve it. Any static server; this one survives the shell.
 powershell -c "Start-Process python -ArgumentList '-m','http.server','8795','--directory','<abs>/songbook_app/build/web' -WindowStyle Hidden"

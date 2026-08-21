@@ -249,10 +249,24 @@ async function shot(page, name, opts = {}) {
 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
+  // A CSP refusal of canvaskit means the app never booted, and every later check
+  // then fails for a reason that has nothing to do with what it is testing. Say
+  // so once, plainly, instead of 20 times obscurely: the cause is always a build
+  // without --no-web-resources-cdn, which leaves Flutter loading canvaskit from
+  // gstatic while this app's CSP allows only 'self'.
+  let cspBlocked = false;
   page.on('console', (m) => {
-    if (m.type() === 'error') pageErrors.push(`console: ${m.text()}`);
+    if (m.type() !== 'error') return;
+    if (/Content Security Policy/.test(m.text()) && /canvaskit/.test(m.text())) {
+      cspBlocked = true;
+      return;
+    }
+    pageErrors.push(`console: ${m.text()}`);
   });
-  page.on('pageerror', (e) => pageErrors.push(`pageerror: ${e.message}`));
+  page.on('pageerror', (e) => {
+    if (cspBlocked && /canvaskit|Failed to fetch/.test(e.message)) return;
+    pageErrors.push(`pageerror: ${e.message}`);
+  });
 
   try {
     await page.goto(BASE, { waitUntil: 'domcontentloaded' });
@@ -371,6 +385,17 @@ async function shot(page, name, opts = {}) {
     if (!FLAG('keep-open')) await browser.close();
   }
 
+  if (cspBlocked) {
+    console.log([
+      '',
+      'FAIL  the app never booted: this build loads canvaskit from gstatic,',
+      "      which this app's own CSP blocks on purpose.",
+      '      Rebuild the way CI does:',
+      '        flutter build web --release --no-web-resources-cdn',
+      '      Every check above failed because of that, not because of what it tests.',
+    ].join('\n'));
+    failures.push('canvaskit blocked by CSP');
+  }
   for (const err of pageErrors) console.log(`FAIL  ${err}`);
   const total = failures.length + pageErrors.length;
   console.log(`\n${total === 0 ? 'all checks passed' : `${total} failure(s)`} — screenshots in ${OUT}`);
