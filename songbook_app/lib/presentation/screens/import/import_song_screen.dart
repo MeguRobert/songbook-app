@@ -347,7 +347,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             // Both sets: the service reports what it could not read, the
             // parser what it could not classify. Either can be the reason a
             // line looks wrong.
-            warnings: [...warnings, ...parsed.warnings],
+            warnings: [..._fromReader(warnings), ...parsed.warnings],
             source: _ImportSource.photo,
             fileName: file.name,
           ));
@@ -370,7 +370,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             title: result.title ?? heading,
             key: result.key,
             timeSignature: result.timeSignature,
-            warnings: [...warnings, ...result.warnings],
+            warnings: [..._fromReader(warnings), ...result.warnings],
             source: _ImportSource.photo,
             fileName: file.name,
           ));
@@ -387,7 +387,9 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             e.statusCode == 401 ? l10n.importPhotoSignIn : e.message);
       }
     } on MusicXmlImportException catch (e) {
-      if (mounted) setState(() => _fileError = e.message);
+      if (mounted) {
+        setState(() => _fileError = l10n.importNoticeText(e.notice));
+      }
     } catch (e) {
       if (mounted) setState(() => _fileError = '$e');
     } finally {
@@ -1053,6 +1055,18 @@ class _BookFieldState extends ConsumerState<_BookField> {
     );
   }
 }
+
+/// The photo backend's own warnings, as notices this screen can render.
+///
+/// They arrive as free prose from a remote service that has no idea what language
+/// the app is in, so they are quoted rather than translated — which is what
+/// [ImportNoticeCode.fromReader] exists to say. Wrapping them lets one list carry
+/// both these and the parser's structured notices, so the review screen has a
+/// single place warnings come from.
+List<ImportNotice> _fromReader(List<String> messages) => [
+      for (final message in messages)
+        ImportNotice(ImportNoticeCode.fromReader, text: message),
+    ];
 
 /// Importer warnings. Shown rather than swallowed: every one marks a place the
 /// importer guessed or dropped something, and that is far easier to judge here

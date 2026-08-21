@@ -1232,4 +1232,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get importNoticeNoScoreInArchive =>
       'The .mxl archive contains no MusicXML score.';
+
+  @override
+  String importNoticeContinuationWithoutChord(int line, String text) {
+    return 'Line $line: “$text” has no chord before it to continue; dropped.';
+  }
 }

@@ -1240,4 +1240,9 @@ class AppLocalizationsRo extends AppLocalizations {
   @override
   String get importNoticeNoScoreInArchive =>
       'Arhiva .mxl nu conține nicio partitură MusicXML.';
+
+  @override
+  String importNoticeContinuationWithoutChord(int line, String text) {
+    return 'Rândul $line: „$text” nu are un acord înainte pe care să îl continue; a fost omis.';
+  }
 }

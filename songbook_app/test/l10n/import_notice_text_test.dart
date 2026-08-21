@@ -23,6 +23,10 @@ const _samples = <ImportNoticeCode, ImportNotice>{
       ImportNoticeCode.unknownDirective, line: 3, text: '{define: G}'),
   ImportNoticeCode.ambiguousBareRoot:
       ImportNotice(ImportNoticeCode.ambiguousBareRoot, line: 7, text: 'A'),
+  ImportNoticeCode.continuationWithoutChord: ImportNotice(
+      ImportNoticeCode.continuationWithoutChord, line: 4, text: '-7'),
+  ImportNoticeCode.fromReader: ImportNotice(ImportNoticeCode.fromReader,
+      text: 'The bottom of the page was cut off.'),
   ImportNoticeCode.bracketNotAChord:
       ImportNotice(ImportNoticeCode.bracketNotAChord, line: 1, text: 'Chorus'),
   ImportNoticeCode.timewiseScore: ImportNotice(ImportNoticeCode.timewiseScore),
@@ -80,6 +84,15 @@ void main() {
     }
   });
 
+  /// Codes whose text is identical in every language by design.
+  ///
+  /// [ImportNoticeCode.fromReader] quotes prose written by the photo-reading
+  /// backend, which has no idea what language the app is in. Translating it is
+  /// not possible and pretending to would be worse, so it renders verbatim — and
+  /// the comparison below has to know that, or it reads a deliberate choice as an
+  /// untranslated string.
+  const quotedVerbatim = {ImportNoticeCode.fromReader};
+
   group('nothing falls back to the template', () {
     // gen_l10n fills a missing key from app_en.arb, so an untranslated notice
     // is not a build failure — it is English inside a Hungarian sentence, and
@@ -89,6 +102,7 @@ void main() {
         final en = await load('en');
         final translated = await load(locale);
         for (final entry in _samples.entries) {
+          if (quotedVerbatim.contains(entry.key)) continue;
           expect(
             translated.importNoticeText(entry.value),
             isNot(en.importNoticeText(entry.value)),

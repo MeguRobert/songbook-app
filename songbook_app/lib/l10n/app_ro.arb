@@ -325,5 +325,6 @@
   "importNoticeContainerManifest": "Acesta este cuprinsul din interiorul unui fișier .mxl, nu o partitură. Deschide fișierul .mxl în sine.",
   "importNoticeEmptyMxlInput": "Fișierul .mxl este gol.",
   "importNoticeUnreadableArchive": "Aceasta nu este o arhivă .mxl care poate fi citită: {text}",
-  "importNoticeNoScoreInArchive": "Arhiva .mxl nu conține nicio partitură MusicXML."
+  "importNoticeNoScoreInArchive": "Arhiva .mxl nu conține nicio partitură MusicXML.",
+  "importNoticeContinuationWithoutChord": "Rândul {line}: „{text}” nu are un acord înainte pe care să îl continue; a fost omis."
 }

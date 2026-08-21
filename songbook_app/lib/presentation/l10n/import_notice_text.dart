@@ -26,6 +26,11 @@ extension ImportNoticeText on AppLocalizations {
           importNoticeUnknownDirective(notice.line ?? 0, notice.text ?? ''),
         ImportNoticeCode.ambiguousBareRoot =>
           importNoticeAmbiguousBareRoot(notice.line ?? 0, notice.text ?? ''),
+        ImportNoticeCode.continuationWithoutChord =>
+          importNoticeContinuationWithoutChord(
+              notice.line ?? 0, notice.text ?? ''),
+        // Quoted, not translated — see ImportNoticeCode.fromReader.
+        ImportNoticeCode.fromReader => notice.text ?? '',
         ImportNoticeCode.bracketNotAChord =>
           importNoticeBracketNotAChord(notice.line ?? 0, notice.text ?? ''),
         ImportNoticeCode.timewiseScore => importNoticeTimewiseScore,

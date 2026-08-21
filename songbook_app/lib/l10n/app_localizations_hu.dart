@@ -1236,4 +1236,9 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get importNoticeNoScoreInArchive =>
       'Az .mxl archívum nem tartalmaz MusicXML kottát.';
+
+  @override
+  String importNoticeContinuationWithoutChord(int line, String text) {
+    return '$line. sor: a „$text” előtt nincs akkord, amit folytathatna; kihagytam.';
+  }
 }

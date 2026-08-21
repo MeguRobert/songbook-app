@@ -325,5 +325,6 @@
   "importNoticeContainerManifest": "Ez egy .mxl fájl belső tartalomjegyzéke, nem kotta. Magát az .mxl fájlt nyisd meg.",
   "importNoticeEmptyMxlInput": "Az .mxl bemenet üres.",
   "importNoticeUnreadableArchive": "Ez nem olvasható .mxl archívum: {text}",
-  "importNoticeNoScoreInArchive": "Az .mxl archívum nem tartalmaz MusicXML kottát."
+  "importNoticeNoScoreInArchive": "Az .mxl archívum nem tartalmaz MusicXML kottát.",
+  "importNoticeContinuationWithoutChord": "{line}. sor: a „{text}” előtt nincs akkord, amit folytathatna; kihagytam."
 }

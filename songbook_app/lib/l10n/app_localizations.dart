@@ -2055,6 +2055,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The .mxl archive contains no MusicXML score.'**
   String get importNoticeNoScoreInArchive;
+
+  /// Chord-sheet parser: a -7 style continuation token with nothing in front of it to extend.
+  ///
+  /// In en, this message translates to:
+  /// **'Line {line}: “{text}” has no chord before it to continue; dropped.'**
+  String importNoticeContinuationWithoutChord(int line, String text);
 }
 
 class _AppLocalizationsDelegate

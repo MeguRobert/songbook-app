@@ -1609,5 +1609,17 @@
   "importNoticeNoScoreInArchive": "The .mxl archive contains no MusicXML score.",
   "@importNoticeNoScoreInArchive": {
     "description": "MusicXML importer, fatal: a readable zip with nothing to read in it"
+  },
+  "importNoticeContinuationWithoutChord": "Line {line}: “{text}” has no chord before it to continue; dropped.",
+  "@importNoticeContinuationWithoutChord": {
+    "description": "Chord-sheet parser: a -7 style continuation token with nothing in front of it to extend.",
+    "placeholders": {
+      "line": {
+        "type": "int"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
   }
 }

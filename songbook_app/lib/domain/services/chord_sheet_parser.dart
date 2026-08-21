@@ -364,7 +364,7 @@ class ChordSheetParser {
   /// of the chords around it are untouched, because each chord's position is its
   /// own match offset and never a running total.
   LyricLine _parseChordsOverLyrics(String chordLine, String lyricLine,
-      [int lineNo = 0, List<String>? warnings]) {
+      [int lineNo = 0, List<ImportNotice>? warnings]) {
     final chords = <ChordPosition>[];
     for (final match in _token.allMatches(chordLine)) {
       final token = match.group(0)!;
@@ -376,8 +376,10 @@ class ChordSheetParser {
       final continued = _continuation.firstMatch(_unwrap(token));
       if (continued != null) {
         if (chords.isEmpty) {
-          warnings?.add('Line $lineNo: "$token" has no chord before it to '
-              'continue; dropped.');
+          warnings?.add(ImportNotice(
+              ImportNoticeCode.continuationWithoutChord,
+              line: lineNo,
+              text: token));
           continue;
         }
         chords.add(ChordPosition(

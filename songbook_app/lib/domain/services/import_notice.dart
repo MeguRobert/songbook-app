@@ -22,6 +22,18 @@ enum ImportNoticeCode {
   /// Carries [ImportNotice.line] and [ImportNotice.text].
   ambiguousBareRoot,
 
+  /// A `-7`-style continuation token with no chord in front of it to extend, so
+  /// it was dropped. Carries [ImportNotice.line] and [ImportNotice.text].
+  continuationWithoutChord,
+
+  /// Prose from the photo-reading backend, passed through verbatim.
+  ///
+  /// The one code whose text is NOT translated, and deliberately so: it is
+  /// written by a remote service that does not know what language the app is
+  /// being read in, so the honest thing is to quote it rather than to pretend it
+  /// is ours. Carries [ImportNotice.text].
+  fromReader,
+
   /// A `[…]` marker whose contents are not a chord symbol, kept as lyric text.
   /// Carries [ImportNotice.line] and [ImportNotice.text] — the token *without*
   /// its brackets, so the formatter can punctuate it per language.
