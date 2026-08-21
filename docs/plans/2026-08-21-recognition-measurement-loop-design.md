@@ -306,17 +306,148 @@ punctuation.
 counts as a chord symbol, only how a row is split into symbols before they are
 asked.
 
+## 2026-08-22, second session: the warnings, and the two-column pages
+
+### The app measured two things and told nobody
+
+Every page reported *warning not raised: low-resolution*. `resolution_note` in
+the Python worker tells the user their upload is too compressed to hold `ő` and
+`ű` — the single biggest lever on accuracy, and the fix is on the phone rather
+than in this repo. The app does the same measurement in
+`page_text_recognizer_web.dart` and dropped it on the floor. Same for
+show-through: `PagePreprocessor` erases it and never said so, though suppression
+costs stroke sharpness and is exactly what explains a missing chord.
+
+Raising them meant paying the debt `no_hardcoded_strings_test` had recorded with
+a reason attached: `PhotoReading.warnings` was four English sentences built
+inside pure domain code with no `BuildContext`, feeding both `ChordProPayload`
+and `PhotoImportException`. They are `ImportNoticeCode`s now, translated three
+ways, and the remote reader's prose is carried under `fromReader` — which is what
+that code always existed for. `PageWords` carries the notices the *image* earns,
+because the recogniser is the only stage holding pixels.
+
+Two things the corpus said while this was being done:
+
+- **`hm` was renamed to `Bm` in silence.** The German-note-name warning matched
+  only a capital `H`, and a Hungarian songbook prints its minors in lowercase
+  throughout. `166-tekozlo-fiu` is a page of them.
+- **The show-through message says what was done, not what caused it.**
+  `hasShowThrough` was calibrated on one page whose reverse side is legible
+  through the paper, and it fires on three corpus pages that have none — uneven
+  light across a photographed page leaves the same pale band. The advice ("a
+  photo in flatter light will read better") is right either way; a claim about
+  the cause would not be. Calibrating the gate is still open work, and now
+  visible: `warn` is 0.000 on four pages for this reason.
+
+The harness reads notice **codes** now (`WARNING_CODES` in `reading.py`) rather
+than substring-matching English prose, which its own comment said would break the
+day this debt was paid.
+
+### Two-column pages: read one column at a time
+
+Both two-column pages read as one interleaved column — a line of the left column
+and an unrelated line of the right, at the same height, arriving as one row.
+`125-nincs-mas-isten` scored 0.348, `166-tekozlo-fiu` 0.392.
+
+**Cause one: the gutter was never found.** `splitColumns` looked for a vertical
+band that *no* word crosses, and a hymnal sets the song's heading across the
+columns — so one word of it lies over the gutter. `125` has 127 clear pixels
+between its columns and lost them to `Nincs`; `166` has 158 and lost them to
+`Tékozló`. The test now tolerates a share of the page's rows crossing the band,
+which is precisely the difference between a heading and a page: a heading is one
+row out of however many, while on a single-column page *every* row crosses every
+interior x. What keeps a single-column page whole is the row count inside each
+band — past the end of its shortest line a band does open, but only the longest
+line or two reaches into it, so it holds fewer rows than a column does.
+
+**Cause two: splitting the words afterwards was never going to be enough.**
+Tesseract does its own layout analysis before it returns a box, and given a
+two-column page it joins a line from one column to a line from the other. `125`
+came back with `Nálad lett borrá` and `Átvezető rész` inside one word list at one
+y, and no rule about boxes takes that apart again. So the recogniser crops each
+column and reads it on its own — the single-column page its default segmentation
+assumes. Robert's call, and the corpus agreed with it:
+
+| page | before | after |
+|---|---|---|
+| `125-nincs-mas-isten` | 0.348 | **0.555** |
+| `166-tekozlo-fiu` | 0.392 | **0.895** |
+
+Lyric error rate on `166` went 0.823 → 0.080 and chord recall 0.368 → 0.789. On
+desktop Chromium a single-column page still takes 1.8–4.9 seconds and a
+two-column page about 12 — one whole-page pass to find the columns, then one per
+column.
+
+Two refinements the measurement forced, both after a worse first attempt:
+
+- **The cut goes in the emptiest part of the gutter, not the middle of it.** The
+  middle of `125`'s band is inside a chord row reaching into it, and the cut
+  split `Cadd9-Csus2` across two crops, which read the halves twice and read
+  neither right.
+- **The heading goes into the first column whole.** Filed word by word it splits
+  at the cut, and each crop then reads its own half again: `166. Tékozló fiú`
+  came back as `{title: 166. 166. . Tékozló}` with a stray `fiú` heading the
+  second column. A wider rule — *any* row intruding into the gutter band — was
+  tried and reversed, because it also catches the printed rule between `125`'s
+  columns, which the engine returns as a column of one-character words sitting
+  right where the cut falls. Most of the page then became one spanning row and
+  the columns interleaved again.
+
+**And a heading across the columns is the signal that the page is one song.**
+`photoTwoSongs` told the user to delete the half they did not want, on both
+pages, wrongly. Two songs to a page each carry their own heading, inside their
+own column.
+
+### Two harness bugs, without which none of it was visible
+
+- `compile_harness` decided staleness from the **entry point alone**, which never
+  changes. Every run after a fix in `photo_text_bridge.dart` quietly re-measured
+  the previous build and reported the old score to the digit — the exact opposite
+  of this harness's one claim.
+- The harness read each photograph **twice**, once for the word count and once
+  through the service. Two independent reads of the same page were free to
+  disagree, and with column crops it doubled a three-pass page.
+
+### Gold for the two-column pages
+
+Transcribed from the photographs, which is the assistant's job. The text was read
+off crops of the originals; the chord columns come from measured ink spans — row
+bands and word spans by projection, no OCR involved — mapped onto character
+columns with `PhotoTextBridge`'s own interpolation rule, so a gold file says what
+a *perfect reading* would say rather than what some other convention would. Both
+are `drafted_from: "vision"` and both still need Robert's review.
+
+`125` records `low-resolution`; `166` records `low-resolution` and
+`german-chords`. Neither records `two-songs`, because neither page holds two
+songs. Neither records `show-through-removed`, because neither page has a reverse
+side showing through — which is what makes the gate's over-firing show up as a
+failure rather than as noise.
+
+### What the corpus says is next
+
+1. **Calibrate `hasShowThrough`.** It fires on four of seven pages and only one
+   of them has show-through. User-visible now, so the noise has a cost.
+2. **`low-resolution` on a born-digital screenshot.** Bytes per pixel is the
+   wrong proxy for a screenshot: the app screenshot is perfectly legible and
+   trips the gate.
+3. **The chord symbols no rule can spell.** `fiszm`, `Amaj7-A7`, `D-E`,
+   `Cadd9-Csus2`, `G5-Gsus2`, `D4/Fis`. Three of `166`'s ten chord rows and the
+   whole of `125`'s intro line read as lyrics for this reason alone — in gold as
+   well as in the reading, so the comparison stays fair and the chords are simply
+   uncountable. `_CHORD_TOKEN` and `isChordToken` have to move together.
+4. **`125`'s printed rule between the columns** comes back as a column of
+   one-character words (`!`, `;`, `i`, `S`), which is most of the 50 lyric lines
+   it reports against 34 expected.
+5. **`125`'s intro chord row is heavily tilted** and splits across two rows.
+6. **`185-jezus-krisztusom` at 0.453** — still the worst reviewed page.
+
 ## Verify
 
 ```bash
-python -m unittest discover -s tools -p "test_*.py"       # expect 310
+python -m unittest discover -s tools -p "test_*.py"       # expect 312
 python -m tools.ocr_harness run                           # the Python arm
 python -m tools.ocr_harness run --engine browser          # what actually ships
 cd songbook_app && flutter analyze --no-fatal-infos       # expect exit 0, 0 issues
-cd songbook_app && flutter test                           # expect 1190
+cd songbook_app && flutter test                           # expect 1196
 cd songbook_app && flutter build web --release --no-web-resources-cdn
 ```
-
-`run` exits non-zero when a gated metric moved the wrong way against the
-committed baseline. The browser engine needs `dart` on PATH, `node` with
-playwright, and a network for the Tesseract model.
