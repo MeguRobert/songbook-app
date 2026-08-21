@@ -60,5 +60,7 @@ tools/fixtures/out/
 tools/photo_inbox/*
 !tools/photo_inbox/README.txt
 
-# Session handoffs: written to be read once and replaced, never reviewed as history.
+# Session handoffs: written to be read once by the next session and replaced,
+# not reviewed as history. HANDOFF-photo-import.md is deliberately tracked and
+# stays so — a rule here cannot untrack what is already tracked.
 HANDOFF*.md
