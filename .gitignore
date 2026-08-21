@@ -59,3 +59,6 @@ tools/fixtures/out/
 # Song photos dropped in for debugging a reading.
 tools/photo_inbox/*
 !tools/photo_inbox/README.txt
+
+# Session handoffs: written to be read once and replaced, never reviewed as history.
+HANDOFF*.md
