@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'chord_sheet_parser.dart';
+import 'import_notice.dart';
 
 /// One word as an OCR engine reports it: the text, and where it sat.
 class OcrWord {
@@ -56,9 +57,14 @@ class PhotoReading {
 
   /// Things worth telling the person reviewing: a page holding two songs, a
   /// chord renamed on the way in, nothing legible at all.
-  final List<String> warnings;
+  ///
+  /// Codes rather than sentences. This is pure domain code with no
+  /// `BuildContext`, so a sentence written here is English on a Hungarian
+  /// screen - which is what these four were until they became codes. The prose
+  /// lives in `AppLocalizations.importNoticeText` and nowhere else.
+  final List<ImportNotice> notices;
 
-  const PhotoReading({required this.chordPro, this.warnings = const []});
+  const PhotoReading({required this.chordPro, this.notices = const []});
 }
 
 /// Turns a bag of OCR words back into chords-over-lyrics text.
@@ -139,8 +145,9 @@ class PhotoTextBridge {
   /// Reads [words] into chords-over-lyrics text.
   PhotoReading read(List<OcrWord> words) {
     if (words.isEmpty) {
-      return const PhotoReading(
-          chordPro: '', warnings: ['Nothing legible was found in that photo.']);
+      return const PhotoReading(chordPro: '', notices: [
+        ImportNotice(ImportNoticeCode.photoNothingLegible),
+      ]);
     }
 
     // Merged chord runs pulled apart first, so everything below — grouping,
@@ -167,28 +174,27 @@ class PhotoTextBridge {
     }
 
     if (lines.isEmpty) {
-      return const PhotoReading(
-          chordPro: '', warnings: ['Nothing legible was found in that photo.']);
+      return const PhotoReading(chordPro: '', notices: [
+        ImportNotice(ImportNoticeCode.photoNothingLegible),
+      ]);
     }
 
-    final warnings = <String>[];
+    final notices = <ImportNotice>[];
     if (columns.length > 1) {
       // Honest rather than clever: a page holding two songs cannot become one
       // song, and the review box is where the unwanted half gets deleted.
-      warnings.add('That page holds ${columns.length} songs side by side. '
-          'Both were read, in reading order — delete the one you did not want.');
+      notices.add(
+          ImportNotice(ImportNoticeCode.photoTwoSongs, count: columns.length));
     }
     if (chordRows == 0) {
-      warnings.add(
-          'No chords were recognised — the words were imported on their own.');
+      notices.add(const ImportNotice(ImportNoticeCode.photoNoChords));
     }
     if (german.isNotEmpty) {
       final names = german.toList()..sort();
-      warnings.add('${names.join(', ')} will be stored under the English name '
-          '(H is B natural). The app keeps one spelling per pitch so '
-          'transposing stays exact.');
+      notices.add(ImportNotice(ImportNoticeCode.photoGermanNoteNames,
+          text: names.join(', ')));
     }
-    return PhotoReading(chordPro: lines.join('\n'), warnings: warnings);
+    return PhotoReading(chordPro: lines.join('\n'), notices: notices);
   }
 
   /// The angle, in degrees, by which the page appears to be tilted.
@@ -367,9 +373,15 @@ class PhotoTextBridge {
       }
 
       chordRows++;
-      german.addAll(row
-          .map((w) => w.text)
-          .where((t) => t.startsWith('H') && parser.isChordToken(t)));
+      // Case-insensitive, because a Hungarian songbook prints its minors in
+      // lowercase throughout: `hm` is B minor and is renamed on the way into
+      // storage exactly as `Hm` is. Matching only the capital meant a page
+      // spelling its minors the Hungarian way had its chords renamed without a
+      // word to the person reviewing it - measured on `166-tekozlo-fiu`, which
+      // prints `hm` and raised nothing.
+      german.addAll(row.map((w) => w.text).where((t) =>
+          (t.startsWith('H') || t.startsWith('h')) &&
+          parser.isChordToken(t)));
 
       final below = index + 1 < rows.length ? rows[index + 1] : null;
       final pairs = below != null &&

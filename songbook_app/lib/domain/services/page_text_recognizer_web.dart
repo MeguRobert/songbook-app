@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:web/web.dart' as web;
 
+import 'import_notice.dart';
 import 'page_preprocessor.dart';
 import 'page_text_recognizer.dart';
 import 'photo_import_service.dart';
@@ -90,6 +91,23 @@ Never _tooSlow() => throw const PhotoImportException(
 /// already known to be about two seconds, rather than four times that.
 const _longestEdge = 2048;
 
+/// What a page of text needs to keep its accents, as the Python worker measures
+/// it in `resolution_note` — the two have to agree, because a photograph read on
+/// one side of the wire and then on the other must get the same answer.
+///
+/// A Hungarian `ő` differs from `ó` by two hairline strokes, and they are the
+/// first thing a hard JPEG throws away: measured on a real upload, 2048x1532 at
+/// 0.026 bytes per pixel came back reading `erót` for `erőt` and `-7` as `27`.
+///
+/// Both halves matter and either alone is enough to lose the accents, so the
+/// test is an OR. Pixels alone would pass a 4000px image squeezed into 90KB;
+/// bytes alone would fail a lightly compressed small scan that is genuinely
+/// legible. Measured against the *upload*, not the canvas below: scaling to
+/// [_longestEdge] is this file's own doing and says nothing about what the
+/// camera handed over.
+const _minLongEdge = 1200;
+const _minBytesPerPixel = 0.08;
+
 class TesseractPageTextRecognizer implements PageTextRecognizer {
   const TesseractPageTextRecognizer({
     this.preprocessor = const PagePreprocessor(),
@@ -101,13 +119,13 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
   bool get isSupported => true;
 
   @override
-  Future<List<OcrWord>> recognize(
+  Future<PageWords> recognize(
     Uint8List imageBytes, {
     String language = PageTextRecognizer.hungarian,
   }) async {
     await _loadTesseract();
 
-    final canvas = await _cleanedCanvas(imageBytes);
+    final prepared = await _prepare(imageBytes);
     // A worker per photo. It could be kept alive between photos, but it holds
     // the WebAssembly heap and the language model for as long as it lives, and
     // a second photo is minutes away at best — the model is cached by then, so
@@ -129,22 +147,30 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
         // PhotoTextBridge.splitMergedChords needs the glyph boxes to undo that.
         ..setProperty('symbols'.toJS, true.toJS);
       final result = await worker
-          .recognize(canvas, JSObject(), output)
+          .recognize(prepared.canvas, JSObject(), output)
           .toDart
           .timeout(_readBudget, onTimeout: _tooSlow);
-      return _wordsIn(result.data);
+      return PageWords(_wordsIn(result.data), notices: prepared.notices);
     } finally {
       await worker.terminate().toDart;
     }
   }
 
-  /// The photograph as greyscale on a canvas, with the reverse page erased.
+  /// The photograph as greyscale on a canvas, with the reverse page erased —
+  /// and what the pixels themselves are worth telling the user.
   ///
-  /// Both steps matter and neither is Tesseract's job. Greyscale is what the
-  /// engine works in anyway. Show-through — a hymnal is printed thin enough to
-  /// read its own back page — arrives as words stuck to the real lyrics, and
-  /// removing it took the measured page from 3 recognised chord rows to 4.
-  Future<web.HTMLCanvasElement> _cleanedCanvas(Uint8List imageBytes) async {
+  /// Both cleaning steps matter and neither is Tesseract's job. Greyscale is
+  /// what the engine works in anyway. Show-through — a hymnal is printed thin
+  /// enough to read its own back page — arrives as words stuck to the real
+  /// lyrics, and removing it took the measured page from 3 recognised chord
+  /// rows to 4.
+  ///
+  /// The notices come out of here because this is the only stage holding the
+  /// image. Both were already being measured and then thrown away: every page
+  /// in the measurement corpus reported *warning not raised: low-resolution*
+  /// against a worker that says so, and show-through was suppressed without a
+  /// word even though suppression costs stroke sharpness.
+  Future<_Prepared> _prepare(Uint8List imageBytes) async {
     final bitmap = await web.window
         .createImageBitmap(web.Blob([imageBytes.toJS].toJS))
         .toDart;
@@ -155,6 +181,17 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
     );
     final width = math.max(1, (bitmap.width * scale).round());
     final height = math.max(1, (bitmap.height * scale).round());
+
+    final notices = <ImportNotice>[];
+    final pixels = math.max(1, bitmap.width * bitmap.height);
+    if (math.max(bitmap.width, bitmap.height) < _minLongEdge ||
+        imageBytes.length / pixels < _minBytesPerPixel) {
+      notices.add(ImportNotice(
+        ImportNoticeCode.photoLowResolution,
+        text: '${bitmap.width}×${bitmap.height}',
+        count: imageBytes.length ~/ 1024,
+      ));
+    }
 
     final canvas =
         web.document.createElement('canvas') as web.HTMLCanvasElement
@@ -177,9 +214,13 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
           (rgba[at] * 299 + rgba[at + 1] * 587 + rgba[at + 2] * 114) ~/ 1000;
     }
 
-    final cleaned = preprocessor.hasShowThrough(grey, width, height)
-        ? preprocessor.suppressShowThrough(grey, width, height)
-        : grey;
+    final Uint8List cleaned;
+    if (preprocessor.hasShowThrough(grey, width, height)) {
+      cleaned = preprocessor.suppressShowThrough(grey, width, height);
+      notices.add(const ImportNotice(ImportNoticeCode.photoShowThroughRemoved));
+    } else {
+      cleaned = grey;
+    }
 
     // A fresh ImageData rather than writing through the one just read: whether
     // `toDart` hands back a view or a copy is the compiler's business, and this
@@ -191,7 +232,7 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
       out[at + 3] = 255;
     }
     context.putImageData(web.ImageData(out.toJS, width, height.toJS), 0, 0);
-    return canvas;
+    return _Prepared(canvas, notices);
   }
 
   /// Every word Tesseract reported, whichever shape this version reports in.
@@ -248,6 +289,14 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
     }
     return words;
   }
+}
+
+/// A canvas ready to read, and what the image itself was worth saying.
+class _Prepared {
+  final web.HTMLCanvasElement canvas;
+  final List<ImportNotice> notices;
+
+  const _Prepared(this.canvas, this.notices);
 }
 
 /// The load already in flight, so two quick taps fetch the script once.

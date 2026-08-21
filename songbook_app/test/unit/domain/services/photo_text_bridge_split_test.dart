@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:songbook_app/domain/services/import_notice.dart';
 import 'package:songbook_app/domain/services/photo_text_bridge.dart';
 
 /// Undoing a merged chord run.
@@ -165,9 +166,9 @@ void main() {
       ]);
       expect(reading.chordPro, contains('D'));
       expect(reading.chordPro, isNot(contains('DGD')));
-      expect(reading.warnings,
-          isNot(contains('No chords were recognised — the words were imported '
-              'on their own.')));
+      expect(reading.notices,
+          isNot(contains(
+              const ImportNotice(ImportNoticeCode.photoNoChords))));
     });
 
     test('and a row of prose still reads as prose', () {

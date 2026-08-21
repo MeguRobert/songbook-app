@@ -1237,4 +1237,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String importNoticeContinuationWithoutChord(int line, String text) {
     return 'Line $line: “$text” has no chord before it to continue; dropped.';
   }
+
+  @override
+  String importNoticePhotoLowResolution(String text, int count) {
+    return 'That photo arrived at $text in $count KB — too compressed to hold the fine strokes. Accents like ő and ű are the first thing to go, so expect a few wrong letters. A phone gallery hands over a shrunken copy; picking the same photo through Files usually gives the full-quality original.';
+  }
+
+  @override
+  String get importNoticePhotoShowThroughRemoved =>
+      'Part of the page read as faint second ink — the reverse side showing through, or uneven light — and it was cleaned away before reading. If a chord is missing, a photo in flatter light will read better than this one.';
+
+  @override
+  String importNoticePhotoTwoSongs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'That page holds $count songs side by side. All of them were read, in reading order — delete the one you did not want.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNoticePhotoNoChords =>
+      'No chords were recognised — the words were imported on their own.';
+
+  @override
+  String get importNoticePhotoNothingLegible =>
+      'Nothing legible was found in that photo.';
+
+  @override
+  String importNoticePhotoGermanNoteNames(String text) {
+    return '$text will be stored under the English name (H is B natural). The app keeps one spelling per pitch so transposing stays exact.';
+  }
 }

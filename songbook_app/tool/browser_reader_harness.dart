@@ -16,7 +16,8 @@
 //       -o <out>/harness.js tool/browser_reader_harness.dart
 //
 // The page then exposes `window.readPage('<url>')`, which resolves to
-// `{chordPro, warnings, words, ms}` or `{error}`.
+// `{chordPro, warnings, words, ms}` or `{error}`. `warnings` holds
+// ImportNoticeCode names, since the prose is in the app's localisations.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
@@ -55,7 +56,7 @@ Future<JSString> _read(String url) async {
     // which does not expose it. Cheap enough at this scale and it says whether
     // a thin reading was the recognizer's fault or the bridge's.
     final bytes = await _fetch(url);
-    final words = await recognizer.recognize(bytes);
+    final read = await recognizer.recognize(bytes);
     final service = BrowserPhotoImportService(recognizer: recognizer);
     final payload = await service.extract(bytes, fileName: url);
     if (payload is! ChordProPayload) {
@@ -64,8 +65,13 @@ Future<JSString> _read(String url) async {
     }
     return jsonEncode({
       'chordPro': payload.text,
-      'warnings': payload.warnings,
-      'words': words.length,
+      // Code names, not sentences. The reader emits ImportNotice codes now, and
+      // the prose lives in the app's localisations, which nothing here loads.
+      // The harness maps these to its own slugs — see WARNING_CODES in
+      // tools/ocr_harness/reading.py — which is a stabler contract than the
+      // substring match on English wording it replaced.
+      'warnings': [for (final notice in payload.notices) notice.code.name],
+      'words': read.words.length,
       'ms': DateTime.now().difference(started).inMilliseconds,
     }).toJS;
   } on PhotoImportException catch (error) {

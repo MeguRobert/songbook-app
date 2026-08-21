@@ -326,5 +326,11 @@
   "importNoticeEmptyMxlInput": "Fișierul .mxl este gol.",
   "importNoticeUnreadableArchive": "Aceasta nu este o arhivă .mxl care poate fi citită: {text}",
   "importNoticeNoScoreInArchive": "Arhiva .mxl nu conține nicio partitură MusicXML.",
-  "importNoticeContinuationWithoutChord": "Rândul {line}: „{text}” nu are un acord înainte pe care să îl continue; a fost omis."
+  "importNoticeContinuationWithoutChord": "Rândul {line}: „{text}” nu are un acord înainte pe care să îl continue; a fost omis.",
+  "importNoticePhotoLowResolution": "Fotografia a sosit la {text}, în {count} KB — prea comprimată ca să păstreze liniile fine. Accentele ő și ű dispar primele, așa că sunt de așteptat câteva litere greșite. Galeria telefonului predă o copie micșorată; dacă alegi aceeași fotografie prin Fișiere, primești de obicei originalul la calitate completă.",
+  "importNoticePhotoShowThroughRemoved": "O parte a paginii s-a citit ca o a doua cerneală, palidă — versoul care se vede prin hârtie, sau lumină neuniformă — și a fost curățată înainte de citire. Dacă lipsește un acord, o fotografie la lumină mai uniformă se va citi mai bine.",
+  "importNoticePhotoTwoSongs": "{count, plural, other{Pagina are {count} cântece unul lângă altul. Le-am citit pe toate, în ordinea de citire — șterge-l pe cel de care nu aveai nevoie.}}",
+  "importNoticePhotoNoChords": "Nu am recunoscut niciun acord — au fost importate doar versurile.",
+  "importNoticePhotoNothingLegible": "Nu am găsit nimic lizibil în fotografia aceasta.",
+  "importNoticePhotoGermanNoteNames": "{text} va fi stocat sub denumirea engleză (H este si natural). Aplicația păstrează o singură scriere pentru fiecare notă, ca transpunerea să rămână exactă."
 }

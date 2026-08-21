@@ -3,7 +3,7 @@
   "tier": "B",
   "engine": "text",
   "reviewed_by": null,
-  "drafted_from": "easyocr",
+  "drafted_from": "vision",
   "_review_checklist": [
     "Compare every line against the photograph, not against the app.",
     "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
@@ -21,9 +21,11 @@
     "compound chords joined by a hyphen: Cadd9-Csus2, G5-Gsus2",
     "chords sit above the first word of a line rather than over a specific syllable"
   ],
-  "_drafted_from": "easyocr reading, uncorrected",
+  "_drafted_from_note": "transcribed from the photograph; chord columns from measured ink spans, mapped to columns with PhotoTextBridge's own interpolation rule",
   "number": 125,
-  "title": "Nincs mas Isten",
-  "warnings": [],
-  "chordpro": "{title: 125. Nincs más Isten}\n\nFi7 Cadd9-Csus2 G5-Gsus2 D4/Fis   Vissza a versszakohra\n1. Versszak                       4> Refrén\nEm        G            Átvezetó rész\nNálad lett borrá a víz;\nEm     G           Em És hogyha Isten velünk.\nHoltakat életre hívsz;\nAm                 Ember mit árthat nekünk?\nNincs más Isten;               G\nD                    Mert hogyha Te vagy velünk,\nNincsen más!               D\nKi lehet ellenünk?\n2. Versszak\nEm        G          Em És hogyha Isten velünk,\nTe ragyogod be az éjt,\nEm   C  G             Ember mit árthat nekünk?\nTe hozod el a reményt;               G\nAm                 Mert hogyha Te vagy velünk,\nNincs más Isten;              D\nD                    Ki lehet ellenünk?\nNincsen más!                 Em € G D         Em\nRefrén                                      Ki állhat ellenünk\nEm\nTe vagy az Isten;,              CGD\nC\nAki nevére     D               \"> Refrén\nG\nLeborul minden a földön, az égen.      ~> Átvezetó_ rész\nEm\nHegyeket mozdít,               Em € G D         Em\nBeteget gyógyít C                                        Ki állhat ellenünk\nG\nAz Úr\nD                CD G\nMa is"
+  "title": "Nincs más Isten",
+  "warnings": [
+    "low-resolution"
+  ],
+  "chordpro": "Em7 Cadd9-Csus2 G5-Gsus2 D4/Fis\n\n1. Versszak\n\nEm         C       G\nNálad lett borrá a víz,\nEm       C      G\nHoltakat életre hívsz,\n          Am\nNincs más Isten,\n      D\nNincsen más!\n\n2. Versszak\n\nEm      C        G\nTe ragyogod be az éjt,\nEm      C       G\nTe hozod el a reményt,\n          Am\nNincs más Isten,\n     D\nNincsen más!\n\nRefrén\n\nEm\nTe vagy az Isten,\nC\nAki nevére\nG                D\nLeborul minden a földön, az égen.\nEm\nHegyeket mozdít,\nC\nBeteget gyógyít\n   G\nAz Úr\n   D\nMa is\n\nVissza a versszakokra\n\n-> Refrén\n\nÁtvezető rész\n\nEm\nÉs hogyha Isten velünk,\nC\nEmber mit árthat nekünk?\nG\nMert hogyha Te vagy velünk,\nD\nKi lehet ellenünk?\n\nEm\nÉs hogyha Isten velünk,\nC\nEmber mit árthat nekünk?\nG\nMert hogyha Te vagy velünk,\nD\nKi lehet ellenünk?\n\nEm C G D        Em\nKi állhat ellenünk\n\nC  G  D\n\n-> Refrén\n\n-> Átvezető rész\n\nEm C G D       Em\nKi állhat ellenünk\n\nC  D  G"
 }

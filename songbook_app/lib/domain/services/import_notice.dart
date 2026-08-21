@@ -40,6 +40,54 @@ enum ImportNoticeCode {
   bracketNotAChord,
 
   // ---------------------------------------------------------------------------
+  // The photo reader — PageTextRecognizer and PhotoTextBridge
+  // ---------------------------------------------------------------------------
+  //
+  // These six used to be English sentences built inside `photo_text_bridge.dart`
+  // and handed up the pipeline as plain strings, which is why they were the last
+  // untranslated text a user could see. Two of them were not raised at all: the
+  // Python worker told the user their photo was too compressed to hold `ő`, and
+  // the app — which does the same measurement and the same show-through removal
+  // — said nothing.
+
+  /// The photograph is too compressed to hold the fine strokes.
+  ///
+  /// The single biggest lever on accuracy, and the fix is on the phone rather
+  /// than in this app: a gallery hands over a re-encoded copy, and no amount of
+  /// parsing recovers a diacritic the compression deleted. Carries
+  /// [ImportNotice.text] — the pixel size, as `1532×2047` — and
+  /// [ImportNotice.count], the file's size in kilobytes.
+  photoLowResolution,
+
+  /// A second, paler population of ink was found and erased before reading.
+  ///
+  /// Worth saying because it is not free: suppression costs stroke sharpness, so
+  /// a chord lost on a page that raised this is worth a second photograph in
+  /// flatter light rather than a bug report.
+  ///
+  /// The message names what was done rather than what caused it, on purpose.
+  /// `PagePreprocessor.hasShowThrough` was calibrated on one page whose reverse
+  /// side is legible through the paper, and on the measurement corpus it also
+  /// fires on three pages that have no reverse page showing through at all —
+  /// uneven light across a photographed page leaves the same pale band. The
+  /// advice is right either way; the claim about the cause would not be.
+  photoShowThroughRemoved,
+
+  /// The page holds more than one song, side by side, and all were read.
+  /// Carries [ImportNotice.count] — how many.
+  photoTwoSongs,
+
+  /// Words were read but no chord row was recognised anywhere on the page.
+  photoNoChords,
+
+  /// Nothing on the page could be read at all.
+  photoNothingLegible,
+
+  /// German note names were read and will be stored under their English
+  /// spelling. Carries [ImportNotice.text] — the names, sorted and joined.
+  photoGermanNoteNames,
+
+  // ---------------------------------------------------------------------------
   // MusicXmlImporter — lossy, but the score still imports
   // ---------------------------------------------------------------------------
 

@@ -100,12 +100,25 @@ class Warnings(unittest.TestCase):
         got = reading.slugs_for(['something new'])
         self.assertTrue(got[0].startswith('unmapped:'))
 
-    def test_every_slug_the_worker_can_emit_is_mapped(self):
-        # The prose is localised and three of these are named as known debt in
-        # the app's own no-hardcoded-strings test. Matching on wording would
-        # break the day that debt is paid; this is the reminder to add the slug
-        # rather than to rewrite the match.
+    def test_a_notice_code_maps_to_the_same_slug_as_its_prose(self):
+        # What the shipped reader reports now: the code name, because its
+        # sentences moved into the app's localisations and are no longer in
+        # English by the time anything here could match on them.
+        self.assertEqual(('german-chords',),
+                         reading.slugs_for(['photoGermanNoteNames']))
+
+    def test_the_code_map_and_the_prose_map_agree_on_the_slugs(self):
+        # Two arms, one vocabulary. A slug on one side and not the other would
+        # score the same page differently depending on which engine read it.
+        self.assertEqual(set(reading.WARNING_CODES.values()),
+                         {slug for _, slug in reading.WARNING_SLUGS})
+
+    def test_every_slug_either_arm_can_emit_is_mapped(self):
+        # The reminder to add the slug rather than to rewrite the match. Six
+        # each: the worker's prose, and the six ImportNoticeCodes the app's
+        # reader raises.
         self.assertEqual(6, len(reading.WARNING_SLUGS))
+        self.assertEqual(6, len(reading.WARNING_CODES))
 
 
 class Accents(unittest.TestCase):

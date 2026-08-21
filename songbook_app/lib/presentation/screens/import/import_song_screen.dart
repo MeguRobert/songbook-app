@@ -337,7 +337,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       if (mounted) setState(() => _readingPhoto = true);
       final payload = await service.extract(bytes, fileName: file.name);
       switch (payload) {
-        case ChordProPayload(text: final text, warnings: final warnings):
+        case ChordProPayload(text: final text, notices: final notices):
           final parsed = _parser.parse(text);
           _sheetController.text = text;
           _accept(_PendingImport(
@@ -347,11 +347,11 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             // Both sets: the service reports what it could not read, the
             // parser what it could not classify. Either can be the reason a
             // line looks wrong.
-            warnings: [..._fromReader(warnings), ...parsed.warnings],
+            warnings: [...notices, ...parsed.warnings],
             source: _ImportSource.photo,
             fileName: file.name,
           ));
-        case MusicXmlPayload(xml: final xml, warnings: final warnings):
+        case MusicXmlPayload(xml: final xml, notices: final notices):
           // A service that can engrave answers with this instead; the app
           // already knows how to read it.
           final result = _musicXml.importXml(xml);
@@ -370,7 +370,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
             title: result.title ?? heading,
             key: result.key,
             timeSignature: result.timeSignature,
-            warnings: [..._fromReader(warnings), ...result.warnings],
+            warnings: [...notices, ...result.warnings],
             source: _ImportSource.photo,
             fileName: file.name,
           ));
@@ -383,8 +383,11 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       // answers in English, and this knows which language is on screen. There
       // is only one reader and it is ours, so a 401 has only one cause.
       if (mounted) {
-        setState(() => _fileError =
-            e.statusCode == 401 ? l10n.importPhotoSignIn : e.message);
+        setState(() => _fileError = e.statusCode == 401
+            ? l10n.importPhotoSignIn
+            : e.notice != null
+                ? l10n.importNoticeText(e.notice!)
+                : e.message);
       }
     } on MusicXmlImportException catch (e) {
       if (mounted) {
@@ -1055,18 +1058,6 @@ class _BookFieldState extends ConsumerState<_BookField> {
     );
   }
 }
-
-/// The photo backend's own warnings, as notices this screen can render.
-///
-/// They arrive as free prose from a remote service that has no idea what language
-/// the app is in, so they are quoted rather than translated — which is what
-/// [ImportNoticeCode.fromReader] exists to say. Wrapping them lets one list carry
-/// both these and the parser's structured notices, so the review screen has a
-/// single place warnings come from.
-List<ImportNotice> _fromReader(List<String> messages) => [
-      for (final message in messages)
-        ImportNotice(ImportNoticeCode.fromReader, text: message),
-    ];
 
 /// Importer warnings. Shown rather than swallowed: every one marks a place the
 /// importer guessed or dropped something, and that is far easier to judge here

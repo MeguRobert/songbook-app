@@ -152,20 +152,18 @@ void main() {
 
   /// Files with known untranslated warnings, exempted deliberately and visibly.
   ///
-  /// `photo_text_bridge.dart` writes four English warnings: nothing legible in
-  /// the photo, a page holding two songs side by side, no chords recognised, and
-  /// German note names stored under their English spelling. They are real
-  /// interface text and they should become codes.
+  /// Empty, and worth keeping as a place to be honest in rather than deleting.
   ///
-  /// They are exempted rather than converted because converting them is not a
-  /// local change: `PhotoReading.warnings` feeds both `PhotoImportException`'s
-  /// message and `ChordProPayload`, which the REMOTE reader also fills with prose
-  /// of its own, so the type has to change right across the photo pipeline — and
-  /// that pipeline is verified with a container and browser OCR rather than with
-  /// `flutter test`. Doing it inside a merge would risk breaking working photo
-  /// import for the sake of four strings. Listed here so this is a known debt
-  /// with a reason attached, rather than a hole in the guard.
-  const proseDebt = {'lib/domain/services/photo_text_bridge.dart'};
+  /// It held `photo_text_bridge.dart` and its four English warnings — nothing
+  /// legible, a page holding two songs, no chords recognised, German note names
+  /// renamed — on the grounds that converting them was not a local change:
+  /// `PhotoReading.warnings` fed both `PhotoImportException`'s message and
+  /// `ChordProPayload`, which the remote reader also fills with prose of its
+  /// own, so the type had to change right across the photo pipeline. That is
+  /// what happened, and the two warnings the app measured and never raised —
+  /// a photograph too compressed to hold its accents, and show-through erased —
+  /// went in at the same time, because they needed the same seam.
+  const proseDebt = <String>{};
 
   test('no importer or parser message is written as prose', () {
     final offenders = <String>[];

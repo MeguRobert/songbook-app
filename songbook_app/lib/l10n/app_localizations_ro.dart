@@ -1245,4 +1245,37 @@ class AppLocalizationsRo extends AppLocalizations {
   String importNoticeContinuationWithoutChord(int line, String text) {
     return 'Rândul $line: „$text” nu are un acord înainte pe care să îl continue; a fost omis.';
   }
+
+  @override
+  String importNoticePhotoLowResolution(String text, int count) {
+    return 'Fotografia a sosit la $text, în $count KB — prea comprimată ca să păstreze liniile fine. Accentele ő și ű dispar primele, așa că sunt de așteptat câteva litere greșite. Galeria telefonului predă o copie micșorată; dacă alegi aceeași fotografie prin Fișiere, primești de obicei originalul la calitate completă.';
+  }
+
+  @override
+  String get importNoticePhotoShowThroughRemoved =>
+      'O parte a paginii s-a citit ca o a doua cerneală, palidă — versoul care se vede prin hârtie, sau lumină neuniformă — și a fost curățată înainte de citire. Dacă lipsește un acord, o fotografie la lumină mai uniformă se va citi mai bine.';
+
+  @override
+  String importNoticePhotoTwoSongs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pagina are $count cântece unul lângă altul. Le-am citit pe toate, în ordinea de citire — șterge-l pe cel de care nu aveai nevoie.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNoticePhotoNoChords =>
+      'Nu am recunoscut niciun acord — au fost importate doar versurile.';
+
+  @override
+  String get importNoticePhotoNothingLegible =>
+      'Nu am găsit nimic lizibil în fotografia aceasta.';
+
+  @override
+  String importNoticePhotoGermanNoteNames(String text) {
+    return '$text va fi stocat sub denumirea engleză (H este si natural). Aplicația păstrează o singură scriere pentru fiecare notă, ca transpunerea să rămână exactă.';
+  }
 }

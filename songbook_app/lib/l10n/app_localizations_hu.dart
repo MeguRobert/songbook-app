@@ -1241,4 +1241,37 @@ class AppLocalizationsHu extends AppLocalizations {
   String importNoticeContinuationWithoutChord(int line, String text) {
     return '$line. sor: a „$text” előtt nincs akkord, amit folytathatna; kihagytam.';
   }
+
+  @override
+  String importNoticePhotoLowResolution(String text, int count) {
+    return 'Ez a fénykép $text méretben, $count KB-ban érkezett — túl tömörített ahhoz, hogy megtartsa a finom vonalakat. Az ő és az ű veszik el először, ezért néhány hibás betűre számíthatsz. A telefon galériája kicsinyített példányt ad át; ha ugyanazt a képet a Fájlok appból választod ki, általában az eredeti minőség érkezik.';
+  }
+
+  @override
+  String get importNoticePhotoShowThroughRemoved =>
+      'A lap egy részén halvány másodlagos nyomatot találtam — vagy a hátoldal ütött át, vagy egyenetlen volt a fény —, és beolvasás előtt eltávolítottam. Ha egy akkord hiányzik, egyenletesebb fényben készült fénykép jobban olvasható lesz.';
+
+  @override
+  String importNoticePhotoTwoSongs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Ezen a lapon $count ének van egymás mellett. Mindet beolvastam, olvasási sorrendben — töröld azt, amelyikre nem volt szükséged.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNoticePhotoNoChords =>
+      'Egyetlen akkordot sem ismertem fel — csak a szöveg került be.';
+
+  @override
+  String get importNoticePhotoNothingLegible =>
+      'Ezen a fényképen nem találtam olvasható szöveget.';
+
+  @override
+  String importNoticePhotoGermanNoteNames(String text) {
+    return 'A(z) $text az angol néven lesz eltárolva (a H a B alaphangot jelenti). Az alkalmazás hangonként egyetlen írásmódot tart, hogy a transzponálás pontos maradjon.';
+  }
 }

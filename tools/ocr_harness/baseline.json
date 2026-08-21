@@ -94,45 +94,6 @@
         "warnings_ok": 0.0,
         "headline": 0.799
       },
-      "105-kosz-jol-vagyok--chords-handwritten-red.jpg": {
-        "number_exact": 1.0,
-        "title_cer": 0.0625,
-        "lyric_cer": 0.2977,
-        "lyric_cer_folded": 0.2908,
-        "chord_recall": 1.0,
-        "chord_precision": 1.0,
-        "chord_f1": 1.0,
-        "placement": 1.0,
-        "placement_near": 1.0,
-        "warnings_ok": 0.0,
-        "headline": 0.9008
-      },
-      "109-tart-meg-a-kegyelem--chords-handwritten-transpose.jpg": {
-        "number_exact": 0.0,
-        "title_cer": 1.0,
-        "lyric_cer": 0.5809,
-        "lyric_cer_folded": 0.5704,
-        "chord_recall": 0.0,
-        "chord_precision": 0.0,
-        "chord_f1": 0.0,
-        "placement": 0.0,
-        "placement_near": 0.0,
-        "warnings_ok": 0.0,
-        "headline": 0.1397
-      },
-      "125-nincs-mas-isten--chords-two-column-ruled.jpg": {
-        "number_exact": 1.0,
-        "title_cer": 0.0667,
-        "lyric_cer": 0.5291,
-        "lyric_cer_folded": 0.5282,
-        "chord_recall": 1.0,
-        "chord_precision": 0.2381,
-        "chord_f1": 0.3846,
-        "placement": 0.1538,
-        "placement_near": 0.2308,
-        "warnings_ok": 0.0,
-        "headline": 0.3621
-      },
       "151-zengjed-a-dalt--chords-letterboxed.jpg": {
         "number_exact": 0.0,
         "title_cer": 1.0,
@@ -145,19 +106,6 @@
         "placement_near": 0.9,
         "warnings_ok": 0.0,
         "headline": 0.9132
-      },
-      "166-tekozlo-fiu--chords-two-column-italic.jpg": {
-        "number_exact": 1.0,
-        "title_cer": 0.2727,
-        "lyric_cer": 0.2071,
-        "lyric_cer_folded": 0.2006,
-        "chord_recall": 0.3333,
-        "chord_precision": 1.0,
-        "chord_f1": 0.5,
-        "placement": 0.5,
-        "placement_near": 0.5,
-        "warnings_ok": 1.0,
-        "headline": 0.5976
       },
       "185-jezus-krisztusom--chords-highlighted.jpg": {
         "number_exact": 0.0,

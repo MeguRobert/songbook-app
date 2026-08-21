@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/domain/services/browser_photo_import_service.dart';
+import 'package:songbook_app/domain/services/import_notice.dart';
 import 'package:songbook_app/domain/services/page_text_recognizer.dart';
 import 'package:songbook_app/domain/services/photo_import_service.dart';
 import 'package:songbook_app/domain/services/photo_text_bridge.dart';
@@ -14,10 +15,14 @@ import 'package:songbook_app/domain/services/photo_text_bridge.dart';
 /// screen consumes. What these pin is the wiring, which is the part that was
 /// missing while both halves already worked.
 class _FakeRecognizer implements PageTextRecognizer {
-  _FakeRecognizer(this.words, {this.error});
+  _FakeRecognizer(this.words, {this.error, this.notices = const []});
 
   final List<OcrWord> words;
   final Object? error;
+
+  /// What the real recognizer reports about the image rather than the words -
+  /// a photograph too compressed to hold its accents, show-through erased.
+  final List<ImportNotice> notices;
 
   int calls = 0;
   Uint8List? sawBytes;
@@ -27,13 +32,13 @@ class _FakeRecognizer implements PageTextRecognizer {
   bool get isSupported => true;
 
   @override
-  Future<List<OcrWord>> recognize(Uint8List imageBytes,
+  Future<PageWords> recognize(Uint8List imageBytes,
       {String language = PageTextRecognizer.hungarian}) async {
     calls++;
     sawBytes = imageBytes;
     sawLanguage = language;
     if (error != null) throw error!;
-    return words;
+    return PageWords(words, notices: notices);
   }
 }
 
@@ -95,7 +100,7 @@ void main() {
 
     final payload = await service.extract(bytes);
 
-    expect(payload.warnings, isNotEmpty);
+    expect(payload.notices, isNotEmpty);
   });
 
   test('an empty image is refused before the engine is started', () async {
@@ -116,8 +121,37 @@ void main() {
 
     await expectLater(
       () => service.extract(bytes),
-      throwsA(isA<PhotoImportException>()),
+      throwsA(isA<PhotoImportException>().having(
+        (e) => e.notice?.code,
+        'notice',
+        // Carried as a code, not only as a sentence: this one is shown to the
+        // user, and the screen has to be able to say it in Hungarian.
+        ImportNoticeCode.photoNothingLegible,
+      )),
     );
+  });
+
+  test("what the recognizer says about the image reaches the review screen",
+      () async {
+    // The two the app measured and then threw away. `low-resolution` is the
+    // single biggest lever on accuracy and the fix is on the phone rather than
+    // in this app, so it is worth a sentence; show-through removal costs stroke
+    // sharpness, so a chord missing from a page that raised it is worth a
+    // second photograph rather than a bug report.
+    const fromImage = [
+      ImportNotice(ImportNoticeCode.photoLowResolution,
+          text: '1532×2047', count: 106),
+      ImportNotice(ImportNoticeCode.photoShowThroughRemoved),
+    ];
+    final service = BrowserPhotoImportService(
+      recognizer: _FakeRecognizer(page, notices: fromImage),
+    );
+
+    final payload = await service.extract(bytes);
+
+    // First, and in this order: "that photo is too compressed" explains the
+    // wrong letters under it and reads oddly after them.
+    expect(payload.notices.take(2), fromImage);
   });
 
   test('an engine that will not start reads as a failed import, not a crash',

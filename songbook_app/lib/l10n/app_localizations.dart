@@ -2061,6 +2061,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Line {line}: “{text}” has no chord before it to continue; dropped.'**
   String importNoticeContinuationWithoutChord(int line, String text);
+
+  /// Photo reader: the upload is too compressed to hold Hungarian long umlauts. `text` is the pixel size, `count` the file size in kilobytes.
+  ///
+  /// In en, this message translates to:
+  /// **'That photo arrived at {text} in {count} KB — too compressed to hold the fine strokes. Accents like ő and ű are the first thing to go, so expect a few wrong letters. A phone gallery hands over a shrunken copy; picking the same photo through Files usually gives the full-quality original.'**
+  String importNoticePhotoLowResolution(String text, int count);
+
+  /// Photo reader: a second, paler population of ink was detected and suppressed. Deliberately says what was done rather than what caused it: measured on the corpus, uneven light across a photographed page trips the same gate as a legible reverse side, and suppression costs stroke sharpness either way.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of the page read as faint second ink — the reverse side showing through, or uneven light — and it was cleaned away before reading. If a chord is missing, a photo in flatter light will read better than this one.'**
+  String get importNoticePhotoShowThroughRemoved;
+
+  /// Photo reader: a hymnal page set with more than one song across it.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{That page holds {count} songs side by side. All of them were read, in reading order — delete the one you did not want.}}'**
+  String importNoticePhotoTwoSongs(int count);
+
+  /// Photo reader: words were read but no row of them classified as chords.
+  ///
+  /// In en, this message translates to:
+  /// **'No chords were recognised — the words were imported on their own.'**
+  String get importNoticePhotoNoChords;
+
+  /// Photo reader: the page could not be read at all.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing legible was found in that photo.'**
+  String get importNoticePhotoNothingLegible;
+
+  /// Photo reader: German/Hungarian note names were read and are renamed on the way into storage. `text` is the names, sorted and joined.
+  ///
+  /// In en, this message translates to:
+  /// **'{text} will be stored under the English name (H is B natural). The app keeps one spelling per pitch so transposing stays exact.'**
+  String importNoticePhotoGermanNoteNames(String text);
 }
 
 class _AppLocalizationsDelegate

@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'page_text_recognizer.dart';
 import 'photo_import_service.dart';
-import 'photo_text_bridge.dart';
 
 /// The recognizer on a platform that has no browser to run one in.
 ///
@@ -19,7 +18,7 @@ class _UnsupportedPageTextRecognizer implements PageTextRecognizer {
   bool get isSupported => false;
 
   @override
-  Future<List<OcrWord>> recognize(
+  Future<PageWords> recognize(
     Uint8List imageBytes, {
     String language = PageTextRecognizer.hungarian,
   }) async {

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:songbook_app/domain/services/import_notice.dart';
 import 'package:songbook_app/domain/services/photo_text_bridge.dart';
 
 /// The Dart port of the OCR -> ChordPro bridge.
@@ -187,8 +188,10 @@ void main() {
     });
 
     test('two songs on one page are reported', () {
-      expect(bridge.read(twoColumns()).warnings.join(),
-          contains('side by side'));
+      expect(
+          bridge.read(twoColumns()).notices,
+          contains(
+              const ImportNotice(ImportNoticeCode.photoTwoSongs, count: 2)));
     });
   });
 
@@ -243,7 +246,22 @@ void main() {
       final words =
           row(70, 16, [('D', 0, 10), ('A', 100, 110), ('Hm', 200, 220)]) +
               row(100, 20, lyrics);
-      expect(bridge.read(words).warnings.join(), contains('Hm'));
+      expect(bridge.read(words).notices, contains(
+          const ImportNotice(ImportNoticeCode.photoGermanNoteNames,
+              text: 'Hm')));
+    });
+
+    test('and so is a lowercase hm, which is the same pitch', () {
+      // A Hungarian songbook prints its minors in lowercase throughout, so
+      // this is the common spelling rather than the exotic one - and it was
+      // renamed to Bm on the way into storage with nothing said, because the
+      // check only looked for the capital.
+      final words =
+          row(70, 16, [('D', 0, 10), ('A', 100, 110), ('hm', 200, 220)]) +
+              row(100, 20, lyrics);
+      expect(bridge.read(words).notices, contains(
+          const ImportNotice(ImportNoticeCode.photoGermanNoteNames,
+              text: 'hm')));
     });
   });
 
@@ -284,7 +302,8 @@ void main() {
     test('no words produce no content, with a warning', () {
       final reading = bridge.read(const []);
       expect(reading.chordPro, isEmpty);
-      expect(reading.warnings, isNotEmpty);
+      expect(reading.notices,
+          [const ImportNotice(ImportNoticeCode.photoNothingLegible)]);
     });
 
     test('too few words to judge a tilt leaves them alone', () {

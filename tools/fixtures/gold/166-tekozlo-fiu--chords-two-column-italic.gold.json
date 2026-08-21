@@ -3,7 +3,7 @@
   "tier": "B",
   "engine": "text",
   "reviewed_by": null,
-  "drafted_from": "easyocr",
+  "drafted_from": "vision",
   "_review_checklist": [
     "Compare every line against the photograph, not against the app.",
     "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
@@ -20,9 +20,12 @@
     "long runs of lyric lines with no chord row above them",
     "a chord (D) in the right column sits past the right edge of the lyric line under it"
   ],
-  "_drafted_from": "easyocr reading, uncorrected",
+  "_drafted_from_note": "transcribed from the photograph; chord columns from measured ink spans, mapped to columns with PhotoTextBridge's own interpolation rule",
   "number": 166,
-  "title": "Tekozlo fiu",
-  "warnings": [],
-  "chordpro": "166. Tékozló fiú\nA              E\nA Mennybe fenn számítanak rád\nA       Amaj 7-A7     D        D E      A    E\nNézd; közeleg az éj, és nem tudod hol talál,         az Atya a kapuban várja tékozló fiát!\ndm      A E  fiszm              A        E           D\na terveket már rég feladtad,                             Kapsz új vuhát és gyürüt az ujjadra Isten vár,\n        hm                       E                    E             A\nmikkel kérkedon; büszkén elindultál.                Ósoha fel nem adja!\nNézd; hív a messzeség, célod régen nincsen már,\nemlékek élnek szívedben;               D     E\nlátod magad elótt; az Atyai ház falát.                   Azt mondod ez nem érdekel,\nAz éj csendesen leszáll, $ te úgy Kiáltanál,        A   E   fiszm  E   D\nde jól tudod, hogy I úgysincs kinek;                     nem a te világod; hívö nem leszel\nhisz régen elhagyott már minden jó barát:.             Nem kell, hogy neked papoljanak; mindent\nCsak mész hív a messzeség,                       megoldasz egymagad,\ncélod régen nincsen már.                            S közben nem látod, hogy elestél é nincs eród,\nCsak várod, hogy feltúnjön a fény, amit hajdan       hogy D  fölkeljél,\nláttál az Atyai ház falán:                             A szívedben nincs békesség; A\nE fiszm  E  D-E       A\nmióta otthonró] cljöttél, mert Várnak rád!"
+  "title": "Tékozló fiú",
+  "warnings": [
+    "low-resolution",
+    "german-chords"
+  ],
+  "chordpro": "A                Amaj7-A7                D\nNézd, közeleg az éj, és nem tudod hol talál,\ndm              A  E     fiszm\na terveket már rég feladtad,\n       hm        D                E\nmikkel kérkedőn, büszkén elindultál.\nNézd, hív a messzeség, célod régen nincsen már,\nemlékek élnek szívedben,\nlátod magad előtt, az Atyai ház falát.\nAz éj csendesen leszáll, s te úgy kiáltanál,\nde jól tudod, hogy úgysincs kinek,\nhisz régen elhagyott már minden jó barát.\nCsak mész, hív a messzeség,\ncélod régen nincsen már.\nCsak várod, hogy feltűnjön a fény, amit hajdan\nláttál az Atyai ház falán.\n\nA              E\nA Mennybe fenn számítanak rád,\n   D      E             A          E\naz Atya a kapuban várja tékozló fiát!\nA                 E                        D\nKapsz új ruhát és gyűrűt az ujjadra Isten vár,\n  E               A\nŐ soha fel nem adja!\n\nD          E\nAzt mondod ez nem érdekel,\nA     E       fiszm     E     D\nnem a te világod, hívő nem leszel\nNem kell, hogy neked papoljanak, mindent\nmegoldasz egymagad,\nS közben nem látod, hogy elestél és nincs erőd,\nhogy fölkeljél,\nD       E                A\nA szívedben nincs békesség,\n  E    fiszm    E       D-E             A\nmióta otthonról eljöttél, mert Várnak rád!"
 }

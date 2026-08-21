@@ -36,9 +36,9 @@ class BrowserPhotoImportService implements PhotoImportService {
       throw const PhotoImportException('That image is empty.');
     }
 
-    final List<OcrWord> words;
+    final PageWords read;
     try {
-      words = await recognizer.recognize(imageBytes);
+      read = await recognizer.recognize(imageBytes);
     } on PhotoImportException {
       // Already a sentence meant for the person holding the phone.
       rethrow;
@@ -54,15 +54,22 @@ class BrowserPhotoImportService implements PhotoImportService {
       );
     }
 
-    final reading = bridge.read(words);
+    final reading = bridge.read(read.words);
     if (reading.chordPro.trim().isEmpty) {
-      // The bridge explains an unreadable page better than this can — it knows
-      // whether it saw nothing at all or nothing it could lay out.
-      throw PhotoImportException(reading.warnings.isNotEmpty
-          ? reading.warnings.first
-          : 'Nothing could be read from that photo.');
+      // The bridge names an unreadable page better than this can - it knows
+      // whether it saw nothing at all or nothing it could lay out. The code is
+      // carried alongside the sentence so the screen can say it in the language
+      // it is being read in; the sentence stays as the fallback for a caller
+      // that has no localisations, which the measurement harness does not.
+      throw PhotoImportException(
+        'Nothing could be read from that photo.',
+        notice: reading.notices.isNotEmpty ? reading.notices.first : null,
+      );
     }
 
-    return ChordProPayload(reading.chordPro, warnings: reading.warnings);
+    // The image's own notices first: "that photo is too compressed" explains
+    // the wrong letters below it, and reads oddly after them.
+    return ChordProPayload(reading.chordPro,
+        notices: [...read.notices, ...reading.notices]);
   }
 }

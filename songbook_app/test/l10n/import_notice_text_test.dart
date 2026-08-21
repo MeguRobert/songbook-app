@@ -29,6 +29,17 @@ const _samples = <ImportNoticeCode, ImportNotice>{
       text: 'The bottom of the page was cut off.'),
   ImportNoticeCode.bracketNotAChord:
       ImportNotice(ImportNoticeCode.bracketNotAChord, line: 1, text: 'Chorus'),
+  ImportNoticeCode.photoLowResolution: ImportNotice(
+      ImportNoticeCode.photoLowResolution, text: '1532×2047', count: 106),
+  ImportNoticeCode.photoShowThroughRemoved:
+      ImportNotice(ImportNoticeCode.photoShowThroughRemoved),
+  ImportNoticeCode.photoTwoSongs:
+      ImportNotice(ImportNoticeCode.photoTwoSongs, count: 2),
+  ImportNoticeCode.photoNoChords: ImportNotice(ImportNoticeCode.photoNoChords),
+  ImportNoticeCode.photoNothingLegible:
+      ImportNotice(ImportNoticeCode.photoNothingLegible),
+  ImportNoticeCode.photoGermanNoteNames: ImportNotice(
+      ImportNoticeCode.photoGermanNoteNames, text: 'H7, hm'),
   ImportNoticeCode.timewiseScore: ImportNotice(ImportNoticeCode.timewiseScore),
   ImportNoticeCode.noNotes: ImportNotice(ImportNoticeCode.noNotes),
   ImportNoticeCode.extraVoicesKept:

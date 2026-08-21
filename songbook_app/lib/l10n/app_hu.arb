@@ -326,5 +326,11 @@
   "importNoticeEmptyMxlInput": "Az .mxl bemenet üres.",
   "importNoticeUnreadableArchive": "Ez nem olvasható .mxl archívum: {text}",
   "importNoticeNoScoreInArchive": "Az .mxl archívum nem tartalmaz MusicXML kottát.",
-  "importNoticeContinuationWithoutChord": "{line}. sor: a „{text}” előtt nincs akkord, amit folytathatna; kihagytam."
+  "importNoticeContinuationWithoutChord": "{line}. sor: a „{text}” előtt nincs akkord, amit folytathatna; kihagytam.",
+  "importNoticePhotoLowResolution": "Ez a fénykép {text} méretben, {count} KB-ban érkezett — túl tömörített ahhoz, hogy megtartsa a finom vonalakat. Az ő és az ű veszik el először, ezért néhány hibás betűre számíthatsz. A telefon galériája kicsinyített példányt ad át; ha ugyanazt a képet a Fájlok appból választod ki, általában az eredeti minőség érkezik.",
+  "importNoticePhotoShowThroughRemoved": "A lap egy részén halvány másodlagos nyomatot találtam — vagy a hátoldal ütött át, vagy egyenetlen volt a fény —, és beolvasás előtt eltávolítottam. Ha egy akkord hiányzik, egyenletesebb fényben készült fénykép jobban olvasható lesz.",
+  "importNoticePhotoTwoSongs": "{count, plural, other{Ezen a lapon {count} ének van egymás mellett. Mindet beolvastam, olvasási sorrendben — töröld azt, amelyikre nem volt szükséged.}}",
+  "importNoticePhotoNoChords": "Egyetlen akkordot sem ismertem fel — csak a szöveg került be.",
+  "importNoticePhotoNothingLegible": "Ezen a fényképen nem találtam olvasható szöveget.",
+  "importNoticePhotoGermanNoteNames": "A(z) {text} az angol néven lesz eltárolva (a H a B alaphangot jelenti). Az alkalmazás hangonként egyetlen írásmódot tart, hogy a transzponálás pontos maradjon."
 }

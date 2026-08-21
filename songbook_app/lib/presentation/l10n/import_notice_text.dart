@@ -33,6 +33,17 @@ extension ImportNoticeText on AppLocalizations {
         ImportNoticeCode.fromReader => notice.text ?? '',
         ImportNoticeCode.bracketNotAChord =>
           importNoticeBracketNotAChord(notice.line ?? 0, notice.text ?? ''),
+        ImportNoticeCode.photoLowResolution => importNoticePhotoLowResolution(
+            notice.text ?? '', notice.count ?? 0),
+        ImportNoticeCode.photoShowThroughRemoved =>
+          importNoticePhotoShowThroughRemoved,
+        ImportNoticeCode.photoTwoSongs =>
+          importNoticePhotoTwoSongs(notice.count ?? 0),
+        ImportNoticeCode.photoNoChords => importNoticePhotoNoChords,
+        ImportNoticeCode.photoNothingLegible =>
+          importNoticePhotoNothingLegible,
+        ImportNoticeCode.photoGermanNoteNames =>
+          importNoticePhotoGermanNoteNames(notice.text ?? ''),
         ImportNoticeCode.timewiseScore => importNoticeTimewiseScore,
         ImportNoticeCode.noNotes => importNoticeNoNotes,
         ImportNoticeCode.extraVoicesKept =>

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:songbook_app/domain/services/chord_sheet_parser.dart';
+import 'package:songbook_app/domain/services/import_notice.dart';
 import 'package:songbook_app/domain/services/photo_import_service.dart';
 
 /// The photo-import contract.
@@ -46,7 +47,7 @@ void main() {
 
       expect(payload, isA<ChordProPayload>());
       expect((payload as ChordProPayload).text, '[G]Az Úrra [C]bízom életem');
-      expect(payload.warnings, isEmpty);
+      expect(payload.notices, isEmpty);
     });
 
     test('musicxml comes back as a MusicXmlPayload', () async {
@@ -63,9 +64,12 @@ void main() {
       expect((payload as MusicXmlPayload).xml, '<score-partwise/>');
     });
 
-    test('backend warnings survive to the caller', () async {
+    test('backend warnings survive to the caller, quoted verbatim', () async {
       // These sit beside the parser's own warnings on the review screen, so a
       // page the backend only half-read is visible before the song is saved.
+      // Carried under `fromReader`, which is the one code whose text is NOT
+      // translated: a remote service does not know what language the app is
+      // being read in, so quoting it beats pretending the words are ours.
       final service = serviceReturning(json.encode({
         'kind': 'chordpro',
         'content': '[G]Egy sor',
@@ -73,7 +77,10 @@ void main() {
       }));
 
       final payload = await service.extract(_image);
-      expect(payload.warnings, ['The bottom of the page was cut off.']);
+      expect(payload.notices, [
+        const ImportNotice(ImportNoticeCode.fromReader,
+            text: 'The bottom of the page was cut off.'),
+      ]);
     });
 
     test('what it returns is what the existing parser already reads', () async {

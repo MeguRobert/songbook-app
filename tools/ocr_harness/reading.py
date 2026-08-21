@@ -24,10 +24,26 @@ _DIRECTIVE = re.compile(r"^\{\s*(\w+)\s*:\s*(.*?)\s*\}$")
 # storage-side rule in Dart and this side only has to agree about the shape.
 _NUMBER_IN_TITLE = re.compile(r"^\s*(\d{1,4})\s*\.?\s+(.*\S)\s*$")
 
-# The prose an engine emits, and the stable slug it is scored as. Warnings are
-# localised and three of them are named as known debt in the app's own
-# no-hardcoded-strings test, so matching on wording would break the moment that
-# debt is paid. Substrings, in the order the worker can emit them.
+# The app's ImportNoticeCode names, and the stable slug each is scored as.
+#
+# The shipped reader emits codes rather than sentences - its prose lives in
+# `AppLocalizations.importNoticeText`, translated three ways - so the browser arm
+# reports `notice.code.name` and this is the whole mapping. A code name is a far
+# stabler contract than the English wording below: rewording a warning used to
+# unmap it silently, which is exactly what the debt note here used to warn about.
+WARNING_CODES = {
+    "photoLowResolution": "low-resolution",
+    "photoShowThroughRemoved": "show-through-removed",
+    "photoNothingLegible": "nothing-legible",
+    "photoTwoSongs": "two-songs",
+    "photoNoChords": "no-chords",
+    "photoGermanNoteNames": "german-chords",
+}
+
+# The prose `photo_import_worker.py` emits, and the same slugs. Kept because the
+# worker answers over the wire in its own words - which is what
+# `ImportNoticeCode.fromReader` exists to carry - so there is no code to read on
+# that side. Substrings, in the order it can emit them.
 WARNING_SLUGS = (
     ("too compressed to hold the fine strokes", "low-resolution"),
     ("reverse side of the page showed through", "show-through-removed"),
@@ -44,6 +60,9 @@ def slugs_for(warnings) -> tuple[str, ...]:
     """[warnings] as stable slugs. Anything unrecognised is kept verbatim."""
     out = []
     for warning in warnings:
+        if warning in WARNING_CODES:
+            out.append(WARNING_CODES[warning])
+            continue
         for needle, slug in WARNING_SLUGS:
             if needle in warning:
                 out.append(slug)

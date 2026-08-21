@@ -1,6 +1,23 @@
 import 'dart:typed_data';
 
+import 'import_notice.dart';
 import 'photo_text_bridge.dart';
+
+/// What a recogniser saw: the words, and anything worth saying about the
+/// photograph itself.
+///
+/// The notices are here rather than in [PhotoTextBridge] because only this
+/// stage has the pixels. Whether the upload is too compressed to hold an `ő`,
+/// and whether the reverse side of the page had to be erased before reading,
+/// are facts about the image — and both were measured here and then silently
+/// dropped, which is why the app never warned about either while the Python
+/// worker did.
+class PageWords {
+  final List<OcrWord> words;
+  final List<ImportNotice> notices;
+
+  const PageWords(this.words, {this.notices = const []});
+}
 
 /// Reads the words off a photographed page.
 ///
@@ -26,7 +43,7 @@ abstract class PageTextRecognizer {
   bool get isSupported;
 
   /// The words in [imageBytes], with their boxes in image pixels.
-  Future<List<OcrWord>> recognize(
+  Future<PageWords> recognize(
     Uint8List imageBytes, {
     String language = hungarian,
   });

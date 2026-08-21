@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import 'import_notice.dart';
+
 /// What a photo-import backend returned.
 ///
 /// Two kinds, because the app already has a consumer for each: ChordPro goes
@@ -12,26 +14,31 @@ import 'package:http/http.dart' as http;
 /// and the sheet-music version needs no new app code, only a backend that
 /// answers `musicxml`.
 sealed class PhotoImportPayload {
-  /// Non-fatal problems the backend wants surfaced — a page it could only
-  /// partly read, a guess it had to make. Shown next to the parser's own
-  /// warnings on the review screen.
-  final List<String> warnings;
+  /// Non-fatal problems the reader wants surfaced — a page it could only
+  /// partly read, a guess it had to make, a photograph too compressed to hold
+  /// its accents. Shown next to the parser's own warnings on the review screen.
+  ///
+  /// Codes, not prose. The on-device reader has no `BuildContext`, so anything
+  /// it words itself arrives in English on a Hungarian screen; a remote reader
+  /// has the same problem for a different reason and its prose is carried
+  /// verbatim under [ImportNoticeCode.fromReader]. One list holds both.
+  final List<ImportNotice> notices;
 
-  const PhotoImportPayload({this.warnings = const []});
+  const PhotoImportPayload({this.notices = const []});
 }
 
 /// Lyrics and chords as ChordPro text.
 class ChordProPayload extends PhotoImportPayload {
   final String text;
 
-  const ChordProPayload(this.text, {super.warnings});
+  const ChordProPayload(this.text, {super.notices});
 }
 
 /// An engraved score as MusicXML.
 class MusicXmlPayload extends PhotoImportPayload {
   final String xml;
 
-  const MusicXmlPayload(this.xml, {super.warnings});
+  const MusicXmlPayload(this.xml, {super.notices});
 }
 
 /// A photo import that failed in a way worth telling the user about.
@@ -50,7 +57,16 @@ class PhotoImportException implements Exception {
   /// beat any translation of a status code.
   final int? statusCode;
 
-  const PhotoImportException(this.message, {this.statusCode});
+  /// The same failure as a translatable code, where there is one.
+  ///
+  /// [message] is the fallback and stays required: a remote reader answers in
+  /// its own words and there is nothing to translate. But the on-device reader
+  /// fails for reasons this app knows the name of — nothing legible on the page
+  /// — and those should not reach a Hungarian screen in English. When this is
+  /// set the screen renders it instead of [message].
+  final ImportNotice? notice;
+
+  const PhotoImportException(this.message, {this.statusCode, this.notice});
 
   @override
   String toString() => 'PhotoImportException: $message';
@@ -189,14 +205,20 @@ class HttpPhotoImportService implements PhotoImportService {
       );
     }
 
-    final warnings = switch (decoded['warnings']) {
-      final List<dynamic> list => list.map((w) => '$w').toList(),
-      _ => const <String>[],
+    // Quoted rather than translated, which is what `fromReader` exists to say:
+    // these sentences are written by a service that has no idea what language
+    // the app is being read in, so passing them off as ours would be worse.
+    final notices = switch (decoded['warnings']) {
+      final List<dynamic> list => [
+          for (final warning in list)
+            ImportNotice(ImportNoticeCode.fromReader, text: '$warning'),
+        ],
+      _ => const <ImportNotice>[],
     };
 
     return switch (decoded['kind']) {
-      'chordpro' => ChordProPayload(content, warnings: warnings),
-      'musicxml' => MusicXmlPayload(content, warnings: warnings),
+      'chordpro' => ChordProPayload(content, notices: notices),
+      'musicxml' => MusicXmlPayload(content, notices: notices),
       // Naming the value is deliberate: the most likely cause is a backend
       // returning something slightly off, and the person debugging it is the
       // one who wrote that backend.
