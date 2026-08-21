@@ -91,12 +91,28 @@ def index_page() -> str:
 """
 
 
+def newest_source() -> float:
+    """When the app's reading path was last touched.
+
+    Every Dart file under `lib`, not just the entry point. Watching the entry
+    point alone was a silent lie: the whole claim of this harness is that a fix
+    in `photo_text_bridge.dart` moves these numbers without being ported, and
+    while the staleness check looked at one file that never changes, a run after
+    such a fix quietly re-measured the previous build and reported the old score
+    to the digit.
+    """
+    newest = ENTRY.stat().st_mtime
+    for path in (APP / "lib").rglob("*.dart"):
+        newest = max(newest, path.stat().st_mtime)
+    return newest
+
+
 def compile_harness(force: bool = False) -> pathlib.Path:
     """Compile the entry point and stage the photographs. Returns the build dir."""
     BUILD.mkdir(parents=True, exist_ok=True)
     out = BUILD / "harness.js"
     stale = (force or not out.exists()
-             or out.stat().st_mtime <= ENTRY.stat().st_mtime)
+             or out.stat().st_mtime <= newest_source())
     if stale:
         subprocess.run(
             [_tool("dart"), "compile", "js",

@@ -162,11 +162,21 @@ void main() {
   });
 
   group('columns', () {
+    // Three rows a side, because that is what a column is: past the end of a
+    // single-column page's shortest line a band of whitespace opens too, and
+    // the row count inside the band is what tells the two apart.
     List<OcrWord> twoColumns() =>
-        row(100, 20, [('Az', 0, 40), ('Úr', 50, 90)]) +
-        row(100, 20, [('Mondd,', 900, 1010), ('ki', 1020, 1050)]) +
-        row(140, 20, [('irgalma', 0, 120)]) +
-        row(140, 20, [('egész', 900, 1000)]);
+        row(100, 20, [('Az', 0, 60), ('Úr', 70, 130), ('irgalma', 140, 300)]) +
+        row(100, 20, [('Mondd,', 520, 640), ('ki', 650, 700)]) +
+        row(140, 20, [('végtelen,', 0, 190)]) +
+        row(140, 20, [('egész', 520, 640)]) +
+        row(180, 20, [('minden', 0, 140), ('reggel', 150, 280)]) +
+        row(180, 20, [('a', 520, 540), ('dzsungel', 550, 700)]);
+
+    // A heading of the kind a hymnal prints over both columns, reaching across
+    // the gutter that the columns leave.
+    List<OcrWord> heading() => row(
+        40, 26, [('166.', 200, 290), ('Tékozló', 300, 520), ('fiú', 530, 620)]);
 
     test('a gutter splits the page and the left column is read first', () {
       final text = render(twoColumns());
@@ -192,6 +202,58 @@ void main() {
           bridge.read(twoColumns()).notices,
           contains(
               const ImportNotice(ImportNoticeCode.photoTwoSongs, count: 2)));
+    });
+
+    test('the heading stays in one piece rather than splitting at the cut', () {
+      // Filed word by word, `166. Tékozló fiú` becomes `166.` heading the first
+      // column and `Tékozló fiú` heading the second - and the recogniser then
+      // reads both halves again when it crops each column.
+      final columns = bridge.splitColumns(heading() + twoColumns());
+      expect(columns.first.map((w) => w.text),
+          containsAll(['166.', 'Tékozló', 'fiú']));
+      expect(render(heading() + twoColumns()),
+          startsWith('{title: 166. Tékozló fiú}'));
+    });
+
+    test('a heading set across the columns does not close the gutter', () {
+      // The failure this cost both two-column pages in the measurement corpus.
+      // A hymnal sets the song's heading over both columns, so one word of it
+      // lies across a gutter that is otherwise 127 clear pixels wide, and the
+      // old rule — a band no word crosses anywhere — found no gutter at all.
+      // The page then read as one column, which interleaves a line of the left
+      // column with an unrelated line of the right.
+      final page = row(40, 26, [('166.', 400, 500), ('Tékozló', 510, 700)]) +
+          twoColumns();
+      final text = render(page);
+      for (final line in text.split('\n')) {
+        expect(line.contains('irgalma') && line.contains('egész'), isFalse,
+            reason: line);
+      }
+      expect(text.indexOf('végtelen,'), lessThan(text.indexOf('Mondd,')));
+    });
+
+    test('and means the columns are one song, not two', () {
+      // Two songs to a page each carry their own heading inside their own
+      // column. One heading above both is a song continuing from the foot of
+      // the first column into the head of the second, which is the order it was
+      // just read in — so telling the user to delete a half would be wrong.
+      expect(bridge.read(heading() + twoColumns()).notices.map((n) => n.code),
+          isNot(contains(ImportNoticeCode.photoTwoSongs)));
+    });
+
+    test('a ragged right margin is not a column', () {
+      // Past the end of the shortest line a band of whitespace does open, and
+      // nothing crosses it but the longest line or two. What stops it becoming
+      // a column is how few rows are inside it.
+      final page = row(100, 20, [('Az', 0, 40), ('Úr', 50, 90)]) +
+          row(140, 20, [('irgalma', 0, 120)]) +
+          row(180, 20, [('végtelen,', 0, 150)]) +
+          row(220, 20, [
+            ('minden', 0, 110),
+            ('reggel', 120, 220),
+            ('megújul', 700, 860),
+          ]);
+      expect(bridge.columnCuts(page), isEmpty);
     });
   });
 

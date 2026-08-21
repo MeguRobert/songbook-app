@@ -49,6 +49,22 @@ class OcrWord {
 
   OcrWord saying(String replacement) => OcrWord(
       text: replacement, x0: x0, y0: y0, x1: x1, y1: y1);
+
+  /// The same word [dx] pixels to the right, glyph boxes and all.
+  ///
+  /// For a box read out of a crop of the page: the recogniser reads each column
+  /// as its own image, and everything downstream compares words with one
+  /// another, so the crops have to be put back into one coordinate system. The
+  /// glyphs move with it because [PhotoTextBridge.splitMergedChords] is the next
+  /// thing to read them.
+  OcrWord shiftedBy(double dx) => OcrWord(
+        text: text,
+        x0: x0 + dx,
+        y0: y0,
+        x1: x1 + dx,
+        y1: y1,
+        symbols: [for (final symbol in symbols) symbol.shiftedBy(dx)],
+      );
 }
 
 /// A page turned back into chords-over-lyrics text.
@@ -138,9 +154,31 @@ class PhotoTextBridge {
   static const _symbolGap = 0.6;
 
   /// A gutter must be this many typical glyph widths across, and a column needs
-  /// this many words to be a column rather than a speck.
+  /// this many words and this many rows of its own to be a column rather than a
+  /// speck.
+  ///
+  /// The row count is what keeps a single-column page from splitting. Past the
+  /// end of its shortest line a band of whitespace does open, but only the one
+  /// or two longest lines reach into it — so it holds fewer rows than a column
+  /// would, and reads as the ragged right margin it is.
   static const _gutterWidth = 4.0;
   static const _minColumnWords = 3;
+  static const _minColumnRows = 3;
+
+  /// What share of the page's rows may cross a gutter and leave it a gutter.
+  ///
+  /// Not zero, which is what the old union-of-extents test demanded, and what
+  /// cost both two-column pages in the measurement corpus their columns: a
+  /// hymnal sets the song's heading *across* the columns, so one word of it lies
+  /// over the gutter. `125-nincs-mas-isten` has 127 clear pixels between its
+  /// columns and lost them to the word `Nincs`; `166-tekozlo-fiu` has 158 and
+  /// lost them to `Tékozló`. Both pages then read as one column, which
+  /// interleaves a line of the left column with an unrelated line of the right.
+  ///
+  /// A share of the rows rather than a constant, because that is the difference
+  /// between a heading and a page: a heading is one row out of however many,
+  /// while on a single-column page *every* row crosses every interior x.
+  static const _gutterStraddle = 0.2;
 
   /// Reads [words] into chords-over-lyrics text.
   PhotoReading read(List<OcrWord> words) {
@@ -180,9 +218,16 @@ class PhotoTextBridge {
     }
 
     final notices = <ImportNotice>[];
-    if (columns.length > 1) {
+    if (columns.length > 1 && !spansColumns(straight)) {
       // Honest rather than clever: a page holding two songs cannot become one
       // song, and the review box is where the unwanted half gets deleted.
+      //
+      // More than one column is not by itself more than one song, though, and
+      // saying so was wrong on both two-column pages in the corpus: a heading
+      // set across the columns means one song continuing from the foot of one
+      // into the head of the next, which is what the columns were read in
+      // order for. Two songs to a page each carry their own heading, inside
+      // their own column.
       notices.add(
           ImportNotice(ImportNoticeCode.photoTwoSongs, count: columns.length));
     }
@@ -258,50 +303,208 @@ class PhotoTextBridge {
     ];
   }
 
-  /// [words] split into columns, left to right, on the gutters between them.
+  /// The gutters between the page's columns, left to right.
   ///
   /// A hymnal sets two songs side by side, and rows are clustered by y — so
   /// without this a line in the left column and an unrelated line at the same
-  /// height in the right one become one row, and the songs interleave.
+  /// height in the right one become one row, and the two songs interleave.
   ///
-  /// The gutter is a vertical band that NO word crosses anywhere on the page.
-  /// Taking the union of every word's extent is what makes it safe: a chord row
-  /// is mostly whitespace and full of wide gaps of its own, but some lyric line
-  /// below always covers them.
-  List<List<OcrWord>> splitColumns(List<OcrWord> words) {
-    if (words.length < 2 * _minColumnWords) return [words];
-    final gutter = _gutterWidth *
-        _median(words.where((w) => w.text.isNotEmpty).map(
-            (w) => w.width / w.text.length));
+  /// A gutter is a vertical band that at most [_gutterStraddle] of the page's
+  /// rows cross. It is found by sweeping the word spans and counting, for each
+  /// interval between two word edges, how many words *cover* it: inside the text
+  /// of a single-column page that count is roughly the number of rows, and in a
+  /// real gutter it is the page's heading and nothing else.
+  List<({double from, double to, double cut})> columnGutters(
+      List<OcrWord> words) {
+    if (words.length < 2 * _minColumnWords) return const [];
+    final measurable =
+        words.where((w) => w.text.isNotEmpty && w.width > 0).toList();
+    if (measurable.isEmpty) return const [];
+    final gutter =
+        _gutterWidth * _median(measurable.map((w) => w.width / w.text.length));
 
-    final spans = words.map((w) => (w.x0, w.x1)).toList()
-      ..sort((a, b) => a.$1.compareTo(b.$1));
-    final edges = <double>[];
-    var reach = spans.first.$2;
-    for (final (start, end) in spans.skip(1)) {
-      if (start - reach > gutter) edges.add((reach + start) / 2);
-      reach = math.max(reach, end);
+    final rows = groupRows(words);
+    final allowed = math.max(1, (rows.length * _gutterStraddle).floor());
+
+    // The crossing count only changes at a word edge, so the intervals between
+    // consecutive edges are where it is worth measuring. A sweep does it in one
+    // pass: `opened - closed` is how many words cover the interval.
+    final starts = words.map((w) => w.x0).toList()..sort();
+    final ends = words.map((w) => w.x1).toList()..sort();
+    final edges = <double>{...starts, ...ends}.toList()..sort();
+
+    final spans = <(double, double, int)>[];
+    var opened = 0, closed = 0;
+    for (var i = 0; i < edges.length - 1; i++) {
+      while (opened < starts.length && starts[opened] <= edges[i]) {
+        opened++;
+      }
+      while (closed < ends.length && ends[closed] <= edges[i]) {
+        closed++;
+      }
+      spans.add((edges[i], edges[i + 1], opened - closed));
     }
-    if (edges.isEmpty) return [words];
 
-    final bounds = [double.negativeInfinity, ...edges, double.infinity];
-    final columns = <List<OcrWord>>[];
-    for (var i = 0; i < bounds.length - 1; i++) {
-      final column = words
-          .where((w) => w.centreX >= bounds[i] && w.centreX < bounds[i + 1])
-          .toList();
-      if (column.length >= _minColumnWords) {
-        columns.add(column);
-      } else if (columns.isNotEmpty) {
-        // A speck in the margin is not a column; fold it back rather than let
-        // it become a song of its own.
-        columns.last.addAll(column);
-      } else if (column.isNotEmpty) {
-        columns.add(column);
+    // Maximal runs of intervals nothing much crosses. A run left open at the
+    // last edge is deliberately dropped: that is the right-hand margin.
+    final bands = <List<(double, double, int)>>[];
+    List<(double, double, int)>? band;
+    for (final span in spans) {
+      if (span.$3 <= allowed) {
+        (band ??= []).add(span);
+      } else if (band != null) {
+        bands.add(band);
+        band = null;
       }
     }
-    return columns.isEmpty ? [words] : columns;
+
+    final gutters = <({double from, double to, double cut})>[];
+    var from = double.negativeInfinity;
+    for (final found in bands) {
+      final start = found.first.$1, end = found.last.$2;
+      if (end - start < gutter) continue;
+      final cut = _quietestPoint(found);
+      if (!_bandHolds(words, from, cut)) continue;
+      gutters.add((from: start, to: end, cut: cut));
+      from = cut;
+    }
+    // The last column has to hold up too, or the final cut only shaved a margin
+    // off the page.
+    if (gutters.isNotEmpty &&
+        !_bandHolds(words, gutters.last.cut, double.infinity)) {
+      gutters.removeLast();
+    }
+    return gutters;
   }
+
+  /// Where the page should be cut into columns, left to right.
+  ///
+  /// Public because the recogniser crops on these. Reading each column as its
+  /// own image is not the same as splitting the words of one whole-page read —
+  /// Tesseract does its own layout analysis, and given a two-column page it
+  /// joins a line from one column to a line from the other before this ever
+  /// sees a box.
+  List<double> columnCuts(List<OcrWord> words) =>
+      [for (final gutter in columnGutters(words)) gutter.cut];
+
+  /// Where to cut inside a gutter: the middle of its emptiest stretch.
+  ///
+  /// Not the middle of the gutter, which is what the first version did and what
+  /// cut `125-nincs-mas-isten` straight through its intro chord row. That page's
+  /// gutter is a 127-pixel band, tolerated because one word of the heading lies
+  /// across its left half; the middle of the band is inside a chord row that
+  /// reaches into it, and the cut then split `Cadd9-Csus2` between two crops,
+  /// which read the halves twice and read neither of them right.
+  ///
+  /// So the emptiest stretch wins, and the widest of those when several tie.
+  double _quietestPoint(List<(double, double, int)> band) {
+    final quietest = band.map((span) => span.$3).reduce(math.min);
+    double? bestFrom, bestTo;
+    double? runFrom, runTo;
+    for (final (start, end, crossing) in band) {
+      if (crossing == quietest) {
+        runFrom ??= start;
+        runTo = end;
+      } else {
+        runFrom = runTo = null;
+      }
+      if (runFrom != null &&
+          (bestFrom == null || runTo! - runFrom > bestTo! - bestFrom)) {
+        bestFrom = runFrom;
+        bestTo = runTo;
+      }
+    }
+    return (bestFrom! + bestTo!) / 2;
+  }
+
+  /// Whether the band between [from] and [to] is a column rather than a margin.
+  ///
+  /// Rows counted *inside the band*, not rows of the page: the page's rows are
+  /// clustered by y across the whole width, so on a two-column page every one of
+  /// them holds words from both columns and none is ever wholly inside either.
+  ///
+  /// This is the test that keeps a single-column page whole. Past the end of its
+  /// shortest line the crossing count falls away and a band does open — but only
+  /// the one or two longest lines reach into it, so it holds fewer rows than a
+  /// column has, and it reads as the ragged right margin it is.
+  bool _bandHolds(List<OcrWord> words, double from, double to) {
+    final inside = [
+      for (final word in words)
+        if (word.x0 >= from && word.x1 <= to) word,
+    ];
+    if (inside.length < _minColumnWords) return false;
+    return groupRows(inside).length >= _minColumnRows;
+  }
+
+  /// The page's heading, when it is set across the columns rather than inside
+  /// one.
+  ///
+  /// A hymnal sets a song's heading over both columns, which is the very thing
+  /// that closes the gutter for a rule looking for a band no word crosses. It
+  /// also has to survive the split: filed word by word into whichever column
+  /// each one happens to fall in, `166. Tékozló fiú` becomes `166.` at the head
+  /// of the first column and `Tékozló fiú` at the head of the second, and the
+  /// recogniser reads both halves a second time when it crops - measured, that
+  /// came back as `{title: 166. 166. . Tékozló}` with a stray `fiú`.
+  ///
+  /// The first row only, and only when it reads as a numbered heading. A wider
+  /// rule was tried and reversed: any row *intruding into the gutter band* also
+  /// catches the printed rule between the columns of `125-nincs-mas-isten`,
+  /// which the engine returns as a column of one-character words sitting right
+  /// where the cut falls - so most of the page became one spanning row and the
+  /// two columns interleaved again, which is the failure this whole thing is
+  /// here to fix.
+  List<OcrWord> headingRow(List<OcrWord> words) {
+    final cuts = columnCuts(words);
+    if (cuts.isEmpty) return const [];
+    final rows = groupRows(words);
+    if (rows.isEmpty) return const [];
+    final first = rows.first;
+    if (!_numberedHeading.hasMatch(first.map((w) => w.text).join(' '))) {
+      return const [];
+    }
+    final left = first.map((w) => w.x0).reduce(math.min);
+    final right = first.map((w) => w.x1).reduce(math.max);
+    return cuts.any((cut) => left < cut && cut < right) ? first : const [];
+  }
+
+  List<List<OcrWord>> splitColumns(List<OcrWord> words) {
+    final gutters = columnGutters(words);
+    if (gutters.isEmpty) return [words];
+
+    final heading = headingRow(words).toSet();
+    final bounds = [
+      double.negativeInfinity,
+      for (final gutter in gutters) gutter.cut,
+      double.infinity,
+    ];
+    final columns = [for (var i = 0; i < bounds.length - 1; i++) <OcrWord>[]];
+    for (final word in words) {
+      if (heading.contains(word)) {
+        columns.first.add(word);
+        continue;
+      }
+      var placed = false;
+      for (var i = 0; i < bounds.length - 1; i++) {
+        if (word.x0 >= bounds[i] && word.x1 <= bounds[i + 1]) {
+          columns[i].add(word);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) columns.first.add(word);
+    }
+    final kept = columns.where((column) => column.isNotEmpty).toList();
+    return kept.isEmpty ? [words] : kept;
+  }
+
+  /// Whether [words] hold a heading set across the columns.
+  ///
+  /// The signal that a two-column page is one song rather than two. A hymnal
+  /// printed two songs to a page gives each one its own heading, inside its own
+  /// column; a song set in two columns has one heading above both — which is
+  /// the very thing that used to close the gutter.
+  bool spansColumns(List<OcrWord> words) => headingRow(words).isNotEmpty;
 
   /// [words] clustered into lines, top to bottom, each sorted left to right.
   List<List<OcrWord>> groupRows(List<OcrWord> words) {

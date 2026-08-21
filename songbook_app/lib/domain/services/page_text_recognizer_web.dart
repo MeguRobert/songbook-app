@@ -111,9 +111,17 @@ const _minBytesPerPixel = 0.08;
 class TesseractPageTextRecognizer implements PageTextRecognizer {
   const TesseractPageTextRecognizer({
     this.preprocessor = const PagePreprocessor(),
+    this.bridge = const PhotoTextBridge(),
   });
 
   final PagePreprocessor preprocessor;
+
+  /// Asked where the columns are, and nothing else.
+  ///
+  /// The rule belongs beside the one that lays the words back out — they have to
+  /// agree about what a column is — and it is measured in Dart against boxes, so
+  /// it stays testable on the VM where there is no engine to run.
+  final PhotoTextBridge bridge;
 
   @override
   bool get isSupported => true;
@@ -134,26 +142,109 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
         .toDart
         .timeout(_engineBudget, onTimeout: _tooSlow);
     try {
-      // Exactly the pair the bench measured. `text` is not read here — the
-      // words and their boxes are — but asking for the same outputs as the
-      // measurement keeps this from being a differently configured engine that
-      // merely looks like the one the numbers came from.
-      final output = JSObject()
-        ..setProperty('blocks'.toJS, true.toJS)
-        ..setProperty('text'.toJS, true.toJS)
-        // Symbols, because the engine joins glyphs into a word on spacing:
-        // `D G  D` set with narrow gaps arrives as the single word `DGD`, which
-        // is not a chord symbol, and the row was then stored as lyrics.
-        // PhotoTextBridge.splitMergedChords needs the glyph boxes to undo that.
-        ..setProperty('symbols'.toJS, true.toJS);
-      final result = await worker
-          .recognize(prepared.canvas, JSObject(), output)
-          .toDart
-          .timeout(_readBudget, onTimeout: _tooSlow);
-      return PageWords(_wordsIn(result.data), notices: prepared.notices);
+      final whole = await _read(worker, prepared.canvas);
+      final cuts = bridge.columnCuts(whole);
+      if (cuts.isEmpty) {
+        return PageWords(whole, notices: prepared.notices);
+      }
+      return PageWords(
+        await _readColumns(worker, prepared.canvas, whole, cuts),
+        notices: prepared.notices,
+      );
     } finally {
       await worker.terminate().toDart;
     }
+  }
+
+  /// [canvas] read once, whole.
+  Future<List<OcrWord>> _read(
+      _TesseractWorker worker, web.HTMLCanvasElement canvas) async {
+    // Exactly the pair the bench measured. `text` is not read here — the words
+    // and their boxes are — but asking for the same outputs as the measurement
+    // keeps this from being a differently configured engine that merely looks
+    // like the one the numbers came from.
+    final output = JSObject()
+      ..setProperty('blocks'.toJS, true.toJS)
+      ..setProperty('text'.toJS, true.toJS)
+      // Symbols, because the engine joins glyphs into a word on spacing:
+      // `D G  D` set with narrow gaps arrives as the single word `DGD`, which
+      // is not a chord symbol, and the row was then stored as lyrics.
+      // PhotoTextBridge.splitMergedChords needs the glyph boxes to undo that.
+      ..setProperty('symbols'.toJS, true.toJS);
+    final result = await worker
+        .recognize(canvas, JSObject(), output)
+        .toDart
+        .timeout(_readBudget, onTimeout: _tooSlow);
+    return _wordsIn(result.data);
+  }
+
+  /// Each column of [canvas] read again, on its own, and put back on one grid.
+  ///
+  /// Splitting the words of a single whole-page read is not enough, which is
+  /// what the measurement corpus showed: Tesseract does its own layout analysis
+  /// before it returns a box, and on a two-column page it joins a line from one
+  /// column to a line from the other — so `125-nincs-mas-isten` came back with
+  /// `Nálad lett borrá` and `Átvezető rész` inside one word list at one y, and
+  /// no rule about boxes can take that apart again. Given one column at a time
+  /// the engine sees the single-column page its default segmentation assumes.
+  ///
+  /// The price is one recognition pass per column on top of the whole-page pass
+  /// that found them — roughly three times the work on a two-column page, and
+  /// nothing at all on the single-column pages that are the common case.
+  ///
+  /// [whole] is not thrown away: a row lying *across* a gutter is in no column,
+  /// and that row is the page's own heading. It is kept from the pass that has
+  /// already been paid for rather than read a fourth time.
+  Future<List<OcrWord>> _readColumns(
+    _TesseractWorker worker,
+    web.HTMLCanvasElement canvas,
+    List<OcrWord> whole,
+    List<double> cuts,
+  ) async {
+    // The bridge decides what the heading is, so the crops and the layout that
+    // follows them agree about it rather than each holding its own opinion.
+    final heading = bridge.headingRow(whole);
+    final words = <OcrWord>[...heading];
+    final skipFrom = heading.isEmpty
+        ? 0.0
+        : heading.map((w) => w.y0).reduce(math.min);
+    final skipTo =
+        heading.isEmpty ? -1.0 : heading.map((w) => w.y1).reduce(math.max);
+
+    final bounds = [0.0, ...cuts, canvas.width.toDouble()];
+    for (var index = 0; index < bounds.length - 1; index++) {
+      final left = bounds[index].floor().clamp(0, canvas.width);
+      final right = bounds[index + 1].ceil().clamp(0, canvas.width);
+      if (right - left < 1) continue;
+      final column = await _read(worker, _band(canvas, left, right));
+      // Back onto the page's own grid, because everything downstream — row
+      // grouping, the character columns a chord sits at — compares words with
+      // one another across the whole reading.
+      words.addAll([
+        for (final word in column)
+          // The heading is already in hand from the whole-page pass, and a crop
+          // of half of it reads as half of it.
+          if (word.centreY < skipFrom || word.centreY > skipTo)
+            word.shiftedBy(left.toDouble()),
+      ]);
+    }
+    return words;
+  }
+
+  /// The slice of [canvas] between [left] and [right], full height.
+  web.HTMLCanvasElement _band(
+      web.HTMLCanvasElement canvas, int left, int right) {
+    final band = web.document.createElement('canvas') as web.HTMLCanvasElement
+      ..width = right - left
+      ..height = canvas.height;
+    final context = band.getContext('2d') as web.CanvasRenderingContext2D?;
+    if (context == null) {
+      throw const PhotoImportException('This browser cannot read images.');
+    }
+    context.drawImage(canvas, left.toDouble(), 0, (right - left).toDouble(),
+        canvas.height.toDouble(), 0, 0, (right - left).toDouble(),
+        canvas.height.toDouble());
+    return band;
   }
 
   /// The photograph as greyscale on a canvas, with the reverse page erased —

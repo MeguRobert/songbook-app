@@ -27,10 +27,27 @@ import 'dart:typed_data';
 import 'package:web/web.dart' as web;
 
 import 'package:songbook_app/domain/services/browser_photo_import_service.dart';
+import 'package:songbook_app/domain/services/page_text_recognizer.dart';
 import 'package:songbook_app/domain/services/page_text_recognizer_stub.dart'
     if (dart.library.js_interop)
         'package:songbook_app/domain/services/page_text_recognizer_web.dart';
 import 'package:songbook_app/domain/services/photo_import_service.dart';
+
+/// The real recognizer, reading each photograph exactly once.
+class _Once implements PageTextRecognizer {
+  _Once(this._inner);
+
+  final PageTextRecognizer _inner;
+  PageWords? answer;
+
+  @override
+  bool get isSupported => _inner.isSupported;
+
+  @override
+  Future<PageWords> recognize(Uint8List imageBytes,
+          {String language = PageTextRecognizer.hungarian}) async =>
+      answer ??= await _inner.recognize(imageBytes, language: language);
+}
 
 /// Fetches [url] as bytes, the same shape a file picker hands the app.
 Future<Uint8List> _fetch(String url) async {
@@ -52,13 +69,18 @@ Future<JSString> _read(String url) async {
     if (!recognizer.isSupported) {
       return jsonEncode({'error': 'no recognizer in this build'}).toJS;
     }
-    // The word count comes from a second call rather than from the service,
-    // which does not expose it. Cheap enough at this scale and it says whether
-    // a thin reading was the recognizer's fault or the bridge's.
+    // The word count says whether a thin reading was the recognizer's fault or
+    // the bridge's, and the service does not expose it. It used to come from a
+    // second `recognize` call, which doubled the cost of every page and left two
+    // independent reads of the same photograph free to disagree - and it got
+    // worse when the recogniser started reading each column as its own image,
+    // because that is three passes rather than one. So the engine is called once
+    // and the answer is held: the service still does exactly what it does.
     final bytes = await _fetch(url);
-    final read = await recognizer.recognize(bytes);
-    final service = BrowserPhotoImportService(recognizer: recognizer);
+    final once = _Once(recognizer);
+    final service = BrowserPhotoImportService(recognizer: once);
     final payload = await service.extract(bytes, fileName: url);
+    final read = once.answer!;
     if (payload is! ChordProPayload) {
       return jsonEncode(
           {'error': 'unexpected payload ${payload.runtimeType}'}).toJS;
