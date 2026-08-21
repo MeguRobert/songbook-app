@@ -114,15 +114,24 @@ class ChordSheetParser {
   /// and is dropped rather than guessed at.
   static final RegExp _continuation = RegExp(r'^[-–—](.+)$');
 
-  /// A lone root letter with no accidental and no quality.
-  ///
-  /// `A` and `E` are both plausible one-chord lines and plausible lyrics (in
-  /// Hungarian `A` is the definite article), so a single-token line of this
-  /// shape is resolved towards lyrics — losing a chord is recoverable, losing
-  /// a line of words is not. `H` is included for the same shape rather than the
-  /// same ambiguity: one bare root alone is too weak a signal to call a line
-  /// music, whichever letter it is.
-  static final RegExp _bareRoot = RegExp(r'^[A-GHa-gh]$');
+  // A line whose only chord is a bare root — `A`, `d`, `A -` — used to be
+  // resolved towards lyrics by a `_bareRoot` regex here. The argument was that
+  // `A` is the Hungarian definite article and losing a chord is recoverable
+  // where losing a line of words is not.
+  //
+  // The rule is gone, because that argument does not survive the corpus. The
+  // ambiguity only arises when a root letter stands *among words*, and the
+  // all-or-nothing rule in [isChordLine] already keeps such a line as lyrics.
+  // A line holding nothing but one letter is not a lyric — not in a hymnal.
+  //
+  // What it cost, measured: `084-van-egy-ut` prints `C` over one line and `G`
+  // over the next, `151-zengjed-a-dalt` prints `D` and `A`. Four real chords on
+  // two pages, every one of them stored as a word.
+  //
+  // The residual risk is a recogniser isolating a genuine one-letter word onto
+  // a line of its own. Accepted deliberately: it is rare, and the moderation
+  // queue exists to catch it. [ImportNoticeCode.ambiguousBareRoot] is kept and
+  // still formats, but nothing emits it any more.
 
   /// Punctuation a chord row may carry that is not itself a chord.
   ///
@@ -134,8 +143,22 @@ class ChordSheetParser {
   /// Deliberately excludes `/`. A lone slash means "another beat of the same
   /// chord" in real charts (`C / / /`), and treating it as filler would make a
   /// row of slashes indistinguishable from punctuation.
+  ///
+  /// A lone bracket or quote is included, and has to be. Songbooks write an
+  /// optional chord with spaces inside the brackets — `G  ( C )` — and a
+  /// recogniser sometimes returns a stray apostrophe where a chord's glyph was.
+  /// Either one is a token that names no pitch and is not a word, and without
+  /// this the whole row read as lyrics. `(C)` written closed still goes through
+  /// [_parenthesised], where the brackets are the evidence that it is a chord.
+  ///
+  /// This must stay in step with `_SEPARATOR` in `tools/photo_import_worker.py`.
+  /// The worker emits laid-out text and this parser reads it back, so a token
+  /// one side treats as punctuation and the other as a word turns a whole row
+  /// of chords into a line of lyrics on the way into storage.
+  /// Triple-quoted because the character class holds both quote marks, and a
+  /// raw string cannot escape its own delimiter.
   static final RegExp _separator = RegExp(
-    r'^(?:[-–—]+|\|+|:\||\|:|\|\||[xX]\d+|\d+[xX])$',
+    r'''^(?:[-–—]+|\|+|:\||\|:|\|\||[xX]\d+|\d+[xX]|[()\[\]'‘’"]+)$''',
   );
 
   /// A chord wrapped in brackets — `(Em)` — which real sheets use for a passing
@@ -176,8 +199,8 @@ class ChordSheetParser {
   /// letter — that all-or-nothing property is the reason this regex is not
   /// `ChordTransposer`'s.
   ///
-  /// A line whose only chord is a bare root (`A`, `A -`) returns false by
-  /// design; see [_bareRoot].
+  /// A line whose only chord is a bare root (`A`, `d`, `A -`) is a chord line.
+  /// It used not to be; see the note above [isChordToken] for why that changed.
   bool isChordLine(String line) {
     final tokens = _token.allMatches(line).map((m) => m.group(0)!).toList();
     if (tokens.isEmpty) return false;
@@ -196,10 +219,6 @@ class ChordSheetParser {
 
     // Punctuation on its own is a rule drawn under a heading, not music.
     if (chords.isEmpty) return false;
-    // Tested against the token as written, not unwrapped: `A` is ambiguous with
-    // the Hungarian definite article, and `(A)` is not — the brackets are
-    // themselves the evidence that this is a chord.
-    if (chords.length == 1 && _bareRoot.hasMatch(chords.first)) return false;
     return true;
   }
 
@@ -291,10 +310,6 @@ class ChordSheetParser {
         continue;
       }
 
-      if (_bareRoot.hasMatch(trimmed)) {
-        warnings.add(ImportNotice(ImportNoticeCode.ambiguousBareRoot,
-            line: lineNo, text: trimmed));
-      }
       pending.add(LyricLine(text: raw.trimRight()));
     }
 

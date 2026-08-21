@@ -1,0 +1,208 @@
+{
+  "_comment": [
+    "The real-photograph corpus. One entry per file in this directory.",
+    "Every image here arrived through WhatsApp: EXIF stripped, long edge 2048px,",
+    "0.02-0.11 bytes per pixel. That is the degradation photo_import_worker.py warns",
+    "about, and it is what destroys the Hungarian long umlauts. It is also, most",
+    "likely, how a congregation actually shares a song page - so treat this corpus as",
+    "the real distribution, not as a compromised one, and keep any future",
+    "camera-direct corpus in a sibling directory so the two can be compared.",
+    "",
+    "tier: A = clean print, one column - must reach 100% and stay there.",
+    "      B = the current frontier: two columns, italics, a second song on the page.",
+    "      C = out of scope for the text path today; scored but excluded from the",
+    "          headline number, because a handwritten chord written OVER a printed one",
+    "          is an ambiguity no OCR setting resolves.",
+    "engine: which path the page is meant for - 'text' (browser Tesseract) or",
+    "        'notation' (Audiveris on Cloud Run)."
+  ],
+  "pages": [
+    {
+      "file": "011-a-mennyben-fenn--notation-clean.jpg",
+      "book_number": 11,
+      "title": "A mennyben fenn",
+      "engine": "notation",
+      "tier": "A",
+      "layout": "single melody staff, chords above, verses 2-3 as prose below",
+      "stresses": [
+        "the best notation case in the corpus: page pressed flat, no curl, good contrast",
+        "3/4 time and a metronome mark (quarter = 70) - Audiveris is known to report no time signature",
+        "slash chords: F/C, C/E, Am/G, C/G, F/G",
+        "lyrics are hyphenated per syllable under the staff, which Audiveris does not return at all",
+        "attribution lines (Ch. L. Bancroft, Ford.: Revesz Arpad, Vikki Cook) that are not lyrics",
+        "a printed page number (15) that is not a song number"
+      ]
+    },
+    {
+      "file": "084-van-egy-ut--chords-showthrough.jpg",
+      "book_number": 84,
+      "title": "Van egy ut",
+      "engine": "text",
+      "tier": "A",
+      "layout": "single column, chord row above each lyric row",
+      "stresses": [
+        "heavy show-through: the reverse page is legible mirrored across the whole sheet",
+        "PagePreprocessor show-through removal is the thing under test here",
+        "a parenthetical stage direction inside a lyric line: (vegen 3x)",
+        "an ellipsis joining two clauses: De hogyha ezen jarsz...Hazatalalsz!",
+        "G7 - a seventh spelled in full rather than as the -7 shorthand"
+      ]
+    },
+    {
+      "file": "098-szivemben-orom-dalol--chords-next-song-header.jpg",
+      "book_number": 98,
+      "title": "Szivemben orom dalol",
+      "engine": "text",
+      "tier": "B",
+      "layout": "single column, bold-italic chords",
+      "stresses": [
+        "the header of the NEXT song (99. Tobb erot) is on the page, cut off at the bottom edge",
+        "this is the 'a page holding two songs' warning case",
+        "chords are bold italic, not upright - a different glyph set to every other page here",
+        "lowercase minor: em, am",
+        "repeat marks as ASCII: //: and ://",
+        "a section label spelled Refr: rather than Refren",
+        "a trailing apostrophe inside a lyric: az en szivem'",
+        "a space before the period in the title line: 98 . Szivemben"
+      ]
+    },
+    {
+      "file": "105-kosz-jol-vagyok--chords-handwritten-red.jpg",
+      "book_number": 105,
+      "title": "Kosz, jol vagyok",
+      "engine": "text",
+      "tier": "C",
+      "layout": "two columns; chords exist only in the left column, handwritten",
+      "stresses": [
+        "every chord is handwritten in red marker and overlaps the printed lyric glyphs",
+        "the right column repeats the same verses with no chords at all",
+        "handwritten Hm is written as a struck-through H with a tail",
+        "the printed title reads Kosz where the first lyric line reads Kosz, jol erzem - title and first line differ",
+        "the page is inside a plastic sleeve: specular highlights and punch holes at the right edge"
+      ]
+    },
+    {
+      "file": "109-tart-meg-a-kegyelem--chords-handwritten-transpose.jpg",
+      "book_number": 109,
+      "title": "Tart meg a kegyelem",
+      "engine": "text",
+      "tier": "C",
+      "layout": "single column, printed chords with a handwritten transposition written beside each",
+      "stresses": [
+        "TWO competing chord sets on one page: printed (Dm, G7, B, A, Gm, A7, Asus4) and handwritten in blue pen a whole tone up (Em, A7, C, H, Am, H7, Hsus4)",
+        "which set the user wants is a product decision, not an OCR setting - this page is why tier C exists",
+        "printed chords use superscript quality: D with superscript m, A with superscript sus4, A with superscript 7",
+        "B in this book means B flat, and the handwritten C above it confirms the transposition - so the H-is-B rule must not fire on the printed B",
+        "stage directions inline with chords: - Intro x1, - Intro",
+        "verse 2 has no chord rows and must inherit verse 1 chords by line position (chord_carry.dart)",
+        "the header and first staff of song 110 (Te veled) are visible at the bottom edge"
+      ]
+    },
+    {
+      "file": "125-nincs-mas-isten--chords-two-column-ruled.jpg",
+      "book_number": 125,
+      "title": "Nincs mas Isten",
+      "engine": "text",
+      "tier": "B",
+      "layout": "two columns separated by a printed vertical rule; reading order is left column then right",
+      "stresses": [
+        "a printed vertical rule between the columns - a gutter the column splitter can key on, unlike 166",
+        "named sections: 1. Versszak, 2. Versszak, Refren, Atvezeto resz",
+        "navigation lines that are not lyrics: -> Refren, -> Atvezeto resz, Vissza a versszakokra",
+        "an intro chord line with no lyric under it: Em7 Cadd9-Csus2 G5-Gsus2 D4/Fis",
+        "chord-only lines mid-song: Em C G D, C G D, C D G",
+        "Hungarian note-name spelling inside a chord: D4/Fis (F sharp)",
+        "compound chords joined by a hyphen: Cadd9-Csus2, G5-Gsus2",
+        "chords sit above the first word of a line rather than over a specific syllable"
+      ]
+    },
+    {
+      "file": "151-hozsanna--notation-showthrough.jpg",
+      "book_number": 151,
+      "title": "Hozsanna",
+      "engine": "notation",
+      "tier": "B",
+      "layout": "melody staff per system, chords above, syllabified lyrics below each system",
+      "stresses": [
+        "the reverse page shows through across the upper half",
+        "the page curls into the spine at the right edge - the failure mode that takes 63 notes down to 6",
+        "four sharps in the key signature (E major / C sharp minor)",
+        "chords with Hungarian sharps: C#m, F#m7, G#m, E/G#, E/D#, and H meaning B natural",
+        "H4 as a suspended-fourth spelling",
+        "triplet brackets, repeat barlines, and the navigation marks Refr., Fine, D.S. and the segno",
+        "verse 1 and verse 2 are engraved as separate systems, so the same music appears twice",
+        "the last two systems have chords over empty (rest-only) bars"
+      ]
+    },
+    {
+      "file": "151-zengjed-a-dalt--chords-letterboxed.jpg",
+      "book_number": 151,
+      "title": "Zengjed a dalt",
+      "engine": "text",
+      "tier": "B",
+      "layout": "single column, letterboxed inside a portrait screenshot",
+      "stresses": [
+        "the photo occupies a band in the middle of the frame; black bars above and below",
+        "cropping to the page before reading is the thing under test",
+        "smallest file in the corpus at 0.021 bytes per pixel - the most compressed",
+        "the -7 shorthand meaning 'the chord before me, with a seventh'",
+        "lowercase minor: gm",
+        "a different book 151 to 151-hozsanna: the number is book-relative, not global",
+        "later verses carry no chords and must inherit them"
+      ]
+    },
+    {
+      "file": "166-tekozlo-fiu--chords-two-column-italic.jpg",
+      "book_number": 166,
+      "title": "Tekozlo fiu",
+      "engine": "text",
+      "tier": "B",
+      "layout": "two columns with NO printed rule; the right column is italic, the left upright",
+      "stresses": [
+        "no gutter rule and unequal column widths - the column splitter has only whitespace to go on",
+        "the right column is set in italic, the left is not, on the same page",
+        "the whole sheet is rotated a few degrees and lit unevenly from the left",
+        "extended chord qualities: Amaj7-A7, D-E",
+        "Hungarian lowercase minor spellings: dm, hm, fiszm (F sharp minor)",
+        "long runs of lyric lines with no chord row above them",
+        "a chord (D) in the right column sits past the right edge of the lyric line under it"
+      ]
+    },
+    {
+      "file": "185-jezus-krisztusom--chords-highlighted.jpg",
+      "book_number": 185,
+      "title": "Jezus Krisztusom, mento oltalom",
+      "engine": "text",
+      "tier": "A",
+      "layout": "single column, large type, one verse",
+      "stresses": [
+        "the song number 185 is handwritten in blue pen over the printed one",
+        "grey highlighter behind the title and behind the first lyric line",
+        "the 7 of H7 is struck through in pen twice - a correction that must not become a different chord",
+        "H7 must be read as B7 into storage",
+        "lowercase minor: em",
+        "two chords adjacent with one space: D G D",
+        "the verse ends in a four-dot ellipsis: halleluja ....",
+        "the largest type in the corpus - the easiest page, so a regression here means something basic broke"
+      ]
+    },
+    {
+      "file": "app-jezus-szivedbe-lat--chords-screenshot.jpg",
+      "book_number": null,
+      "title": "Jezus szivedbe lat",
+      "engine": "text",
+      "tier": "A",
+      "layout": "screenshot of another song app: status bar, app bar, content card, navigation bar",
+      "stresses": [
+        "born-digital glyphs, no paper, no skew, no show-through - the cleanest text case there is",
+        "phone chrome must be cropped away: a clock, a battery percentage and a title in the app bar",
+        "the app bar title duplicates the song title, which is a second source for it",
+        "chords are red and the lyrics black - colour is a usable signal here and nowhere else",
+        "no book number anywhere on the page: the number-out-of-the-title rule has nothing to split",
+        "chord runs joined by hyphens and wrapped in parentheses: G - C - D - ( C )",
+        "verses are numbered 1-4 in the lyric line itself",
+        "if this page is not read almost perfectly, the fault is in the bridge, not in the OCR"
+      ]
+    }
+  ]
+}

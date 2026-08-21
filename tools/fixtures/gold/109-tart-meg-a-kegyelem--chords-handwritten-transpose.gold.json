@@ -1,0 +1,28 @@
+{
+  "file": "109-tart-meg-a-kegyelem--chords-handwritten-transpose.jpg",
+  "tier": "C",
+  "engine": "text",
+  "reviewed_by": null,
+  "drafted_from": "easyocr",
+  "_review_checklist": [
+    "Compare every line against the photograph, not against the app.",
+    "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
+    "Write chords exactly as the page prints them - em, H7, -7, fiszm. Storage spelling is the app's job, not this file's.",
+    "warnings holds slugs, not prose: low-resolution, show-through-removed, two-songs, no-chords, german-chords, nothing-legible.",
+    "Put your name in reviewed_by when the text matches the page. Until you do, every score against this file is circular."
+  ],
+  "_stresses": [
+    "TWO competing chord sets on one page: printed (Dm, G7, B, A, Gm, A7, Asus4) and handwritten in blue pen a whole tone up (Em, A7, C, H, Am, H7, Hsus4)",
+    "which set the user wants is a product decision, not an OCR setting - this page is why tier C exists",
+    "printed chords use superscript quality: D with superscript m, A with superscript sus4, A with superscript 7",
+    "B in this book means B flat, and the handwritten C above it confirms the transposition - so the H-is-B rule must not fire on the printed B",
+    "stage directions inline with chords: - Intro x1, - Intro",
+    "verse 2 has no chord rows and must inherit verse 1 chords by line position (chord_carry.dart)",
+    "the header and first staff of song 110 (Te veled) are visible at the bottom edge"
+  ],
+  "_drafted_from": "easyocr reading, uncorrected",
+  "number": 109,
+  "title": "Tart meg a kegyelem",
+  "warnings": [],
+  "chordpro": "{title: 109. Tart még a kegyelem}\n\n1 Tart nag 0 kegyclem; és a szívem örül,\n1} €                 A H\nJénus cljöut hnoznám; rajtam megkönyörüll\n                        G7  A7\nKiny újtota karját, szelíden fclemeltj\nBC                A     4 A H ~ Intro xl\nAnig élek, azt a percet nem feledem.\n2. Nyiíva áll az ajtó, ma is bejöhetek [\nA trontercmben várnak; nekem ott a helyem.\nJenus mellctt élni; ez a legjobb dolog\n             C D F\nÉs velem tapsol és táncol a Menny,\nGmn                A 747\nJerus gyozelméröl zengek új éneket:\nD\"  66  G A\nÉs velem tápsolés táncol a Menny,\nGimn /YYn A Bárány dicsóségét hirdetem! D\" Em  Intro\nDmn                110. Te veled"
+}

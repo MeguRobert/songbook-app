@@ -1,0 +1,26 @@
+{
+  "file": "105-kosz-jol-vagyok--chords-handwritten-red.jpg",
+  "tier": "C",
+  "engine": "text",
+  "reviewed_by": null,
+  "drafted_from": "easyocr",
+  "_review_checklist": [
+    "Compare every line against the photograph, not against the app.",
+    "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
+    "Write chords exactly as the page prints them - em, H7, -7, fiszm. Storage spelling is the app's job, not this file's.",
+    "warnings holds slugs, not prose: low-resolution, show-through-removed, two-songs, no-chords, german-chords, nothing-legible.",
+    "Put your name in reviewed_by when the text matches the page. Until you do, every score against this file is circular."
+  ],
+  "_stresses": [
+    "every chord is handwritten in red marker and overlaps the printed lyric glyphs",
+    "the right column repeats the same verses with no chords at all",
+    "handwritten Hm is written as a struck-through H with a tail",
+    "the printed title reads Kosz where the first lyric line reads Kosz, jol erzem - title and first line differ",
+    "the page is inside a plastic sleeve: specular highlights and punch holes at the right edge"
+  ],
+  "_drafted_from": "easyocr reading, uncorrected",
+  "number": 105,
+  "title": "Kosz, jol vagyok",
+  "warnings": [],
+  "chordpro": "{title: 105. Kosz, jól vagyok}\n\nKösz jól érzem magam a cgöröpaBen, Amikor meglátnak az emberek,\nNem hordom a jókedyemet            Azt mondják: Nézzétek, tiszta apja ez a gyerek!\nFölig ér a szám és a        rag)88,    Nekem meg fülig ér a szám és a szemem ragyog;\nKinióta tudon; azt        vagyók.    Mert látják rajtam azt, hogy kié vagyok.\nIsten képére lettem teremtve,\nIsten képére lettem teremtve;           Nagyot nóttem a saját szememben;\nNagyot nottem a saját szememben;     Magamról rosszat többé nem gondolok,\nMagamról rosszat többé nem gondolok, Mert felbecsülhetetlen érték vagyok.\nMert felbecsülhetetlen érték vagyok.\nRefr: Lehetek nagy legény\nRefr: Lehetek nagy legeny\nmert sbandRcgkanam; af enycii;\nJézusban\nidáman tancoldk\ntudom az\n{ad 'nsber, 25"
+}

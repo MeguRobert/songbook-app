@@ -1,0 +1,34 @@
+{
+  "file": "084-van-egy-ut--chords-showthrough.jpg",
+  "tier": "A",
+  "engine": "text",
+  "reviewed_by": "Megu Robert",
+  "drafted_from": "vision",
+  "_review_checklist": [
+    "Compare every line against the photograph, not against the app.",
+    "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
+    "Write chords exactly as the page prints them - em, H7, -7, fiszm. Storage spelling is the app's job, not this file's.",
+    "warnings holds slugs, not prose: low-resolution, show-through-removed, two-songs, no-chords, german-chords, nothing-legible.",
+    "Put your name in reviewed_by when the text matches the page."
+  ],
+  "_notes": [
+    "The reverse page is legible, mirrored, across the whole sheet. This is the page that tests show-through removal.",
+    "The G on line 2 really does sit past the end of its lyric line - measured, not a transcription slip. The app stores a chord past the end of a line, so a reading must keep it.",
+    "'(végén 3x)' is a stage direction inside the lyric line and is part of the text.",
+    "'De hogyha ezen jársz...Hazatalálsz!' has no space around the ellipsis on the page."
+  ],
+  "_stresses": [
+    "heavy show-through: the reverse page is legible mirrored across the whole sheet",
+    "PagePreprocessor show-through removal is the thing under test here",
+    "a parenthetical stage direction inside a lyric line: (vegen 3x)",
+    "an ellipsis joining two clauses: De hogyha ezen jarsz...Hazatalalsz!",
+    "G7 - a seventh spelled in full rather than as the -7 shorthand"
+  ],
+  "number": 84,
+  "title": "Van egy út",
+  "warnings": [
+    "low-resolution",
+    "show-through-removed"
+  ],
+  "chordpro": "            C\nVan egy út, ami egy ici-picit göröngyös.\n                          G\nEz az út egy kicsikét szűk.\n\nDe ne legyen a te szívednek közömbös.\n G7                               C\nHa ezen jársz, itt nem győz le a bűn. (végén 3x)\n            F                 C\nIgaz, hogy nem versenypálya, nem széles autósztráda.\n     G                    C\nDe hogyha ezen futsz, biztos, hogy célba jutsz.\n               F                  C\nIgaz, hogy nem versenypálya, nem széles autósztráda.\n     G                        C\nDe hogyha ezen jársz...Hazatalálsz!"
+}

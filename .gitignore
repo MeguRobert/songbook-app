@@ -60,7 +60,30 @@ tools/fixtures/out/
 tools/photo_inbox/*
 !tools/photo_inbox/README.txt
 
+# The measurement corpus: photographs of a copyrighted hymnal. This repo is
+# public, so the images stay on the machine that took them. What travels
+# instead is everything derived from them — manifest.json says what each page
+# stresses, checksums.txt pins the exact bytes, and tools/fixtures/gold/ holds
+# the hand-verified answer each one is scored against. Same treatment
+# deploy/omr/app/ gets, and for the same reason: not ours to redistribute.
+tools/fixtures/photos/*
+!tools/fixtures/photos/manifest.json
+!tools/fixtures/photos/checksums.txt
+!tools/fixtures/photos/README.md
+
+# One measurement run, with every stage record for every page. Regenerate it
+# with `python -m tools.ocr_harness run`; what travels is the accepted
+# baseline in tools/ocr_harness/baseline.json.
+tools/fixtures/runs/
+
 # Session handoffs: written to be read once by the next session and replaced,
 # not reviewed as history. HANDOFF-photo-import.md is deliberately tracked and
 # stays so — a rule here cannot untrack what is already tracked.
 HANDOFF*.md
+
+# The gold-review page, rebuilt from the gold files on demand.
+tools/fixtures/review.html
+
+# Compiled harness + staged photographs for the browser engine. Rebuilt on
+# demand by tools/ocr_harness/browser.py.
+tools/fixtures/browser/

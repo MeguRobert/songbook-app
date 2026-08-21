@@ -1,0 +1,40 @@
+{
+  "file": "098-szivemben-orom-dalol--chords-next-song-header.jpg",
+  "tier": "B",
+  "engine": "text",
+  "reviewed_by": "Megu Robert",
+  "drafted_from": "vision",
+  "_review_checklist": [
+    "Compare every line against the photograph, not against the app.",
+    "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
+    "Write chords exactly as the page prints them - em, H7, -7, fiszm. Storage spelling is the app's job, not this file's.",
+    "warnings holds slugs, not prose: low-resolution, show-through-removed, two-songs, no-chords, german-chords, nothing-legible.",
+    "Put your name in reviewed_by when the text matches the page. Until you do, every score against this file is circular."
+  ],
+  "_stresses": [
+    "the header of the NEXT song (99. Tobb erot) is on the page, cut off at the bottom edge",
+    "this is the 'a page holding two songs' warning case",
+    "chords are bold italic, not upright - a different glyph set to every other page here",
+    "lowercase minor: em, am",
+    "repeat marks as ASCII: //: and ://",
+    "a section label spelled Refr: rather than Refren",
+    "a trailing apostrophe inside a lyric: az en szivem'",
+    "a space before the period in the title line: 98 . Szivemben"
+  ],
+  "_drafted_from": "easyocr reading, uncorrected",
+  "number": 98,
+  "title": "Szívemben öröm dalol",
+  "warnings": [
+    "low-resolution",
+    "show-through-removed"
+  ],
+  "chordpro": "G         D                      em    G\nSzívemben öröm dalol, öröm dalol az én szívemben,\nD                G\nAz én szívemben, az én szívem'\nG         D                      em    G\nSzívemben öröm dalol, öröm dalol az én szívemben,\n am     D7   G\nJézust dícsérem.\n\n        C                 G\nRefr: //:Boldog a szívem, velem van a menny,\nD                      G\nAz Ő kegyelme oly boldogító. ://\n\nSzívemben hála, hála..\nSzívemben béke, béke..\nSzívemben nyugalom van..\nSzívemben béke, hála, öröm dalol.",
+  "_notes": [
+    "Song 99's header (`99. Több erőt`) is printed at the bottom of this page and is deliberately NOT in this answer: the import is song 98. A reading that includes it therefore loses precision, which is the correct signal - the song boundary is not detected and nothing warns about it.",
+    "`two-songs` is not expected either. The page does hold two songs, but that warning's wording is about columns printed side by side, so asserting it would be asserting the wrong message to the user.",
+    "The chords are bold italic here, a different glyph set to every other page in the corpus.",
+    "`Refr:` is the section label as printed, and `//:` `://` are the repeat marks. Both are part of the text.",
+    "`az én szívem'` ends in an apostrophe on the page.",
+    "Chord columns are measured, not estimated: each glyph's x against its lyric line's own pixel span."
+  ]
+}

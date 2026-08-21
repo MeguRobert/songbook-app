@@ -106,13 +106,25 @@ void main() {
       expect(parser.isChordLine('    '), isFalse);
     });
 
-    test('a lone bare root resolves to lyrics', () {
-      expect(parser.isChordLine('A'), isFalse);
-      expect(parser.isChordLine('E'), isFalse);
-      // Anything that removes the ambiguity flips it back to a chord line.
+    test('a lone root is a chord line, whatever its case', () {
+      // A line holding nothing but one letter is not a lyric — not in a
+      // hymnal. The ambiguity with the Hungarian definite article only arises
+      // when a root letter stands among words, and one ordinary word already
+      // makes the whole line lyrics. Reading every one-letter line as words
+      // cost four real chords across two pages of the measurement corpus.
+      for (final line in ['A', 'E', 'C', 'H', 'a', 'e', 'd', 'h']) {
+        expect(parser.isChordLine(line), isTrue, reason: line);
+      }
       expect(parser.isChordLine('Am'), isTrue);
       expect(parser.isChordLine('Bb'), isTrue);
       expect(parser.isChordLine('A E'), isTrue);
+    });
+
+    test('a lone root beside a word is still lyrics', () {
+      // The all-or-nothing rule is what actually protects the definite
+      // article, and it is untouched.
+      expect(parser.isChordLine('A szívemben'), isFalse);
+      expect(parser.isChordLine('a te szívednek'), isFalse);
     });
 
     test('separators between chords do not disqualify the line', () {
@@ -133,6 +145,38 @@ void main() {
       expect(parser.isChordLine('(C)'), isTrue);
     });
 
+    test('brackets written with spaces inside do not disqualify the line', () {
+      // A real page: `G - C - D - ( C )`, spaces inside the brackets. The
+      // brackets arrive as their own tokens, and until they were treated as
+      // punctuation the whole row of chords was stored as a line of words.
+      expect(parser.isChordLine('G - C - D - ( C )'), isTrue);
+      expect(parser.isChordLine('C  ( Em )  F'), isTrue);
+      expect(parser.isChordLine('[ C ]  G'), isTrue);
+    });
+
+    test('a stray quote where a chord glyph was does not lose the row', () {
+      // Measured: a recogniser returned an apostrophe in place of a `C`. One
+      // unreadable token used to cost the row its other three chords.
+      expect(parser.isChordLine("G  '  D - C"), isTrue);
+      expect(parser.isChordLine('G  ’  D'), isTrue);
+    });
+
+    test('brackets and quotes alone are not a chord line', () {
+      expect(parser.isChordLine('( )'), isFalse);
+      expect(parser.isChordLine("'"), isFalse);
+      expect(parser.isChordLine('[ ]'), isFalse);
+    });
+
+    test('a bracket does not rescue a line that has real words', () {
+      expect(parser.isChordLine('( C ) grace'), isFalse);
+    });
+
+    test('a slash is still not punctuation', () {
+      // `C / / /` means three more beats of C. Deliberately excluded from the
+      // separator rule, and adding the brackets must not have changed that.
+      expect(parser.isChordLine('/ / /'), isFalse);
+    });
+
     test('separators alone are not a chord line', () {
       // A row of dashes is a rule drawn under a heading, not music.
       expect(parser.isChordLine('- - -'), isFalse);
@@ -143,8 +187,9 @@ void main() {
 
     test('a separator does not rescue a line that has real words', () {
       expect(parser.isChordLine('C - grace'), isFalse);
-      // Still ambiguous once the filler is discounted, so still lyrics.
-      expect(parser.isChordLine('A -'), isFalse);
+      // One root plus filler is a chord line: nothing on it is a word.
+      expect(parser.isChordLine('A -'), isTrue);
+      expect(parser.isChordLine('a -'), isTrue);
     });
   });
 
@@ -372,17 +417,30 @@ void main() {
       ]);
     });
 
-    test('a lone bare root is kept as a lyric and warned about', () {
+    test('a lone uppercase root becomes a chord over the line below', () {
       final result = parser.parse('A\nAmazing grace');
 
-      expect(result.verses.single.lines.length, 2);
-      expect(result.verses.single.lines[0].text, 'A');
-      expect(result.verses.single.lines[0].chords, isEmpty);
-      expect(
-        result.warnings.single,
-        const ImportNotice(ImportNoticeCode.ambiguousBareRoot,
-            line: 1, text: 'A'),
-      );
+      expect(result.verses.single.lines.length, 1);
+      expect(result.verses.single.lines[0].text, 'Amazing grace');
+      expect(result.verses.single.lines[0].chords.single.chord, 'A');
+      expect(result.warnings, isEmpty);
+    });
+
+    test('a lone lowercase root is a chord too, and warns about nothing', () {
+      // Nothing emits ImportNoticeCode.ambiguousBareRoot any more. The code and
+      // its three translations are kept — a moderator-facing notice is cheap to
+      // hold and expensive to re-translate — but no input reaches it.
+      final result = parser.parse('a\nAmazing grace');
+
+      expect(result.verses.single.lines.length, 1);
+      expect(result.verses.single.lines[0].text, 'Amazing grace');
+      // Stored as `Am`, not `a`: a lowercase root is minor in this notation and
+      // storage keeps one spelling per chord. So the residual risk of dropping
+      // the rule is not that a stray `a` stays a word — it is that a stray `a`
+      // becomes A minor. A moderator sees a chord that is not on the page,
+      // which is the visible kind of wrong.
+      expect(result.verses.single.lines[0].chords.single.chord, 'Am');
+      expect(result.warnings, isEmpty);
     });
   });
 

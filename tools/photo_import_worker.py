@@ -173,7 +173,17 @@ def extract_with_model(image_bytes: bytes, media_type: str) -> tuple[str, list]:
 # than we wrote it.
 # ---------------------------------------------------------------------------
 
-Box = collections.namedtuple("Box", "text x0 y0 x1 y1")
+# `confidence` is what the recogniser scored this region, carried through rather
+# than dropped at this boundary. Nothing in the layout reads it; it exists so a
+# reading can be explained afterwards. A chord that came back at 0.24 and a
+# chord that came back at 0.96 produce the same missing chord downstream, and
+# only the score says which one to go and fix.
+#
+# Defaulted, and every rebuild below goes through `_replace`, so the tests that
+# construct a Box positionally keep working and no field-by-field rebuild can
+# silently drop it — the failure mode this repo has already paid for three times.
+Box = collections.namedtuple("Box", "text x0 y0 x1 y1 confidence",
+                             defaults=(None,))
 
 # Ported verbatim from ChordSheetParser (chord_sheet_parser.dart). The quality
 # whitelist is the whole point: with a `.*` quality every Hungarian word
@@ -191,13 +201,29 @@ Box = collections.namedtuple("Box", "text x0 y0 x1 y1")
 _CHORD_TOKEN = re.compile(
     r"^[A-GHa-gh][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*"
     r"(?:/[A-GHa-gh][#b]?)?$")
-_BARE_ROOT = re.compile(r"^[A-GHa-gh]$")
+# A row whose only chord is a bare root — `A`, `d`, `A -` — used to be resolved
+# towards lyrics by a `_BARE_ROOT` regex here, on the grounds that `A` is the
+# Hungarian definite article. The rule is gone: the ambiguity only arises when a
+# root letter stands among words, and one ordinary word already makes the whole
+# row lyrics. A row holding nothing but one letter is not a line of words.
+#
+# It cost four real chords on two pages — `C` and `G` on 084-van-egy-ut, `D` and
+# `A` on 151-zengjed-a-dalt — every one stored as a word. Removed to match
+# `chord_sheet_parser.dart`, which no longer has the rule either.
 
 # `-7`, `-m` — the chord before this one with something added, which is how the
 # book avoids reprinting the letter. Names no pitch alone, so it is not a chord
 # token; a lone dash stays plain filler.
 _CONTINUATION = re.compile(r"^[-–—](.+)$")
-_SEPARATOR = re.compile(r"^(?:[-–—]+|\|+|:\||\|:|\|\||[xX]\d+|\d+[xX])$")
+# A bracket or a quote left standing on its own once a region is split into
+# words. The songbook writes an optional chord as `( C )`, spaces inside the
+# brackets, and the recogniser sometimes returns a stray apostrophe where a
+# chord's glyph was — either one made the whole row read as lyrics, because a
+# lone bracket is neither a chord nor a separator. It names no pitch and it is
+# not a word, so it belongs here. `(C)` written closed still goes through
+# _PARENTHESISED, where the brackets are the evidence that it is a chord.
+_SEPARATOR = re.compile(
+    r"^(?:[-–—]+|\|+|:\||\|:|\|\||[xX]\d+|\d+[xX]|[()\[\]'‘’\"]+)$")
 _PARENTHESISED = re.compile(r"^\((.+)\)$")
 
 # Two boxes are on the same line when their centres are within this fraction of
@@ -214,7 +240,30 @@ _BREAK_VS_HEIGHT = 1.0
 _BREAK_VS_GAP = 1.6
 
 # How much taller than the body text the first line must be to be a title.
+#
+# Type size alone is a weak signal on a photographed page, and on one real page
+# it is the wrong sign: `151-zengjed-a-dalt` prints its title at a *smaller* row
+# height than the body median (49 against 51.5), because the body carries
+# accents and descenders that the short title does not. That rule could never
+# fire there, and the title landed in the lyrics.
 _TITLE_HEIGHT = 1.25
+
+# The other signal, which is much stronger on a hymnal page: a title leads with
+# the song number, and it is *short*. A lyric line is a sentence.
+#
+# Measured over the corpus, first-row length against the median body line:
+#   084-van-egy-ut       `84 . Van egy út`        15 / 46 = 0.33  title
+#   151-zengjed-a-dalt   `151   Zengjed a dalt`   20 / 41 = 0.49  title
+#   109-tart-meg...      `1 Tart nag 0 kegyclem…` 40 / 40 = 1.00  verse 1, not a title
+#
+# So 0.6 separates them with room on both sides. The residual risk is a page
+# with no title whose first line opens with a verse number — that line becomes
+# the title. Accepted: it is visible on the review screen, it is one tap to fix,
+# and the alternative is a title silently left in the words. There is no rule to
+# keep in step in the app: `chord_sheet_parser.dart` reads a `{title:}`
+# directive and never guesses.
+_TITLE_WIDTH = 0.6
+_NUMBER_LED = re.compile(r"^\s*\d{1,4}\s*\.?\s+\S")
 
 # EasyOCR scores every read. Below this the token is far likelier to be a stave
 # line or a slur than a word, and a wrong word costs more than a missing one.
@@ -265,26 +314,78 @@ def is_continuation(token: str) -> bool:
     return bool(_CONTINUATION.match(_unwrap(token)))
 
 
-def is_chord_row(texts) -> bool:
-    """True when [texts] should be read as a row of chords.
+def chord_row_reason(texts) -> tuple[bool, str]:
+    """Whether [texts] is a row of chords, and why.
 
     All-or-nothing: one ordinary word makes the whole row lyrics. A row whose
     only chord is a bare root reads as lyrics too — `A` is the Hungarian
     definite article, and losing a chord is recoverable where losing a line of
     words is not.
+
+    The reason exists because the two ways to lose a chord are indistinguishable
+    downstream and are fixed in different places: the recogniser never returned
+    the symbol, or it returned it and this rule then threw the whole row away.
+    A reading that comes out short is the same reading either way.
     """
     chords = []
     for text in texts:
         if _SEPARATOR.match(text) or is_continuation(text):
             continue
         if not is_chord_token(text):
-            return False
+            return False, f"not a chord symbol: {text!r}"
         chords.append(text)
     if not chords:
-        return False
-    # Against the token as written, not unwrapped: `(A)`'s brackets are
-    # themselves the evidence that it is a chord.
-    return not (len(chords) == 1 and _BARE_ROOT.match(chords[0]))
+        return False, "separators only, no chord symbol"
+    return True, "chords: " + " ".join(chords)
+
+
+def is_chord_row(texts) -> bool:
+    """True when [texts] should be read as a row of chords."""
+    return chord_row_reason(texts)[0]
+
+
+def split_regions(row):
+    """[row] with every multi-word region split into one box per word.
+
+    The recogniser returns *regions*, not words, and a chord row is mostly white
+    space — so a widely spaced row comes back as `G` and `C   D - C`: two
+    regions holding four chords. Every rule above is written about one token, so
+    that second region reads as an ordinary word and the all-or-nothing test
+    then emits the whole row as lyrics. That is how a page of large, clean,
+    well-separated chords loses every one of them, and it was doing so on the
+    cleanest page in the corpus.
+
+    Sub-boxes are positioned by character offset on the region's own average
+    character width. Approximate on purpose: a chord only has to land over the
+    right word, and the alternative is re-reading the pixels.
+    """
+    split = []
+    for box in row:
+        parts = list(re.finditer(r"\S+", box.text))
+        if len(parts) < 2:
+            split.append(box)
+            continue
+        width = (box.x1 - box.x0) / max(1, len(box.text))
+        split.extend(box._replace(text=part.group(0),
+                                  x0=box.x0 + part.start() * width,
+                                  x1=box.x0 + part.end() * width)
+                     for part in parts)
+    return split
+
+
+def as_chord_row(row):
+    """[row] split into per-chord boxes when that is what it turns out to be.
+
+    Only when splitting changes the verdict. A lyric row split into words would
+    reach `_lay_out` as many boxes rather than one, and its spacing is measured
+    from the boxes — so leaving lyrics alone is not tidiness, it is required.
+    """
+    if is_chord_row([b.text for b in row]):
+        return row
+    split = split_regions(row)
+    if len(split) != len(row) and is_chord_row([b.text for b in split]):
+        return split
+    return row
 
 
 def _german_chords_in(texts):
@@ -312,7 +413,8 @@ def boxes_from_easyocr(results, min_confidence: float = _MIN_CONFIDENCE):
         xs = [point[0] for point in quad]
         ys = [point[1] for point in quad]
         boxes.append(Box(text=text, x0=min(xs), y0=min(ys),
-                         x1=max(xs), y1=max(ys)))
+                         x1=max(xs), y1=max(ys),
+                         confidence=float(confidence)))
     return boxes
 
 
@@ -596,19 +698,54 @@ def _row_height(row) -> float:
     return statistics.median(b.y1 - b.y0 for b in row)
 
 
-def chordpro_from_boxes(boxes) -> tuple[str, list]:
+def _row_confidence(row):
+    """Median recogniser score over [row], or None when the boxes carry none."""
+    scores = [b.confidence for b in row if b.confidence is not None]
+    return round(statistics.median(scores), 3) if scores else None
+
+
+def _log(trace, stage, **fields) -> None:
+    """Append one stage record to [trace], when a caller asked for one.
+
+    The records exist for the measurement loop in tools/ocr_harness, where a
+    reading that came out wrong has to be attributed to a stage rather than
+    guessed at.
+
+    Arguments are evaluated by the caller, so anything that costs more than a
+    `round` — a comprehension over the boxes, say — belongs inside an explicit
+    `if trace is not None` at the call site rather than in an argument here.
+    Passing one such comprehension unguarded is what made a page with nothing
+    legible on it raise instead of returning its warning.
+    """
+    if trace is not None:
+        trace.append({"stage": stage, **fields})
+
+
+def chordpro_from_boxes(boxes, trace=None) -> tuple[str, list]:
     """ChordPro for a page of OCR [boxes]. Returns (content, warnings)."""
     # Straightened before anything reads it, because grouping is what tilt
     # breaks, and columns are found on x once the page is square.
-    boxes = deskew(boxes, estimate_skew(boxes))
+    skew = estimate_skew(boxes)
+    _log(trace, "skew", degrees=round(skew, 3), corrected=abs(skew) >= _SKEW_FLOOR)
+    boxes = deskew(boxes, skew)
     columns = split_columns(boxes)
+    if trace is not None:
+        _log(trace, "columns", count=len(columns),
+             spans=[{"x0": round(min(b.x0 for b in c)),
+                     "x1": round(max(b.x1 for b in c)),
+                     "boxes": len(c)} for c in columns if c],
+             # More than one column is read as more than one *song*, which is
+             # right for a hymnal printed two songs to a page and wrong for one
+             # song set in two columns. Logged so a corpus can say which this
+             # page was.
+             read_as="one song per column")
 
     lines, german, chord_rows = [], [], 0
     for index, column in enumerate(columns):
         # Only the first column may name the song: two `{title:}` directives in
         # one paste would leave the parser keeping whichever came last.
         block, block_german, block_chords = _lay_out_column(
-            column, titled=(index == 0))
+            column, titled=(index == 0), trace=trace, column_index=index)
         if not block:
             continue
         if lines:
@@ -640,21 +777,71 @@ def chordpro_from_boxes(boxes) -> tuple[str, list]:
     return "\n".join(lines), warnings
 
 
-def _lay_out_column(boxes, titled: bool) -> tuple[list, list, int]:
+def _lay_out_column(boxes, titled: bool, trace=None,
+                    column_index: int = 0) -> tuple[list, list, int]:
     """One column as ChordPro lines. Returns (lines, german chords, chord rows)."""
     # Noise dropped before anything else reads the rows, so verse spacing is
     # measured between real lines rather than across a stray time signature.
-    rows = [row for row in group_rows(boxes)
+    grouped = group_rows(boxes)
+    # Regions become per-chord boxes here, once, before anything measures the
+    # rows: verse breaks are found on y and are unaffected, but every later
+    # question - is this chords, does the row below pair with it, where does
+    # each chord sit - has to be asked of the same boxes.
+    grouped = [as_chord_row(row) for row in grouped]
+    rows = [row for row in grouped
             if not _is_noise_row([b.text for b in row])]
+    if trace is not None:
+        _log(trace, "column", column=column_index, rows=len(grouped),
+             kept=len(rows),
+             dropped_as_noise=[[b.text for b in row] for row in grouped
+                               if _is_noise_row([b.text for b in row])])
     if not rows:
         return [], [], 0
 
     lines = []
-    # A title is set larger than the body, which is the only signal available
-    # here — so a page that merely opens with a long line is left as a lyric.
-    if titled and len(rows) > 1 and not is_chord_row([b.text for b in rows[0]]) \
-            and _row_height(rows[0]) >= _TITLE_HEIGHT * statistics.median(
-                _row_height(row) for row in rows[1:]):
+    # Two independent signals, either of which is enough. Larger type catches a
+    # page that prints its heading big; number-led-and-short catches one that
+    # does not, which on this corpus is most of them.
+    first_text = " ".join(b.text for b in rows[0])
+
+    # The two tests need different denominators, and conflating them cost a
+    # working title.
+    #
+    # Width: lyric lines only. A chord row is mostly white space and a couple of
+    # letters, so counting them halved the median and 151-zengjed-a-dalt missed
+    # by four characters — its body came out at 27 against a true 38.
+    #
+    # Height: every row. A chord row's box is *shorter* than a lyric's at the
+    # same type size, because `G` has no accent and no descender. Excluding them
+    # therefore raises the median and makes the test stricter — which is what
+    # dropped 185-jezus-krisztusom's title, a title that had been found
+    # correctly for weeks, from a ratio of 1.36 to 1.08. The 1.25 threshold is
+    # calibrated against a median that includes them, so it stays that way.
+    height_rows = rows[1:]
+    width_rows = [row for row in rows[1:]
+                  if not is_chord_row([b.text for b in row])] or rows[1:]
+    body_height = (statistics.median(_row_height(row) for row in height_rows)
+                   if height_rows else 0.0)
+    body_width = (statistics.median(
+        len(" ".join(b.text for b in row)) for row in width_rows)
+        if width_rows else 0.0)
+    body_rows = height_rows
+    by_height = _row_height(rows[0]) >= _TITLE_HEIGHT * body_height
+    by_number = bool(_NUMBER_LED.match(first_text)) and bool(body_width) and \
+        len(first_text) <= _TITLE_WIDTH * body_width
+    is_title = bool(
+        titled and body_rows and not is_chord_row([b.text for b in rows[0]])
+        and (by_height or by_number))
+    _log(trace, "title", column=column_index, taken=is_title,
+         first_row=[b.text for b in rows[0]],
+         by_height=bool(by_height), by_number=bool(by_number),
+         first_row_height=round(_row_height(rows[0]), 1),
+         body_height=round(body_height, 1),
+         needs=round(_TITLE_HEIGHT * body_height, 1),
+         first_row_width=len(first_text),
+         body_width=round(body_width, 1),
+         width_allowed=round(_TITLE_WIDTH * body_width, 1))
+    if is_title:
         lines.append("{title: %s}" % " ".join(b.text for b in rows[0]))
         lines.append("")
         rows = rows[1:]
@@ -667,17 +854,30 @@ def _lay_out_column(boxes, titled: bool) -> tuple[list, list, int]:
         if breaks[index] and lines and lines[-1] != "":
             lines.append("")
         row = rows[index]
-        if not is_chord_row([b.text for b in row]):
+        texts = [b.text for b in row]
+        chords_here, why = chord_row_reason(texts)
+        _log(trace, "row", column=column_index, row=index, texts=texts,
+             classified="chord" if chords_here else "lyric", reason=why,
+             verse_break_before=bool(breaks[index]),
+             height=round(_row_height(row), 1),
+             confidence=_row_confidence(row))
+        if not chords_here:
             lines.append(_lay_out(_repair_ocr(row))[0])
             index += 1
             continue
 
         chord_rows += 1
-        german.extend(_german_chords_in([b.text for b in row]))
+        german.extend(_german_chords_in(texts))
         below = rows[index + 1] if index + 1 < len(rows) else None
         pairs = (below is not None
                  and not breaks[index + 1]
                  and not is_chord_row([b.text for b in below]))
+        _log(trace, "pairing", column=column_index, chord_row=index,
+             paired_with=index + 1 if pairs else None,
+             reason=("paired" if pairs
+                     else "last row in the column" if below is None
+                     else "a verse break separates them" if breaks[index + 1]
+                     else "the row below is chords too"))
         if not pairs:
             # An intro or turnaround with nothing underneath. Kept: the app
             # stores chords with positions past the end of an empty lyric.
@@ -685,7 +885,21 @@ def _lay_out_column(boxes, titled: bool) -> tuple[list, list, int]:
             index += 1
             continue
 
-        lyrics, anchors = _lay_out(_repair_ocr(below))
+        repaired = _repair_ocr(below)
+        # The lyric half of a pair is consumed here rather than coming round
+        # the loop, so without this it would be the one row in the column with
+        # no record of its own — and it is the row whose confidence explains a
+        # wrong word.
+        if trace is not None:
+            after = [b.text for b in repaired]
+            _log(trace, "row", column=column_index, row=index + 1,
+                 texts=[b.text for b in below],
+                 classified="lyric", reason="paired under the chords above",
+                 verse_break_before=False,
+                 height=round(_row_height(below), 1),
+                 confidence=_row_confidence(below),
+                 repaired=after if after != [b.text for b in below] else None)
+        lyrics, anchors = _lay_out(repaired)
         lines.append(_lay_out_chords(row, anchors, _char_width(below)))
         lines.append(lyrics)
         index += 2
@@ -817,28 +1031,51 @@ def suppress_show_through(rgb):
     return cv2.cvtColor(cleaned, cv2.COLOR_GRAY2RGB)
 
 
-def extract_with_easyocr(image_bytes: bytes) -> tuple[str, list]:
-    """Read a photo with EasyOCR. Returns (content, warnings)."""
+def extract_with_easyocr(image_bytes: bytes, trace=None) -> tuple[str, list]:
+    """Read a photo with EasyOCR. Returns (content, warnings).
+
+    Pass a list as [trace] to have every stage append what it decided and why.
+    Costs nothing when it is None, which is every request the service serves.
+    """
     import io
 
     import numpy
     from PIL import Image, ImageOps
 
-    image = Image.open(io.BytesIO(image_bytes))
+    original = Image.open(io.BytesIO(image_bytes))
     # A phone holds rotation in EXIF rather than in the pixels, so a photo
     # taken in portrait arrives sideways and OCRs to nothing at all.
-    image = ImageOps.exif_transpose(image)
+    image = ImageOps.exif_transpose(original)
+    _log(trace, "decode", width=image.width, height=image.height,
+         bytes=len(image_bytes), mode=original.mode,
+         exif_rotated=image.size != original.size)
     if image.mode != "RGB":
         image = image.convert("RGB")
     pixels = numpy.array(image)
     quality = resolution_note(image.width, image.height, len(image_bytes))
+    _log(trace, "quality", long_edge=max(image.width, image.height),
+         bytes_per_pixel=round(len(image_bytes) / (image.width * image.height), 4),
+         floor_long_edge=_MIN_LONG_EDGE,
+         floor_bytes_per_pixel=_MIN_BYTES_PER_PIXEL,
+         warned=quality is not None)
     ghosted = has_show_through(pixels)
+    _log(trace, "show_through", detected=bool(ghosted), suppressed=bool(ghosted))
     if ghosted:
         pixels = suppress_show_through(pixels)
     results = easyocr_reader().readtext(
         pixels, paragraph=False,
         text_threshold=_TEXT_THRESHOLD, low_text=_LOW_TEXT)
-    content, warnings = chordpro_from_boxes(boxes_from_easyocr(results))
+    boxes = boxes_from_easyocr(results)
+    if trace is not None:
+        scores = sorted(round(float(c), 3) for _, _, c in results)
+        _log(trace, "ocr", regions=len(results), kept=len(boxes),
+             dropped_below_confidence=len(results) - len(boxes),
+             min_confidence=_MIN_CONFIDENCE,
+             median_confidence=scores[len(scores) // 2] if scores else None,
+             lowest_kept=[{"text": b.text, "confidence": round(b.confidence, 3)}
+                          for b in sorted(
+                              boxes, key=lambda b: b.confidence or 1.0)[:5]])
+    content, warnings = chordpro_from_boxes(boxes, trace=trace)
     if ghosted:
         # Said out loud because it changes what was read: the page was cleaned
         # up before anyone looked at it, and that is worth knowing when a line
@@ -849,6 +1086,7 @@ def extract_with_easyocr(image_bytes: bytes) -> tuple[str, list]:
         # First, because it is the one problem the person holding the phone can
         # actually fix, and it caps how good anything below it can be.
         warnings.insert(0, quality)
+    _log(trace, "warnings", count=len(warnings), prose=list(warnings))
     return content, warnings
 
 

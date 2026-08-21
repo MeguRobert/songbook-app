@@ -101,25 +101,14 @@ void main() {
     expect(find.textContaining('Key guessed as G'), findsOneWidget);
   });
 
-  testWidgets('parser warnings are surfaced, not swallowed', (tester) async {
+  testWidgets('a lone root is read as a chord, not warned about', (tester) async {
     await pumpImport(tester);
-    // A lone bare root is ambiguous, so the parser keeps it as lyrics and
-    // warns. That warning has to reach the user while it is still cheap to fix.
+    // The rule that kept a one-letter line as lyrics is gone: no hymnal line is
+    // one character long, and it cost four real chords across two pages of the
+    // measurement corpus. The rare misread is the moderation queue's job.
     await pasteAndParse(tester, 'A\nEgy sor szöveg');
 
-    // Wording adapts to the count ('this line' / 'these lines'), so match
-    // the invariant: the warning block is on screen.
-    expect(find.textContaining('Check'), findsWidgets);
-
-    // And the warning itself, run through the localised formatter. The parser
-    // reports a CODE now, so a screen that forgot to format one would show
-    // nothing at all here rather than English — which the heading above cannot
-    // tell you, since it was already translated.
-    expect(
-      find.textContaining(
-          'Line 1: "A" could be a one-chord line or a lyric; kept as a lyric.'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('could be a one-chord line'), findsNothing);
   });
 
   testWidgets('Hungarian lyrics are not eaten as chords', (tester) async {

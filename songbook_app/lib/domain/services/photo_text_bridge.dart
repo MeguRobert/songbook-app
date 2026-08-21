@@ -10,12 +10,27 @@ class OcrWord {
   final double x1;
   final double y1;
 
+  /// The glyphs inside this word, where the engine reported them.
+  ///
+  /// Only ever read to undo a merge. Tesseract returns `D G  D` as the single
+  /// word `DGD` when the gaps are narrow, and `G - C - D - ( C )` as
+  /// `G-C-D-(C)`. Neither is a chord symbol, so the all-or-nothing rule threw
+  /// the whole row away as lyrics. Measured on the corpus, that alone took
+  /// `185-jezus-krisztusom` to *zero* chords found and cost
+  /// `app-jezus-szivedbe-lat` more than half of its.
+  ///
+  /// There is no whitespace to split on, so the split has to come from where
+  /// the glyphs actually are. Empty when the engine does not report symbols, in
+  /// which case nothing changes.
+  final List<OcrWord> symbols;
+
   const OcrWord({
     required this.text,
     required this.x0,
     required this.y0,
     required this.x1,
     required this.y1,
+    this.symbols = const [],
   });
 
   double get centreX => (x0 + x1) / 2;
@@ -107,6 +122,15 @@ class PhotoTextBridge {
   static const _skewFloor = 0.4;
   static const _minWordsForSkew = 6;
 
+  /// How wide a gap between two glyphs has to be, as a multiple of the word's
+  /// own median glyph width, before it is read as a space the engine swallowed.
+  ///
+  /// Letters inside a word sit almost touching; chords set a couple of spaces
+  /// apart are a clear step wider. 0.6 sits between the two with room either
+  /// side, and the all-or-nothing chord check behind it means an over-eager cut
+  /// still cannot turn prose into chords.
+  static const _symbolGap = 0.6;
+
   /// A gutter must be this many typical glyph widths across, and a column needs
   /// this many words to be a column rather than a speck.
   static const _gutterWidth = 4.0;
@@ -119,9 +143,14 @@ class PhotoTextBridge {
           chordPro: '', warnings: ['Nothing legible was found in that photo.']);
     }
 
+    // Merged chord runs pulled apart first, so everything below — grouping,
+    // classification, layout — sees the chords the page prints rather than one
+    // nonsense symbol standing for three.
+    final split = splitMergedChords(words);
+
     // Straightened before anything else looks at it, because grouping is what
     // tilt breaks, and columns are found on x once the page is square.
-    final straight = deskew(words, estimateSkew(words));
+    final straight = deskew(split, estimateSkew(split));
     final columns = splitColumns(straight);
 
     final lines = <String>[];
@@ -400,6 +429,88 @@ class PhotoTextBridge {
     }
     return line;
   }
+
+  /// [words] with any merged run of chord symbols pulled back apart.
+  ///
+  /// Tesseract joins glyphs into a word on horizontal spacing, so `D G  D` set
+  /// with narrow gaps arrives as `DGD`, and `G - C - D - ( C )` as
+  /// `G-C-D-(C)`. Neither is a chord symbol, so the all-or-nothing rule in
+  /// [ChordSheetParser.isChordLine] read the whole row as lyrics and the chords
+  /// were stored as words. On the measurement corpus that one merge took
+  /// `185-jezus-krisztusom` to zero chords found.
+  ///
+  /// Two guards keep this from cutting up lyrics, and both must hold:
+  ///
+  /// * the split has to fall on a **real gap** — [_symbolGap] times the word's
+  ///   own median glyph width — so ordinary letter spacing is never a cut; and
+  /// * **every** resulting piece has to be a chord or chord punctuation. That is
+  ///   what protects prose: `szívemben` cuts into pieces like `sz` and `ívem`,
+  ///   which are not chords, so the word is left whole. `Am` is safe for the
+  ///   same reason — `m` alone names no pitch.
+  ///
+  /// A word the engine reported no symbols for is returned untouched, so an
+  /// engine that does not report them loses nothing.
+  List<OcrWord> splitMergedChords(List<OcrWord> words) {
+    final out = <OcrWord>[];
+    for (final word in words) {
+      out.addAll(_splitOne(word));
+    }
+    return out;
+  }
+
+  List<OcrWord> _splitOne(OcrWord word) {
+    final symbols = word.symbols;
+    // Nothing to go on, or nothing worth splitting: one glyph cannot be a
+    // merge, and a word already readable as a chord must not be touched —
+    // `Em7`'s glyphs are as tightly spaced as `DGD`'s.
+    if (symbols.length < 2 || parser.isChordToken(word.text)) return [word];
+
+    final widths = symbols.map((s) => s.width).where((w) => w > 0).toList();
+    if (widths.isEmpty) return [word];
+    final gate = _symbolGap * _median(widths);
+
+    final runs = <List<OcrWord>>[[symbols.first]];
+    for (var i = 1; i < symbols.length; i++) {
+      final gap = symbols[i].x0 - symbols[i - 1].x1;
+      if (gap >= gate) {
+        runs.add([symbols[i]]);
+      } else {
+        runs.last.add(symbols[i]);
+      }
+    }
+    if (runs.length < 2) return [word];
+
+    final pieces = <OcrWord>[];
+    for (final run in runs) {
+      final text = run.map((s) => s.text).join().trim();
+      if (text.isEmpty) continue;
+      pieces.add(OcrWord(
+        text: text,
+        x0: run.first.x0,
+        y0: word.y0,
+        x1: run.last.x1,
+        y1: word.y1,
+      ));
+    }
+    if (pieces.length < 2) return [word];
+    // The guard that protects prose: all or nothing.
+    for (final piece in pieces) {
+      if (!parser.isChordToken(piece.text) &&
+          !parser.isContinuation(piece.text) &&
+          !_isChordPunctuation(piece.text)) {
+        return [word];
+      }
+    }
+    return pieces;
+  }
+
+  /// Brackets and dashes a chord row carries, as their own pieces.
+  ///
+  /// [ChordSheetParser] tolerates these inside a row; here they have to be
+  /// recognised one piece at a time, because a split can land either side of
+  /// one.
+  bool _isChordPunctuation(String text) =>
+      RegExp(r'''^[-–—|:()\[\]'‘’"]+$''').hasMatch(text);
 
   /// The character column at pixel [x], interpolated between [anchors].
   int _columnFor(double x, List<(double, int)> anchors, double charWidth) {

@@ -209,10 +209,25 @@ class ChordRowTests(unittest.TestCase):
     def test_punctuation_alone_is_not_a_chord_row(self):
         self.assertFalse(worker.is_chord_row(['|', '-', '|']))
 
-    def test_a_lone_bare_root_reads_as_lyrics(self):
-        # `A` is the Hungarian definite article; losing a chord beats losing a
-        # line of words.
-        self.assertFalse(worker.is_chord_row(['A']))
+    def test_a_lone_root_is_a_chord_row_in_either_case(self):
+        # A row holding nothing but one letter is not a plausible line of words.
+        # `A` is the Hungarian definite article, but that ambiguity only arises
+        # when it stands among words — and one ordinary word already makes the
+        # whole row lyrics. Reading every one-letter row as lyrics cost four
+        # real chords across two pages of the measurement corpus.
+        for root in ('A', 'C', 'D', 'E', 'G', 'H', 'a', 'd', 'e', 'h'):
+            with self.subTest(root=root):
+                self.assertTrue(worker.is_chord_row([root]))
+
+    def test_a_lone_root_with_punctuation_is_a_chord_row(self):
+        self.assertTrue(worker.is_chord_row(['D', '-']))
+        self.assertTrue(worker.is_chord_row(['a', '-']))
+
+    def test_a_lone_root_beside_a_word_is_still_lyrics(self):
+        # The all-or-nothing rule is what actually protects the article, and it
+        # is untouched: one ordinary word makes the whole row words.
+        self.assertFalse(worker.is_chord_row(['A', 'szívemben']))
+        self.assertFalse(worker.is_chord_row(['a', 'szívemben']))
 
     def test_a_lone_parenthesised_root_is_a_chord_row(self):
         self.assertTrue(worker.is_chord_row(['(A)']))

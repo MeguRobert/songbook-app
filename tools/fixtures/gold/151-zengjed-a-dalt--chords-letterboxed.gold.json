@@ -1,0 +1,31 @@
+{
+  "file": "151-zengjed-a-dalt--chords-letterboxed.jpg",
+  "tier": "B",
+  "engine": "text",
+  "reviewed_by": "Megu Robert",
+  "drafted_from": "easyocr",
+  "_review_checklist": [
+    "Compare every line against the photograph, not against the app.",
+    "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
+    "Write chords exactly as the page prints them - em, H7, -7, fiszm. Storage spelling is the app's job, not this file's.",
+    "warnings holds slugs, not prose: low-resolution, show-through-removed, two-songs, no-chords, german-chords, nothing-legible.",
+    "Put your name in reviewed_by when the text matches the page. Until you do, every score against this file is circular."
+  ],
+  "_stresses": [
+    "the photo occupies a band in the middle of the frame; black bars above and below",
+    "cropping to the page before reading is the thing under test",
+    "smallest file in the corpus at 0.021 bytes per pixel - the most compressed",
+    "the -7 shorthand meaning 'the chord before me, with a seventh'",
+    "lowercase minor: gm",
+    "a different book 151 to 151-hozsanna: the number is book-relative, not global",
+    "later verses carry no chords and must inherit them"
+  ],
+  "_drafted_from": "easyocr reading, uncorrected",
+  "number": 151,
+  "title": "Zengjed a dalt",
+  "warnings": [
+    "low-resolution",
+    "show-through-removed"
+  ],
+  "chordpro": "             D\nZengjed a dalt, dalt, dalt, kiáltsd a szót, szót, szót,\n                                      A\nZengjed a dalt, kiáltsd a szót: Él az Úr!\n   D            -7      G       gm\nAz aranykapun át látod életed Urát,\n           D              A          D\nzengjed a dalt, kiáltsd a szót: Él az Úr!\n\nIndulj szép égi szekér, hazafelé vezet egy út!\nIndulj szép égi szekér, hazafelé vezet egy út!\n\nHa minden szent életre kél,\nha minden szent életre kél,\nhívj Atyám a szentek közé,\nha minden szent életre kél!"
+}

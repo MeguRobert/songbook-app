@@ -122,7 +122,12 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
       // merely looks like the one the numbers came from.
       final output = JSObject()
         ..setProperty('blocks'.toJS, true.toJS)
-        ..setProperty('text'.toJS, true.toJS);
+        ..setProperty('text'.toJS, true.toJS)
+        // Symbols, because the engine joins glyphs into a word on spacing:
+        // `D G  D` set with narrow gaps arrives as the single word `DGD`, which
+        // is not a chord symbol, and the row was then stored as lyrics.
+        // PhotoTextBridge.splitMergedChords needs the glyph boxes to undo that.
+        ..setProperty('symbols'.toJS, true.toJS);
       final result = await worker
           .recognize(canvas, JSObject(), output)
           .toDart
@@ -201,12 +206,28 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
       final text = (word.text ?? '').trim();
       final box = word.bbox;
       if (text.isEmpty || box == null) return;
+      // Carried, not interpreted. Whether a merge is worth undoing is a
+      // question about chords, and that belongs in PhotoTextBridge.
+      final glyphs = <OcrWord>[];
+      for (final symbol in word.symbols?.toDart ?? const <_TesseractSymbol>[]) {
+        final glyph = symbol.text;
+        final glyphBox = symbol.bbox;
+        if (glyph == null || glyph.isEmpty || glyphBox == null) continue;
+        glyphs.add(OcrWord(
+          text: glyph,
+          x0: glyphBox.x0.toDouble(),
+          y0: glyphBox.y0.toDouble(),
+          x1: glyphBox.x1.toDouble(),
+          y1: glyphBox.y1.toDouble(),
+        ));
+      }
       words.add(OcrWord(
         text: text,
         x0: box.x0.toDouble(),
         y0: box.y0.toDouble(),
         x1: box.x1.toDouble(),
         y1: box.y1.toDouble(),
+        symbols: glyphs,
       ));
     }
 
@@ -323,6 +344,12 @@ extension type _TesseractLine._(JSObject _) implements JSObject {
 }
 
 extension type _TesseractWord._(JSObject _) implements JSObject {
+  external String? get text;
+  external _TesseractBox? get bbox;
+  external JSArray<_TesseractSymbol>? get symbols;
+}
+
+extension type _TesseractSymbol._(JSObject _) implements JSObject {
   external String? get text;
   external _TesseractBox? get bbox;
 }

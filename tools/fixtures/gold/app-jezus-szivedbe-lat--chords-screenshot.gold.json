@@ -1,0 +1,37 @@
+{
+  "file": "app-jezus-szivedbe-lat--chords-screenshot.jpg",
+  "tier": "A",
+  "engine": "text",
+  "reviewed_by": "Megu Robert",
+  "drafted_from": "vision",
+  "_review_checklist": [
+    "Compare every line against the photograph, not against the app.",
+    "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
+    "Write chords exactly as the page prints them - em, H7, -7, fiszm. Storage spelling is the app's job, not this file's.",
+    "warnings holds slugs, not prose: low-resolution, show-through-removed, two-songs, no-chords, german-chords, nothing-legible.",
+    "Put your name in reviewed_by when the text matches the page."
+  ],
+  "_notes": [
+    "Chord columns are measured per character, not snapped to the start of a word. An earlier version of this file did snap them, which put the first C of verse 1 at column 9 (`szívedbe`'s first letter) when the page prints it at column 13, over the `e`. Robert caught it.",
+    "Floor, not round, when converting a pixel x to a column: a glyph starting at x sits inside the character whose cell contains x. Rounding moved that same C to column 14.",
+    "Eight chords were never recognised and were measured off the image against a pixel ruler: the C on every `Mi az…` and `Nézi…` line, plus verse 4's leading G.",
+    "The chords float at fixed horizontal positions and do not track the words. Verse 1's D sits over `lát!`; verse 2's over `szemedbe`. That is what the page does.",
+    "Verse 1 alone wraps its last chord in brackets: `G - C - D - ( C )`. Verses 2-4 print `G - C - D - C`.",
+    "No book number anywhere on the page. The title appears only in the phone's app bar, which is chrome rather than song content.",
+    "Both warnings are deliberately unticked: this is a born-digital screenshot, perfectly legible, with no reverse page to show through. Both currently fire, which is the point of recording them as unexpected."
+  ],
+  "_stresses": [
+    "born-digital glyphs, no paper, no skew, no show-through - the cleanest text case there is",
+    "phone chrome must be cropped away: a clock, a battery percentage and a title in the app bar",
+    "the app bar title duplicates the song title, which is a second source for it",
+    "chords are red and the lyrics black - colour is a usable signal here and nowhere else",
+    "no book number anywhere on the page: the number-out-of-the-title rule has nothing to split",
+    "chord runs joined by hyphens and wrapped in parentheses: G - C - D - ( C )",
+    "verses are numbered 1-4 in the lyric line itself",
+    "if this page is not read almost perfectly, the fault is in the bridge, not in the OCR"
+  ],
+  "number": null,
+  "title": "Jézus szívedbe lát",
+  "warnings": [],
+  "chordpro": "   G         C     D   -  C\n1. Jézus szívedbe lát!\nG           C     D  -  C\nMi az, mit ott talál?\nG          C      C7     D     G - C - D - ( C )\nMi az, mit benne, benne ott talál?\n\nG        C    D  -  C\n2. Jézus szemedbe néz!\nG         C    D  -   C\nMi az, mi benned él?\nG          C     C7      D      G - C - D - C\nMi az, mi benned, benned, benned él?\n\nG          C    D   -  C\n3. Jézus az útra néz!\nG        C    D  -  C\nNézi, hogy merre mész!\nG           C    C7      D      G - C - D - C\nNézi, hogy merre, merre, merre mész!\n\nG          C   D   - C\n4. Jézus fogja kezed!\nG          C   D   -  C\nSegít és megy veled!\n G       C     C7       D       G - C - D - C\nSegít és együtt, együtt megy veled!"
+}

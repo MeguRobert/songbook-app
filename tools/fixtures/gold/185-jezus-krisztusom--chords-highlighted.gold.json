@@ -1,0 +1,37 @@
+{
+  "file": "185-jezus-krisztusom--chords-highlighted.jpg",
+  "tier": "A",
+  "engine": "text",
+  "reviewed_by": "Megu Robert",
+  "drafted_from": "vision",
+  "_review_checklist": [
+    "Compare every line against the photograph, not against the app.",
+    "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
+    "Write chords exactly as the page prints them - em, H7, -7, fiszm. Storage spelling is the app's job, not this file's.",
+    "warnings holds slugs, not prose: low-resolution, show-through-removed, two-songs, no-chords, german-chords, nothing-legible.",
+    "Put your name in reviewed_by when the text matches the page."
+  ],
+  "_notes": [
+    "The song number 185 is handwritten in blue pen over the printed one, and the printed one is what OCR reads - as 485.",
+    "The 7 of both H7s is struck through twice in pen. It is still a seventh; the strike is a correction to something else.",
+    "Grey highlighter sits behind the title and behind the first lyric line.",
+    "The verse ends in a four-dot ellipsis, which is on the page and belongs in the reading."
+  ],
+  "_stresses": [
+    "the song number 185 is handwritten in blue pen over the printed one",
+    "grey highlighter behind the title and behind the first lyric line",
+    "the 7 of H7 is struck through in pen twice - a correction that must not become a different chord",
+    "H7 must be read as B7 into storage",
+    "lowercase minor: em",
+    "two chords adjacent with one space: D G D",
+    "the verse ends in a four-dot ellipsis: halleluja ....",
+    "the largest type in the corpus - the easiest page, so a regression here means something basic broke"
+  ],
+  "number": 185,
+  "title": "Jézus Krisztusom, mentő oltalom",
+  "warnings": [
+    "low-resolution",
+    "german-chords"
+  ],
+  "chordpro": "      G      D           em H7\nJézus Krisztusom, mentő oltalom\n        C      D G  D\nvagy Te minden utamon.\n   G        D          em       H7\nElőttem Te mész, mögöttem Te lépsz,\n    C        D     G\na szívemben is Te élsz.\nHalleluja, halleluja, halleluja, halleluja ...."
+}

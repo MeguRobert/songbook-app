@@ -1,0 +1,29 @@
+{
+  "file": "125-nincs-mas-isten--chords-two-column-ruled.jpg",
+  "tier": "B",
+  "engine": "text",
+  "reviewed_by": null,
+  "drafted_from": "easyocr",
+  "_review_checklist": [
+    "Compare every line against the photograph, not against the app.",
+    "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
+    "Write chords exactly as the page prints them - em, H7, -7, fiszm. Storage spelling is the app's job, not this file's.",
+    "warnings holds slugs, not prose: low-resolution, show-through-removed, two-songs, no-chords, german-chords, nothing-legible.",
+    "Put your name in reviewed_by when the text matches the page. Until you do, every score against this file is circular."
+  ],
+  "_stresses": [
+    "a printed vertical rule between the columns - a gutter the column splitter can key on, unlike 166",
+    "named sections: 1. Versszak, 2. Versszak, Refren, Atvezeto resz",
+    "navigation lines that are not lyrics: -> Refren, -> Atvezeto resz, Vissza a versszakokra",
+    "an intro chord line with no lyric under it: Em7 Cadd9-Csus2 G5-Gsus2 D4/Fis",
+    "chord-only lines mid-song: Em C G D, C G D, C D G",
+    "Hungarian note-name spelling inside a chord: D4/Fis (F sharp)",
+    "compound chords joined by a hyphen: Cadd9-Csus2, G5-Gsus2",
+    "chords sit above the first word of a line rather than over a specific syllable"
+  ],
+  "_drafted_from": "easyocr reading, uncorrected",
+  "number": 125,
+  "title": "Nincs mas Isten",
+  "warnings": [],
+  "chordpro": "{title: 125. Nincs más Isten}\n\nFi7 Cadd9-Csus2 G5-Gsus2 D4/Fis   Vissza a versszakohra\n1. Versszak                       4> Refrén\nEm        G            Átvezetó rész\nNálad lett borrá a víz;\nEm     G           Em És hogyha Isten velünk.\nHoltakat életre hívsz;\nAm                 Ember mit árthat nekünk?\nNincs más Isten;               G\nD                    Mert hogyha Te vagy velünk,\nNincsen más!               D\nKi lehet ellenünk?\n2. Versszak\nEm        G          Em És hogyha Isten velünk,\nTe ragyogod be az éjt,\nEm   C  G             Ember mit árthat nekünk?\nTe hozod el a reményt;               G\nAm                 Mert hogyha Te vagy velünk,\nNincs más Isten;              D\nD                    Ki lehet ellenünk?\nNincsen más!                 Em € G D         Em\nRefrén                                      Ki állhat ellenünk\nEm\nTe vagy az Isten;,              CGD\nC\nAki nevére     D               \"> Refrén\nG\nLeborul minden a földön, az égen.      ~> Átvezetó_ rész\nEm\nHegyeket mozdít,               Em € G D         Em\nBeteget gyógyít C                                        Ki állhat ellenünk\nG\nAz Úr\nD                CD G\nMa is"
+}

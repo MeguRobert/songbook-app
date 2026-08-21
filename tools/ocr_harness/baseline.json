@@ -1,0 +1,189 @@
+{
+  "accepted": "2026-08-22",
+  "engines": {
+    "easyocr": {
+      "084-van-egy-ut--chords-showthrough.jpg": {
+        "number_exact": 1.0,
+        "title_cer": 0.0,
+        "lyric_cer": 0.0319,
+        "lyric_cer_folded": 0.0203,
+        "chord_recall": 0.3333,
+        "chord_precision": 1.0,
+        "chord_f1": 0.5,
+        "placement": 0.25,
+        "placement_near": 0.5,
+        "warnings_ok": 1.0,
+        "headline": 0.656
+      },
+      "185-jezus-krisztusom--chords-highlighted.jpg": {
+        "number_exact": 0.0,
+        "title_cer": 0.0645,
+        "lyric_cer": 0.1728,
+        "lyric_cer_folded": 0.1605,
+        "chord_recall": 0.6,
+        "chord_precision": 1.0,
+        "chord_f1": 0.75,
+        "placement": 0.6667,
+        "placement_near": 0.75,
+        "warnings_ok": 0.0,
+        "headline": 0.7757
+      },
+      "app-jezus-szivedbe-lat--chords-screenshot.jpg": {
+        "title_cer": 1.0,
+        "lyric_cer": 0.0249,
+        "lyric_cer_folded": 0.0249,
+        "chord_recall": 0.8125,
+        "chord_precision": 1.0,
+        "chord_f1": 0.8966,
+        "placement": 0.7931,
+        "placement_near": 0.8621,
+        "warnings_ok": 0.0,
+        "headline": 0.9112
+      },
+      "151-zengjed-a-dalt--chords-letterboxed.jpg": {
+        "number_exact": 1.0,
+        "title_cer": 0.0,
+        "lyric_cer": 0.0211,
+        "lyric_cer_folded": 0.0184,
+        "chord_recall": 1.0,
+        "chord_precision": 1.0,
+        "chord_f1": 1.0,
+        "placement": 1.0,
+        "placement_near": 1.0,
+        "warnings_ok": 1.0,
+        "headline": 0.993
+      },
+      "098-szivemben-orom-dalol--chords-next-song-header.jpg": {
+        "number_exact": 0.0,
+        "title_cer": 1.0,
+        "lyric_cer": 0.3364,
+        "lyric_cer_folded": 0.3333,
+        "chord_recall": 0.0588,
+        "chord_precision": 1.0,
+        "chord_f1": 0.1111,
+        "placement": 0.0,
+        "placement_near": 0.1111,
+        "warnings_ok": 1.0,
+        "headline": 0.2953
+      }
+    },
+    "browser": {
+      "084-van-egy-ut--chords-showthrough.jpg": {
+        "number_exact": 1.0,
+        "title_cer": 0.0,
+        "lyric_cer": 0.0203,
+        "lyric_cer_folded": 0.0203,
+        "chord_recall": 0.5833,
+        "chord_precision": 0.5833,
+        "chord_f1": 0.5833,
+        "placement": 0.5,
+        "placement_near": 0.5833,
+        "warnings_ok": 0.0,
+        "headline": 0.7155
+      },
+      "098-szivemben-orom-dalol--chords-next-song-header.jpg": {
+        "number_exact": 1.0,
+        "title_cer": 0.0,
+        "lyric_cer": 0.203,
+        "lyric_cer_folded": 0.203,
+        "chord_recall": 0.7059,
+        "chord_precision": 0.9231,
+        "chord_f1": 0.8,
+        "placement": 0.8,
+        "placement_near": 0.8,
+        "warnings_ok": 0.0,
+        "headline": 0.799
+      },
+      "105-kosz-jol-vagyok--chords-handwritten-red.jpg": {
+        "number_exact": 1.0,
+        "title_cer": 0.0625,
+        "lyric_cer": 0.2977,
+        "lyric_cer_folded": 0.2908,
+        "chord_recall": 1.0,
+        "chord_precision": 1.0,
+        "chord_f1": 1.0,
+        "placement": 1.0,
+        "placement_near": 1.0,
+        "warnings_ok": 0.0,
+        "headline": 0.9008
+      },
+      "109-tart-meg-a-kegyelem--chords-handwritten-transpose.jpg": {
+        "number_exact": 0.0,
+        "title_cer": 1.0,
+        "lyric_cer": 0.5809,
+        "lyric_cer_folded": 0.5704,
+        "chord_recall": 0.0,
+        "chord_precision": 0.0,
+        "chord_f1": 0.0,
+        "placement": 0.0,
+        "placement_near": 0.0,
+        "warnings_ok": 0.0,
+        "headline": 0.1397
+      },
+      "125-nincs-mas-isten--chords-two-column-ruled.jpg": {
+        "number_exact": 1.0,
+        "title_cer": 0.0667,
+        "lyric_cer": 0.5291,
+        "lyric_cer_folded": 0.5282,
+        "chord_recall": 1.0,
+        "chord_precision": 0.2381,
+        "chord_f1": 0.3846,
+        "placement": 0.1538,
+        "placement_near": 0.2308,
+        "warnings_ok": 0.0,
+        "headline": 0.3621
+      },
+      "151-zengjed-a-dalt--chords-letterboxed.jpg": {
+        "number_exact": 0.0,
+        "title_cer": 1.0,
+        "lyric_cer": 0.0605,
+        "lyric_cer_folded": 0.0605,
+        "chord_recall": 1.0,
+        "chord_precision": 0.8182,
+        "chord_f1": 0.9,
+        "placement": 0.8,
+        "placement_near": 0.9,
+        "warnings_ok": 0.0,
+        "headline": 0.9132
+      },
+      "166-tekozlo-fiu--chords-two-column-italic.jpg": {
+        "number_exact": 1.0,
+        "title_cer": 0.2727,
+        "lyric_cer": 0.2071,
+        "lyric_cer_folded": 0.2006,
+        "chord_recall": 0.3333,
+        "chord_precision": 1.0,
+        "chord_f1": 0.5,
+        "placement": 0.5,
+        "placement_near": 0.5,
+        "warnings_ok": 1.0,
+        "headline": 0.5976
+      },
+      "185-jezus-krisztusom--chords-highlighted.jpg": {
+        "number_exact": 0.0,
+        "title_cer": 0.0,
+        "lyric_cer": 0.3086,
+        "lyric_cer_folded": 0.3086,
+        "chord_recall": 0.2,
+        "chord_precision": 1.0,
+        "chord_f1": 0.3333,
+        "placement": 0.3333,
+        "placement_near": 0.3333,
+        "warnings_ok": 0.0,
+        "headline": 0.4527
+      },
+      "app-jezus-szivedbe-lat--chords-screenshot.jpg": {
+        "title_cer": 0.2222,
+        "lyric_cer": 0.0125,
+        "lyric_cer_folded": 0.0125,
+        "chord_recall": 0.9844,
+        "chord_precision": 0.9844,
+        "chord_f1": 0.9844,
+        "placement": 0.8594,
+        "placement_near": 0.9219,
+        "warnings_ok": 1.0,
+        "headline": 0.9646
+      }
+    }
+  }
+}
