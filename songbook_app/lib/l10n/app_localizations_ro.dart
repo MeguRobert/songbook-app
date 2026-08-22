@@ -1278,4 +1278,201 @@ class AppLocalizationsRo extends AppLocalizations {
   String importNoticePhotoGermanNoteNames(String text) {
     return '$text va fi stocat sub denumirea engleză (H este si natural). Aplicația păstrează o singură scriere pentru fiecare notă, ca transpunerea să rămână exactă.';
   }
+
+  @override
+  String get roleMember => 'Membru';
+
+  @override
+  String get roleModerator => 'Moderator';
+
+  @override
+  String get roleAdministrator => 'Administrator';
+
+  @override
+  String get roleMemberDescription =>
+      'Poate citi cartea de cântări și poate propune cântări spre aprobare.';
+
+  @override
+  String get roleModeratorDescription =>
+      'Poate aproba sau respinge propunerile și poate corecta orice cântare.';
+
+  @override
+  String get roleAdministratorDescription =>
+      'Tot ce poate face un moderator, plus gestionarea conturilor și a setărilor.';
+
+  @override
+  String get adminTitle => 'Administrare';
+
+  @override
+  String get adminNotPermitted =>
+      'Această secțiune este pentru administratori.';
+
+  @override
+  String get adminUsersTitle => 'Membri';
+
+  @override
+  String get adminUserTitle => 'Membru';
+
+  @override
+  String get adminUserGone => 'Acest cont nu mai există.';
+
+  @override
+  String get adminSettingsTitle => 'Setări pentru contribuții';
+
+  @override
+  String get adminSettingsSubtitle =>
+      'Cine poate trimite cântări și regulile pe care le acceptă';
+
+  @override
+  String adminWaitingCount(String count) {
+    return '$count în așteptare';
+  }
+
+  @override
+  String adminMemberCount(String count) {
+    return '$count conturi';
+  }
+
+  @override
+  String get adminSubmissionsClosedNotice =>
+      'Trimiterile sunt închise. Nimeni nu poate propune o cântare.';
+
+  @override
+  String get adminReopen => 'Deschide';
+
+  @override
+  String get adminSearchUsers => 'Caută după nume sau adresă';
+
+  @override
+  String get adminFilterAll => 'Toți';
+
+  @override
+  String get adminInvite => 'Invită';
+
+  @override
+  String get adminSendInvite => 'Trimite invitația';
+
+  @override
+  String get adminInviteSent => 'Invitația a fost trimisă.';
+
+  @override
+  String get adminUsersUnavailable =>
+      'Lista de membri nu a putut fi încărcată.';
+
+  @override
+  String get adminNoMatchingUsers => 'Nu există rezultate.';
+
+  @override
+  String get adminActionDone => 'Gata.';
+
+  @override
+  String get adminActionFailed => 'Nu a funcționat.';
+
+  @override
+  String get adminCannotActOnSelf =>
+      'Nu îți poți schimba propriul rol și nu îți poți șterge propriul cont.';
+
+  @override
+  String get adminLastAdministrator =>
+      'Trebuie să existe cel puțin un administrator.';
+
+  @override
+  String get adminRole => 'Rol';
+
+  @override
+  String get adminChange => 'Modifică';
+
+  @override
+  String get adminChangeRole => 'Schimbă rolul';
+
+  @override
+  String get adminEmailStatus => 'Adresă de e-mail';
+
+  @override
+  String get adminEmailConfirmed => 'Confirmată';
+
+  @override
+  String get adminEmailUnconfirmed => 'Neconfirmată';
+
+  @override
+  String get adminGuidelinesStatus => 'Regulile de contribuție';
+
+  @override
+  String get adminGuidelinesAccepted => 'Acceptate';
+
+  @override
+  String get adminGuidelinesNotAccepted => 'Încă neacceptate';
+
+  @override
+  String get adminLastSignIn => 'Ultima conectare';
+
+  @override
+  String get adminNeverSignedIn => 'nu s-a conectat niciodată';
+
+  @override
+  String get adminSubmissions => 'Cântări trimise';
+
+  @override
+  String adminTallyApproved(int count) {
+    return '$count aprobate';
+  }
+
+  @override
+  String adminTallyPending(int count) {
+    return '$count în așteptare';
+  }
+
+  @override
+  String adminTallyRejected(int count) {
+    return '$count respinse';
+  }
+
+  @override
+  String get adminDeleteAccount => 'Șterge acest cont';
+
+  @override
+  String get adminDeleteWarning => 'Această acțiune nu poate fi anulată.';
+
+  @override
+  String get adminDeleteKeepsApproved =>
+      'Cântările deja aprobate rămân în cartea de cântări, cu numele înregistrat la trimitere. Ce este încă în așteptare sau respins se șterge.';
+
+  @override
+  String adminDeleteTypeToConfirm(String address) {
+    return 'Scrie $address pentru confirmare.';
+  }
+
+  @override
+  String get adminDeletePermanently => 'Șterge definitiv';
+
+  @override
+  String get adminSubmissionsSection => 'Trimiteri';
+
+  @override
+  String get adminSubmissionsOpen => 'Acceptă cântări noi';
+
+  @override
+  String get adminSubmissionsOpenHelp =>
+      'Oprește pentru a nu mai accepta nimic nou.';
+
+  @override
+  String get adminRequireConfirmedEmail => 'Cere o adresă confirmată';
+
+  @override
+  String get adminRequireConfirmedEmailHelp =>
+      'Cine nu și-a confirmat adresa nu poate trimite cântări.';
+
+  @override
+  String get adminDailyCap => 'Cântări pe zi per persoană';
+
+  @override
+  String get adminDailyCapHelp =>
+      'Limitează cât de repede un cont poate umple lista.';
+
+  @override
+  String get adminGuidelinesSection => 'Regulile de contribuție';
+
+  @override
+  String get adminGuidelinesHelp =>
+      'Toți citesc acest text și îl acceptă o dată, înainte de prima trimitere.';
 }

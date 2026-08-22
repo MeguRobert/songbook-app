@@ -1274,4 +1274,199 @@ class AppLocalizationsHu extends AppLocalizations {
   String importNoticePhotoGermanNoteNames(String text) {
     return 'A(z) $text az angol néven lesz eltárolva (a H a B alaphangot jelenti). Az alkalmazás hangonként egyetlen írásmódot tart, hogy a transzponálás pontos maradjon.';
   }
+
+  @override
+  String get roleMember => 'Tag';
+
+  @override
+  String get roleModerator => 'Moderátor';
+
+  @override
+  String get roleAdministrator => 'Rendszergazda';
+
+  @override
+  String get roleMemberDescription =>
+      'Olvashatja az énekeskönyvet, és énekeket ajánlhat jóváhagyásra.';
+
+  @override
+  String get roleModeratorDescription =>
+      'Jóváhagyhatja vagy elutasíthatja a beküldött énekeket, és bármelyik éneket javíthatja.';
+
+  @override
+  String get roleAdministratorDescription =>
+      'Mindent megtehet, amit a moderátor, továbbá kezelheti a fiókokat és a beállításokat.';
+
+  @override
+  String get adminTitle => 'Adminisztráció';
+
+  @override
+  String get adminNotPermitted => 'Ez a rész a rendszergazdáknak szól.';
+
+  @override
+  String get adminUsersTitle => 'Tagok';
+
+  @override
+  String get adminUserTitle => 'Tag';
+
+  @override
+  String get adminUserGone => 'Ez a fiók már nem létezik.';
+
+  @override
+  String get adminSettingsTitle => 'Beküldési beállítások';
+
+  @override
+  String get adminSettingsSubtitle =>
+      'Ki küldhet be éneket, és milyen szabályokat fogad el';
+
+  @override
+  String adminWaitingCount(String count) {
+    return '$count vár jóváhagyásra';
+  }
+
+  @override
+  String adminMemberCount(String count) {
+    return '$count fiók';
+  }
+
+  @override
+  String get adminSubmissionsClosedNotice =>
+      'A beküldés le van zárva. Senki sem ajánlhat éneket.';
+
+  @override
+  String get adminReopen => 'Megnyitás';
+
+  @override
+  String get adminSearchUsers => 'Keresés név vagy cím szerint';
+
+  @override
+  String get adminFilterAll => 'Mind';
+
+  @override
+  String get adminInvite => 'Meghívás';
+
+  @override
+  String get adminSendInvite => 'Meghívó küldése';
+
+  @override
+  String get adminInviteSent => 'A meghívó elküldve.';
+
+  @override
+  String get adminUsersUnavailable => 'A taglistát nem sikerült betölteni.';
+
+  @override
+  String get adminNoMatchingUsers => 'Nincs találat.';
+
+  @override
+  String get adminActionDone => 'Kész.';
+
+  @override
+  String get adminActionFailed => 'Ez nem sikerült.';
+
+  @override
+  String get adminCannotActOnSelf =>
+      'A saját szerepedet nem módosíthatod, és a saját fiókodat nem törölheted.';
+
+  @override
+  String get adminLastAdministrator =>
+      'Legalább egy rendszergazdának lennie kell.';
+
+  @override
+  String get adminRole => 'Szerep';
+
+  @override
+  String get adminChange => 'Módosítás';
+
+  @override
+  String get adminChangeRole => 'Szerep módosítása';
+
+  @override
+  String get adminEmailStatus => 'E-mail cím';
+
+  @override
+  String get adminEmailConfirmed => 'Megerősítve';
+
+  @override
+  String get adminEmailUnconfirmed => 'Nincs megerősítve';
+
+  @override
+  String get adminGuidelinesStatus => 'Beküldési szabályok';
+
+  @override
+  String get adminGuidelinesAccepted => 'Elfogadva';
+
+  @override
+  String get adminGuidelinesNotAccepted => 'Még nincs elfogadva';
+
+  @override
+  String get adminLastSignIn => 'Utolsó bejelentkezés';
+
+  @override
+  String get adminNeverSignedIn => 'még sosem jelentkezett be';
+
+  @override
+  String get adminSubmissions => 'Beküldött énekek';
+
+  @override
+  String adminTallyApproved(int count) {
+    return '$count jóváhagyva';
+  }
+
+  @override
+  String adminTallyPending(int count) {
+    return '$count várakozik';
+  }
+
+  @override
+  String adminTallyRejected(int count) {
+    return '$count elutasítva';
+  }
+
+  @override
+  String get adminDeleteAccount => 'Fiók törlése';
+
+  @override
+  String get adminDeleteWarning => 'Ezt nem lehet visszavonni.';
+
+  @override
+  String get adminDeleteKeepsApproved =>
+      'A már jóváhagyott énekek az énekeskönyvben maradnak, a beküldéskor rögzített névvel. Ami még jóváhagyásra vár vagy el lett utasítva, az törlődik.';
+
+  @override
+  String adminDeleteTypeToConfirm(String address) {
+    return 'Írd be a megerősítéshez: $address';
+  }
+
+  @override
+  String get adminDeletePermanently => 'Véglegesen törlöm';
+
+  @override
+  String get adminSubmissionsSection => 'Beküldés';
+
+  @override
+  String get adminSubmissionsOpen => 'Új énekek fogadása';
+
+  @override
+  String get adminSubmissionsOpenHelp =>
+      'Kapcsold ki, ha ideiglenesen semmit sem fogadsz be.';
+
+  @override
+  String get adminRequireConfirmedEmail => 'Megerősített cím kötelező';
+
+  @override
+  String get adminRequireConfirmedEmailHelp =>
+      'Aki nem erősítette meg az e-mail címét, nem küldhet be éneket.';
+
+  @override
+  String get adminDailyCap => 'Napi énekek fejenként';
+
+  @override
+  String get adminDailyCapHelp =>
+      'Korlátozza, milyen gyorsan tölthet meg egy fiók a listát.';
+
+  @override
+  String get adminGuidelinesSection => 'Beküldési szabályok';
+
+  @override
+  String get adminGuidelinesHelp =>
+      'Ezt mindenki elolvassa és egyszer elfogadja az első beküldés előtt.';
 }
