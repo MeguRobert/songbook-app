@@ -7,12 +7,17 @@
 begin;
 select plan(4);
 
-insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
+-- Confirmed and guidelines-accepted, because the gate in 20260822120500 requires
+-- both of a submitter. This file is about what happens to the NAME once a
+-- submission is accepted, not about whether it is.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+                        email_confirmed_at, created_at, updated_at)
 values ('b0000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000000',
-  'authenticated', 'authenticated', 'clara@example.test', '', now(), now());
+  'authenticated', 'authenticated', 'clara@example.test', '', now(), now(), now());
 
-update public.profiles set display_name = 'Clara K.'
+update public.profiles
+   set display_name = 'Clara K.', guidelines_accepted_at = now()
   where id = 'b0000000-0000-0000-0000-000000000001';
 
 insert into public.songs (id, owner_id, status, title, payload) values (

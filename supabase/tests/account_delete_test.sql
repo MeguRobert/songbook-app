@@ -20,16 +20,20 @@
 begin;
 select plan(7);
 
-insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
+-- Confirmed addresses, because the gate in 20260822120500 requires one of a
+-- submitter and this file needs a song that was actually accepted.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+                        email_confirmed_at, created_at, updated_at)
 values
   ('c0000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'leaving@example.test', '', now(), now()),
+   'authenticated', 'authenticated', 'leaving@example.test', '', now(), now(), now()),
   ('c0000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'staying@example.test', '', now(), now()),
+   'authenticated', 'authenticated', 'staying@example.test', '', now(), now(), now()),
   ('c0000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'mod@example.test', '', now(), now());
+   'authenticated', 'authenticated', 'mod@example.test', '', now(), now(), now());
 
-update public.profiles set display_name = 'Departed Member'
+update public.profiles
+   set display_name = 'Departed Member', guidelines_accepted_at = now()
   where id = 'c0000000-0000-0000-0000-000000000001';
 update public.user_roles set role = 'moderator'
   where user_id = 'c0000000-0000-0000-0000-000000000003';
