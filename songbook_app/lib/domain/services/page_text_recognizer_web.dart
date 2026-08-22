@@ -130,10 +130,11 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
   Future<PageWords> recognize(
     Uint8List imageBytes, {
     String language = PageTextRecognizer.hungarian,
+    List<Map<String, Object?>>? trace,
   }) async {
     await _loadTesseract();
 
-    final prepared = await _prepare(imageBytes);
+    final prepared = await _prepare(imageBytes, trace);
     // A worker per photo. It could be kept alive between photos, but it holds
     // the WebAssembly heap and the language model for as long as it lives, and
     // a second photo is minutes away at best — the model is cached by then, so
@@ -144,13 +145,18 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
     try {
       final whole = await _read(worker, prepared.canvas);
       final cuts = bridge.columnCuts(whole);
+      trace?.add({
+        'stage': 'read',
+        'words': whole.length,
+        'columnCuts': [for (final cut in cuts) cut.round()],
+      });
       if (cuts.isEmpty) {
         return PageWords(whole, notices: prepared.notices);
       }
-      return PageWords(
-        await _readColumns(worker, prepared.canvas, whole, cuts),
-        notices: prepared.notices,
-      );
+      final words = await _readColumns(worker, prepared.canvas, whole, cuts,
+          trace);
+      trace?.add({'stage': 'columns', 'words': words.length});
+      return PageWords(words, notices: prepared.notices);
     } finally {
       await worker.terminate().toDart;
     }
@@ -200,6 +206,7 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
     web.HTMLCanvasElement canvas,
     List<OcrWord> whole,
     List<double> cuts,
+    List<Map<String, Object?>>? trace,
   ) async {
     // The bridge decides what the heading is, so the crops and the layout that
     // follows them agree about it rather than each holding its own opinion.
@@ -217,6 +224,12 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
       final right = bounds[index + 1].ceil().clamp(0, canvas.width);
       if (right - left < 1) continue;
       final column = await _read(worker, _band(canvas, left, right));
+      trace?.add({
+        'stage': 'column',
+        'x0': left,
+        'x1': right,
+        'words': column.length,
+      });
       // Back onto the page's own grid, because everything downstream — row
       // grouping, the character columns a chord sits at — compares words with
       // one another across the whole reading.
@@ -261,7 +274,8 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
   /// in the measurement corpus reported *warning not raised: low-resolution*
   /// against a worker that says so, and show-through was suppressed without a
   /// word even though suppression costs stroke sharpness.
-  Future<_Prepared> _prepare(Uint8List imageBytes) async {
+  Future<_Prepared> _prepare(
+      Uint8List imageBytes, List<Map<String, Object?>>? trace) async {
     final bitmap = await web.window
         .createImageBitmap(web.Blob([imageBytes.toJS].toJS))
         .toDart;
@@ -275,6 +289,13 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
 
     final notices = <ImportNotice>[];
     final pixels = math.max(1, bitmap.width * bitmap.height);
+    trace?.add({
+      'stage': 'image',
+      'width': bitmap.width,
+      'height': bitmap.height,
+      'bytes': imageBytes.length,
+      'bytesPerPixel': imageBytes.length / pixels,
+    });
     if (math.max(bitmap.width, bitmap.height) < _minLongEdge ||
         imageBytes.length / pixels < _minBytesPerPixel) {
       notices.add(ImportNotice(
@@ -305,13 +326,33 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
           (rgba[at] * 299 + rgba[at + 1] * 587 + rgba[at + 2] * 114) ~/ 1000;
     }
 
-    final Uint8List cleaned;
-    if (preprocessor.hasShowThrough(grey, width, height)) {
-      cleaned = preprocessor.suppressShowThrough(grey, width, height);
-      notices.add(const ImportNotice(ImportNoticeCode.photoShowThroughRemoved));
-    } else {
-      cleaned = grey;
-    }
+    // Measured rather than only asked, so the trace carries the number behind
+    // the verdict.
+    //
+    // Nothing is told to the user about it, and that is a reversal. The notice
+    // went in first and the measurement then said it could not be supported:
+    // under the Dart port's flattening every page in the corpus sits between
+    // 0.0139 and 0.0451, so the 0.012 gate has never excluded one, and the
+    // born-digital screenshot scores 0.0444 — higher than the page whose
+    // reverse side is genuinely legible through the paper. A warning that fires
+    // on every import and names a cause it cannot establish is noise.
+    //
+    // The suppression itself stays, because it is not really ghost removal: it
+    // flattens the lighting and stretches the levels, and the reader needs that
+    // almost everywhere. Measured over the corpus, turning it off costs 0.156
+    // of the mean score - `app-jezus-szivedbe-lat` alone falls from 0.965 to
+    // 0.351. Two pages would read better without it and there is no signal that
+    // separates them from the rest, which is the open question here.
+    final pale = preprocessor.paleFraction(grey, width, height);
+    final suppress = preprocessor.showsThroughAt(pale);
+    final cleaned = suppress
+        ? preprocessor.suppressShowThrough(grey, width, height)
+        : grey;
+    trace?.add({
+      'stage': 'clean',
+      'paleFraction': pale,
+      'suppressed': suppress,
+    });
 
     // A fresh ImageData rather than writing through the one just read: whether
     // `toDart` hands back a view or a copy is the compiler's business, and this

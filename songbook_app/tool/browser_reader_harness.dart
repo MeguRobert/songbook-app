@@ -40,13 +40,18 @@ class _Once implements PageTextRecognizer {
   final PageTextRecognizer _inner;
   PageWords? answer;
 
+  /// What every stage measured and decided, for the harness to report.
+  final List<Map<String, Object?>> trace = [];
+
   @override
   bool get isSupported => _inner.isSupported;
 
   @override
   Future<PageWords> recognize(Uint8List imageBytes,
-          {String language = PageTextRecognizer.hungarian}) async =>
-      answer ??= await _inner.recognize(imageBytes, language: language);
+          {String language = PageTextRecognizer.hungarian,
+          List<Map<String, Object?>>? trace}) async =>
+      answer ??= await _inner.recognize(imageBytes,
+          language: language, trace: this.trace);
 }
 
 /// Fetches [url] as bytes, the same shape a file picker hands the app.
@@ -94,6 +99,10 @@ Future<JSString> _read(String url) async {
       // substring match on English wording it replaced.
       'warnings': [for (final notice in payload.notices) notice.code.name],
       'words': read.words.length,
+      // What each stage measured, the way the Python arm has always reported
+      // it. Without this the only account of why a page read the way it did
+      // was of the engine that does not run on a phone.
+      'trace': once.trace,
       'ms': DateTime.now().difference(started).inMilliseconds,
     }).toJS;
   } on PhotoImportException catch (error) {

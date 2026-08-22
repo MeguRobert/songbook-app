@@ -43,12 +43,13 @@ enum ImportNoticeCode {
   // The photo reader — PageTextRecognizer and PhotoTextBridge
   // ---------------------------------------------------------------------------
   //
-  // These six used to be English sentences built inside `photo_text_bridge.dart`
-  // and handed up the pipeline as plain strings, which is why they were the last
-  // untranslated text a user could see. Two of them were not raised at all: the
-  // Python worker told the user their photo was too compressed to hold `ő`, and
-  // the app — which does the same measurement and the same show-through removal
-  // — said nothing.
+  // Four of these used to be English sentences built inside
+  // `photo_text_bridge.dart` and handed up the pipeline as plain strings, which
+  // is why they were the last untranslated text a user could see. Two more were
+  // measured and never raised at all: the Python worker told the user their
+  // photo was too compressed to hold `ő`, and the app — which does the same
+  // measurement — said nothing. One of those two was then withdrawn again on the
+  // evidence; see [photoShowThroughRemoved].
 
   /// The photograph is too compressed to hold the fine strokes.
   ///
@@ -61,16 +62,22 @@ enum ImportNoticeCode {
 
   /// A second, paler population of ink was found and erased before reading.
   ///
-  /// Worth saying because it is not free: suppression costs stroke sharpness, so
-  /// a chord lost on a page that raised this is worth a second photograph in
-  /// flatter light rather than a bug report.
+  /// **Nothing emits this.** Kept, with its three translations, because a
+  /// notice is cheap to hold and expensive to re-translate — the same reason
+  /// [ambiguousBareRoot] is still here.
   ///
-  /// The message names what was done rather than what caused it, on purpose.
-  /// `PagePreprocessor.hasShowThrough` was calibrated on one page whose reverse
-  /// side is legible through the paper, and on the measurement corpus it also
-  /// fires on three pages that have no reverse page showing through at all —
-  /// uneven light across a photographed page leaves the same pale band. The
-  /// advice is right either way; the claim about the cause would not be.
+  /// It was raised for one release and then withdrawn on the measurement.
+  /// `PagePreprocessor.hasShowThrough` was calibrated against the Python
+  /// original's flattening and never against the Dart port's: under the port
+  /// every page in the corpus sits between 0.0139 and 0.0451 against a 0.012
+  /// gate, so the gate has never excluded a page, and the born-digital
+  /// screenshot scores higher than the page whose reverse side really is
+  /// legible through the paper. A warning that fires on every import and names
+  /// a cause it cannot establish tells the user nothing.
+  ///
+  /// The cleaning it described stays on, because it is not really ghost removal
+  /// — it flattens the lighting and stretches the levels, and the reader needs
+  /// that almost everywhere. Turning it off costs 0.156 of the corpus mean.
   photoShowThroughRemoved,
 
   /// The page holds more than one song, side by side, and all were read.

@@ -43,8 +43,15 @@ abstract class PageTextRecognizer {
   bool get isSupported;
 
   /// The words in [imageBytes], with their boxes in image pixels.
+  ///
+  /// [trace] is a sink, not a return value: pass a list and every stage appends
+  /// what it measured and what it decided. The Python arm has had this since it
+  /// was written — `extract_with_easyocr(bytes, trace=None)` — and the browser
+  /// arm, the one that actually ships, had nothing. So the only account of why a
+  /// page read the way it did was of the engine that does not run on a phone.
   Future<PageWords> recognize(
     Uint8List imageBytes, {
     String language = hungarian,
+    List<Map<String, Object?>>? trace,
   });
 }

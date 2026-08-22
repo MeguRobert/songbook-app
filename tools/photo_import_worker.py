@@ -1096,12 +1096,22 @@ def extract_with_easyocr(image_bytes: bytes, trace=None) -> tuple[str, list]:
                           for b in sorted(
                               boxes, key=lambda b: b.confidence or 1.0)[:5]])
     content, warnings = chordpro_from_boxes(boxes, trace=trace)
-    if ghosted:
-        # Said out loud because it changes what was read: the page was cleaned
-        # up before anyone looked at it, and that is worth knowing when a line
-        # comes out wrong anyway.
-        warnings.insert(0, "The reverse side of the page showed through; it was "
-                           "removed before reading.")
+    # Suppression is NOT reported, and used to be. It said the reverse side of
+    # the page had showed through, and `has_show_through` cannot support that:
+    # measured across the eleven-page corpus it fires on every single page,
+    # including the born-digital app screenshot, which has no reverse side and
+    # no paper. The `0.00%-0.60% across seven clean scans` calibration behind
+    # `_PALE_FRACTION` was measured on renders and simulated photographs, not on
+    # real ones. A warning that fires on every import and names a cause it
+    # cannot establish tells the user nothing.
+    #
+    # The suppression itself stays, because it is not really ghost removal: it
+    # flattens the lighting and stretches the levels, and both readers need that
+    # almost everywhere. Measured on the shipped path, turning it off costs 0.156
+    # of the corpus mean - the app screenshot alone falls from 0.965 to 0.351.
+    #
+    # Withdrawn from `photo_text_bridge.dart` at the same time and for the same
+    # reason: what the user is told has to be the same on both sides of the wire.
     if quality:
         # First, because it is the one problem the person holding the phone can
         # actually fix, and it caps how good anything below it can be.

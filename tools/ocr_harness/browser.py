@@ -200,10 +200,16 @@ class Browser:
         if answer is None:
             raise RuntimeError(
                 f"{path.name} was not read; call prepare() with it first")
-        trace = [{"stage": "browser", "words": answer.get("words"),
-                  "page_ms": answer.get("ms"),
-                  "csp_violations": answer.get("csp") or [],
-                  "console_errors": answer.get("consoleErrors") or []}]
+        # The app's own stages first, then what driving it looked like. The
+        # reader reports what it measured - the pale fraction behind the
+        # show-through verdict, the bytes per pixel behind the compression one,
+        # where it cut the page into columns - the way `extract_with_easyocr`
+        # always has for the arm that does not ship.
+        trace = list(answer.get("trace") or [])
+        trace.append({"stage": "browser", "words": answer.get("words"),
+                      "page_ms": answer.get("ms"),
+                      "csp_violations": answer.get("csp") or [],
+                      "console_errors": answer.get("consoleErrors") or []})
         if answer.get("error"):
             raise RuntimeError(f"{path.name}: {answer['error']}")
         if answer.get("refused"):

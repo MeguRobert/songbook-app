@@ -10,6 +10,16 @@ name: CI
 # Deliberately the same three checks as the deploy job and no more, so "CI is
 # green" means the same thing on a branch as it does on master. If a check is
 # added here it belongs there too.
+#
+# ONE DELIBERATE EXCEPTION, 2026-08-22: the deploy also runs the browser walk
+# (tools/browser-smoke/) and this workflow does not. The walk needs a release web
+# build, which is the slowest thing in the pipeline, and it earns that cost by
+# gating the commits that actually reach users — which arrive on master, the one
+# branch this workflow ignores. Adding it here would spend eight minutes on the
+# rare fork pull request and change nothing about what ships. If branch work
+# becomes normal again, move it here as its own job (not into `verify`, so the
+# fast analyze/test signal still arrives first) and stage the build exactly as
+# the deploy does, under a `songbook-app/` directory to match `--base-href`.
 
 on:
   pull_request:
@@ -72,8 +82,8 @@ jobs:
         # Discovery, not a hand-maintained module list. The list this replaces
         # named three modules and had been overtaken four times: it missed
         # test_convert_hymn, test_photo_import_preprocess, test_photo_import_trace
-        # and the whole of tools/ocr_harness/, so 317 tests locally were 128 here
-        # and the gap grew with every file added.
+        # and the whole of tools/ocr_harness/, so of the ~320 tests this tree has
+        # CI was running 128 — and the gap grew with every file added.
         #
         # Run from the repo root, not from tools/, because the two halves resolve
         # differently: the worker tests `import photo_import_worker` off the

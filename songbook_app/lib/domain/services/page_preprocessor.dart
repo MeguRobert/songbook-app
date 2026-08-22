@@ -44,14 +44,30 @@ class PagePreprocessor {
   ///
   /// Suppression costs stroke sharpness, and on a page that does not need it
   /// that shows up as dropped chords — so it is asked for, never always applied.
-  bool hasShowThrough(Uint8List grey, int width, int height) {
-    if (grey.isEmpty || width <= 0 || height <= 0) return false;
+  bool hasShowThrough(Uint8List grey, int width, int height) =>
+      showsThroughAt(paleFraction(grey, width, height));
+
+  /// Whether a [pale] share measured by [paleFraction] counts as show-through.
+  ///
+  /// Split out so a caller that already has the number does not pay for it
+  /// twice, and so the threshold lives in exactly one place.
+  bool showsThroughAt(double pale) => pale >= _paleFraction;
+
+  /// What share of [grey] sits in the pale band once the lighting is flattened.
+  ///
+  /// Separate from [hasShowThrough] so the measurement can be reported rather
+  /// than only acted on. The threshold was calibrated on a single ghosted page,
+  /// and the number behind the verdict is what says whether it is calibrated
+  /// well — which mattered as soon as the app started *telling* the user it had
+  /// cleaned the page.
+  double paleFraction(Uint8List grey, int width, int height) {
+    if (grey.isEmpty || width <= 0 || height <= 0) return 0.0;
     final flattened = _flatten(grey, width, height);
     var pale = 0;
     for (final value in flattened) {
       if (value >= _paleLow && value <= _paleHigh) pale++;
     }
-    return pale / flattened.length >= _paleFraction;
+    return pale / flattened.length;
   }
 
   /// [grey] with the reverse page's bleed-through erased.

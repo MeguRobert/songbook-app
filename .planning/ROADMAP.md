@@ -29,7 +29,7 @@ Ship a polished, store-ready songbook app by building on the existing functional
 
 ### 📋 v2.0 Platform & Sharing
 
-- [ ] **Phase 10: Cloud Backend** - User accounts, cloud storage architecture
+- [ ] **Phase 10: Cloud Backend** - User accounts, cloud storage architecture *(mostly shipped outside this plan — accounts, the Supabase catalogue, submissions and moderation are live; cross-device sync of favourites and setlists is NOT. Deliberately left unticked: see the per-criterion status below.)*
 - [ ] **Phase 11: Custom Songbooks & Sharing** - User-created collections, export/import/share
 - [ ] **Phase 12: Scale & Quality** - Performance for 1000+ songs, test coverage, Riverpod migration
 
@@ -197,11 +197,19 @@ Plans:
 **Depends on**: Phase 6 (needs shipped app)
 **Requirements**: [FUT-04]
 **Success Criteria** (what must be TRUE):
-  1. User can create account and sign in
-  2. Favorites and setlists sync across devices
-  3. App works offline and syncs when connection returns
-  4. Data migration from local-only to cloud is seamless
-**Plans**: TBD
+  1. ✅ User can create account and sign in — email + Google, optional; signed-out is fully functional
+  2. ❌ Favorites and setlists sync across devices — `FavoritesRepository` and `SetlistRepository`
+     still go through `LocalDataSource` alone, so a person signed in on a phone and a tablet has two
+     unrelated setlists. **The one real hole left in this phase**, and it undercuts the reason to
+     have accounts at all.
+  3. ⚠️ App works offline and syncs when connection returns — the bundled hymnal is the offline
+     floor and the Supabase catalogue layers over it, but there is no write queue, because
+     criterion 2 never shipped and nothing else the app stores is server-side.
+  4. ⚠️ Data migration from local-only to cloud is seamless — nothing to migrate while (2) is open.
+     The question returns the moment sync is built, against installs that already hold local data.
+**Plans**: None. This phase was never planned or executed as a GSD phase; the work arrived through
+the 2026-07-28 platform decision (Supabase, accounts, moderation) and shipped commit by commit on
+master. Recorded here so the roadmap stops describing it as unstarted.
 
 ### Phase 11: Custom Songbooks & Sharing
 **Goal**: Allow users to create custom songbook collections and share them with others
@@ -241,6 +249,14 @@ Phases 1 → 2 → 3 → 4 in sequence. Phase 5 can run parallel to 2/3/4. Phase
 | 7. Import Pipeline | v1.1 | 2/2 | Complete (code; OMR/OCR accuracy pending) | 2026-06-13 |
 | 8. Setlists & Playlists | v1.1 | 2/2 | Complete (code; visual UAT pending) | 2026-06-13 |
 | 9. Tags & Search | v1.1 | 2/2 | Complete (code; visual UAT pending) | 2026-06-13 |
-| 10. Cloud Backend | v2.0 | 0/? | Not started | - |
-| 11. Custom Songbooks & Sharing | v2.0 | 0/? | Not started | - |
-| 12. Scale & Quality | v2.0 | 0/? | Not started | - |
+| 10. Cloud Backend | v2.0 | n/a | Mostly shipped off-plan; favourites/setlists sync is the hole | 2026-07/08 |
+| 11. Custom Songbooks & Sharing | v2.0 | 0/? | Not started (song-level share links shipped; user-created collections have not) | - |
+| 12. Scale & Quality | v2.0 | n/a | Partly shipped off-plan: Riverpod is in place, the suite is ~1200 tests, search was made affordable at hymnal scale (43b5ab7) | - |
+
+**On "off-plan".** Phases 10–12 were written in February as a v2.0 that would be planned and executed
+like phases 1–9. What happened instead is that the 2026-07-28 platform decision turned Songbook into
+a multi-user Supabase app, and that work — accounts, catalogue, submissions, moderation, photo import,
+the notation editor, SATB engraving — shipped commit by commit on master without ever becoming GSD
+phases. So the plan-count columns above are not "0 of many, nothing done"; they are "this phase is no
+longer how the work is tracked". `HANDOFF.md` and `backlog.md` are the live queues. Trust this file
+for phases 1–9 and for the criteria under Phase 10, and nothing else.

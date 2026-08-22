@@ -113,6 +113,18 @@ class Warnings(unittest.TestCase):
         self.assertEqual(set(reading.WARNING_CODES.values()),
                          {slug for _, slug in reading.WARNING_SLUGS})
 
+    def test_no_page_expects_the_show_through_claim_any_more(self):
+        # Both arms withdrew it: `has_show_through` fires on every page in the
+        # corpus, including the born-digital screenshot that has no paper and no
+        # reverse side, so the sentence named a cause it could not establish.
+        # The slug stays mapped - a gold file has to be able to say it if the
+        # detection is ever calibrated - but nothing expects it, and a page that
+        # started expecting it again would be claiming that calibration exists.
+        from . import gold
+        for page in gold.pages(with_gold=True):
+            with self.subTest(page=page.file):
+                self.assertNotIn('show-through-removed', page.gold.warnings)
+
     def test_every_slug_either_arm_can_emit_is_mapped(self):
         # The reminder to add the slug rather than to rewrite the match. Six
         # each: the worker's prose, and the six ImportNoticeCodes the app's

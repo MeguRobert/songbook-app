@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/models/song.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../providers/book_provider.dart';
 import '../../../providers/favorites_provider.dart';
 
@@ -25,6 +26,10 @@ class SongListTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isFavorite = ref.watch(isFavoriteProvider(song.id));
+    // The heart's tooltip is also its accessibility label, so leaving it in
+    // English left a Hungarian screen reader saying "Add to favorites" on every
+    // row of the list. The ARB keys existed and were translated the whole time.
+    final l10n = AppLocalizations.of(context);
     // Book-qualified so a user songbook's #1 and a hymnal's #1 stay
     // distinguishable in an unfiltered list without inventing fake numbers.
     final label = ref.watch(bookServiceProvider).qualifiedNumber(song);
@@ -89,7 +94,7 @@ class SongListTile extends ConsumerWidget {
           onPressed: () {
             ref.read(favoritesProvider.notifier).toggleFavorite(song.id);
           },
-          tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+          tooltip: isFavorite ? l10n.favoriteRemove : l10n.favoriteAdd,
         ),
         onTap: onTap,
       );
@@ -129,7 +134,7 @@ class SongListTile extends ConsumerWidget {
         onPressed: () {
           ref.read(favoritesProvider.notifier).toggleFavorite(song.id);
         },
-        tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+        tooltip: isFavorite ? l10n.favoriteRemove : l10n.favoriteAdd,
       ),
       onTap: onTap,
     );

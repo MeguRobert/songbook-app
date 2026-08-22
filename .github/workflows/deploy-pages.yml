@@ -74,7 +74,7 @@ jobs:
 
       - name: Test import tooling (Python)
         # Discovery rather than a module list, for the reasons spelled out in
-        # ci.yml — the list had drifted to 128 of 317 tests. Run from the repo
+        # ci.yml — the list had drifted to 128 of roughly 320 tests. Run from the repo
         # root: `-s tools` is what makes both the flat worker tests and the
         # ocr_harness package importable.
         run: python -m unittest discover -s tools -p "test_*.py"
@@ -134,6 +134,89 @@ jobs:
         working-directory: songbook_app
         run: |
           echo "Deploying $(cat build/web/version.json)" >> "$GITHUB_STEP_SUMMARY"
+
+      # ---------------------------------------------------------------- the walk
+      #
+      # Every serious bug in this app was found by driving a browser and none by
+      # `flutter test` — see tools/browser-smoke/README.md, which explains why the
+      # widget suite structurally cannot see these seams (it substitutes a font
+      # whose every glyph is a full em, it never runs a service worker, and
+      # pumpAndSettle hides the timing gaps real frames expose). Until now that
+      # technique ran only when somebody remembered to run it, which meant it did
+      # not run on the commits that deploy.
+      #
+      # It walks THIS build — the same bytes the next step uploads — rather than
+      # building its own, so a pass is evidence about what is about to go live.
+      # That is also why the site is staged under a `songbook-app/` directory:
+      # the build carries `--base-href /songbook-app/`, so served at the server
+      # root every asset path would 404 and all 28 checks would fail for a reason
+      # that has nothing to do with the app.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        # Installed into a scratch directory and reached through NODE_PATH, not
+        # into the repo: the root package.json exists only to pin the Supabase
+        # CLI, and `npm i` there would drag that whole tree in for no reason.
+        # Version-pinned to match the local dev machine — an unpinned browser
+        # engine turns this gate into a moving target.
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null
+          npm i --silent playwright@1.59.1
+          npx playwright install --with-deps chromium
+
+      - name: Browser walk
+        timeout-minutes: 12
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        # The walk is retried once, and the retry is reported rather than hidden.
+        #
+        # This is not defensive boilerplate: writing this step, one run of three
+        # failed `the four-part song is in the list` and then passed twice on the
+        # identical build. The cause is `stableSemantics`, which calls the
+        # accessibility tree settled as soon as one poll matches the previous one
+        # — a tree still being populated can hold still for 400ms and read as
+        # finished. So a single red run is not evidence of a regression, but two
+        # in a row are, and a real break fails both times. If the summary below
+        # starts saying "passed on retry" often, harden the harness rather than
+        # raising the retry count.
+        run: |
+          set -o pipefail
+          site="$RUNNER_TEMP/site"
+          mkdir -p "$site/songbook-app"
+          cp -r songbook_app/build/web/. "$site/songbook-app/"
+
+          python3 -m http.server 8795 --bind 127.0.0.1 --directory "$site" &
+          server=$!
+          trap 'kill $server 2>/dev/null || true' EXIT
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:8795/songbook-app/index.html && break
+            sleep 1
+          done
+
+          walk() { node tools/browser-smoke/smoke.js --base http://127.0.0.1:8795/songbook-app; }
+          if walk; then
+            echo "Browser walk: passed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "First walk failed — retrying once (see the step log for which check)."
+            if walk; then
+              echo "Browser walk: **passed on retry** — first attempt failed. Flake, or a real intermittent bug; the log names the check." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "Browser walk: **failed twice**. Screenshots are in the \`browser-walk-shots\` artifact." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          fi
+
+      - name: Keep the walk's screenshots when it failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-walk-shots
+          path: tools/browser-smoke/shots
+          if-no-files-found: warn
 
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -441,13 +441,127 @@ failure rather than as noise.
 5. **`125`'s intro chord row is heavily tilted** and splits across two rows.
 6. **`185-jezus-krisztusom` at 0.453** — still the worst reviewed page.
 
+## 2026-08-22, third session: the spelled-out accidentals, and a warning withdrawn
+
+### The chord symbols no rule could spell
+
+`fiszm` is F sharp minor and `D4/Fis` names a sharp bass, but the token rule knew
+only `#` and `b`. Those rows failed the all-or-nothing test and every chord on
+them was stored as a word: three of `166-tekozlo-fiu`'s ten chord rows and the
+whole of `125-nincs-mas-isten`'s intro line.
+
+Sharps are `isz`/`is`, flats are `esz`/`sz`. A bare `s` is deliberately not a
+flat, German short forms notwithstanding — it would read `Gsus2` as G flat
+carrying `us2`. `ChordTransposer` learned the same spellings, because admitting a
+chord it cannot transpose is worse than not reading it: `fiszm` came out of
+`toEnglishNotation` as `Fmiszm`.
+
+Chords joined by a hyphen are one token and two chords — `Amaj7-A7`,
+`Cadd9-Csus2`, `G5-Gsus2`, `D-E`. Every part has to be a chord on its own, which
+is what keeps `ici-picit` a word, and `ChordSheetParser.chordsIn` separates them
+again on the way into storage so nothing ever transposes a symbol naming two
+pitches. `splitMergedChords` asks the new `isSingleChord` rather than
+`isChordToken`, so a `G-C-D-C` merged out of a row printed `G - C - D - ( C )` is
+still pulled apart on its glyph boxes, which know where the page put each chord.
+
+**What it bought, in chords the user actually gets:** `166-tekozlo-fiu` 21 → 27,
+`125-nincs-mas-isten` 22 → 24.
+
+**And both pages' scores fell.** That is the honest reading rather than a
+regression: those rows are in gold's *chords* now instead of gold's lyrics, so
+the answer key grew from 28 chords to 36 on `166`, and the same reading scores a
+lower recall against a fuller answer.
+
+### Which the harness was calling a regression, so two fixes there
+
+- **`symbols` could not see the case that matters.** It listed unspellable
+  symbols out of `Reading.chords`, which holds only chords from rows that already
+  classified AS chords — so a symbol expensive enough to cost its whole row never
+  appeared. It printed "every gold chord symbol is spellable" while `fiszm` was
+  taking three rows down. `metrics.rows_lost_to_a_token` names the row and the
+  token, and a row qualifies only when *every* token on it is already a chord, a
+  separator, or chord-shaped, which is what keeps a lyric line out.
+- **The baseline fingerprints the answer it was marked against.**
+  `reading.fingerprint` digests the gold text and its warnings;
+  `report.regraded` reports a page whose answer moved instead of gating it. A
+  metric that drops because the answer key got more complete is not an
+  instruction to undo the change.
+
+### The show-through warning: raised, measured, withdrawn
+
+The previous session raised `show-through-removed` because the app was erasing
+show-through and never saying so. Measuring it settled the question the other
+way, and the notice is gone again.
+
+To measure it at all, the browser arm got the trace the Python arm has always
+had — `recognize(bytes, trace: [...])`, a sink every stage appends to. Until now
+the only account of *why* a page read the way it did described the engine that
+does not run on a phone.
+
+What the trace says, across the corpus:
+
+| page | bytes/px | pale fraction | suppressed |
+|---|---|---|---|
+| `084-van-egy-ut` | 0.0272 | 0.0422 | yes |
+| `098-szivemben-orom-dalol` | 0.0225 | 0.0169 | yes |
+| `125-nincs-mas-isten` | 0.0347 | 0.0311 | yes |
+| `151-zengjed-a-dalt` | 0.0213 | 0.0139 | yes |
+| `166-tekozlo-fiu` | 0.0373 | 0.0319 | yes |
+| `185-jezus-krisztusom` | 0.0500 | 0.0451 | yes |
+| `app-jezus-szivedbe-lat` | 0.0370 | 0.0444 | yes |
+
+The gate is `0.012`. **Every page clears it**, and the highest score belongs to
+the born-digital screenshot — which has no paper and no reverse side — above the
+one page whose reverse side genuinely is legible through it. The
+`0.00%–0.60% across seven clean scans` calibration behind `_paleFraction` was
+measured on renders and simulated photographs, and never re-measured after the
+Python median-blur flattening was replaced by the Dart port's box-blur of a local
+maximum. The Python arm over-fires on the same corpus for the same reason.
+
+So the sentence named a cause it could not establish, on every single import. It
+is withdrawn from both arms, the three gold files that expected it no longer do,
+and a test in `test_harness.py` says so — the slug stays mapped, because a gold
+file has to be able to say it if the detection is ever calibrated.
+
+**The suppression itself stays on, and has to.** It is not really ghost removal:
+it flattens the lighting and stretches the levels, and the reader needs that
+almost everywhere. Turning it off, measured:
+
+| page | with | without |
+|---|---|---|
+| `app-jezus-szivedbe-lat` | 0.965 | **0.351** |
+| `185-jezus-krisztusom` | 0.453 | **0.142** |
+| `166-tekozlo-fiu` | 0.881 | 0.784 |
+| `084-van-egy-ut` | 0.715 | 0.564 |
+| `098-szivemben-orom-dalol` | 0.799 | 0.733 |
+| `125-nincs-mas-isten` | 0.513 | **0.571** |
+| `151-zengjed-a-dalt` | 0.913 | **0.996** |
+| **mean** | **0.748** | **0.592** |
+
+Two pages would read better without it, and nothing in the pale fraction
+separates them from the five that would read worse — `151` has the *lowest*
+fraction and prefers it off, `098` the second lowest and prefers it on. So the
+open question is not the threshold, it is that there is no signal here to
+threshold. Until there is, the cleaning runs on every page.
+
+### Where that leaves the warnings
+
+`warn` is 1.000 on five of seven pages now. What remains:
+
+- `185-jezus-krisztusom` does not raise `german-chords`, because its `H7` is
+  misread — a reading failure, not a notice failure.
+- `app-jezus-szivedbe-lat` raises `low-resolution` unasked. Bytes per pixel is
+  the wrong proxy for a born-digital image: the screenshot is perfectly legible
+  at 0.0370. Kept as a failure rather than papered over, because the metric is
+  the only thing that will remember.
+
 ## Verify
 
 ```bash
-python -m unittest discover -s tools -p "test_*.py"       # expect 312
+python -m unittest discover -s tools -p "test_*.py"       # expect 321
 python -m tools.ocr_harness run                           # the Python arm
 python -m tools.ocr_harness run --engine browser          # what actually ships
 cd songbook_app && flutter analyze --no-fatal-infos       # expect exit 0, 0 issues
-cd songbook_app && flutter test                           # expect 1196
+cd songbook_app && flutter test                           # expect 1203
 cd songbook_app && flutter build web --release --no-web-resources-cdn
 ```

@@ -33,7 +33,8 @@ class _FakeRecognizer implements PageTextRecognizer {
 
   @override
   Future<PageWords> recognize(Uint8List imageBytes,
-      {String language = PageTextRecognizer.hungarian}) async {
+      {String language = PageTextRecognizer.hungarian,
+      List<Map<String, Object?>>? trace}) async {
     calls++;
     sawBytes = imageBytes;
     sawLanguage = language;
@@ -133,15 +134,13 @@ void main() {
 
   test("what the recognizer says about the image reaches the review screen",
       () async {
-    // The two the app measured and then threw away. `low-resolution` is the
-    // single biggest lever on accuracy and the fix is on the phone rather than
-    // in this app, so it is worth a sentence; show-through removal costs stroke
-    // sharpness, so a chord missing from a page that raised it is worth a
-    // second photograph rather than a bug report.
+    // `low-resolution` is the single biggest lever on accuracy and the fix is
+    // on the phone rather than in this app, so it is worth a sentence. The
+    // recogniser is the only stage that can raise it, because it is the only
+    // one holding the image.
     const fromImage = [
       ImportNotice(ImportNoticeCode.photoLowResolution,
           text: '1532×2047', count: 106),
-      ImportNotice(ImportNoticeCode.photoShowThroughRemoved),
     ];
     final service = BrowserPhotoImportService(
       recognizer: _FakeRecognizer(page, notices: fromImage),
@@ -149,9 +148,9 @@ void main() {
 
     final payload = await service.extract(bytes);
 
-    // First, and in this order: "that photo is too compressed" explains the
-    // wrong letters under it and reads oddly after them.
-    expect(payload.notices.take(2), fromImage);
+    // First: "that photo is too compressed" explains the wrong letters under it
+    // and reads oddly after them.
+    expect(payload.notices.take(1), fromImage);
   });
 
   test('an engine that will not start reads as a failed import, not a crash',

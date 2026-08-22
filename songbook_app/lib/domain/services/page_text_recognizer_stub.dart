@@ -21,6 +21,7 @@ class _UnsupportedPageTextRecognizer implements PageTextRecognizer {
   Future<PageWords> recognize(
     Uint8List imageBytes, {
     String language = PageTextRecognizer.hungarian,
+    List<Map<String, Object?>>? trace,
   }) async {
     throw const PhotoImportException(
       'This version of Songbook cannot read a photo by itself. '
