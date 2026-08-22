@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import collections
 import dataclasses
+import re
 import sys
 import pathlib
 
@@ -111,6 +112,49 @@ def _near_placement(want, got) -> float:
     return 2 * recall * precision / (recall + precision)
 
 
+# What an unspellable chord symbol looks like, as opposed to a word.
+#
+# A note letter, then something no Hungarian word carries in that position: a
+# figure, a slash bass, a hyphen joining two chords, or one of the Hungarian
+# accidental spellings. This catches `fiszm`, `Amaj7-A7`, `Cadd9-Csus2`,
+# `G5-Gsus2`, `D4/Fis` and `D-E`, and rejects `Mennybe`, `hogyha` and `fenn`.
+_CHORD_SHAPED = re.compile(r"^[A-Ha-h](?:.*[\d/-]|(?:isz|is|esz|es))",
+                           re.IGNORECASE)
+
+
+def rows_lost_to_a_token(chordpro: str) -> list[tuple[str, str]]:
+    """(row, tokens) for every row of [chordpro] that ALMOST reads as chords.
+
+    A row of chord symbols where at least one is spelled in a way the token rule
+    does not admit. The all-or-nothing rule then emits the whole row as lyrics
+    and every chord on it is gone - the most expensive single thing a token rule
+    can get wrong, and the one `unclassifiable` cannot see, because the row it
+    happened to never contributed a chord to look at.
+
+    A row qualifies only when EVERY token on it is already a chord, a separator,
+    or chord-shaped by [_CHORD_SHAPED]. That `every` is what keeps a lyric line
+    out: `A Mennybe fenn számítanak rád,` opens with a chord and its other words
+    are words.
+    """
+    out = []
+    for line in chordpro.split("\n"):
+        texts = line.split()
+        if not texts or reading_mod.is_chord_row(line):
+            continue
+        unknown = []
+        for text in texts:
+            if (worker._SEPARATOR.match(text) or worker.is_continuation(text)
+                    or worker.is_chord_token(text)):
+                continue
+            if not _CHORD_SHAPED.match(text):
+                unknown = []
+                break
+            unknown.append(text)
+        if unknown:
+            out.append((line, " ".join(sorted(set(unknown)))))
+    return out
+
+
 def unclassifiable(chords) -> list[str]:
     """The [chords] the worker's own token rule does not accept as chords.
 
@@ -136,6 +180,14 @@ class Score:
     tier: str
     values: dict
     notes: list[str] = dataclasses.field(default_factory=list)
+
+    gold: str | None = None
+    """Digest of the answer this was marked against - see report.gold_fingerprint.
+
+    A number is comparable with the last one only when both were marked against
+    the same answer key, and the key does move: a token rule that learns a new
+    spelling turns gold lyric rows into gold chord rows.
+    """
 
     @property
     def headline(self) -> float:
@@ -211,4 +263,4 @@ def score(gold: reading_mod.Reading, got: reading_mod.Reading, *,
                      f"{len(gold.lyrics)} expected")
 
     return Score(page=page, engine=engine, tier=tier, values=values,
-                 notes=notes)
+                 notes=notes, gold=reading_mod.fingerprint(gold))

@@ -7,6 +7,7 @@ here does any recognising.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import pathlib
 import re
 import sys
@@ -157,6 +158,20 @@ class Reading:
             "warnings": list(self.warnings),
             "chordpro": self.chordpro,
         }
+
+
+def fingerprint(page) -> str:
+    """A short digest of the answer a score was marked against.
+
+    Stored beside the numbers, because a number is only comparable with the last
+    one when both were marked against the same answer key. Teaching the token
+    rule that `fiszm` is F sharp minor moved four rows of `166-tekozlo-fiu` out
+    of gold's lyrics and into its chords: the reading found six more chords than
+    before and its recall FELL, because the answer key had grown. Called a
+    regression, that reads as an instruction to undo an improvement.
+    """
+    material = chr(0).join((page.chordpro,) + tuple(page.warnings))
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()[:12]
 
 
 def words_in(line: str):

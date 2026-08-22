@@ -62,8 +62,31 @@ class ChordTransposer {
         '${needsM ? 'm' : ''}$quality';
   }
 
-  static String toEnglishNotation(String chord) => _minorFromCase(chord)
-      .replaceAllMapped(_germanRoot, (m) => '${m.group(1)}B');
+  /// An accidental spelled out in letters, at a root position.
+  ///
+  /// Hungarian and German print the accidental as a syllable rather than a sign:
+  /// `Fisz` and `Fis` are F sharp, `Esz` is E flat, `Desz` is D flat. A chord
+  /// sheet from Robert's book is full of them — `fiszm`, `D4/Fis` — and without
+  /// this they arrive at [_minorFromCase] as a root with a nonsense quality:
+  /// `fiszm` came out as `Fmiszm`.
+  ///
+  /// Sharps are `isz`/`is`; flats are `esz`/`sz`. A bare `s` is deliberately not
+  /// a flat, German short forms notwithstanding: it would read `Gsus2` as G flat
+  /// carrying `us2`. Anchored to the start or to a slash bass, so a quality is
+  /// still free to say `sus`.
+  static final _spelledAccidental =
+      RegExp(r'(^|/)([A-Ga-g])(isz|is|esz|sz)');
+
+  static String toEnglishNotation(String chord) =>
+      _minorFromCase(_signsForSyllables(chord))
+          .replaceAllMapped(_germanRoot, (m) => '${m.group(1)}B');
+
+  /// [chord] with `Fisz`/`Fis` written as `F#` and `Esz` as `Eb`.
+  static String _signsForSyllables(String chord) =>
+      chord.replaceAllMapped(_spelledAccidental, (m) {
+        final sharp = m.group(3) == 'isz' || m.group(3) == 'is';
+        return '${m.group(1)}${m.group(2)}${sharp ? '#' : 'b'}';
+      });
 
   /// Transposes a single chord by the given number of semitones
   ///

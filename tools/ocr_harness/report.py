@@ -63,6 +63,8 @@ def save_baseline(scores, accepted: str) -> None:
             if key != "headline" and score.values.get(key) is not None
         }
         engine[score.page]["headline"] = round(score.headline, 4)
+        if score.gold is not None:
+            engine[score.page]["gold"] = score.gold
     BASELINE.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
                         encoding="utf-8")
 
@@ -78,12 +80,35 @@ def _arrow(key: str, now: float, before: float | None) -> str:
     return ("+" if better else "-") + f"{abs(delta):.2f}"[1:]
 
 
+def regraded(scores, baseline: dict) -> list[str]:
+    """Pages whose gold file changed since the baseline was accepted.
+
+    Their numbers are not comparable with the last run in either direction, so
+    they are reported as what they are rather than gated.
+    """
+    out = []
+    for score in scores:
+        before = baseline.get("engines", {}).get(score.engine, {}).get(score.page)
+        if not before or score.gold is None:
+            continue
+        was = before.get("gold")
+        if was is not None and was != score.gold:
+            out.append(f"{score.page} [{score.engine}]")
+    return out
+
+
 def regressions(scores, baseline: dict) -> list[str]:
-    """Every metric that moved the wrong way beyond tolerance."""
+    """Every metric that moved the wrong way beyond tolerance.
+
+    Silent on a page whose gold file changed: see [regraded].
+    """
+    changed = set(regraded(scores, baseline))
     out = []
     for score in scores:
         before = baseline.get("engines", {}).get(score.engine, {}).get(score.page)
         if not before:
+            continue
+        if f"{score.page} [{score.engine}]" in changed:
             continue
         for key in GATED:
             was = before.get(key)
@@ -136,6 +161,33 @@ def render(scores, baseline: dict, *, unreviewed=()) -> str:
             lines.append(f"{'':<{width}} {'':^4}  " + "  ".join(marks))
         for note in score.notes:
             lines.append(f"{'':<{width}} {'':^4}  . {note}")
+
+    unfingerprinted = [
+        f"{s.page} [{s.engine}]" for s in scores
+        if s.gold is not None
+        and "gold" not in baseline.get("engines", {})
+                            .get(s.engine, {}).get(s.page, {})
+        and baseline.get("engines", {}).get(s.engine, {}).get(s.page)
+    ]
+    if unfingerprinted:
+        lines.append("")
+        lines.append(f"{len(unfingerprinted)} pages have a baseline from before "
+                     "answers were fingerprinted, so a")
+        lines.append("  moved gold file cannot be told from a regression for "
+                     "them. Accept once to fix.")
+
+    changed = regraded(scores, baseline)
+    if changed:
+        lines.append("")
+        lines.append("MARKED AGAINST A CHANGED ANSWER: " + ", ".join(changed))
+        lines.append("  The gold file moved since the baseline was accepted, so "
+                     "these numbers are not")
+        lines.append("  comparable with the last run in either direction and "
+                     "are not gated. A token")
+        lines.append("  rule that learns a new spelling turns gold lyric rows "
+                     "into gold chord rows:")
+        lines.append("  the reading can find more chords than before and score "
+                     "a lower recall for it.")
 
     counted = [s for s in scores if s.tier in HEADLINE_TIERS]
     lines.append("")

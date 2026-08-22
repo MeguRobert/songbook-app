@@ -211,11 +211,25 @@ class Scoring(unittest.TestCase):
 class Unspellable(unittest.TestCase):
     """Chord symbols no reading can ever get right."""
 
-    def test_the_hungarian_f_sharp_minor_spelling_is_not_spellable(self):
-        self.assertEqual(['fiszm'], metrics.unclassifiable(['G', 'em', 'fiszm']))
+    def test_the_hungarian_spellings_are_spellable_now(self):
+        # These two used to be pinned here as unspellable, which is what the
+        # list was for. They cost `166-tekozlo-fiu` three of its ten chord rows
+        # and `125-nincs-mas-isten` its whole intro line before the token rule
+        # learned that an accidental can be a syllable rather than a sign.
+        self.assertEqual([], metrics.unclassifiable(['G', 'em', 'fiszm']))
+        self.assertEqual([], metrics.unclassifiable(['D4/Fis']))
 
-    def test_a_hungarian_bass_note_is_not_spellable(self):
-        self.assertEqual(['D4/Fis'], metrics.unclassifiable(['D4/Fis']))
+    def test_a_row_carrying_an_unspellable_symbol_is_named(self):
+        # The list `unclassifiable` cannot produce: a symbol so unspellable
+        # that its whole row reads as lyrics never contributes a chord to look
+        # at, so it hid from the report entirely.
+        self.assertEqual(
+            [('A  Amaj7sharp9  D', 'Amaj7sharp9')],
+            metrics.rows_lost_to_a_token('A  Amaj7sharp9  D'))
+
+    def test_a_lyric_line_is_not_named(self):
+        self.assertEqual(
+            [], metrics.rows_lost_to_a_token('A Mennybe fenn szamitanak rad,'))
 
     def test_lowercase_minor_and_german_h_are_fine(self):
         self.assertEqual([], metrics.unclassifiable(['em', 'dm', 'hm', 'H7']))
@@ -254,6 +268,39 @@ class Regressions(unittest.TestCase):
         baseline = {'engines': {'easyocr': {'p': {'lyric_cer': 0.4}}}}
         self.assertEqual([], report.regressions([self._score(lyric_cer=0.1)],
                                                 baseline))
+
+    def test_a_moved_answer_key_is_not_a_regression(self):
+        # A number is comparable with the last one only when both were marked
+        # against the same answer. Teaching the token rule that `fiszm` is F
+        # sharp minor moved four rows of 166-tekozlo-fiu out of gold's lyrics
+        # and into its chords: the reading found six more chords than before and
+        # its recall fell, because the answer key had grown. Gated, that reads as
+        # an instruction to undo an improvement.
+        baseline = {'engines': {'easyocr': {'p': {'chord_f1': 1.0,
+                                                 'gold': 'aaaaaaaaaaaa'}}}}
+        score = self._score(chord_f1=0.5)
+        score.gold = 'bbbbbbbbbbbb'
+        self.assertEqual(['p [easyocr]'], report.regraded([score], baseline))
+        self.assertEqual([], report.regressions([score], baseline))
+
+    def test_the_same_answer_key_still_gates(self):
+        baseline = {'engines': {'easyocr': {'p': {'chord_f1': 1.0,
+                                                 'gold': 'aaaaaaaaaaaa'}}}}
+        score = self._score(chord_f1=0.5)
+        score.gold = 'aaaaaaaaaaaa'
+        self.assertEqual([], report.regraded([score], baseline))
+        self.assertEqual(1, len(report.regressions([score], baseline)))
+
+    def test_a_fingerprint_is_the_answer_and_not_the_reading(self):
+        # Two readings of the same page must agree about which answer they were
+        # marked against, or the gate goes quiet whenever the engine improves.
+        answer = reading.parse("G       D\nAmazing grace", ('german-chords',))
+        same = reading.parse("G       D\nAmazing grace", ('german-chords',))
+        other = reading.parse("G       D\nAmazing grace", ())
+        self.assertEqual(reading.fingerprint(answer),
+                         reading.fingerprint(same))
+        self.assertNotEqual(reading.fingerprint(answer),
+                            reading.fingerprint(other))
 
     def test_movement_within_tolerance_is_not_reported(self):
         baseline = {'engines': {'easyocr': {'p': {'chord_f1': 1.0}}}}

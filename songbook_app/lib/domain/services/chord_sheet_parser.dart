@@ -101,9 +101,19 @@ class ChordSheetParser {
   /// is what stopped every row carrying an `em` from importing as lyrics.
   /// [ChordTransposer.toEnglishNotation] raises the case and marks the chord
   /// minor on the way into storage.
+  ///
+  /// An accidental may also be **spelled out**, which is how Hungarian and
+  /// German print it: `isz`/`is` is a sharp (`fiszm` is F sharp minor, `Fis` is
+  /// F sharp) and `esz`/`sz` is a flat (`Esz` is E flat, `Desz` is D flat).
+  /// Measured: `fiszm` alone cost `166-tekozlo-fiu` three of its ten chord rows,
+  /// because the all-or-nothing rule threw every chord on those rows away with
+  /// it. A bare `s` is deliberately NOT a flat, German short forms
+  /// notwithstanding — it would read `Gsus2` as G flat and `us2`.
+  static final RegExp _accidental = RegExp(r'(?:#|b|isz|is|esz|sz)');
   static final RegExp _chordToken = RegExp(
-    r'^[A-GHa-gh][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*'
-    r'(?:/[A-GHa-gh][#b]?)?$',
+    '^[A-GHa-gh]${_accidental.pattern}?'
+    r'(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*'
+    '(?:/[A-GHa-gh]${_accidental.pattern}?)?\$',
   );
 
   /// `-7`, `-m` — the chord before this one, with something added.
@@ -182,7 +192,53 @@ class ChordSheetParser {
   ///
   /// Surrounding parentheses are tolerated, so `(Em)` is a chord.
   /// Whitespace is not: callers split lines into tokens first.
-  bool isChordToken(String token) => _chordToken.hasMatch(_unwrap(token));
+  ///
+  /// A run of chords joined by hyphens counts as one token, because that is how
+  /// the book prints two chords played in succession over one syllable:
+  /// `Amaj7-A7`, `Cadd9-Csus2`, `G5-Gsus2`, `D-E`. Every part has to be a chord
+  /// on its own, which is what keeps `ici-picit` a word. They are separated
+  /// again on the way into storage — see [chordsIn] — so nothing downstream ever
+  /// has to transpose a symbol naming two pitches.
+  bool isChordToken(String token) {
+    if (isSingleChord(token)) return true;
+    final parts = _unwrap(token).split('-');
+    return parts.length > 1 && parts.every(_chordToken.hasMatch);
+  }
+
+  /// Returns true when [token] is ONE chord symbol, hyphen runs excluded.
+  ///
+  /// The distinction matters to [PhotoTextBridge.splitMergedChords], which pulls
+  /// a merged run apart on its glyph boxes and must not stop just because the
+  /// merged text now reads as a chord: `G-C-D-C` arrives from a row printed
+  /// `G - C - D - ( C )` with real spaces in it, and the glyph boxes put each
+  /// chord back where the page had it. Character offsets inside the merged token
+  /// cannot - the run is set far wider than its letters.
+  bool isSingleChord(String token) => _chordToken.hasMatch(_unwrap(token));
+
+  /// The chords in [token], and where each sits relative to its start.
+  ///
+  /// One entry for an ordinary chord, and one per part for a hyphen-joined run:
+  /// `Cadd9-Csus2` is two chords, and storing it as one would leave a symbol
+  /// `ChordTransposer` cannot transpose — it rewrites the first root and carries
+  /// the rest verbatim, so `Amaj7-A7` up a tone would come out as `Bmaj7-A7`
+  /// with the second chord silently in the wrong key.
+  List<(String, int)> chordsIn(String token) {
+    final bare = _unwrap(token);
+    if (_chordToken.hasMatch(bare)) return [(bare, 0)];
+    final parts = bare.split('-');
+    if (parts.length < 2 || !parts.every(_chordToken.hasMatch)) {
+      return [(bare, 0)];
+    }
+    final out = <(String, int)>[];
+    // Offsets are relative to the token as written, brackets included, because
+    // the caller adds them to that token's own column.
+    var offset = token.indexOf(bare);
+    for (final part in parts) {
+      out.add((part, offset));
+      offset += part.length + 1;
+    }
+    return out;
+  }
 
   /// Returns true when [token] is `-7`-style shorthand for the chord before it.
   ///
@@ -348,10 +404,15 @@ class ChordSheetParser {
         if (close != -1) {
           final token = raw.substring(i + 1, close).trim();
           if (isChordToken(token)) {
-            chords.add(ChordPosition(
-              chord: ChordTransposer.toEnglishNotation(token),
-              position: text.length,
-            ));
+            // A hyphen-joined run is two chords over one syllable, and a
+            // bracket carries no horizontal information to separate them by, so
+            // they share the position the marker names.
+            for (final (part, _) in chordsIn(token)) {
+              chords.add(ChordPosition(
+                chord: ChordTransposer.toEnglishNotation(part),
+                position: text.length,
+              ));
+            }
             i = close + 1;
             continue;
           }
@@ -404,10 +465,12 @@ class ChordSheetParser {
         continue;
       }
 
-      chords.add(ChordPosition(
-        chord: ChordTransposer.toEnglishNotation(_unwrap(token)),
-        position: match.start,
-      ));
+      for (final (part, offset) in chordsIn(token)) {
+        chords.add(ChordPosition(
+          chord: ChordTransposer.toEnglishNotation(part),
+          position: match.start + offset,
+        ));
+      }
     }
     return LyricLine(text: lyricLine.trimRight(), chords: chords);
   }

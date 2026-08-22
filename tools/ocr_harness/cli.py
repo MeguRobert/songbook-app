@@ -209,20 +209,47 @@ def cmd_review(args) -> int:
 
 
 def cmd_symbols(args) -> int:
-    """Every chord symbol in the gold answers that no rule can spell."""
+    """Every chord symbol in the gold answers that no rule can spell.
+
+    Two lists, because the expensive case hides from the cheap one.
+
+    `Reading.chords` only holds chords from rows that already classified AS
+    chords, so a symbol so unspellable that it costs its whole row never reaches
+    it. This command reported "every gold chord symbol is spellable" while
+    `fiszm` was taking two of `166-tekozlo-fiu`'s chord rows down to lyrics -
+    which is the worse failure of the two and the one worth naming first.
+    """
     blocked: dict[str, list[str]] = {}
+    lost: dict[str, list[tuple[str, str]]] = {}
     for page in gold.pages(args.pages, with_gold=True):
         for chord in metrics.unclassifiable(page.gold.chords):
             blocked.setdefault(chord, []).append(page.file)
-    if not blocked:
+        for row, token in metrics.rows_lost_to_a_token(page.gold.chordpro):
+            lost.setdefault(token, []).append((page.file, row))
+
+    if lost:
+        print("chord rows the token rule reads as LYRICS, and the one token that")
+        print("costs each of them every chord it carries:")
+        print()
+        for token, where in sorted(lost.items()):
+            print(f"  {token}")
+            for file, row in sorted(set(where)):
+                print(f"      {file}")
+                print(f"      {row.strip()}")
+        print()
+
+    if blocked:
+        print("chord symbols inside rows that DO classify, which the token rule")
+        print("still cannot spell - a reading can never get these right:")
+        print()
+        for chord, pages_ in sorted(blocked.items()):
+            print(f"  {chord:<16} {', '.join(sorted(set(pages_)))}")
+        print()
+
+    if not blocked and not lost:
         print("every gold chord symbol is spellable by the current token rule")
         return 0
-    print("chord symbols the token rule cannot spell - a reading can never get")
-    print("these right, whatever the recogniser does:")
-    print()
-    for chord, pages_ in sorted(blocked.items()):
-        print(f"  {chord:<16} {', '.join(sorted(set(pages_)))}")
-    print()
+
     print("_CHORD_TOKEN in tools/photo_import_worker.py, and its port in")
     print("songbook_app/lib/domain/services/chord_sheet_parser.dart, both have")
     print("to agree - the app re-parses whatever the worker emits.")

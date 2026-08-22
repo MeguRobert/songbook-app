@@ -79,7 +79,8 @@
         "placement": 0.5,
         "placement_near": 0.5833,
         "warnings_ok": 1.0,
-        "headline": 0.7155
+        "headline": 0.7155,
+        "gold": "72aa0ec322dc"
       },
       "098-szivemben-orom-dalol--chords-next-song-header.jpg": {
         "number_exact": 1.0,
@@ -92,7 +93,8 @@
         "placement": 0.8,
         "placement_near": 0.8,
         "warnings_ok": 1.0,
-        "headline": 0.799
+        "headline": 0.799,
+        "gold": "1a890c5845ee"
       },
       "151-zengjed-a-dalt--chords-letterboxed.jpg": {
         "number_exact": 0.0,
@@ -105,7 +107,8 @@
         "placement": 0.8,
         "placement_near": 0.9,
         "warnings_ok": 1.0,
-        "headline": 0.9132
+        "headline": 0.9132,
+        "gold": "2dbda48e0b19"
       },
       "185-jezus-krisztusom--chords-highlighted.jpg": {
         "number_exact": 0.0,
@@ -118,7 +121,8 @@
         "placement": 0.3333,
         "placement_near": 0.3333,
         "warnings_ok": 0.0,
-        "headline": 0.4527
+        "headline": 0.4527,
+        "gold": "886c28d56932"
       },
       "app-jezus-szivedbe-lat--chords-screenshot.jpg": {
         "title_cer": 0.2222,
@@ -130,33 +134,36 @@
         "placement": 0.8594,
         "placement_near": 0.9219,
         "warnings_ok": 0.0,
-        "headline": 0.9646
+        "headline": 0.9646,
+        "gold": "d42b098f20dc"
       },
       "125-nincs-mas-isten--chords-two-column-ruled.jpg": {
         "number_exact": 1.0,
         "title_cer": 0.4,
-        "lyric_cer": 0.5559,
-        "lyric_cer_folded": 0.5511,
-        "chord_recall": 0.4583,
+        "lyric_cer": 0.6178,
+        "lyric_cer_folded": 0.6128,
+        "chord_recall": 0.4231,
         "chord_precision": 0.9167,
-        "chord_f1": 0.6111,
-        "placement": 0.5833,
-        "placement_near": 0.6111,
+        "chord_f1": 0.5789,
+        "placement": 0.5526,
+        "placement_near": 0.5789,
         "warnings_ok": 0.0,
-        "headline": 0.5554
+        "headline": 0.5133,
+        "gold": "52c50a046d0a"
       },
       "166-tekozlo-fiu--chords-two-column-italic.jpg": {
         "number_exact": 1.0,
         "title_cer": 0.0,
-        "lyric_cer": 0.08,
-        "lyric_cer_folded": 0.08,
-        "chord_recall": 0.7895,
+        "lyric_cer": 0.0717,
+        "lyric_cer_folded": 0.0717,
+        "chord_recall": 0.75,
         "chord_precision": 1.0,
-        "chord_f1": 0.8824,
-        "placement": 0.8824,
-        "placement_near": 0.8824,
+        "chord_f1": 0.8571,
+        "placement": 0.8571,
+        "placement_near": 0.8571,
         "warnings_ok": 0.0,
-        "headline": 0.8949
+        "headline": 0.8809,
+        "gold": "6385fb7afcd6"
       }
     }
   }

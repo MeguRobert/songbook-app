@@ -678,7 +678,7 @@ class PhotoTextBridge {
     // Nothing to go on, or nothing worth splitting: one glyph cannot be a
     // merge, and a word already readable as a chord must not be touched —
     // `Em7`'s glyphs are as tightly spaced as `DGD`'s.
-    if (symbols.length < 2 || parser.isChordToken(word.text)) return [word];
+    if (symbols.length < 2 || parser.isSingleChord(word.text)) return [word];
 
     final widths = symbols.map((s) => s.width).where((w) => w > 0).toList();
     if (widths.isEmpty) return [word];

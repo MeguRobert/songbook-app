@@ -69,5 +69,16 @@ jobs:
         run: flutter test
 
       - name: Test import tooling (Python)
-        working-directory: tools
-        run: python -m unittest test_song_validator test_batch_import test_photo_import_worker
+        # Discovery, not a hand-maintained module list. The list this replaces
+        # named three modules and had been overtaken four times: it missed
+        # test_convert_hymn, test_photo_import_preprocess, test_photo_import_trace
+        # and the whole of tools/ocr_harness/, so 317 tests locally were 128 here
+        # and the gap grew with every file added.
+        #
+        # Run from the repo root, not from tools/, because the two halves resolve
+        # differently: the worker tests `import photo_import_worker` off the
+        # discovery start directory, while the harness tests are a package doing
+        # `from . import metrics`. Only `-s tools` from the root satisfies both.
+        # Every third-party import in this tree (easyocr, cv2, numpy) is inside a
+        # function, so discovery stays stdlib-only and needs no pip install.
+        run: python -m unittest discover -s tools -p "test_*.py"

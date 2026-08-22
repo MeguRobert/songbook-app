@@ -86,6 +86,41 @@ void main() {
       // never alone on a line, and one ordinary word makes the line lyrics.
       expect(parser.isChordLine('Hadd menjek el'), isFalse);
     });
+
+    test('an accidental spelled out in letters is still an accidental', () {
+      // Hungarian and German print the sign as a syllable. Measured on the
+      // corpus, `fiszm` alone cost 166-tekozlo-fiu three of its ten chord rows:
+      // the all-or-nothing rule threw every chord on those rows away with it.
+      expect(parser.isChordToken('fiszm'), isTrue, reason: 'F sharp minor');
+      expect(parser.isChordToken('Fis'), isTrue, reason: 'F sharp');
+      expect(parser.isChordToken('D4/Fis'), isTrue, reason: 'sharp bass');
+      expect(parser.isChordToken('Esz'), isTrue, reason: 'E flat');
+      expect(parser.isChordToken('Desz'), isTrue, reason: 'D flat');
+      expect(parser.isChordLine('A     E       fiszm     E     D'), isTrue);
+    });
+
+    test('a bare s is not a flat, whatever German shorthand says', () {
+      // It would read the suspension off every sus chord in the book.
+      expect(parser.isChordToken('Gsus2'), isTrue);
+      expect(parser.isChordToken('Csus4'), isTrue);
+      expect(parser.chordsIn('Gsus2').single.$1, 'Gsus2');
+    });
+
+    test('chords joined by a hyphen are one token and two chords', () {
+      // How the book prints two chords played in succession over one syllable.
+      for (final run in ['Amaj7-A7', 'Cadd9-Csus2', 'G5-Gsus2', 'D-E']) {
+        expect(parser.isChordToken(run), isTrue, reason: run);
+        expect(parser.isSingleChord(run), isFalse, reason: run);
+      }
+      expect(parser.chordsIn('Cadd9-Csus2'), [('Cadd9', 0), ('Csus2', 6)]);
+      expect(parser.isChordLine('Em7 Cadd9-Csus2 G5-Gsus2 D4/Fis'), isTrue);
+    });
+
+    test('and a hyphenated word is still a word', () {
+      expect(parser.isChordToken('ici-picit'), isFalse);
+      expect(parser.isChordToken('A-'), isFalse);
+      expect(parser.isChordLine('ici-picit göröngyös'), isFalse);
+    });
   });
 
   group('ChordSheetParser.isChordLine', () {

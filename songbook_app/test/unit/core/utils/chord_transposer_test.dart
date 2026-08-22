@@ -77,6 +77,32 @@ void main() {
       expect(ChordTransposer.parseChord('G/H'), ('G', '/B'));
     });
 
+    test('reads an accidental spelled out in letters', () {
+      // Hungarian and German print the sign as a syllable: `fiszm` is F sharp
+      // minor and `D4/Fis` names a sharp bass. Without this they arrived at the
+      // lowercase-minor rule as a root with a nonsense quality, and `fiszm`
+      // came out as `Fmiszm`.
+      expect(ChordTransposer.parseChord('fiszm'), ('F#', 'm'));
+      expect(ChordTransposer.parseChord('Fisz'), ('F#', ''));
+      expect(ChordTransposer.parseChord('Fis'), ('F#', ''));
+      expect(ChordTransposer.parseChord('D4/Fis'), ('D', '4/F#'));
+      expect(ChordTransposer.parseChord('Esz'), ('Eb', ''));
+      expect(ChordTransposer.parseChord('Desz'), ('Db', ''));
+    });
+
+    test('a suspension is not a flat', () {
+      // A bare `s` as shorthand for a flat would take the suspension off every
+      // sus chord in the book.
+      expect(ChordTransposer.parseChord('Gsus2'), ('G', 'sus2'));
+      expect(ChordTransposer.parseChord('Csus4'), ('C', 'sus4'));
+      expect(ChordTransposer.parseChord('Asus2'), ('A', 'sus2'));
+    });
+
+    test('a spelled-out accidental transposes like a written one', () {
+      expect(ChordTransposer.transposeChord('fiszm', 1), 'Gm');
+      expect(ChordTransposer.transposeChord('D4/Fis', 2), 'E4/G#');
+    });
+
     test('B keeps meaning B natural', () {
       // Strict German notation reads `B` as B flat, but every song already
       // stored here reads it as B natural. Redefining it would silently

@@ -73,8 +73,11 @@ jobs:
         run: flutter test
 
       - name: Test import tooling (Python)
-        working-directory: tools
-        run: python -m unittest test_song_validator test_batch_import test_photo_import_worker
+        # Discovery rather than a module list, for the reasons spelled out in
+        # ci.yml — the list had drifted to 128 of 317 tests. Run from the repo
+        # root: `-s tools` is what makes both the flat worker tests and the
+        # ocr_harness package importable.
+        run: python -m unittest discover -s tools -p "test_*.py"
 
       # Every deployment must report a distinct, increasing version, so the
       # build number is derived rather than hand-maintained: nobody has to

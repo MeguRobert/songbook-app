@@ -198,9 +198,17 @@ Box = collections.namedtuple("Box", "text x0 y0 x1 y1 confidence",
 # on the way into storage; the worker only has to agree that these are chords,
 # because a row it does not recognise is emitted as lyrics and the chords on it
 # reach the song as words.
+# An accidental may be a sign or a syllable. Hungarian and German print it as
+# one: `isz`/`is` is a sharp (`fiszm` is F sharp minor, `Fis` is F sharp) and
+# `esz`/`sz` is a flat (`Esz` is E flat). Measured on the corpus, `fiszm` alone
+# cost `166-tekozlo-fiu` three of its ten chord rows, because the all-or-nothing
+# rule threw every chord on those rows away with it. A bare `s` is deliberately
+# NOT a flat: it would read `Gsus2` as G flat carrying `us2`.
+_ACCIDENTAL = r"(?:#|b|isz|is|esz|sz)"
 _CHORD_TOKEN = re.compile(
-    r"^[A-GHa-gh][#b]?(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*"
-    r"(?:/[A-GHa-gh][#b]?)?$")
+    r"^[A-GHa-gh]" + _ACCIDENTAL + r"?"
+    r"(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*"
+    r"(?:/[A-GHa-gh]" + _ACCIDENTAL + r"?)?$")
 # A row whose only chord is a bare root — `A`, `d`, `A -` — used to be resolved
 # towards lyrics by a `_BARE_ROOT` regex here, on the grounds that `A` is the
 # Hungarian definite article. The rule is gone: the ambiguity only arises when a
@@ -305,8 +313,20 @@ def _unwrap(token: str) -> str:
 
 
 def is_chord_token(token: str) -> bool:
-    """True when [token] is unambiguously a chord symbol."""
-    return bool(_CHORD_TOKEN.match(_unwrap(token)))
+    """True when [token] is unambiguously a chord symbol.
+
+    A run of chords joined by hyphens counts as one, because that is how the book
+    prints two chords played in succession over one syllable: `Amaj7-A7`,
+    `Cadd9-Csus2`, `G5-Gsus2`, `D-E`. Every part has to be a chord on its own,
+    which is what keeps `ici-picit` a word. The app separates them again on the
+    way into storage, so nothing ever has to transpose a symbol naming two
+    pitches - see `ChordSheetParser.chordsIn`.
+    """
+    bare = _unwrap(token)
+    if _CHORD_TOKEN.match(bare):
+        return True
+    parts = bare.split("-")
+    return len(parts) > 1 and all(_CHORD_TOKEN.match(p) for p in parts)
 
 
 def is_continuation(token: str) -> bool:

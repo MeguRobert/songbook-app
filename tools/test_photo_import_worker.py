@@ -193,6 +193,29 @@ class ChordTokenTests(unittest.TestCase):
     def test_rejects_a_double_flat(self):
         self.assertFalse(worker.is_chord_token('Bbb'))
 
+    def test_accepts_an_accidental_spelled_out_in_letters(self):
+        # Hungarian and German print the sign as a syllable. Measured on the
+        # corpus, `fiszm` alone cost 166-tekozlo-fiu three of its ten chord
+        # rows: the all-or-nothing rule threw every chord on them away with it.
+        for token in ('fiszm', 'Fisz', 'Fis', 'D4/Fis', 'Esz', 'Desz', 'asz'):
+            self.assertTrue(worker.is_chord_token(token), token)
+
+    def test_a_bare_s_is_not_a_flat(self):
+        # It would read the suspension off every sus chord in the book.
+        for token in ('Gsus2', 'Csus4', 'Asus2'):
+            self.assertTrue(worker.is_chord_token(token), token)
+
+    def test_accepts_chords_joined_by_a_hyphen(self):
+        # How the book prints two chords played in succession over one syllable.
+        # The app splits them again on the way into storage, so nothing has to
+        # transpose a symbol naming two pitches.
+        for token in ('Amaj7-A7', 'Cadd9-Csus2', 'G5-Gsus2', 'D-E'):
+            self.assertTrue(worker.is_chord_token(token), token)
+
+    def test_rejects_a_hyphenated_word(self):
+        for token in ('ici-picit', 'A-', '-D'):
+            self.assertFalse(worker.is_chord_token(token), token)
+
 
 class ChordRowTests(unittest.TestCase):
     """Mirrors ChordSheetParser.isChordLine's all-or-nothing rule."""
