@@ -1212,14 +1212,19 @@ Expected: five suites green — `songs_rls_test` (26), `roles_test` (12),
 `attribution_test` (4), `account_delete_test` (6), `admin_audit_test` (4),
 `submission_gate_test` (8).
 
-**Step 2:** Confirm the pre-existing suite is genuinely untouched:
+**Step 2:** Confirm no *assertion* in the pre-existing suite changed:
 
 ```bash
-git diff master --stat -- supabase/tests/songs_rls_test.sql
+git diff master -- supabase/tests/songs_rls_test.sql
 ```
 
-Expected: **no output.** If `songs_rls_test.sql` had to change, a policy changed
-meaning and that needs explaining before the UI is built on it.
+Expected: the only change is the fixture at line ~30, which became an `UPDATE`
+naming `'administrator'` — the provisioning trigger from Task 2 already created
+the row, so the original `INSERT` collides on the primary key, and `'admin'` was
+retired by Task 1. **No `select is(...)`, `select ok(...)` or `select throws_ok(...)`
+line may differ.** That, and not an untouched file, is what proves the
+`is_admin()` alias preserved behaviour. If an assertion had to change, a policy
+changed meaning and that needs explaining before any UI is built on it.
 
 **Step 3:** Commit nothing; this is a gate, not a change.
 

@@ -27,8 +27,13 @@ values
   ('33333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'admin@example.test', '', now(), now());
 
-insert into public.user_roles (user_id, role) values
-  ('33333333-3333-3333-3333-333333333333', 'admin');
+-- UPDATE, not INSERT: since 20260822120100 a trigger on auth.users provisions a
+-- 'member' role row for every new account, so inserting here collides on the
+-- primary key. The role is also named 'administrator' now that the ladder in
+-- 20260822120000 has ranks -- 'admin' was retired. Every assertion below is
+-- unchanged; this is the fixture catching up with the schema.
+update public.user_roles set role = 'administrator'
+  where user_id = '33333333-3333-3333-3333-333333333333';
 
 -- Alice's song, submitted for review but NOT approved. originalKey and the
 -- verses live inside `payload` -- there is deliberately no column for them.
