@@ -36,6 +36,24 @@ class RulesAreShippedNotCopied(unittest.TestCase):
         self.assertEqual(worker._PARENTHESISED.pattern,
                          shipped["parenthesised"])
 
+    def test_the_shipped_pattern_decides_what_the_worker_decides(self):
+        """The invariant shipping the pattern is FOR, and the one that broke.
+
+        Shipping `_CHORD_TOKEN.pattern` only keeps the preview honest while the
+        pattern IS the rule. The hyphen-joined chord run went in as a `split('-')`
+        inside `is_chord_token` instead, so the preview called
+        `E fiszm E D-E A` a lyric row while both parsers read it as chords — and
+        it was a reviewer, reading a gold file, who noticed.
+        """
+        shipped = re.compile(editor.rules()["chord_token"])
+        for token in ("fiszm", "Fis", "D4/Fis", "Esz", "em", "H7", "A", "Gsus2",
+                      "Amaj7-A7", "Cadd9-Csus2", "G5-Gsus2", "D-E", "G-C-D-C",
+                      "ici-picit", "A-", "-D", "Csak", "Egy", "Az", "Bbb",
+                      "Mennybe", "hogyha"):
+            with self.subTest(token=token):
+                self.assertEqual(editor.worker.is_chord_token(token),
+                                 bool(shipped.match(token)))
+
     def test_the_patterns_use_only_syntax_javascript_shares(self):
         # `new RegExp(pattern)` has to mean the same thing. Lookbehind, named
         # groups, inline flags and possessive quantifiers do not survive the

@@ -205,10 +205,24 @@ Box = collections.namedtuple("Box", "text x0 y0 x1 y1 confidence",
 # rule threw every chord on those rows away with it. A bare `s` is deliberately
 # NOT a flat: it would read `Gsus2` as G flat carrying `us2`.
 _ACCIDENTAL = r"(?:#|b|isz|is|esz|sz)"
-_CHORD_TOKEN = re.compile(
-    r"^[A-GHa-gh]" + _ACCIDENTAL + r"?"
-    r"(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*"
-    r"(?:/[A-GHa-gh]" + _ACCIDENTAL + r"?)?$")
+_ONE_CHORD = (r"[A-GHa-gh]" + _ACCIDENTAL + r"?"
+              r"(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*"
+              r"(?:/[A-GHa-gh]" + _ACCIDENTAL + r"?)?")
+# Chords joined by hyphens are one token, because that is how the book prints two
+# chords played in succession over one syllable: `Amaj7-A7`, `Cadd9-Csus2`,
+# `G5-Gsus2`, `D-E`. Every part has to be a chord on its own, which is what keeps
+# `ici-picit` a word. The app separates them again on the way into storage - see
+# `ChordSheetParser.chordsIn` - so nothing ever transposes a symbol naming two
+# pitches.
+#
+# In the PATTERN and not in `is_chord_token`, and that is the whole point. The
+# gold editor colours rows client-side and is handed these patterns rather than a
+# hand-copied JavaScript translation of them, precisely so one source of truth
+# stays one. The first version of the hyphen rule lived in the function, so the
+# editor went on calling `E fiszm E D-E A` a lyric row while both parsers read it
+# as chords - the same drift that comment was written about.
+_CHORD_TOKEN = re.compile("^(?:" + _ONE_CHORD + r")(?:-(?:" + _ONE_CHORD
+                          + r"))*$")
 # A row whose only chord is a bare root — `A`, `d`, `A -` — used to be resolved
 # towards lyrics by a `_BARE_ROOT` regex here, on the grounds that `A` is the
 # Hungarian definite article. The rule is gone: the ambiguity only arises when a
@@ -315,18 +329,11 @@ def _unwrap(token: str) -> str:
 def is_chord_token(token: str) -> bool:
     """True when [token] is unambiguously a chord symbol.
 
-    A run of chords joined by hyphens counts as one, because that is how the book
-    prints two chords played in succession over one syllable: `Amaj7-A7`,
-    `Cadd9-Csus2`, `G5-Gsus2`, `D-E`. Every part has to be a chord on its own,
-    which is what keeps `ici-picit` a word. The app separates them again on the
-    way into storage, so nothing ever has to transpose a symbol naming two
-    pitches - see `ChordSheetParser.chordsIn`.
+    A hyphen-joined run of chords counts as one; the reasoning is at
+    [_CHORD_TOKEN], and so is the rule, because the gold editor is handed the
+    pattern rather than a copy of this function.
     """
-    bare = _unwrap(token)
-    if _CHORD_TOKEN.match(bare):
-        return True
-    parts = bare.split("-")
-    return len(parts) > 1 and all(_CHORD_TOKEN.match(p) for p in parts)
+    return bool(_CHORD_TOKEN.match(_unwrap(token)))
 
 
 def is_continuation(token: str) -> bool:
