@@ -2439,6 +2439,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Everyone reads this and ticks it once, before their first submission.'**
   String get adminGuidelinesHelp;
+
+  /// No description provided for @actionOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get actionOk;
+
+  /// The action that offers a song to the shared catalogue, next to saving it locally
+  ///
+  /// In en, this message translates to:
+  /// **'Share with the congregation'**
+  String get publishShare;
+
+  /// No description provided for @publishSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent for review. A moderator will look at it.'**
+  String get publishSubmitted;
+
+  /// No description provided for @publishSaveLocally.
+  ///
+  /// In en, this message translates to:
+  /// **'Save on this device'**
+  String get publishSaveLocally;
+
+  /// No description provided for @publishClosedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions are closed'**
+  String get publishClosedTitle;
+
+  /// Reassures the contributor their work is not lost
+  ///
+  /// In en, this message translates to:
+  /// **'New songs are not being accepted at the moment. Your song is still saved on this device.'**
+  String get publishClosedBody;
+
+  /// The address the confirmation link went to
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your email address first. We sent a link to {email}.'**
+  String publishConfirmEmailBody(String email);
+
+  /// No description provided for @publishNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How should we credit you?'**
+  String get publishNameTitle;
+
+  /// No description provided for @publishNameBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name is shown next to the song, so the congregation can see who brought it.'**
+  String get publishNameBody;
+
+  /// No description provided for @publishNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get publishNameLabel;
+
+  /// No description provided for @publishNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please give a name.'**
+  String get publishNameRequired;
+
+  /// No description provided for @publishGuidelinesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you send it'**
+  String get publishGuidelinesTitle;
+
+  /// No description provided for @publishGuidelinesAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read this and my song follows it.'**
+  String get publishGuidelinesAgree;
+
+  /// No description provided for @publishGuidelinesAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree and send'**
+  String get publishGuidelinesAccept;
+
+  /// No description provided for @publishRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent'**
+  String get publishRefusedTitle;
+
+  /// No description provided for @publishDailyLimitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have already sent as many songs today as the limit allows. Please try again tomorrow.'**
+  String get publishDailyLimitBody;
+
+  /// The frozen name recorded when the song was submitted
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted by {name}'**
+  String submittedBy(String name);
+
+  /// The frozen name of a deleted account
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted by {name}, who has since left'**
+  String submittedByFormerMember(String name);
 }
 
 class _AppLocalizationsDelegate

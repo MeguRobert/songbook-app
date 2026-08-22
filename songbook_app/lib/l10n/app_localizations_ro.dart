@@ -1475,4 +1475,69 @@ class AppLocalizationsRo extends AppLocalizations {
   @override
   String get adminGuidelinesHelp =>
       'Toți citesc acest text și îl acceptă o dată, înainte de prima trimitere.';
+
+  @override
+  String get actionOk => 'OK';
+
+  @override
+  String get publishShare => 'Partajează cu adunarea';
+
+  @override
+  String get publishSubmitted =>
+      'Trimis spre aprobare. Un moderator îl va verifica.';
+
+  @override
+  String get publishSaveLocally => 'Salvează pe acest dispozitiv';
+
+  @override
+  String get publishClosedTitle => 'Trimiterile sunt închise';
+
+  @override
+  String get publishClosedBody =>
+      'Momentan nu se acceptă cântări noi. Cântarea ta rămâne salvată pe acest dispozitiv.';
+
+  @override
+  String publishConfirmEmailBody(String email) {
+    return 'Confirmă mai întâi adresa de e-mail. Am trimis un link la $email.';
+  }
+
+  @override
+  String get publishNameTitle => 'Cum să te creditam?';
+
+  @override
+  String get publishNameBody =>
+      'Numele tău apare lângă cântare, ca adunarea să vadă cine a adus-o.';
+
+  @override
+  String get publishNameLabel => 'Nume';
+
+  @override
+  String get publishNameRequired => 'Te rugăm să introduci un nume.';
+
+  @override
+  String get publishGuidelinesTitle => 'Înainte de a trimite';
+
+  @override
+  String get publishGuidelinesAgree =>
+      'Am citit și cântarea mea respectă acest lucru.';
+
+  @override
+  String get publishGuidelinesAccept => 'Accept și trimit';
+
+  @override
+  String get publishRefusedTitle => 'Nu a fost trimis';
+
+  @override
+  String get publishDailyLimitBody =>
+      'Ai trimis deja atâtea cântări astăzi cât permite limita. Te rugăm să încerci mâine.';
+
+  @override
+  String submittedBy(String name) {
+    return 'Trimis de $name';
+  }
+
+  @override
+  String submittedByFormerMember(String name) {
+    return 'Trimis de $name, care a plecat de atunci';
+  }
 }

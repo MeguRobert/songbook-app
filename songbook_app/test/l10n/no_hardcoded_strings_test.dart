@@ -47,6 +47,9 @@ const _localised = [
   'lib/presentation/screens/admin/admin_user_detail_screen.dart',
   'lib/presentation/screens/admin/admin_settings_screen.dart',
   'lib/presentation/screens/admin/role_label.dart',
+  'lib/presentation/screens/import/publish_flow.dart',
+  'lib/presentation/screens/moderation/moderation_queue_screen.dart',
+  'lib/presentation/screens/moderation/my_submissions_screen.dart',
 ];
 
 /// Literals that are not interface text, with the reason each is here.

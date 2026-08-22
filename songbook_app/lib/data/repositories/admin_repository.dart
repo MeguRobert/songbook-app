@@ -163,6 +163,35 @@ class AdminRepository {
     }
   }
 
+  /// The signed-in user's own profile row: the name they will be credited as,
+  /// and whether they have accepted the guidelines.
+  ///
+  /// Returns a null-ish record when signed out or unreachable, rather than
+  /// throwing: the publish gate reads this to decide what to ask for, and an
+  /// exception there would turn "we do not know your name yet" into an error.
+  Future<({String? displayName, DateTime? guidelinesAcceptedAt})>
+      myProfile() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return (displayName: null, guidelinesAcceptedAt: null);
+    try {
+      final row = await _client
+          .from('profiles')
+          .select('display_name, guidelines_accepted_at')
+          .eq('id', user.id)
+          .maybeSingle()
+          .timeout(SupabaseConfig.fetchTimeout);
+      if (row == null) return (displayName: null, guidelinesAcceptedAt: null);
+      final accepted = row['guidelines_accepted_at'];
+      return (
+        displayName: row['display_name'] as String?,
+        guidelinesAcceptedAt:
+            accepted is String ? DateTime.tryParse(accepted) : null,
+      );
+    } catch (_) {
+      return (displayName: null, guidelinesAcceptedAt: null);
+    }
+  }
+
   /// Records that this user has accepted the contribution guidelines.
   ///
   /// Self-service by design: the claim "I have read this" is only ever the user's

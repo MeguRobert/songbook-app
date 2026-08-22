@@ -44,6 +44,20 @@ class Submission {
 
   final DateTime? submittedAt;
 
+  /// The name recorded when the song was submitted.
+  ///
+  /// A frozen copy, not a join to the contributor's current display name — see
+  /// `supabase/migrations/20260822120200_frozen_attribution.sql`. Null only for a
+  /// draft, which has not been offered to anybody yet.
+  final String? submittedByName;
+
+  /// True when the submitting account has since been deleted.
+  ///
+  /// The song stays in the catalogue and keeps [submittedByName]; what is gone is
+  /// the account behind it. Worth distinguishing, because "submitted by Anna" and
+  /// "submitted by Anna, who has since left" are different things to show.
+  final bool ownerGone;
+
   /// The song itself, reconstructed from the row's payload.
   final Song song;
 
@@ -53,6 +67,8 @@ class Submission {
     required this.song,
     this.rejectionReason,
     this.submittedAt,
+    this.submittedByName,
+    this.ownerGone = false,
   });
 
   bool get isPending => status == SubmissionStatus.pending;
@@ -79,6 +95,12 @@ class Submission {
         rejectionReason: row['rejection_reason'] as String?,
         submittedAt:
             submittedAt is String ? DateTime.tryParse(submittedAt) : null,
+        submittedByName: row['submitted_by_name'] as String?,
+        // `owner_id` is only absent on a user song whose account was deleted;
+        // the FK is ON DELETE SET NULL rather than CASCADE precisely so the song
+        // survives. A hymnal row also has no owner, but hymnal rows never come
+        // through the submission queries.
+        ownerGone: row.containsKey('owner_id') && row['owner_id'] == null,
         song: Song.fromJson(json),
       );
     } catch (_) {

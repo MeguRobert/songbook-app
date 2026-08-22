@@ -1465,4 +1465,69 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get adminGuidelinesHelp =>
       'Everyone reads this and ticks it once, before their first submission.';
+
+  @override
+  String get actionOk => 'OK';
+
+  @override
+  String get publishShare => 'Share with the congregation';
+
+  @override
+  String get publishSubmitted =>
+      'Sent for review. A moderator will look at it.';
+
+  @override
+  String get publishSaveLocally => 'Save on this device';
+
+  @override
+  String get publishClosedTitle => 'Submissions are closed';
+
+  @override
+  String get publishClosedBody =>
+      'New songs are not being accepted at the moment. Your song is still saved on this device.';
+
+  @override
+  String publishConfirmEmailBody(String email) {
+    return 'Confirm your email address first. We sent a link to $email.';
+  }
+
+  @override
+  String get publishNameTitle => 'How should we credit you?';
+
+  @override
+  String get publishNameBody =>
+      'Your name is shown next to the song, so the congregation can see who brought it.';
+
+  @override
+  String get publishNameLabel => 'Name';
+
+  @override
+  String get publishNameRequired => 'Please give a name.';
+
+  @override
+  String get publishGuidelinesTitle => 'Before you send it';
+
+  @override
+  String get publishGuidelinesAgree =>
+      'I have read this and my song follows it.';
+
+  @override
+  String get publishGuidelinesAccept => 'Agree and send';
+
+  @override
+  String get publishRefusedTitle => 'Not sent';
+
+  @override
+  String get publishDailyLimitBody =>
+      'You have already sent as many songs today as the limit allows. Please try again tomorrow.';
+
+  @override
+  String submittedBy(String name) {
+    return 'Submitted by $name';
+  }
+
+  @override
+  String submittedByFormerMember(String name) {
+    return 'Submitted by $name, who has since left';
+  }
 }

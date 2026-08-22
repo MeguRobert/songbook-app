@@ -1777,5 +1777,53 @@
   "adminDailyCap": "Songs per person per day",
   "adminDailyCapHelp": "A limit on how fast one account can fill the queue.",
   "adminGuidelinesSection": "Contribution guidelines",
-  "adminGuidelinesHelp": "Everyone reads this and ticks it once, before their first submission."
+  "adminGuidelinesHelp": "Everyone reads this and ticks it once, before their first submission.",
+  "actionOk": "OK",
+  "publishShare": "Share with the congregation",
+  "@publishShare": {
+    "description": "The action that offers a song to the shared catalogue, next to saving it locally"
+  },
+  "publishSubmitted": "Sent for review. A moderator will look at it.",
+  "publishSaveLocally": "Save on this device",
+  "publishClosedTitle": "Submissions are closed",
+  "publishClosedBody": "New songs are not being accepted at the moment. Your song is still saved on this device.",
+  "@publishClosedBody": {
+    "description": "Reassures the contributor their work is not lost"
+  },
+  "publishConfirmEmailBody": "Confirm your email address first. We sent a link to {email}.",
+  "@publishConfirmEmailBody": {
+    "description": "The address the confirmation link went to",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "publishNameTitle": "How should we credit you?",
+  "publishNameBody": "Your name is shown next to the song, so the congregation can see who brought it.",
+  "publishNameLabel": "Name",
+  "publishNameRequired": "Please give a name.",
+  "publishGuidelinesTitle": "Before you send it",
+  "publishGuidelinesAgree": "I have read this and my song follows it.",
+  "publishGuidelinesAccept": "Agree and send",
+  "publishRefusedTitle": "Not sent",
+  "publishDailyLimitBody": "You have already sent as many songs today as the limit allows. Please try again tomorrow.",
+  "submittedBy": "Submitted by {name}",
+  "@submittedBy": {
+    "description": "The frozen name recorded when the song was submitted",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "submittedByFormerMember": "Submitted by {name}, who has since left",
+  "@submittedByFormerMember": {
+    "description": "The frozen name of a deleted account",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

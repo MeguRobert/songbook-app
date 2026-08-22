@@ -1469,4 +1469,68 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get adminGuidelinesHelp =>
       'Ezt mindenki elolvassa és egyszer elfogadja az első beküldés előtt.';
+
+  @override
+  String get actionOk => 'Rendben';
+
+  @override
+  String get publishShare => 'Megosztás a gyülekezettel';
+
+  @override
+  String get publishSubmitted => 'Elküldve jóváhagyásra. Egy moderátor átnézi.';
+
+  @override
+  String get publishSaveLocally => 'Mentés erre az eszközre';
+
+  @override
+  String get publishClosedTitle => 'A beküldés le van zárva';
+
+  @override
+  String get publishClosedBody =>
+      'Jelenleg nem fogadunk be új énekeket. Az éneked továbbra is el van mentve ezen az eszközön.';
+
+  @override
+  String publishConfirmEmailBody(String email) {
+    return 'Először erősítsd meg az e-mail címedet. Küldtünk egy hivatkozást ide: $email.';
+  }
+
+  @override
+  String get publishNameTitle => 'Kinek tulajdonítsuk?';
+
+  @override
+  String get publishNameBody =>
+      'A neved megjelenik az ének mellett, hogy a gyülekezet látja, ki hozta.';
+
+  @override
+  String get publishNameLabel => 'Név';
+
+  @override
+  String get publishNameRequired => 'Kérlek, adj meg egy nevet.';
+
+  @override
+  String get publishGuidelinesTitle => 'Mielőtt elküldöd';
+
+  @override
+  String get publishGuidelinesAgree =>
+      'Elolvastam, és az énekem megfelel ennek.';
+
+  @override
+  String get publishGuidelinesAccept => 'Elfogadom és elküldöm';
+
+  @override
+  String get publishRefusedTitle => 'Nem sikerült elküldeni';
+
+  @override
+  String get publishDailyLimitBody =>
+      'Ma már annyi éneket küldtél be, amennyit a korlát engedélyez. Kérlek, próbáld újra holnap.';
+
+  @override
+  String submittedBy(String name) {
+    return 'Beküldte: $name';
+  }
+
+  @override
+  String submittedByFormerMember(String name) {
+    return 'Beküldte: $name, aki azóta elhagyta a gyülekezetet';
+  }
 }

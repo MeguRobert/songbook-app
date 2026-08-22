@@ -57,6 +57,22 @@ final adminAccessProvider = Provider.family<AdminAccess, bool>((ref, needsAdmin)
   );
 });
 
+/// The signed-in user's own profile: the name they are credited as, and whether
+/// they have accepted the guidelines.
+///
+/// Read by the publish gate to decide what to ask for. Recomputed on every auth
+/// transition so signing in as somebody else does not carry the old name.
+final myProfileProvider =
+    FutureProvider<({String? displayName, DateTime? guidelinesAcceptedAt})>(
+        (ref) async {
+  ref.watch(authStateChangesProvider);
+  final repository = ref.watch(adminRepositoryProvider);
+  if (repository == null) {
+    return (displayName: null, guidelinesAcceptedAt: null);
+  }
+  return repository.myProfile();
+});
+
 /// Every account. Administrator only — a member's call is refused server-side.
 final managedUsersProvider = FutureProvider<List<ManagedUser>>((ref) async {
   ref.watch(authStateChangesProvider);

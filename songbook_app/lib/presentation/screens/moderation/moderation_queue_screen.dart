@@ -143,9 +143,23 @@ class _QueueRowState extends ConsumerState<_QueueRow> {
     final song = widget.submission.song;
     final repository = ref.read(submissionRepositoryProvider);
 
+    // Who submitted it, shown at the moment of the decision rather than after
+    // it. This is the whole reason attribution exists: a moderator deciding on a
+    // song should be able to see whose it is without leaving the queue.
+    final credited = widget.submission.submittedByName;
+    final attribution = credited == null
+        ? null
+        : widget.submission.ownerGone
+            ? l10n.submittedByFormerMember(credited)
+            : l10n.submittedBy(credited);
+
     return ListTile(
+      isThreeLine: attribution != null,
       title: Text(song.title),
-      subtitle: Text('${song.number} · ${song.book ?? ''}'.trim()),
+      subtitle: Text([
+        '${song.number} · ${song.book ?? ''}'.trim(),
+        if (attribution != null) attribution,
+      ].join('\n')),
       trailing: _busy
           ? const SizedBox(
               height: 20, width: 20,
