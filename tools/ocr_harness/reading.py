@@ -205,6 +205,13 @@ def placements_in(chord_row: str, lyric_row: str,
         # matching the page a reviewer is holding it against.
         separator = (worker._SEPARATOR.match(chord)
                      and not worker.is_continuation(chord))
+        # A section name is punctuation of the same kind: `109-tart-meg-a-kegyelem`
+        # writes `Gm  A7  Dm  - Intro`, and scoring `Intro` as a chord asked
+        # every engine for a symbol the token rule cannot even spell. Held to
+        # the same [keep_separators] rule, so the editor still shows the
+        # reviewer the word the page prints.
+        if not separator and worker.is_direction(chord):
+            separator = True
         if separator and not keep_separators:
             continue
         index, word = -1, PAST_END

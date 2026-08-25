@@ -316,6 +316,98 @@ void main() {
     });
   });
 
+  group('ChordSheetParser — a stage direction on a chord row', () {
+    // `109-tart-meg-a-kegyelem` in the measurement corpus prints
+    // `B  Asus4  A  - Intro x1` and `Gm  A7  Dm  - Intro`. The dash and the
+    // `x1` were already separators, so `Intro` was the one unrecognised token
+    // the row tolerates: kept, and stored as a chord in the column the page
+    // printed the word in. The harness named it — *chord symbols the token rule
+    // cannot spell: Intro*.
+    test('the direction is not stored as a chord', () {
+      final result = parser.parse(
+          'Gm          A7        Dm     - Intro\n'
+          'A Bárány dicsőségét hirdetem!');
+      final chords = result.verses.single.lines.single.chords;
+
+      expect(chords.map((c) => c.chord), ['Gm', 'A7', 'Dm']);
+    });
+
+    test('the chords around it keep their columns', () {
+      // Each chord's position is its own match offset, so dropping a token
+      // between them must not shift any of them.
+      final result = parser.parse(
+          'Gm          A7        Dm     - Intro\n'
+          'A Bárány dicsőségét hirdetem!');
+      final chords = result.verses.single.lines.single.chords;
+
+      expect(chords.map((c) => c.position), [0, 12, 22]);
+    });
+
+    test('the row is still a chord row', () {
+      expect(parser.isChordLine('Gm          A7        Dm     - Intro'), isTrue);
+      expect(parser.isChordLine('B       Asus4   A    - Intro x1'), isTrue);
+    });
+
+    test('the direction no longer spends the row’s one tolerance', () {
+      // The tolerance exists for a MISREAD chord. 109 was spending it on a word
+      // the engine read perfectly, so a genuine misread beside the direction
+      // cost the row every chord on it.
+      expect(parser.isChordLine('Gm  A7  Dm  - Intro  HÁ'), isTrue);
+    });
+
+    test('both languages, accented or not', () {
+      for (final direction in [
+        'Intro', 'Outro', 'Coda', 'Bridge', 'Chorus', 'Verse', 'Refrén',
+        'Refren', 'Versszak', 'Átvezető', 'Atvezeto', 'Ismétlés', 'Strofă',
+        'Strofa', 'Intro:', 'Refrén.',
+      ]) {
+        expect(parser.isDirection(direction), isTrue,
+            reason: '$direction should read as a section name');
+      }
+    });
+
+    test('a lowercase word is not a direction', () {
+      // Capitalised, because that is how a page prints an instruction and
+      // because `intro`, `verse`, `coda` and `versszak` are ordinary words in
+      // one language or another.
+      for (final word in ['intro', 'refren', 'verse', 'coda', 'versszak']) {
+        expect(parser.isDirection(word), isFalse, reason: word);
+      }
+    });
+
+    test('a direction is never asked about a real chord', () {
+      // The order is what makes this rule unable to lose a chord: the chord test
+      // runs first, and `Coda`, `Bridge` and `Cor` all open with note letters.
+      for (final direction in ['Coda', 'Bridge', 'Cor']) {
+        expect(parser.isChordToken(direction), isFalse, reason: direction);
+      }
+    });
+
+    test('a direction alone is not a chord row', () {
+      // `125-nincs-mas-isten` sets these on lines of their own, and they stay
+      // lyrics: a row with no chord on it is not a chord row.
+      expect(parser.isChordLine('Refrén'), isFalse);
+      expect(parser.isChordLine('-> Refrén'), isFalse);
+      expect(parser.isChordLine('Átvezető rész'), isFalse);
+      expect(parser.isChordLine('1. Versszak'), isFalse);
+    });
+
+    test('a direction does not turn a line of words into chords', () {
+      // The risk the vocabulary carries: one fewer unknown could push a lyric
+      // line over the tolerance floor. The other words are still words.
+      expect(parser.isChordLine('A Refrén szól'), isFalse);
+      expect(parser.isChordLine('E Versszak vége'), isFalse);
+    });
+
+    test('a section name in brackets still tells the reviewer', () {
+      // The inline path already refused to invent a chord from `[Chorus]` and
+      // says so; that behaviour is untouched.
+      final result = parser.parse('[C]Az [Chorus]Úrra bízom');
+      expect(result.warnings.map((w) => w.code),
+          contains(ImportNoticeCode.bracketNotAChord));
+    });
+  });
+
   group('ChordSheetParser.parse — inline brackets', () {
     test('strips brackets and indexes chords into the stripped text', () {
       final result = parser.parse('[G]Amazing [C]grace how [G]sweet');

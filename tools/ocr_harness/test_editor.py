@@ -22,8 +22,8 @@ PAGE = pathlib.Path(editor.PAGE)
 class RulesAreShippedNotCopied(unittest.TestCase):
 
     def test_every_pattern_the_preview_needs_is_shipped(self):
-        self.assertEqual({"chord_token", "separator", "continuation",
-                          "parenthesised", "lowercase_word"},
+        self.assertEqual({"chord_token", "separator", "direction",
+                          "continuation", "parenthesised", "lowercase_word"},
                          set(editor.rules()))
 
     def test_the_counts_the_preview_needs_are_shipped_too(self):
@@ -45,6 +45,7 @@ class RulesAreShippedNotCopied(unittest.TestCase):
         shipped = editor.rules()
         self.assertEqual(worker._CHORD_TOKEN.pattern, shipped["chord_token"])
         self.assertEqual(worker._SEPARATOR.pattern, shipped["separator"])
+        self.assertEqual(worker._DIRECTION.pattern, shipped["direction"])
         self.assertEqual(worker._CONTINUATION.pattern, shipped["continuation"])
         self.assertEqual(worker._PARENTHESISED.pattern,
                          shipped["parenthesised"])
@@ -199,6 +200,61 @@ class Saving(unittest.TestCase):
         })
         self.assertEqual(data["chordpro"], stored["chordpro"])
         self.assertEqual(self.before, self.path.read_text(encoding="utf-8"))
+
+    def test_every_gold_file_keeps_every_line_through_a_save(self):
+        """Not just the first one.
+
+        The test above takes `pages()[0]`, which is `084-van-egy-ut` and holds
+        nothing unusual. Every rule that decides what a token IS has to survive
+        this trip - the editor takes a chord row apart into placements and puts
+        it back - and a rule that only fires on one page is exactly what the
+        first file cannot prove. `109-tart-meg-a-kegyelem` writes
+        `Gm  A7  Dm  - Intro`, whose `Intro` the scoring path skips like
+        punctuation; if the editor skipped it too, opening that page and saving
+        it would quietly delete a word off the answer.
+
+        Line by line rather than byte for byte, and directives excluded, because
+        one thing here is *meant* to change: `105-kosz-jol-vagyok` is the only
+        gold file carrying a `{title:}` line, and `gold.answer_for` reads the
+        title from the explicit JSON field in preference to it. Saving drops the
+        redundant directive and normalises that page to the convention the other
+        eight already follow, which is why the title is asserted as a field.
+        """
+        def answer(text):
+            return [line.rstrip() for line in text.split("\n")
+                    if line.strip()
+                    and not editor.structure.reading_mod._DIRECTIVE.match(
+                        line.strip())]
+
+        for page in gold.pages(with_gold=True):
+            path = gold.gold_path(page.stem)
+            before = path.read_text(encoding="utf-8")
+            data = json.loads(before)
+            try:
+                with self.subTest(page=page.stem):
+                    stored = editor._save(page.stem, {
+                        "number": data.get("number"),
+                        "title": data.get("title"),
+                        "warnings": data.get("warnings", []),
+                        "lines": editor.structure.to_lines(data["chordpro"]),
+                        "reviewed_by": data.get("reviewed_by"),
+                    })
+                    self.assertEqual(answer(data["chordpro"]),
+                                     answer(stored["chordpro"]))
+                    self.assertEqual(data.get("title"), stored["title"])
+                    self.assertEqual(data.get("number"), stored["number"])
+                    # And a second save is a no-op, so the file settles rather
+                    # than drifting a little every time it is opened.
+                    again = editor._save(page.stem, {
+                        "number": stored["number"], "title": stored["title"],
+                        "warnings": stored["warnings"],
+                        "lines": editor.structure.to_lines(
+                            stored["chordpro"]),
+                        "reviewed_by": stored["reviewed_by"],
+                    })
+                    self.assertEqual(stored["chordpro"], again["chordpro"])
+            finally:
+                path.write_text(before, encoding="utf-8")
 
     def test_a_reviewer_name_is_trimmed_and_stored(self):
         editor._save(self.stem(), {"lines": [], "reviewed_by": "  Robert  "})

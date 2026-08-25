@@ -259,6 +259,36 @@ _CONTINUATION = re.compile(r"^[-–—](.+)$")
 _SEPARATOR = re.compile(
     r"^(?:[-–—]+|\|+|:\||\|:|\|\||[xX]\d+|\d+[xX]|[()\[\]'‘’\"]+)$")
 _PARENTHESISED = re.compile(r"^\((.+)\)$")
+# A section name printed inline on a chord row: an instruction to the player,
+# not music. `109-tart-meg-a-kegyelem` sets `B  Asus4  A  - Intro x1` and
+# `Gm  A7  Dm  - Intro`. The dash and the `x1` were already separators, so the
+# word was the one unrecognised token the row tolerates - kept, and stored as a
+# chord in the column the page printed the word in. `symbols` named it itself:
+# *chord symbols the token rule cannot spell: Intro*.
+#
+# Capitalised, and case-sensitively so. That is how a page prints an
+# instruction, and `intro`, `verse`, `cor`, `tag` and `solo` are ordinary words
+# in one language or another; a lowercase one stays the row's single tolerated
+# token, which is the behaviour that was already there. The pattern is shipped
+# to the gold editor, which cannot pass flags, so IGNORECASE was not available
+# either.
+#
+# Accented and unaccented spellings both, because the recogniser drops accents:
+# `Refr[eé]n` covers what the page prints and what a hard JPEG returns.
+#
+# Only words this corpus attests, plus the ones a songbook prints in any
+# language. Left out on purpose: `Tag`, `Solo`, `Cor`, `Ending`,
+# `Instrumental` - each is an ordinary word somewhere, and none appears on any
+# page here to calibrate against. NO ROMANIAN PAGE IS IN THE CORPUS, so
+# `Strof[aă]` and `Refren` are the app's localisation talking, not a
+# measurement.
+#
+# Calibrated the way the tolerance rule was: against every line of every gold
+# file and of every song the app ships, 284 of them, this reclassifies none.
+_DIRECTION = re.compile(
+    r"^(?:Intro|Outro|Coda|Bridge|Chorus|Verse"
+    r"|Refr[eé]n|Versszak|[AÁ]tvezet[oő]"
+    r"|Ism[eé]tl[eé]s|Strof[aă])[.:]?$")
 
 # Two boxes are on the same line when their centres are within this fraction of
 # a glyph height. A photographed page is never square-on, so a line's baseline
@@ -353,6 +383,17 @@ def is_continuation(token: str) -> bool:
     return bool(_CONTINUATION.match(_unwrap(token)))
 
 
+def is_direction(token: str) -> bool:
+    """True when [token] is a section name rather than a chord.
+
+    Only ever asked about a token [is_chord_token] has already refused, which is
+    what makes this rule unable to lose a chord: `Coda` and `Bridge` open with
+    note letters, and a chord spelling that collided with one of these words
+    would still be read as the chord.
+    """
+    return bool(_DIRECTION.match(_unwrap(token)))
+
+
 def chord_row_reason(texts) -> tuple[bool, str]:
     """Whether [texts] is a row of chords, and why.
 
@@ -392,6 +433,12 @@ def chord_row_reason(texts) -> tuple[bool, str]:
     place the moderator can fix; a silently missing chord is the harder thing to
     notice.
 
+    The tolerance is for a MISREAD chord, though, and a stage direction is not
+    one - `109-tart-meg-a-kegyelem` was spending its one tolerance on `Intro`,
+    a word the engine read perfectly. A small vocabulary of section names is
+    skipped like punctuation instead; see [_DIRECTION] for which words, and for
+    why the test is case-sensitive.
+
     The reason exists because the two ways to lose a chord are indistinguishable
     downstream and are fixed in different places: the recogniser never returned
     the symbol, or it returned it and this rule then threw the whole row away.
@@ -401,7 +448,13 @@ def chord_row_reason(texts) -> tuple[bool, str]:
     for text in texts:
         if _SEPARATOR.match(text) or is_continuation(text):
             continue
-        (chords if is_chord_token(text) else unknown).append(text)
+        if is_chord_token(text):
+            chords.append(text)
+        elif is_direction(text):
+            # Asked after the chord test, never before: see [is_direction].
+            continue
+        else:
+            unknown.append(text)
     if not chords:
         return False, "separators only, no chord symbol"
     if len(unknown) > 1:

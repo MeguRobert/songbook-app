@@ -256,6 +256,82 @@ class ChordRowTests(unittest.TestCase):
         self.assertTrue(worker.is_chord_row(['(A)']))
 
 
+class StageDirectionTests(unittest.TestCase):
+    """A section name printed inline on a chord row is not a chord.
+
+    `109-tart-meg-a-kegyelem` prints `B  Asus4  A  - Intro x1` and
+    `Gm  A7  Dm  - Intro`: three chords, a dash, and an instruction to the
+    player. The dash and the `x1` were already separators; `Intro` was the one
+    unrecognised token the row tolerates, so it was kept and reached storage as
+    a chord in the column the page printed the word in. The harness said so
+    itself - `symbols` reported *chord symbols the token rule cannot spell:
+    Intro*, which is a chord no reading can ever get right.
+
+    Calibrated the way the tolerance rule was: against every line of every gold
+    file and of every song the app ships, 284 of them, this vocabulary
+    reclassifies **none**.
+    """
+
+    def test_a_direction_on_a_chord_row_is_not_a_chord(self):
+        # The row from 109, and the whole point of the rule.
+        self.assertTrue(worker.is_chord_row(
+            ['Gm', 'A7', 'Dm', '-', 'Intro']))
+        self.assertEqual(
+            'chords: Gm A7 Dm',
+            worker.chord_row_reason(['Gm', 'A7', 'Dm', '-', 'Intro'])[1])
+
+    def test_the_direction_no_longer_spends_the_row_s_one_tolerance(self):
+        # The row's tolerance is for a MISREAD chord, and 109 spent it on a word
+        # that was read perfectly. With the direction skipped the row can still
+        # afford a genuine misread beside it.
+        self.assertTrue(worker.is_chord_row(
+            ['B', 'Asus4', 'A', '-', 'Intro', 'x1']))
+        self.assertTrue(worker.is_chord_row(
+            ['Gm', 'A7', 'Dm', '-', 'Intro', 'HÁ']))
+
+    def test_the_vocabulary_is_recognised_in_both_languages(self):
+        for direction in ('Intro', 'Outro', 'Coda', 'Bridge', 'Chorus',
+                          'Verse', 'Refrén', 'Refren', 'Versszak',
+                          'Átvezető', 'Atvezeto', 'Ismétlés', 'Strofă',
+                          'Strofa', 'Intro:', 'Refrén.'):
+            with self.subTest(direction=direction):
+                self.assertTrue(worker.is_direction(direction))
+
+    def test_a_direction_is_never_asked_about_a_real_chord(self):
+        # The order matters and is the reason this rule cannot lose a chord:
+        # `chord_row_reason` asks `is_chord_token` first, so a token the chord
+        # pattern accepts is never offered to the vocabulary. `Coda` and
+        # `Bridge` open with note letters, and a future chord spelling that
+        # collided with one of these words would still be read as the chord.
+        for direction in ('Coda', 'Bridge', 'Cor'):
+            with self.subTest(direction=direction):
+                self.assertFalse(worker.is_chord_token(direction))
+
+    def test_a_lowercase_word_is_not_a_direction(self):
+        # Capitalised, because that is how a page prints an instruction and
+        # because `intro`, `verse`, `cor`, `tag` and `solo` are ordinary words
+        # in one language or another. A lowercase one stays the row's single
+        # tolerated token, which is the behaviour that was already there.
+        for word in ('intro', 'refren', 'verse', 'coda', 'versszak'):
+            with self.subTest(word=word):
+                self.assertFalse(worker.is_direction(word))
+
+    def test_a_direction_alone_is_not_a_chord_row(self):
+        # 125-nincs-mas-isten sets `Refrén` and `Átvezető rész` on their own
+        # lines. A row with no chord on it is not a chord row, whatever else it
+        # holds - the same answer as before, by the same clause.
+        self.assertFalse(worker.is_chord_row(['Refrén']))
+        self.assertFalse(worker.is_chord_row(['->', 'Refrén']))
+        self.assertFalse(worker.is_chord_row(['Átvezető', 'rész']))
+        self.assertFalse(worker.is_chord_row(['1.', 'Versszak']))
+
+    def test_a_direction_does_not_turn_a_lyric_line_into_chords(self):
+        # The risk the vocabulary carries: a skipped token is one fewer unknown,
+        # so a line of words holding a note letter and a section name could
+        # cross the floor. It does not - the rest of the words are still words.
+        self.assertFalse(worker.is_chord_row(['A', 'Refrén', 'szól']))
+        self.assertFalse(worker.is_chord_row(['E', 'Versszak', 'vége']))
+
 class GroupRowsTests(unittest.TestCase):
 
     def test_boxes_on_one_baseline_become_one_row(self):

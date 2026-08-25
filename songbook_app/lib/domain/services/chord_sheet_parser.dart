@@ -198,6 +198,41 @@ class ChordSheetParser {
   /// handed a root plus quality, and `(Em)` is neither.
   static final RegExp _parenthesised = RegExp(r'^\((.+)\)$');
 
+  /// A section name printed inline on a chord row: an instruction to the
+  /// player, not music.
+  ///
+  /// `109-tart-meg-a-kegyelem` in the measurement corpus sets
+  /// `B  Asus4  A  - Intro x1` and `Gm  A7  Dm  - Intro`. The dash and the `x1`
+  /// were already [_separator]s, so the word was the one unrecognised token the
+  /// row tolerates — kept, and stored as a chord in the column the page printed
+  /// the word in. The harness said so itself: *chord symbols the token rule
+  /// cannot spell: Intro*, which is a chord no reading can ever get right.
+  ///
+  /// The tolerance is for a MISREAD chord, and a stage direction is not one. It
+  /// is skipped like punctuation instead, which also gives the row its one
+  /// tolerance back for a genuine misread beside the direction.
+  ///
+  /// Only ever asked about a token [isChordToken] has already refused, which is
+  /// what makes this unable to lose a chord: `Coda` and `Bridge` open with note
+  /// letters, and a chord spelling that collided with one of these words would
+  /// still be read as the chord.
+  ///
+  /// Capitalised, and case-sensitively so. That is how a page prints an
+  /// instruction, and `intro`, `verse`, `cor`, `tag` and `solo` are ordinary
+  /// words in one language or another; a lowercase one stays the row's single
+  /// tolerated token, which is the behaviour that was already there. Accented
+  /// and unaccented spellings both, because the recogniser drops accents.
+  ///
+  /// This must stay in step with `_DIRECTION` in
+  /// `tools/photo_import_worker.py`, for the same reason [_separator] must:
+  /// the worker emits laid-out text and this parser reads it back.
+  static final RegExp _direction = RegExp(
+    r'^(?:Intro|Outro|Coda|Bridge|Chorus|Verse'
+    r'|Refr[eé]n|Versszak|[AÁ]tvezet[oő]'
+    r'|Ism[eé]tl[eé]s|Strof[aă])[.:]?$',
+  );
+
+
   /// [token] with any surrounding parentheses removed.
   static String _unwrap(String token) =>
       _parenthesised.firstMatch(token)?.group(1) ?? token;
@@ -264,6 +299,12 @@ class ChordSheetParser {
   /// carries nothing to add.
   bool isContinuation(String token) => _continuation.hasMatch(_unwrap(token));
 
+  /// Returns true when [token] is a section name rather than a chord.
+  ///
+  /// Public so `PhotoTextBridge` and the measurement harness can ask the same
+  /// question this asks. See [_direction].
+  bool isDirection(String token) => _direction.hasMatch(_unwrap(token));
+
   /// Returns true when [line] should be read as a row of chords.
   ///
   /// All-but-one, not all-or-nothing. Every token must be a chord or
@@ -318,7 +359,16 @@ class ChordSheetParser {
       // rather than costing the row its real chords. The "at least one chord"
       // rule below still keeps a lyric line of dashes out.
       if (isContinuation(token)) continue;
-      (isChordToken(token) ? chords : unknown).add(token);
+      if (isChordToken(token)) {
+        chords.add(token);
+      } else if (isDirection(token)) {
+        // Asked after the chord test, never before: see [_direction]. A stage
+        // direction is not a misread chord, so it does not spend the row's one
+        // tolerance.
+        continue;
+      } else {
+        unknown.add(token);
+      }
     }
 
     // Punctuation on its own is a rule drawn under a heading, not music.
@@ -506,6 +556,10 @@ class ChordSheetParser {
     for (final match in _token.allMatches(chordLine)) {
       final token = match.group(0)!;
       if (_separator.hasMatch(token)) continue;
+      // `Intro` on a chord row is an instruction, and `ChordView` would print
+      // it over the lyric as if it were a chord. Dropped the way a bar line is,
+      // and after the separator test for the same reason.
+      if (!isChordToken(token) && isDirection(token)) continue;
 
       // `-7` after an `A` is that A carrying a seventh. Built from the whole
       // previous chord rather than its root, so `Em` followed by `-7` gives

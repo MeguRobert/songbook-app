@@ -55,6 +55,7 @@ def rules() -> dict:
     return {
         "chord_token": worker._CHORD_TOKEN.pattern,
         "separator": worker._SEPARATOR.pattern,
+        "direction": worker._DIRECTION.pattern,
         "continuation": worker._CONTINUATION.pattern,
         "parenthesised": worker._PARENTHESISED.pattern,
         "lowercase_word": worker._LOWERCASE_WORD.pattern,
