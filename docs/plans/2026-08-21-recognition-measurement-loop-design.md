@@ -647,19 +647,19 @@ chord run.
 
 ## 2026-08-25, fifth session: the page's own printed lines, and a mis-sized C
 
-**0.827 → 0.950 mean over seven pages**, in six changes
+**0.827 → 0.958 mean over seven pages**, in seven changes
 any of them.
 
 | page | before | after |
 |---|---|---|
 | `084-van-egy-ut` | 0.715 | **0.993** |
-| `125-nincs-mas-isten` | 0.581 | **0.849** |
+| `125-nincs-mas-isten` | 0.581 | **0.900** |
 | `098-szivemben-orom-dalol` | 0.880 | **0.960** |
 | `151-zengjed-a-dalt` | 0.913 | **0.997** |
 | `166-tekozlo-fiu` | 0.957 | **0.962** |
 | `app-jezus-szivedbe-lat` | 0.965 | **0.969** |
 | `185-jezus-krisztusom` | 0.778 | **0.911** |
-| **mean** | **0.827** | **0.950** |
+| **mean** | **0.827** | **0.958** |
 
 ### A photographed page is not only type
 
@@ -975,6 +975,61 @@ third time this session the two arms have needed different answers to the same
 question, and it is worth saying plainly: **the bridge and the worker share a
 vocabulary, not a geometry.**
 
+### Ask the row, not the gap
+
+**0.950 → 0.958.** `125-nincs-mas-isten` 0.846 → **0.900**, chord recall 0.692 →
+**0.808**, 39 lyric lines down to 37. `109` (tier C) 0.079 → **0.243**.
+
+`125` prints `C G D` and `C D G` as chord-only rows and the engine returns them
+as the single words `CGD` and `CDG`: 26-pixel glyphs with gaps of 11, 12 and 13,
+so 0.42 to 0.50 of a glyph. The gate that opens a word is 0.6, so it never opened
+them — three of that page's six extra lines and fifteen of its missing chords.
+
+The gate cannot reach them, and this file has now said so twice. Hungarian `ha`
+carries 0.38 and `CGD` needs 0.42 cut; both cut into bare note letters, so the
+all-chords check does not separate them either.
+
+**So ask the row instead of the gap.** A second attempt with *no gate at all*,
+kept only when it changes the verdict: a row that did not read as chords and now
+does. `ha` and `de` and `be` do cut into chords — the lines they stand in have
+words in them, the verdict does not flip, and the cut is thrown away.
+
+This is exactly the shape the Python arm's `as_chord_row` has had since the
+beginning — *only when splitting changes the verdict* — arrived at from the other
+side. There it splits a region on its internal whitespace; here it cuts a word on
+its glyph boxes. Same guard, different evidence.
+
+Calibrated as every rule in this family has been: over every line of every gold
+file and of every song the app ships, 284 of them, it flips **none**.
+
+It needed one thing first. `OcrWord.movedTo` dropped `symbols` and `deskew`
+rebuilds every word through it, so by the time rows were grouped there were no
+glyph boxes left to cut on — which is why this could not exist until now. The
+glyphs are translated by however far the centre moved rather than rotated about
+it: they are only read for the gaps between them inside one word, a translation
+leaves those untouched, and rotating each glyph would change them by fractions of
+a pixel and pretend to a precision the boxes do not have.
+
+### `125`'s intro row cannot be read, and that is measured now
+
+The last thing on the list that looked like layout is not. Given perfect
+grouping, `Em7 Cadd9-Csus2 G5-Gsus2 D4/Fis` still comes back as
+
+```
+lm7  Cadd9o  E  ——  5US2  G5-Gsus2  D4/Fis
+```
+
+`Em7` → `lm7`, `Cadd9-` → `Cadd9o`, `Csus2` → `5US2`. Three tokens misread beyond
+recognition where the tolerance rule allows one, so `chord_row_reason` refuses
+the row whatever the boxes say — checked directly, not inferred.
+
+The row sits in the top-left corner where the page curls into the binding, at
+**5.7°** against the page's 0.7°, which is the only genuinely local distortion
+found anywhere in the corpus. It is an OCR-quality problem of the same kind as
+`109`, and it belongs beside it under *do not re-litigate without a new signal*
+rather than on a work list.
+
+
 ### What the corpus says is next
 
 The extra lyric lines are three different defects, not the one the previous
@@ -988,10 +1043,11 @@ handoff named. Measured against gold, line by line:
    means `deskew` must stop dropping glyph boxes (`OcrWord.movedTo` does not
    carry `symbols`). That single change also unblocks anything else that wants
    to reason about a chord row's glyphs.
-2. **`125`'s tilted intro row**, still the largest single unread thing:
-   `Em7 Cadd9-Csus2 G5-Gsus2 D4/Fis` arrives as `Cadd9o   E ——` and
-   `5US2 G5-Gsus2  D4/Fis`, plus a `FAS` at confidence 10. It is the only row on
-   any reviewed page that is simply not read.
+2. **Widen the corpus.** It is seven pages, and six of them now match gold on
+   both line count and chord count. `105-kosz-jol-vagyok` is not transcribed at
+   all and `109`'s gold is unreviewed; a rule calibrated on seven pages is worth
+   less than the eighth page. This is the highest-value work left, and it is not
+   code.
 3. **`084`'s `átíte`** — one garbage line at confidence 5 and glyph width 0.46 of
    the page median, just above the furniture gate. That page's only defect.
 4. **~~Row grouping~~**, which the old item 8 half-saw: `098`
@@ -1009,6 +1065,6 @@ python -m unittest discover -s tools -p "test_*.py"       # expect 339
 python -m tools.ocr_harness run                           # the Python arm
 python -m tools.ocr_harness run --engine browser          # what actually ships
 cd songbook_app && flutter analyze --no-fatal-infos       # expect exit 0, 0 issues
-cd songbook_app && flutter test                           # expect 1302
+cd songbook_app && flutter test                           # expect 1309
 cd songbook_app && flutter build web --release --no-web-resources-cdn
 ```

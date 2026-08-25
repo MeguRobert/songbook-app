@@ -39,13 +39,40 @@ class OcrWord {
   double get height => y1 - y0;
   double get width => x1 - x0;
 
-  OcrWord movedTo(double centreX, double centreY) => OcrWord(
-        text: text,
-        x0: centreX - width / 2,
-        y0: centreY - height / 2,
-        x1: centreX + width / 2,
-        y1: centreY + height / 2,
-      );
+  /// The same word with its centre at ([centreX], [centreY]), glyph boxes and
+  /// all.
+  ///
+  /// The glyphs are *translated* by however far the centre moved, not rotated
+  /// about it. They are only ever read for the gaps between them inside one
+  /// word, and a translation leaves those exactly as they were; rotating each
+  /// glyph about the page's centre would change them by fractions of a pixel and
+  /// pretend to a precision the boxes do not have.
+  ///
+  /// They used to be dropped here, and that is why the second, gateless split
+  /// attempt could not exist: [deskew] rebuilds every word through this, so by
+  /// the time rows were grouped there were no glyph boxes left to cut a merged
+  /// chord run on. See [asChordRow].
+  OcrWord movedTo(double centreX, double centreY) {
+    final dx = centreX - this.centreX;
+    final dy = centreY - this.centreY;
+    return OcrWord(
+      text: text,
+      x0: x0 + dx,
+      y0: y0 + dy,
+      x1: x1 + dx,
+      y1: y1 + dy,
+      symbols: [
+        for (final glyph in symbols)
+          OcrWord(
+            text: glyph.text,
+            x0: glyph.x0 + dx,
+            y0: glyph.y0 + dy,
+            x1: glyph.x1 + dx,
+            y1: glyph.y1 + dy,
+          ),
+      ],
+    );
+  }
 
   OcrWord saying(String replacement) => OcrWord(
       text: replacement, x0: x0, y0: y0, x1: x1, y1: y1);
@@ -720,6 +747,12 @@ class PhotoTextBridge {
     // measured between real lines rather than across a stray time signature.
     final rows = groupRows(words)
         .where((row) => !_isNoiseRow(row))
+        // Merged chord runs the first pass could not open, cut here, once,
+        // before anything measures the rows: verse breaks are found on y and
+        // are unaffected, but every later question - is this chords, does the
+        // row below pair with it, where does each chord sit - has to be asked
+        // of the same boxes. See [asChordRow].
+        .map(asChordRow)
         .toList();
     if (rows.isEmpty) return const _Block([], {}, 0, 0);
 
@@ -993,6 +1026,52 @@ class PhotoTextBridge {
     final right = _chordPieces(word, glyphs.sublist(at));
     if (right == null) return null;
     return [...left, ...right];
+  }
+
+  /// [row] cut into per-chord boxes when that is what it turns out to be.
+  ///
+  /// A second attempt, made with **no gate at all**, and kept only when it
+  /// changes the verdict: a row that did not read as chords and now does. The
+  /// gate in [splitMergedChords] is a proportion of a word's own glyphs and it
+  /// cannot be lowered far enough to help here. Measured over the corpus,
+  /// `125-nincs-mas-isten`'s `CGD` has gaps of 13 and 11 px on 26 px glyphs
+  /// — 0.42 and 0.50 — and Hungarian `ha` on `151-zengjed-a-dalt` carries 0.38.
+  /// A threshold in a factor of 1.1 would be luck, and both words cut into bare
+  /// note letters, so the all-chords check would not tell them apart either.
+  ///
+  /// What tells them apart is the row. `ha` and `de` and `be` do cut into
+  /// chords; the lines they stand in have words in them, so the verdict does not
+  /// flip and the cut is thrown away. Calibrated against every line of every
+  /// gold file and of every song the app ships — 284 of them — this reclassifies
+  /// **none**.
+  ///
+  /// Only when splitting changes the verdict, for the same reason the Python
+  /// arm's `as_chord_row` says so: a lyric row split into pieces would reach
+  /// [_layOut] as many boxes rather than one, and its spacing is measured from
+  /// the boxes. Leaving lyrics alone is not tidiness, it is required.
+  List<OcrWord> asChordRow(List<OcrWord> row) {
+    if (row.isEmpty) return row;
+    if (parser.isChordLine(row.map((w) => w.text).join(' '))) return row;
+
+    final split = <OcrWord>[];
+    var changed = false;
+    for (final word in row) {
+      if (word.symbols.length < 2 || parser.isSingleChord(word.text)) {
+        split.add(word);
+        continue;
+      }
+      final pieces = _chordPieces(word, word.symbols);
+      if (pieces == null || pieces.length < 2) {
+        split.add(word);
+        continue;
+      }
+      split.addAll(pieces);
+      changed = true;
+    }
+    if (!changed) return row;
+    return parser.isChordLine(split.map((w) => w.text).join(' '))
+        ? split
+        : row;
   }
 
   /// Brackets and dashes a chord row carries, as their own pieces.

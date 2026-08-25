@@ -26,9 +26,12 @@ void main() {
   /// `letters` is what the engine reported as one word; the boxes are laid out
   /// left to right with the gap before each glyph taken from [gaps].
   OcrWord merged(String letters,
-      {double width = 10, List<double> gaps = const [], double y = 100}) {
+      {double width = 10,
+      List<double> gaps = const [],
+      double y = 100,
+      double x0 = 0}) {
     final symbols = <OcrWord>[];
-    var x = 0.0;
+    var x = x0;
     for (var i = 0; i < letters.length; i++) {
       x += i == 0 ? 0 : (i - 1 < gaps.length ? gaps[i - 1] : 1.0);
       symbols.add(OcrWord(
@@ -47,6 +50,96 @@ void main() {
 
   List<String> textsOf(List<OcrWord> words) =>
       words.map((w) => w.text).toList();
+
+  group('a row that turns out to be chords after all', () {
+    // The gate that opens a word is a proportion of that word's own glyphs, and
+    // it cannot be lowered: measured over the corpus, Hungarian `ha` carries a
+    // gap of 0.38 of its glyph width and `125-nincs-mas-isten`'s `CGD` needs
+    // 0.42 cut. So a second attempt is made with no gate at all, and what keeps
+    // it safe is not geometry but the VERDICT: the cut is kept only if it turns
+    // a row that did not read as chords into one that does.
+    //
+    // Calibrated the way every rule in this family has been - against every line
+    // of every gold file and of every song the app ships, 284 of them, this
+    // flips **none**. `be de` would indeed cut to `b e d e`, and no line in the
+    // songbook is `be de`.
+    test('CGD becomes C, G and D once the row is asked', () {
+      // 125-nincs-mas-isten: 26 px glyphs with gaps of 13 and 11, so the 0.6
+      // gate of 15.6 never opens the word and the first pass does nothing.
+      final row = [
+        merged('Em', width: 26, gaps: [3]),
+        merged('CGD', width: 26, gaps: [13, 11], x0: 400),
+      ];
+      expect(textsOf(bridge.asChordRow(row)), ['Em', 'C', 'G', 'D']);
+    });
+
+    test('CDG too, with its two equal gaps', () {
+      final row = [
+        merged('Em', width: 26, gaps: [3]),
+        merged('CDG', width: 26, gaps: [12, 12], x0: 400),
+      ];
+      expect(textsOf(bridge.asChordRow(row)), ['Em', 'C', 'D', 'G']);
+    });
+
+    test('a row already reading as chords is handed back untouched', () {
+      final row = [
+        merged('Em', width: 26, gaps: [3]),
+        merged('C', width: 26, x0: 400),
+      ];
+      expect(bridge.asChordRow(row), same(row));
+    });
+
+    test('a line of words is handed back untouched', () {
+      // `De hogyha ezen futsz` - `De` does cut to `D` and `e`, both perfectly
+      // good chords, and the row still has three words in it, so the verdict
+      // does not flip and the cut is thrown away.
+      final row = [
+        merged('De', width: 26, gaps: [4]),
+        merged('hogyha', width: 26, gaps: [5, 5, 5, 5, 5], x0: 200),
+        merged('ezen', width: 26, gaps: [5, 5, 5], x0: 500),
+        merged('futsz', width: 26, gaps: [5, 5, 5, 5], x0: 700),
+      ];
+      expect(textsOf(bridge.asChordRow(row)),
+          ['De', 'hogyha', 'ezen', 'futsz']);
+    });
+
+    test('a two-word line whose words are note letters is left alone', () {
+      // The sharp edge of the rule, and the reason the guard is the verdict
+      // rather than the geometry: `ha` and `de` both cut into bare note
+      // letters. What saves the line is that the row it is in has words in it.
+      final row = [
+        merged('Ha', width: 26, gaps: [4]),
+        merged('nem', width: 26, gaps: [5, 5], x0: 200),
+        merged('tudod', width: 26, gaps: [5, 5, 5, 5], x0: 400),
+      ];
+      expect(textsOf(bridge.asChordRow(row)), ['Ha', 'nem', 'tudod']);
+    });
+  });
+
+  group('the glyph boxes survive the page being straightened', () {
+    // `deskew` used to rebuild every word through `movedTo`, which dropped
+    // `symbols` - so by the time rows were grouped there were no glyph boxes
+    // left to cut a merged run on. That is why the second attempt could not
+    // exist until now.
+    test('a deskewed word still knows where its glyphs are', () {
+      final word = merged('CGD', width: 26, gaps: [13, 11]);
+      final straight = bridge.deskew([word], 2.0);
+      expect(straight.single.symbols, hasLength(3));
+    });
+
+    test('and the gaps between them are unchanged', () {
+      final word = merged('CGD', width: 26, gaps: [13, 11]);
+      final before = [
+        for (var i = 1; i < word.symbols.length; i++)
+          word.symbols[i].x0 - word.symbols[i - 1].x1,
+      ];
+      final after = bridge.deskew([word], 2.0).single.symbols;
+      final gaps = [
+        for (var i = 1; i < after.length; i++) after[i].x0 - after[i - 1].x1,
+      ];
+      expect(gaps, before);
+    });
+  });
 
   group('a piece that is not a chord is cut again', () {
     // `185-jezus-krisztusom` returns `D G D` as the single word `DGD`, glyphs

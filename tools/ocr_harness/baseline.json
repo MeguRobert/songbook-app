@@ -187,15 +187,15 @@
       "125-nincs-mas-isten--chords-two-column-ruled.jpg": {
         "number_exact": 1.0,
         "title_cer": 0.4,
-        "lyric_cer": 0.0791,
-        "lyric_cer_folded": 0.0741,
-        "chord_recall": 0.6923,
-        "chord_precision": 0.973,
-        "chord_f1": 0.809,
-        "placement": 0.809,
-        "placement_near": 0.809,
+        "lyric_cer": 0.0673,
+        "lyric_cer_folded": 0.0623,
+        "chord_recall": 0.8077,
+        "chord_precision": 0.9767,
+        "chord_f1": 0.8842,
+        "placement": 0.8842,
+        "placement_near": 0.8842,
         "warnings_ok": 1.0,
-        "headline": 0.8463,
+        "headline": 0.9004,
         "gold": "52c50a046d0a"
       },
       "166-tekozlo-fiu--chords-two-column-italic.jpg": {
@@ -215,15 +215,15 @@
       "109-tart-meg-a-kegyelem--chords-handwritten-transpose.jpg": {
         "number_exact": 0.0,
         "title_cer": 1.0,
-        "lyric_cer": 0.762,
-        "lyric_cer_folded": 0.7576,
-        "chord_recall": 0.0,
-        "chord_precision": 0.0,
-        "chord_f1": 0.0,
-        "placement": 0.0,
-        "placement_near": 0.0,
-        "warnings_ok": 0.0,
-        "headline": 0.0793,
+        "lyric_cer": 0.7336,
+        "lyric_cer_folded": 0.7293,
+        "chord_recall": 0.1364,
+        "chord_precision": 0.75,
+        "chord_f1": 0.2308,
+        "placement": 0.1538,
+        "placement_near": 0.2308,
+        "warnings_ok": 1.0,
+        "headline": 0.2426,
         "gold": "4a7ca973bcee"
       }
     }
