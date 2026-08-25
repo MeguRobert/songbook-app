@@ -64,6 +64,18 @@ def call(method, path, key):
         sys.exit("%s %s -> HTTP %d" % (method, path, error.code))
 
 
+def administrators(key):
+    """The user ids holding the administrator role.
+
+    service_role has SELECT on user_roles (20260822120700), so this is readable
+    without the caller being an administrator themselves.
+    """
+    _, rows = call(
+        "GET", "/rest/v1/user_roles?select=user_id,role&role=eq.administrator",
+        key)
+    return [row["user_id"] for row in rows]
+
+
 def main():
     delete = "--delete" in sys.argv
     key = secret_key()
@@ -71,6 +83,14 @@ def main():
     status, page = call("GET", "/auth/v1/admin/users?page=1&per_page=200", key)
     users = page.get("users", [])
     print("%d accounts in the project" % len(users))
+
+    # Printed every run, not just before a delete: a role row surviving its
+    # account would mean the auth.users cascade did not fire, which is worth
+    # seeing whether or not there is anything left to remove.
+    live = {u["id"] for u in users}
+    admins = administrators(key)
+    print("%d administrator role row(s); %d orphaned"
+          % (len(admins), len([a for a in admins if a not in live])))
 
     match = [u for u in users if u.get("email", "").lower() == TARGET]
     if not match:
@@ -80,6 +100,14 @@ def main():
     print("found %s  id=%s  created=%s  last_sign_in=%s"
           % (TARGET, user["id"], user.get("created_at"),
              user.get("last_sign_in_at") or "never"))
+
+    # Deleting the last administrator leaves nobody able to reach /admin, and
+    # there is no screen that can promote a replacement -- it would take a hand
+    # -written INSERT to recover. The app refuses the equivalent move for the
+    # same reason; so does this.
+    if user["id"] in admins and len(admins) < 2:
+        sys.exit("REFUSING: this is the only administrator. Promote someone "
+                 "else first, or nobody can reach /admin afterwards.")
 
     if not delete:
         print("\nDry run. Re-run with --delete to remove it.")
