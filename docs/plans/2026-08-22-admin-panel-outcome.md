@@ -100,34 +100,59 @@ attempt.
 
 ## Deployment, when you want it
 
-Nothing has touched the live project. In order:
+Nothing has touched the live project yet. **The push is a manual step** — an
+agent's attempt to write to the production database is refused by the permission
+classifier, which is the right default for this.
+
+### What is actually at risk, verified from a backup taken 2026-08-25
+
+Taken with `supabase db dump` into `backups/` (gitignored — these files contain
+`auth.users` password hashes and must never be committed):
+
+| | |
+|---|---|
+`songs` | 8 rows, **all `source = 'hymnal'`** with `owner_id IS NULL` |
+`profiles` | empty |
+`user_roles` | **one row**, currently `'admin'` |
+
+So there are no user submissions in production at all. Nothing can be orphaned by
+the foreign-key change, and the new `songs_source_shape` constraint validates
+against all 8 existing rows (they take the `hymnal` branch unchanged).
+
+**You do not need a bootstrap step.** An earlier draft of this file said there was
+no in-app path to the first administrator, which is true in general and wrong
+here: migration `20260822120000` rewrites `role = 'admin'` to `'administrator'`,
+and the one existing row is yours. You come out of the push as the Administrator.
+
+### The push
 
 ```bash
-# 1. Migrations. Read them first -- one changes a foreign key on a table with
-#    real rows in it, and one revokes and re-grants privileges.
-npx supabase db push
-
-# 2. The Edge Function. Needs the service-role key set in the dashboard;
-#    SUPABASE_SERVICE_ROLE_KEY is provided to deployed functions automatically.
+cd <this worktree>
+npx supabase db push          # 8 migrations, dry-run verified
 npx supabase functions deploy admin-users
-
-# 3. Make yourself an administrator. There is no bootstrap path in the app --
-#    deliberately, since the function refuses to act on your own account.
-#    In the SQL editor:
-#      update public.user_roles set role = 'administrator'
-#       where user_id = (select id from auth.users where email = 'you@example.com');
 ```
 
-Then a browser pass, which is the part no test above covers:
+`SUPABASE_SERVICE_ROLE_KEY` is provided to deployed functions automatically; it
+does not need setting by hand.
+
+### Order matters
+
+Migrations first, **then** the app. `master` deploys to GitHub Pages on push, so
+merging this branch publishes an admin UI to every visitor. If the app lands
+first it will call `role_rank` and `app_settings` on a database that has neither,
+and every contributor's Share button will fail until the migrations catch up.
+
+### Then the browser pass
+
+The part no test here covers:
 
 - open `/admin/users` from a **cold load** in a fresh tab — that is the guard's
   failure mode, and a hot-reloaded session will not reproduce it
 - change a role, and confirm the audit entry appears
-- delete a throwaway account, and confirm an approved song of theirs survives
-  with its name
+- share a song end to end: the name prompt, the guidelines tick, then the queue
 - close submissions, and confirm Share explains itself rather than failing
-- check the Hungarian and Romanian strings on the admin screens; they were
-  written in this session and have not been read by a native speaker
+- read the Hungarian and Romanian on the admin screens; they were written in this
+  session and have not been checked by a native speaker
 
 ## Still deferred, on purpose
 
