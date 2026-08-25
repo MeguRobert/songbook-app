@@ -181,6 +181,32 @@ async function clickLabel(page, text, nth = 0) {
   return true;
 }
 
+/// Finds the first label starting with [prefix], scrolling and re-asking until
+/// it appears or the tries run out.
+///
+/// One snapshot is not enough for a row at the bottom of a long list. The
+/// semantics tree carries only what is laid out — the trap this file already
+/// names for OTHER VOICES and for the controls sheet's lower half — and the
+/// four-part song is the LAST row of the catalogue, sitting under the add button
+/// at 360x780. Whether its node exists at the instant the tree settles is a coin
+/// toss: the check passed for weeks, then failed once locally and twice in a row
+/// on CI, on builds that were fine in every other respect. `stableSemantics`
+/// cannot close that gap either, because a tree still being populated can hold
+/// still for one poll.
+async function findLabel(page, prefix, tries = 8) {
+  for (let attempt = 0; attempt < tries; attempt++) {
+    const found = (await labels(page)).find((l) => l.startsWith(prefix));
+    if (found) return found;
+    // Down the list rather than a fixed wait: if the row is merely below the
+    // fold, waiting will never produce it.
+    await page.mouse.move(Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2));
+    await page.mouse.wheel(0, 400);
+    await page.waitForTimeout(250);
+    await stableSemantics(page);
+  }
+  return undefined;
+}
+
 /// Anything whose box reaches past the viewport, and the widest few nodes.
 ///
 /// This is the only way this harness can see an overflow at all: a RELEASE build
@@ -367,7 +393,11 @@ async function shot(page, name, opts = {}) {
     // --- the browser's own back button ------------------------------------
     await page.goto(BASE, { waitUntil: 'domcontentloaded' });
     await enableSemantics(page);
-    const song = (await labels(page)).find((l) => l.startsWith('Song 900'));
+    const song = await findLabel(page, 'Song 900');
+    // Taken whatever the verdict. When this check failed on CI the artifact held
+    // seven screenshots, none of them of this screen, so the only evidence about
+    // the list was a shot from before the editor was ever opened.
+    await shot(page, '08-list-revisited');
     check('the four-part song is in the list', Boolean(song));
     if (song) {
       await clickLabel(page, song);
