@@ -104,13 +104,13 @@
         "title_cer": 0.0,
         "lyric_cer": 0.5066,
         "lyric_cer_folded": 0.4825,
-        "chord_recall": 0.1667,
+        "chord_recall": 0.1818,
         "chord_precision": 0.8,
-        "chord_f1": 0.2759,
-        "placement": 0.2069,
-        "placement_near": 0.2759,
+        "chord_f1": 0.2963,
+        "placement": 0.2222,
+        "placement_near": 0.2963,
         "warnings_ok": 1.0,
-        "headline": 0.3484,
+        "headline": 0.362,
         "gold": "4a7ca973bcee"
       }
     },
