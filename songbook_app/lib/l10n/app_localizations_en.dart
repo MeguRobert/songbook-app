@@ -1502,16 +1502,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionOk => 'OK';
 
   @override
-  String get publishShare => 'Share with the congregation';
-
-  @override
-  String get publishSubmitted =>
-      'Sent for review. A moderator will look at it.';
-
-  @override
-  String get publishSaveLocally => 'Save on this device';
-
-  @override
   String get publishClosedTitle => 'Submissions are closed';
 
   @override

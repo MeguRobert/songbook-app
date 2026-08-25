@@ -1820,12 +1820,6 @@
   "adminGuidelinesSection": "Contribution guidelines",
   "adminGuidelinesHelp": "Everyone reads this and ticks it once, before their first submission.",
   "actionOk": "OK",
-  "publishShare": "Share with the congregation",
-  "@publishShare": {
-    "description": "The action that offers a song to the shared catalogue, next to saving it locally"
-  },
-  "publishSubmitted": "Sent for review. A moderator will look at it.",
-  "publishSaveLocally": "Save on this device",
   "publishClosedTitle": "Submissions are closed",
   "publishClosedBody": "New songs are not being accepted at the moment. Your song is still saved on this device.",
   "@publishClosedBody": {

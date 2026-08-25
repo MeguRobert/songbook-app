@@ -25,7 +25,6 @@ import '../../../router/app_router.dart';
 import '../../widgets/content_pane.dart';
 import '../song_view/widgets/chord_view.dart';
 import '../song_view/widgets/sheet_music_view.dart';
-import 'publish_flow.dart';
 
 /// Where a pending import came from.
 ///
@@ -629,43 +628,6 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     context.pushReplacement(AppRoutes.songPath(stored.id));
   }
 
-  /// Offers the song to the shared catalogue, after the publish gate.
-  ///
-  /// Saves to the device first, always. Two reasons: the contributor keeps their
-  /// work whatever the gate decides, and the local copy is what they will
-  /// actually sing from while the submission waits for review — approval can take
-  /// days and Sunday does not.
-  Future<void> _share() async {
-    final draft = _draft;
-    if (draft == null) return;
-    setState(() => _saving = true);
-
-    final Song stored;
-    if (_isEditing) {
-      // `update` returns void — the draft already carries the id it is
-      // replacing, so it is the stored song.
-      await ref.read(userSongsProvider.notifier).update(draft);
-      stored = draft;
-    } else {
-      stored = await ref.read(userSongsProvider.notifier).add(draft);
-    }
-
-    if (!mounted) return;
-
-    final sent = await PublishFlow(ref: ref, context: context).run(stored);
-    if (!mounted) return;
-    setState(() => _saving = false);
-
-    if (sent) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).publishSubmitted)),
-      );
-    }
-    // Either way the song exists locally, so land on it. A refused submission
-    // must not look like a lost song.
-    context.pushReplacement(AppRoutes.songPath(stored.id));
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -681,20 +643,6 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       appBar: AppBar(
         title: Text(_isEditing ? l10n.menuEditSong : l10n.addSong),
         actions: [
-          // Sharing is a second, separate action -- never a replacement for
-          // Save. Saving to the device stays free and signed-out, which is what
-          // keeps this screen usable with no account and no network; sharing is
-          // the one that needs a name behind it.
-          //
-          // Hidden entirely when there is no backend, matching how the account
-          // section of Settings disappears in that build: an action that cannot
-          // work is worse than no action.
-          if (ref.watch(submissionRepositoryProvider) != null)
-            IconButton(
-              icon: const Icon(Icons.upload_outlined),
-              tooltip: l10n.publishShare,
-              onPressed: blockers.isEmpty && !_saving ? _share : null,
-            ),
           TextButton(
             onPressed: blockers.isEmpty && !_saving ? _save : null,
             child: _saving

@@ -1506,15 +1506,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get actionOk => 'Rendben';
 
   @override
-  String get publishShare => 'Megosztás a gyülekezettel';
-
-  @override
-  String get publishSubmitted => 'Elküldve jóváhagyásra. Egy moderátor átnézi.';
-
-  @override
-  String get publishSaveLocally => 'Mentés erre az eszközre';
-
-  @override
   String get publishClosedTitle => 'A beküldés le van zárva';
 
   @override

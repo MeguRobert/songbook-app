@@ -6,7 +6,9 @@ import 'package:songbook_app/data/models/song.dart';
 import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/data/models/submission.dart';
 import 'package:songbook_app/data/models/verse.dart';
+import 'package:songbook_app/data/models/app_settings.dart';
 import 'package:songbook_app/data/repositories/submission_repository.dart';
+import 'package:songbook_app/presentation/providers/admin_provider.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
 import 'package:songbook_app/presentation/providers/song_provider.dart';
 import 'package:songbook_app/presentation/screens/song_view/song_view_screen.dart';
@@ -18,7 +20,14 @@ import 'helpers.dart';
 /// `SubmissionRepository.submit` shipped tested and with no caller anywhere in
 /// the app: every song ever imported stayed on the phone that imported it, so
 /// the moderation queue, the roles and the RLS behind it had nothing to act on.
-/// These pin the entry point and the two stops in front of it.
+/// These pin the entry point and the stops in front of it.
+///
+/// The gate grew from two stops to five when the role ladder landed, so the
+/// harness below has to present a contributor who is ALREADY past the other
+/// three -- confirmed address, a name to be credited as, guidelines accepted.
+/// Each of those is a database rule as well as a prompt, so a test that left
+/// them unmet would be testing the gate, not the sharing, and
+/// `test/unit/domain/services/publish_gate_test.dart` already tests the gate.
 
 class _MockSubmissions extends Mock implements SubmissionRepository {}
 
@@ -58,6 +67,10 @@ Future<void> pumpSongView(
   Song song, {
   SubmissionRepository? submissions,
   bool signedIn = true,
+  bool emailConfirmed = true,
+  String? displayName = 'Someone',
+  bool guidelinesAccepted = true,
+  AppSettings settings = const AppSettings(),
 }) async {
   await pumpScreen(
     tester,
@@ -69,6 +82,13 @@ Future<void> pumpSongView(
           .overrideWith((ref, id) async => id == song.id ? song : null),
       submissionRepositoryProvider.overrideWithValue(submissions),
       isSignedInProvider.overrideWithValue(signedIn),
+      isEmailConfirmedProvider.overrideWithValue(emailConfirmed),
+      appSettingsProvider.overrideWith((ref) async => settings),
+      myProfileProvider.overrideWith((ref) async => (
+            displayName: displayName,
+            guidelinesAcceptedAt:
+                guidelinesAccepted ? DateTime(2026, 8, 1) : null,
+          )),
     ],
   );
   await tester.pumpAndSettle();

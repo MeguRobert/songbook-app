@@ -2500,24 +2500,6 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get actionOk;
 
-  /// The action that offers a song to the shared catalogue, next to saving it locally
-  ///
-  /// In en, this message translates to:
-  /// **'Share with the congregation'**
-  String get publishShare;
-
-  /// No description provided for @publishSubmitted.
-  ///
-  /// In en, this message translates to:
-  /// **'Sent for review. A moderator will look at it.'**
-  String get publishSubmitted;
-
-  /// No description provided for @publishSaveLocally.
-  ///
-  /// In en, this message translates to:
-  /// **'Save on this device'**
-  String get publishSaveLocally;
-
   /// No description provided for @publishClosedTitle.
   ///
   /// In en, this message translates to:

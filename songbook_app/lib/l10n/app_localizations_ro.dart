@@ -1512,16 +1512,6 @@ class AppLocalizationsRo extends AppLocalizations {
   String get actionOk => 'OK';
 
   @override
-  String get publishShare => 'Partajează cu adunarea';
-
-  @override
-  String get publishSubmitted =>
-      'Trimis spre aprobare. Un moderator îl va verifica.';
-
-  @override
-  String get publishSaveLocally => 'Salvează pe acest dispozitiv';
-
-  @override
   String get publishClosedTitle => 'Trimiterile sunt închise';
 
   @override
