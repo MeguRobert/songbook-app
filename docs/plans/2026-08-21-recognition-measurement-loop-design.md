@@ -647,19 +647,19 @@ chord run.
 
 ## 2026-08-25, fifth session: the page's own printed lines, and a mis-sized C
 
-**0.827 → 0.944 mean over seven pages**, in four changes, no page falling on
+**0.827 → 0.947 mean over seven pages**, in five changes, no page falling on
 any of them.
 
 | page | before | after |
 |---|---|---|
 | `084-van-egy-ut` | 0.715 | **0.993** |
 | `125-nincs-mas-isten` | 0.581 | **0.849** |
-| `098-szivemben-orom-dalol` | 0.880 | **0.919** |
+| `098-szivemben-orom-dalol` | 0.880 | **0.940** |
 | `151-zengjed-a-dalt` | 0.913 | **0.997** |
 | `166-tekozlo-fiu` | 0.957 | **0.962** |
 | `app-jezus-szivedbe-lat` | 0.965 | **0.969** |
 | `185-jezus-krisztusom` | 0.778 | **0.911** |
-| **mean** | **0.827** | **0.944** |
+| **mean** | **0.827** | **0.947** |
 
 ### A photographed page is not only type
 
@@ -889,6 +889,54 @@ lowercase `c` at full cap height. It answered `DGD` in one run.
 The browser arm fills it; the EasyOCR arm reports none and says so — which is
 itself the reason the two arms need different fixes for the same-looking defect.
 
+### The heading of the next song
+
+**0.944 → 0.947.** `098-szivemben-orom-dalol` 0.919 → **0.940**, lyric CER
+0.124 → 0.064.
+
+A hymnal prints one song after another down the page, so a photograph framed on
+song 98 catches the head of song 99 at its foot. The engine returns
+`99. Több erőt  a-t.` as the last row — y 1991 to 2047, where 2047 *is* the
+bottom edge of the image, so the row is clipped — and it was becoming a lyric
+line of song 98.
+
+The corpus had been saying so since the day it was built: the file is called
+`098-szivemben-orom-dalol--chords-next-song-header.jpg`, and the manifest lists
+the same thing for `109`. Two sessions went past it.
+
+The signal is the one the title at the top is already found by — every page of
+this songbook opens with a number and no lyric does — plus the one thing that
+makes it the *next* song rather than this one: it stands **last**. A song's own
+heading is never the final thing on the page.
+
+Height was the other candidate and it does not separate: `99. Több erőt` is
+43–45 px against a body of 34, which is 1.3, and `1. Versszak` on `125` is 35
+against 29, which is 1.2. `_titleHeight` is 1.25 and sits between them, which is
+luck. `1. Versszak` having twenty rows under it is not luck.
+
+Dropped rather than kept and warned about. `photoTwoSongs` says the page holds
+songs *side by side* and that all of them were read, which would be untrue here:
+there is one song and the top edge of the next, with no verse of it to import.
+Gold agrees — `098`'s answer is ten lyric lines and no extra warning.
+
+### The page is curled, not tilted
+
+`098`'s remaining extra line is a different defect and a harder one. Its last
+lyric row comes back split and reordered — `béke, hála, öröm dalol.` and then
+`Szívemben` — and the boxes say why. Measured over its own rows, the baseline
+slope is **+1.24°** near the top of the page and **−1.07°** at the foot: the
+paper bends, because it is a bound book held open under a phone.
+
+`estimateSkew` fits one global angle by projection profile, and no single angle
+straightens a bend. What is left over after deskewing exceeds `_sameRow`, so
+`groupRows` cuts a line in two and the halves sort out of order.
+
+This is the same defect behind `084`'s 9-lines-against-8 and `125`'s
+39-against-33, and it is now the largest one left. Fixing it means a *local*
+baseline rather than a global angle — fit the skew per band of the page, or group
+rows by following each line's own drift rather than by a fixed y tolerance.
+
+
 ### What the corpus says is next
 
 The extra lyric lines are three different defects, not the one the previous
@@ -902,10 +950,11 @@ handoff named. Measured against gold, line by line:
    means `deskew` must stop dropping glyph boxes (`OcrWord.movedTo` does not
    carry `symbols`). That single change also unblocks anything else that wants
    to reason about a chord row's glyphs.
-2. **`098`'s next-song header.** `99. Több erőt  a-t.` is the head of song 99
-   bleeding in — the page is named `chords-next-song-header` and the corpus has
-   been waiting for someone to read the filename.
-3. **Row grouping**, which is the only part the old item 8 got right: `098`
+2. **A curled page, not a tilted one** — see above. `098` splits and reorders
+   its last lyric row, `084` reads 9 lines against 8, `125` 39 against 33.
+   Largest remaining defect, and it wants a local baseline rather than one
+   global angle.
+3. **~~Row grouping~~**, which the old item 8 half-saw: `098`
    splits `Szívemben béke, hála, öröm dalol.` into two rows and swaps their
    order.
 
@@ -920,6 +969,6 @@ python -m unittest discover -s tools -p "test_*.py"       # expect 339
 python -m tools.ocr_harness run                           # the Python arm
 python -m tools.ocr_harness run --engine browser          # what actually ships
 cd songbook_app && flutter analyze --no-fatal-infos       # expect exit 0, 0 issues
-cd songbook_app && flutter test                           # expect 1292
+cd songbook_app && flutter test                           # expect 1298
 cd songbook_app && flutter build web --release --no-web-resources-cdn
 ```

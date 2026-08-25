@@ -706,6 +706,40 @@ class PhotoTextBridge {
       rows.removeAt(0);
     }
 
+    // The heading of the NEXT song, caught by the bottom of the frame.
+    //
+    // A hymnal prints one song after another down the page, so a photograph
+    // framed on song 98 catches the head of song 99 at its foot.
+    // `098-szivemben-orom-dalol` returns `99. Tobb erot  a-t.` as its last row,
+    // clipped by the edge of the image, and it was becoming a lyric line of
+    // song 98 - the page the corpus named `chords-next-song-header` and then
+    // waited two sessions for someone to read.
+    //
+    // The signal is the same one the title at the top is found by: every page
+    // of this songbook opens with a number and no lyric does. What makes it the
+    // *next* song rather than this one is that it stands last - a song's own
+    // heading is never the final thing on the page.
+    //
+    // Height was the other candidate and it does not separate. `99. Tobb erot`
+    // is 43-45 px against a body of 34, which is 1.3; `1. Versszak` on
+    // `125-nincs-mas-isten` is 35 against 29, which is 1.2. [_titleHeight] is
+    // 1.25 and sits between them, which is luck rather than a rule. Being last
+    // is not luck: `1. Versszak` has twenty rows under it.
+    //
+    // Dropped rather than kept and warned about.
+    // [ImportNoticeCode.photoTwoSongs] says the page holds songs *side by side*
+    // and that all of them were read, which would be untrue here: what is on
+    // the page is one song and the top edge of the next, with no verse of it to
+    // import. Gold agrees - `098`'s answer is ten lyric lines and no extra
+    // warning.
+    if (rows.length > 1) {
+      final lastRow = rows.last.map((w) => w.text).join(' ');
+      if (!parser.isChordLine(lastRow) &&
+          _numberedHeading.hasMatch(lastRow)) {
+        rows.removeLast();
+      }
+    }
+
     final breaks = _verseBreaks(rows);
     final german = <String>{};
     var chordRows = 0;

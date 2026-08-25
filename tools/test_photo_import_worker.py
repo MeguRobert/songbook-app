@@ -332,6 +332,50 @@ class StageDirectionTests(unittest.TestCase):
         self.assertFalse(worker.is_chord_row(['A', 'Refrén', 'szól']))
         self.assertFalse(worker.is_chord_row(['E', 'Versszak', 'vége']))
 
+class NextSongHeadingTests(unittest.TestCase):
+    """The heading of the next song, caught by the bottom of the frame.
+
+    A hymnal prints one song after another down the page, so a photograph framed
+    on song 98 catches the head of song 99 at its foot.
+    `098-szivemben-orom-dalol` gives up `99. Tobb erot` as its last row, clipped
+    by the bottom edge of the image, and BOTH arms were reading it as a lyric
+    line of song 98 - so unlike the furniture and the mis-sized `c`, this one is
+    a property of the page and belongs in both.
+
+    The rule is in `_lay_out_column`; these test the pattern that decides it,
+    which has to match `_numberedHeading` in `photo_text_bridge.dart` character
+    for character.
+    """
+
+    def test_a_numbered_heading_is_recognised(self):
+        for heading in ("99. Tobb erot", "99 Tobb", "110. Te veled",
+                        "9) Valami", "9: Valami"):
+            with self.subTest(heading=heading):
+                self.assertTrue(worker._NEXT_SONG_HEADING.match(heading))
+
+    def test_a_number_followed_by_a_number_is_not_a_heading(self):
+        # `10 000 angyal` is a song title, not song 10, and this is the clause
+        # that says so. `_NUMBER_LED` leans on _TITLE_WIDTH for the same job;
+        # there is no width to lean on at the foot of a page.
+        self.assertFalse(worker._NEXT_SONG_HEADING.match("10 000 angyal"))
+
+    def test_an_ordinary_lyric_is_not_a_heading(self):
+        for line in ("Szivemben beke, hala, orom dalol.", "Jezust dicserem.",
+                     "am D7 G"):
+            with self.subTest(line=line):
+                self.assertFalse(worker._NEXT_SONG_HEADING.match(line))
+
+    def test_the_app_and_the_worker_agree_on_the_pattern(self):
+        # Not a copy that happens to look right: the same characters. The Dart
+        # side is the one that ships, and a page read on one side of the wire
+        # and then on the other must get the same answer.
+        dart = (pathlib.Path(__file__).resolve().parents[1]
+                / "songbook_app" / "lib" / "domain" / "services"
+                / "photo_text_bridge.dart").read_text(encoding="utf-8")
+        self.assertIn(r"RegExp(r'^\s*\d{1,4}\s*[.):]?\s+\D')", dart)
+        self.assertEqual(r"^\s*\d{1,4}\s*[.):]?\s+\D",
+                         worker._NEXT_SONG_HEADING.pattern)
+
 class GroupRowsTests(unittest.TestCase):
 
     def test_boxes_on_one_baseline_become_one_row(self):

@@ -328,6 +328,22 @@ _TITLE_HEIGHT = 1.25
 # directive and never guesses.
 _TITLE_WIDTH = 0.6
 _NUMBER_LED = re.compile(r"^\s*\d{1,4}\s*\.?\s+\S")
+# The heading of the NEXT song, standing as the last row of the page.
+#
+# A hymnal prints one song after another down the page, so a photograph framed on
+# song 98 catches the head of song 99 at its foot.
+# `098-szivemben-orom-dalol` gives up `99. Tobb erot` as its last row - clipped
+# by the bottom edge of the image - and both arms were reading it as a lyric line
+# of song 98.
+#
+# Not `_NUMBER_LED`, deliberately, though the two look alike. That one is the
+# title test and it is paired with `_TITLE_WIDTH`, which is what keeps
+# `10 000 angyal` from becoming song 10; there is no width to lean on at the foot
+# of a page, so this carries the exclusion itself - what follows the number must
+# not be another digit. Written to match `_numberedHeading` in
+# `photo_text_bridge.dart` character for character, because the two arms have to
+# agree about what a heading is.
+_NEXT_SONG_HEADING = re.compile(r"^\s*\d{1,4}\s*[.):]?\s+\D")
 
 # EasyOCR scores every read. Below this the token is far likelier to be a stave
 # line or a slur than a word, and a wrong word costs more than a missing one.
@@ -986,6 +1002,18 @@ def _lay_out_column(boxes, titled: bool, trace=None,
         lines.append("{title: %s}" % " ".join(b.text for b in rows[0]))
         lines.append("")
         rows = rows[1:]
+
+    # The next song's heading, caught by the bottom of the frame. See
+    # [_NEXT_SONG_HEADING]. Dropped rather than warned about: what is on the page
+    # is one song and the top edge of the next, with no verse of it to import, so
+    # the two-songs sentence - which says they are side by side and that both
+    # were read - would be untrue.
+    if len(rows) > 1:
+        last_text = " ".join(b.text for b in rows[-1])
+        if (not is_chord_row([b.text for b in rows[-1]])
+                and _NEXT_SONG_HEADING.match(last_text)):
+            _log(trace, "next_song", column=column_index, dropped=last_text)
+            rows = rows[:-1]
 
     breaks = _verse_breaks(rows)
     chord_rows = 0
