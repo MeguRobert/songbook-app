@@ -1042,6 +1042,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mySubmissionsEmpty => 'You have not sent in any songs yet.';
 
   @override
+  String get menuShareSong => 'Share with the congregation';
+
+  @override
+  String get shareSongTitle => 'Share this song?';
+
+  @override
+  String shareSongBody(String title) {
+    return '“$title” goes to the moderators. It joins the shared songbook only after one of them approves it, and your copy stays on this device either way.';
+  }
+
+  @override
+  String get shareSongConfirm => 'Send';
+
+  @override
+  String get shareSongSignInTitle => 'Sign in to share';
+
+  @override
+  String get shareSongSignInBody =>
+      'Sharing needs an account, so the congregation can see who contributed the song. Your song is already saved on this device and stays there.';
+
+  @override
+  String get shareSongSent => 'Sent for review.';
+
+  @override
+  String get shareSongAlreadySent =>
+      'You have already sent this song in. It is waiting for review.';
+
+  @override
+  String get shareSongFailed =>
+      'The song could not be sent. Check your connection and try again.';
+
+  @override
   String get approve => 'Approve';
 
   @override

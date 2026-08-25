@@ -1822,6 +1822,60 @@ abstract class AppLocalizations {
   /// **'You have not sent in any songs yet.'**
   String get mySubmissionsEmpty;
 
+  /// Overflow-menu action that sends a user's own song to the moderators
+  ///
+  /// In en, this message translates to:
+  /// **'Share with the congregation'**
+  String get menuShareSong;
+
+  /// Title of the confirmation before submitting
+  ///
+  /// In en, this message translates to:
+  /// **'Share this song?'**
+  String get shareSongTitle;
+
+  /// Explains submit-then-review before the user commits
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” goes to the moderators. It joins the shared songbook only after one of them approves it, and your copy stays on this device either way.'**
+  String shareSongBody(String title);
+
+  /// Confirms the submission
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get shareSongConfirm;
+
+  /// Title shown when a signed-out user tries to share
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to share'**
+  String get shareSongSignInTitle;
+
+  /// Why an account is required to submit
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing needs an account, so the congregation can see who contributed the song. Your song is already saved on this device and stays there.'**
+  String get shareSongSignInBody;
+
+  /// Confirmation after a successful submission
+  ///
+  /// In en, this message translates to:
+  /// **'Sent for review.'**
+  String get shareSongSent;
+
+  /// Shown when the same song is already in the queue
+  ///
+  /// In en, this message translates to:
+  /// **'You have already sent this song in. It is waiting for review.'**
+  String get shareSongAlreadySent;
+
+  /// Shown when the submission call fails
+  ///
+  /// In en, this message translates to:
+  /// **'The song could not be sent. Check your connection and try again.'**
+  String get shareSongFailed;
+
   /// Accepts a submission into the shared catalogue
   ///
   /// In en, this message translates to:
