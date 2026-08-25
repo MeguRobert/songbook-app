@@ -2,8 +2,9 @@
 
 **Date:** 2026-08-22
 **Branch:** `admin-panel`
-**Status:** implemented, verified locally, **migrations deployed to production
-2026-08-25**. The Edge Function and the app itself are not deployed yet.
+**Status:** implemented, verified locally, and **deployed to production
+2026-08-25** — migrations and the `admin-users` Edge Function both. The app
+itself is not deployed: this branch is not merged to `master` yet.
 
 Read alongside `2026-08-22-admin-panel-and-roles-design.md` (the decisions) and
 `2026-08-22-admin-panel-implementation-plan.md` (the intended steps). This file
@@ -144,16 +145,30 @@ That `401` rather than `200 []` is worth noting: it is the exact signal
 20260728120200 was written to produce, confirmed in the cloud where the original
 drift was found.
 
-### Still to deploy
+### The Edge Function — DONE 2026-08-25
 
-```bash
-npx supabase functions deploy admin-users
-```
+`npx supabase functions deploy admin-users`. `SUPABASE_SERVICE_ROLE_KEY` is
+provided to deployed functions automatically and needed no setting by hand.
 
-`SUPABASE_SERVICE_ROLE_KEY` is provided to deployed functions automatically; it
-does not need setting by hand. Until this runs, `/admin/users` cannot load the
-member list — everything else works, because everything else goes through RLS
-rather than the function.
+Verified against the live endpoint:
+
+| call | result |
+|---|---|
+no `Authorization` header | HTTP 401, refused by the platform |
+publishable key, no user session | HTTP 401 `{"error":"unauthenticated"}` — our own check |
+`OPTIONS` preflight from the Pages origin | HTTP 200 |
+
+The member-gets-403 and administrator-gets-200 paths are covered by the 13 local
+checks in `verify.sh` and were NOT re-run against production, because proving
+them there means creating real accounts in the live project and leaving at least
+one behind. Worth doing by hand during the browser pass instead, with an account
+you intend to keep.
+
+### Still to deploy: the app
+
+This branch is not merged. `master` deploys to GitHub Pages on push, so merging
+is what publishes the admin panel to every visitor. The database is already
+ahead of the app, which is the safe direction.
 
 ### Order matters
 
