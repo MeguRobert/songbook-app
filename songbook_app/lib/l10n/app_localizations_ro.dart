@@ -1426,7 +1426,7 @@ class AppLocalizationsRo extends AppLocalizations {
   String get adminChange => 'Modifică';
 
   @override
-  String get adminChangeRole => 'Schimbă rolul';
+  String get adminChangeRole => 'Modifică rolul';
 
   @override
   String get adminEmailStatus => 'Adresă de e-mail';
@@ -1478,7 +1478,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get adminDeleteKeepsApproved =>
-      'Cântările deja aprobate rămân în cartea de cântări, cu numele înregistrat la trimitere. Ce este încă în așteptare sau respins se șterge.';
+      'Cântările deja aprobate rămân în cartea de cântări, cu numele înregistrat la trimitere. Cele aflate încă în așteptare sau respinse se șterg.';
 
   @override
   String adminDeleteTypeToConfirm(String address) {
@@ -1496,7 +1496,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get adminSubmissionsOpenHelp =>
-      'Oprește pentru a nu mai accepta nimic nou.';
+      'Dezactivează pentru a nu mai accepta cântări noi.';
 
   @override
   String get adminRequireConfirmedEmail => 'Cere o adresă confirmată';
@@ -1506,7 +1506,7 @@ class AppLocalizationsRo extends AppLocalizations {
       'Cine nu și-a confirmat adresa nu poate trimite cântări.';
 
   @override
-  String get adminDailyCap => 'Cântări pe zi per persoană';
+  String get adminDailyCap => 'Cântări pe persoană pe zi';
 
   @override
   String get adminDailyCapHelp =>
@@ -1535,7 +1535,7 @@ class AppLocalizationsRo extends AppLocalizations {
   }
 
   @override
-  String get publishNameTitle => 'Cum să te creditam?';
+  String get publishNameTitle => 'Ce nume să afișăm?';
 
   @override
   String get publishNameBody =>
@@ -1552,25 +1552,25 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get publishGuidelinesAgree =>
-      'Am citit și cântarea mea respectă acest lucru.';
+      'Am citit regulile și cântarea mea le respectă.';
 
   @override
   String get publishGuidelinesAccept => 'Accept și trimit';
 
   @override
-  String get publishRefusedTitle => 'Nu a fost trimis';
+  String get publishRefusedTitle => 'Nu a fost trimisă';
 
   @override
   String get publishDailyLimitBody =>
-      'Ai trimis deja atâtea cântări astăzi cât permite limita. Te rugăm să încerci mâine.';
+      'Ai trimis deja astăzi atâtea cântări câte permite limita. Te rugăm să încerci mâine.';
 
   @override
   String submittedBy(String name) {
-    return 'Trimis de $name';
+    return 'Trimisă de $name';
   }
 
   @override
   String submittedByFormerMember(String name) {
-    return 'Trimis de $name, care a plecat de atunci';
+    return 'Trimisă de $name, care a plecat de atunci';
   }
 }

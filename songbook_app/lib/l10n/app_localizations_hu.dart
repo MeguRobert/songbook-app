@@ -1407,20 +1407,20 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get adminCannotActOnSelf =>
-      'A saját szerepedet nem módosíthatod, és a saját fiókodat nem törölheted.';
+      'A saját szerepkörödet nem módosíthatod, és a saját fiókodat nem törölheted.';
 
   @override
   String get adminLastAdministrator =>
       'Legalább egy rendszergazdának lennie kell.';
 
   @override
-  String get adminRole => 'Szerep';
+  String get adminRole => 'Szerepkör';
 
   @override
   String get adminChange => 'Módosítás';
 
   @override
-  String get adminChangeRole => 'Szerep módosítása';
+  String get adminChangeRole => 'Szerepkör módosítása';
 
   @override
   String get adminEmailStatus => 'E-mail cím';
@@ -1472,11 +1472,11 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get adminDeleteKeepsApproved =>
-      'A már jóváhagyott énekek az énekeskönyvben maradnak, a beküldéskor rögzített névvel. Ami még jóváhagyásra vár vagy el lett utasítva, az törlődik.';
+      'A már jóváhagyott énekek az énekeskönyvben maradnak, a beküldéskor rögzített névvel. A jóváhagyásra váró és az elutasított énekek törlődnek.';
 
   @override
   String adminDeleteTypeToConfirm(String address) {
-    return 'Írd be a megerősítéshez: $address';
+    return 'Írd be a megerősítéshez: $address.';
   }
 
   @override
@@ -1490,7 +1490,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get adminSubmissionsOpenHelp =>
-      'Kapcsold ki, ha ideiglenesen semmit sem fogadsz be.';
+      'Kapcsold ki, ha átmenetileg nem szeretnél új énekeket fogadni.';
 
   @override
   String get adminRequireConfirmedEmail => 'Megerősített cím kötelező';
@@ -1504,7 +1504,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get adminDailyCapHelp =>
-      'Korlátozza, milyen gyorsan tölthet meg egy fiók a listát.';
+      'Korlátozza, hogy egy fiók milyen gyorsan töltheti meg a listát.';
 
   @override
   String get adminGuidelinesSection => 'Beküldési szabályok';
@@ -1521,7 +1521,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get publishClosedBody =>
-      'Jelenleg nem fogadunk be új énekeket. Az éneked továbbra is el van mentve ezen az eszközön.';
+      'Jelenleg nem fogadunk el új énekeket. Az éneked továbbra is el van mentve ezen az eszközön.';
 
   @override
   String publishConfirmEmailBody(String email) {
@@ -1529,11 +1529,11 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get publishNameTitle => 'Kinek tulajdonítsuk?';
+  String get publishNameTitle => 'Milyen néven tüntessünk fel?';
 
   @override
   String get publishNameBody =>
-      'A neved megjelenik az ének mellett, hogy a gyülekezet látja, ki hozta.';
+      'A neved megjelenik az ének mellett, hogy a gyülekezet lássa, ki hozta.';
 
   @override
   String get publishNameLabel => 'Név';
@@ -1546,7 +1546,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get publishGuidelinesAgree =>
-      'Elolvastam, és az énekem megfelel ennek.';
+      'Elolvastam, és az énekem megfelel a szabályoknak.';
 
   @override
   String get publishGuidelinesAccept => 'Elfogadom és elküldöm';
@@ -1565,6 +1565,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String submittedByFormerMember(String name) {
-    return 'Beküldte: $name, aki azóta elhagyta a gyülekezetet';
+    return 'Beküldte: $name — a fiókja azóta megszűnt';
   }
 }
