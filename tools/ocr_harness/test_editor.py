@@ -127,9 +127,27 @@ class Serving(unittest.TestCase):
 
     def test_a_photograph_the_manifest_lists_is_served(self):
         listed = gold.pages()[0].file
+        if not (gold.PHOTOS / listed).is_file():
+            # The corpus is gitignored — this repo is public and the pages are
+            # a copyrighted hymnal — so on CI, and on any machine that did not
+            # take the photographs, the manifest lists files that are not here.
+            # The absent case is covered by the test below rather than left to
+            # fail as if the server were broken.
+            self.skipTest(f"{listed} is not on this machine")
         status, body = self.get("/photos/" + listed)
         self.assertEqual(200, status)
         self.assertTrue(body)
+
+    def test_a_photograph_the_manifest_lists_but_this_machine_lacks_is_404(self):
+        # Not a hypothetical: it is the state of every checkout that did not
+        # take the photographs. It used to raise inside the handler and drop the
+        # connection, so the client saw a disconnect rather than a reason.
+        listed = gold.pages()[0].file
+        if (gold.PHOTOS / listed).is_file():
+            self.skipTest(f"{listed} is on this machine")
+        status, body = self.get("/photos/" + listed)
+        self.assertEqual(404, status)
+        self.assertIn(b"photograph not on this machine", body)
 
     def test_a_path_the_manifest_does_not_list_is_refused(self):
         # The name is checked against the manifest rather than sanitised, so
