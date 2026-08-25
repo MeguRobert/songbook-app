@@ -18,17 +18,34 @@ select plan(26);
 -- ---------------------------------------------------------------------------
 -- Fixtures: two ordinary users and one admin.
 -- ---------------------------------------------------------------------------
-insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
+-- `email_confirmed_at` is set because since 20260822120500 an unconfirmed
+-- address cannot submit. These fixtures are about WHO MAY SEE AND DECIDE what
+-- has been submitted, so they need submitters who are eligible to submit at all;
+-- submission_gate_test.sql is where eligibility itself is tested.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+                        email_confirmed_at, created_at, updated_at)
 values
   ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'alice@example.test', '', now(), now()),
+   'authenticated', 'authenticated', 'alice@example.test', '', now(), now(), now()),
   ('22222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'bob@example.test', '', now(), now()),
+   'authenticated', 'authenticated', 'bob@example.test', '', now(), now(), now()),
   ('33333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'admin@example.test', '', now(), now());
+   'authenticated', 'authenticated', 'admin@example.test', '', now(), now(), now());
 
-insert into public.user_roles (user_id, role) values
-  ('33333333-3333-3333-3333-333333333333', 'admin');
+-- Likewise a name to credit and an accepted set of guidelines, both now required
+-- of a submitter.
+update public.profiles set display_name = 'Alice', guidelines_accepted_at = now()
+  where id = '11111111-1111-1111-1111-111111111111';
+update public.profiles set display_name = 'Bob', guidelines_accepted_at = now()
+  where id = '22222222-2222-2222-2222-222222222222';
+
+-- UPDATE, not INSERT: since 20260822120100 a trigger on auth.users provisions a
+-- 'member' role row for every new account, so inserting here collides on the
+-- primary key. The role is also named 'administrator' now that the ladder in
+-- 20260822120000 has ranks -- 'admin' was retired. Every assertion below is
+-- unchanged; this is the fixture catching up with the schema.
+update public.user_roles set role = 'administrator'
+  where user_id = '33333333-3333-3333-3333-333333333333';
 
 -- Alice's song, submitted for review but NOT approved. originalKey and the
 -- verses live inside `payload` -- there is deliberately no column for them.

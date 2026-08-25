@@ -1302,4 +1302,254 @@ class AppLocalizationsEn extends AppLocalizations {
   String importNoticePhotoGermanNoteNames(String text) {
     return '$text will be stored under the English name (H is B natural). The app keeps one spelling per pitch so transposing stays exact.';
   }
+
+  @override
+  String get roleMember => 'Member';
+
+  @override
+  String get roleModerator => 'Moderator';
+
+  @override
+  String get roleAdministrator => 'Administrator';
+
+  @override
+  String get roleMemberDescription =>
+      'Can read the songbook and offer songs for review.';
+
+  @override
+  String get roleModeratorDescription =>
+      'Can approve or turn down submissions, and correct any song.';
+
+  @override
+  String get roleAdministratorDescription =>
+      'Everything a moderator can do, plus managing accounts and settings.';
+
+  @override
+  String get adminTitle => 'Administration';
+
+  @override
+  String get adminNotPermitted => 'This area is for administrators.';
+
+  @override
+  String get adminUsersTitle => 'Members';
+
+  @override
+  String get adminUserTitle => 'Member';
+
+  @override
+  String get adminUserGone => 'This account no longer exists.';
+
+  @override
+  String get adminSettingsTitle => 'Contribution settings';
+
+  @override
+  String get adminSettingsSubtitle =>
+      'Who may submit, and the rules they accept';
+
+  @override
+  String adminWaitingCount(String count) {
+    return '$count waiting for review';
+  }
+
+  @override
+  String adminMemberCount(String count) {
+    return '$count accounts';
+  }
+
+  @override
+  String get adminSubmissionsClosedNotice =>
+      'Submissions are closed. Nobody can offer a song.';
+
+  @override
+  String get adminReopen => 'Open';
+
+  @override
+  String get adminSearchUsers => 'Search by name or address';
+
+  @override
+  String get adminFilterAll => 'All';
+
+  @override
+  String get adminInvite => 'Invite someone';
+
+  @override
+  String get adminSendInvite => 'Send invitation';
+
+  @override
+  String get adminInviteSent => 'Invitation sent.';
+
+  @override
+  String get adminUsersUnavailable => 'The member list could not be loaded.';
+
+  @override
+  String get adminNoMatchingUsers => 'Nobody matches that.';
+
+  @override
+  String get adminActionDone => 'Done.';
+
+  @override
+  String get adminActionFailed => 'That did not work.';
+
+  @override
+  String get adminCannotActOnSelf =>
+      'You cannot change your own role or delete your own account.';
+
+  @override
+  String get adminLastAdministrator =>
+      'There has to be at least one administrator.';
+
+  @override
+  String get adminRole => 'Role';
+
+  @override
+  String get adminChange => 'Change';
+
+  @override
+  String get adminChangeRole => 'Change role';
+
+  @override
+  String get adminEmailStatus => 'Email address';
+
+  @override
+  String get adminEmailConfirmed => 'Confirmed';
+
+  @override
+  String get adminEmailUnconfirmed => 'Not confirmed';
+
+  @override
+  String get adminGuidelinesStatus => 'Contribution guidelines';
+
+  @override
+  String get adminGuidelinesAccepted => 'Accepted';
+
+  @override
+  String get adminGuidelinesNotAccepted => 'Not accepted yet';
+
+  @override
+  String get adminLastSignIn => 'Last signed in';
+
+  @override
+  String get adminNeverSignedIn => 'never signed in';
+
+  @override
+  String get adminSubmissions => 'Submitted songs';
+
+  @override
+  String adminTallyApproved(int count) {
+    return '$count approved';
+  }
+
+  @override
+  String adminTallyPending(int count) {
+    return '$count waiting';
+  }
+
+  @override
+  String adminTallyRejected(int count) {
+    return '$count turned down';
+  }
+
+  @override
+  String get adminDeleteAccount => 'Delete this account';
+
+  @override
+  String get adminDeleteWarning => 'This cannot be undone.';
+
+  @override
+  String get adminDeleteKeepsApproved =>
+      'Songs already approved stay in the songbook, credited to the name recorded when they were submitted. Anything still waiting or turned down is removed.';
+
+  @override
+  String adminDeleteTypeToConfirm(String address) {
+    return 'Type $address to confirm.';
+  }
+
+  @override
+  String get adminDeletePermanently => 'Delete permanently';
+
+  @override
+  String get adminSubmissionsSection => 'Submissions';
+
+  @override
+  String get adminSubmissionsOpen => 'Accept new songs';
+
+  @override
+  String get adminSubmissionsOpenHelp =>
+      'Turn this off to stop accepting anything new, without a redeploy.';
+
+  @override
+  String get adminRequireConfirmedEmail => 'Require a confirmed address';
+
+  @override
+  String get adminRequireConfirmedEmailHelp =>
+      'Someone who has not confirmed their email cannot submit.';
+
+  @override
+  String get adminDailyCap => 'Songs per person per day';
+
+  @override
+  String get adminDailyCapHelp =>
+      'A limit on how fast one account can fill the queue.';
+
+  @override
+  String get adminGuidelinesSection => 'Contribution guidelines';
+
+  @override
+  String get adminGuidelinesHelp =>
+      'Everyone reads this and ticks it once, before their first submission.';
+
+  @override
+  String get actionOk => 'OK';
+
+  @override
+  String get publishClosedTitle => 'Submissions are closed';
+
+  @override
+  String get publishClosedBody =>
+      'New songs are not being accepted at the moment. Your song is still saved on this device.';
+
+  @override
+  String publishConfirmEmailBody(String email) {
+    return 'Confirm your email address first. We sent a link to $email.';
+  }
+
+  @override
+  String get publishNameTitle => 'How should we credit you?';
+
+  @override
+  String get publishNameBody =>
+      'Your name is shown next to the song, so the congregation can see who brought it.';
+
+  @override
+  String get publishNameLabel => 'Name';
+
+  @override
+  String get publishNameRequired => 'Please give a name.';
+
+  @override
+  String get publishGuidelinesTitle => 'Before you send it';
+
+  @override
+  String get publishGuidelinesAgree =>
+      'I have read this and my song follows it.';
+
+  @override
+  String get publishGuidelinesAccept => 'Agree and send';
+
+  @override
+  String get publishRefusedTitle => 'Not sent';
+
+  @override
+  String get publishDailyLimitBody =>
+      'You have already sent as many songs today as the limit allows. Please try again tomorrow.';
+
+  @override
+  String submittedBy(String name) {
+    return 'Submitted by $name';
+  }
+
+  @override
+  String submittedByFormerMember(String name) {
+    return 'Submitted by $name, who has since left';
+  }
 }

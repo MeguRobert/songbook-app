@@ -8,8 +8,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'data/datasources/remote/remote_song_datasource.dart';
 import 'data/datasources/remote/supabase_config.dart';
+import 'data/repositories/admin_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/submission_repository.dart';
+import 'presentation/providers/admin_provider.dart';
 import 'presentation/providers/providers.dart';
 
 void main() async {
@@ -39,6 +41,7 @@ void main() async {
   RemoteSongDataSource? remoteSongs;
   AuthRepository? auth;
   SubmissionRepository? submissions;
+  AdminRepository? admin;
   try {
     await Supabase.initialize(
       url: SupabaseConfig.url,
@@ -47,6 +50,7 @@ void main() async {
     remoteSongs = RemoteSongDataSource(Supabase.instance.client);
     auth = AuthRepository(Supabase.instance.client.auth);
     submissions = SubmissionRepository(Supabase.instance.client);
+    admin = AdminRepository(Supabase.instance.client);
   } catch (error, stack) {
     // Worth reporting in debug, not worth interrupting anyone's use of the app.
     debugPrint('Supabase init failed; using bundled catalogue only: $error');
@@ -54,6 +58,7 @@ void main() async {
     remoteSongs = null;
     auth = null;
     submissions = null;
+    admin = null;
   }
 
   // Run the app with Riverpod
@@ -65,6 +70,7 @@ void main() async {
         remoteSongDataSourceProvider.overrideWithValue(remoteSongs),
         authRepositoryProvider.overrideWithValue(auth),
         submissionRepositoryProvider.overrideWithValue(submissions),
+        adminRepositoryProvider.overrideWithValue(admin),
       ],
       child: const SongbookApp(),
     ),

@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/view_config.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../router/app_router.dart';
+import '../../providers/admin_provider.dart';
 import '../../providers/app_info_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/providers.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/content_pane.dart';
+import '../admin/role_label.dart';
 import '../auth/auth_screen.dart';
-import '../moderation/moderation_queue_screen.dart';
-import '../moderation/my_submissions_screen.dart';
 
 /// Settings screen
 class SettingsScreen extends ConsumerWidget {
@@ -61,22 +63,28 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.outbox_outlined),
             title: Text(l10n.mySubmissionsTitle),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MySubmissionsScreen()),
-            ),
+            // A real route now, rather than a MaterialPageRoute push. On web the
+            // unrouted version had no address at all, so it could not be
+            // bookmarked, reloaded or backed out of with the browser button.
+            onTap: () => context.push(AppRoutes.mySubmissions),
           ),
-          // Moderation appears only for an admin. This hides the entry; it is
-          // not what stops anyone else deciding anything — RLS and the status
-          // trigger do that, server-side, on every write.
-          ref.watch(isAdminProvider).maybeWhen(
-                data: (isAdmin) => isAdmin
+          // Administration appears from Moderator up. This hides the entry; it
+          // is not what stops anyone else deciding anything — RLS, the status
+          // trigger, and the Edge Function's own rank check do that, server-side,
+          // on every write. AdminGate re-asks on arrival, and each screen inside
+          // asks for the rank it actually needs.
+          ref.watch(currentRoleProvider).maybeWhen(
+                data: (role) => role.canModerate
                     ? ListTile(
-                        leading: const Icon(Icons.rule),
-                        title: Text(l10n.moderationQueueTitle),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const ModerationQueueScreen(),
-                          ),
+                        leading: const Icon(Icons.admin_panel_settings_outlined),
+                        title: Text(l10n.adminTitle),
+                        subtitle: Text(roleLabel(l10n, role)),
+                        onTap: () => context.push(
+                          // A moderator has nothing to do on the overview but
+                          // look at the queue, so send them straight to it.
+                          role.isAdministrator
+                              ? AppRoutes.admin
+                              : AppRoutes.adminQueue,
                         ),
                       )
                     : const SizedBox.shrink(),

@@ -13,6 +13,13 @@ import '../presentation/screens/setlists/setlist_detail_screen.dart';
 import '../presentation/screens/import/import_song_screen.dart';
 import '../presentation/screens/notation_editor/notation_editor_screen.dart';
 import '../presentation/screens/presentation/presentation_screen.dart';
+import '../presentation/screens/admin/admin_gate.dart';
+import '../presentation/screens/admin/admin_overview_screen.dart';
+import '../presentation/screens/admin/admin_settings_screen.dart';
+import '../presentation/screens/admin/admin_user_detail_screen.dart';
+import '../presentation/screens/admin/admin_users_screen.dart';
+import '../presentation/screens/moderation/moderation_queue_screen.dart';
+import '../presentation/screens/moderation/my_submissions_screen.dart';
 import '../presentation/widgets/scaffold_with_nav_bar.dart';
 
 /// Route paths
@@ -43,6 +50,27 @@ class AppRoutes {
   /// Retired: search is now part of [home]. Kept so bookmarks and the old
   /// `?tag=` deep link land somewhere sensible instead of the error page.
   static const search = '/search';
+
+  /// Administration.
+  ///
+  /// Outside the bottom-bar shell for the same reason [importSong] is: a focused
+  /// task area, not a congregation-facing destination competing for a tab.
+  ///
+  /// These are real paths rather than the bare `MaterialPageRoute` pushes the
+  /// moderation screens used to get from Settings. On a web app an unrouted
+  /// screen has no address at all — no bookmark, no reload, no back button — and
+  /// the queue is exactly the screen somebody wants to keep open in a tab.
+  static const admin = '/admin';
+  static const adminQueue = '/admin/queue';
+  static const adminUsers = '/admin/users';
+  static const adminUser = '/admin/users/:id';
+  static const adminSettings = '/admin/settings';
+
+  /// A contributor's own submissions. Not administration, but it was pushed
+  /// unrouted alongside the queue and had the same problem.
+  static const mySubmissions = '/my-submissions';
+
+  static String adminUserPath(String userId) => '/admin/users/$userId';
 
   static String songPath(SongId id) => '/song/${id.value}';
   static String editSongPath(SongId id) => '/song/${id.value}/edit';
@@ -133,6 +161,60 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.home}) {
         path: AppRoutes.importSong,
         name: 'importSong',
         builder: (context, state) => const ImportSongScreen(),
+      ),
+      // Administration. Every screen is wrapped in AdminGate, which is a widget
+      // rather than a `redirect` on purpose — see admin_gate.dart. The short
+      // version: the rank arrives asynchronously, go_router does not re-run
+      // `redirect` when a provider settles, and a guard that reads
+      // not-yet-known as denied bounces an administrator off their own
+      // bookmarked /admin on every cold load.
+      GoRoute(
+        path: AppRoutes.admin,
+        name: 'admin',
+        builder: (context, state) =>
+            const AdminGate(child: AdminOverviewScreen()),
+        routes: [
+          GoRoute(
+            path: 'queue',
+            name: 'adminQueue',
+            // needsAdmin: false — reviewing is a moderator's job, and the queue
+            // is the one screen in here they are meant to reach.
+            builder: (context, state) => const AdminGate(
+              needsAdmin: false,
+              child: ModerationQueueScreen(),
+            ),
+          ),
+          GoRoute(
+            path: 'users',
+            name: 'adminUsers',
+            builder: (context, state) =>
+                const AdminGate(child: AdminUsersScreen()),
+            routes: [
+              GoRoute(
+                path: ':id',
+                name: 'adminUser',
+                builder: (context, state) => AdminGate(
+                  child: AdminUserDetailScreen(
+                    userId: state.pathParameters['id'] ?? '',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'settings',
+            name: 'adminSettings',
+            builder: (context, state) =>
+                const AdminGate(child: AdminSettingsScreen()),
+          ),
+        ],
+      ),
+      // A contributor's own submissions. Ungated: it shows only your own rows,
+      // which is what RLS permits you to see anyway.
+      GoRoute(
+        path: AppRoutes.mySubmissions,
+        name: 'mySubmissions',
+        builder: (context, state) => const MySubmissionsScreen(),
       ),
       // Song view route (outside shell for full-screen)
       GoRoute(

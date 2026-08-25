@@ -2151,6 +2151,438 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{text} will be stored under the English name (H is B natural). The app keeps one spelling per pitch so transposing stays exact.'**
   String importNoticePhotoGermanNoteNames(String text);
+
+  /// Role name shown to users. One of three; see the roles table.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get roleMember;
+
+  /// No description provided for @roleModerator.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderator'**
+  String get roleModerator;
+
+  /// No description provided for @roleAdministrator.
+  ///
+  /// In en, this message translates to:
+  /// **'Administrator'**
+  String get roleAdministrator;
+
+  /// No description provided for @roleMemberDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Can read the songbook and offer songs for review.'**
+  String get roleMemberDescription;
+
+  /// No description provided for @roleModeratorDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Can approve or turn down submissions, and correct any song.'**
+  String get roleModeratorDescription;
+
+  /// No description provided for @roleAdministratorDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything a moderator can do, plus managing accounts and settings.'**
+  String get roleAdministratorDescription;
+
+  /// No description provided for @adminTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Administration'**
+  String get adminTitle;
+
+  /// Shown when a non-administrator opens an /admin URL
+  ///
+  /// In en, this message translates to:
+  /// **'This area is for administrators.'**
+  String get adminNotPermitted;
+
+  /// No description provided for @adminUsersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get adminUsersTitle;
+
+  /// No description provided for @adminUserTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get adminUserTitle;
+
+  /// No description provided for @adminUserGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This account no longer exists.'**
+  String get adminUserGone;
+
+  /// No description provided for @adminSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution settings'**
+  String get adminSettingsTitle;
+
+  /// No description provided for @adminSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who may submit, and the rules they accept'**
+  String get adminSettingsSubtitle;
+
+  /// Number waiting, or an em dash while loading
+  ///
+  /// In en, this message translates to:
+  /// **'{count} waiting for review'**
+  String adminWaitingCount(String count);
+
+  /// Number of accounts, or an em dash while loading
+  ///
+  /// In en, this message translates to:
+  /// **'{count} accounts'**
+  String adminMemberCount(String count);
+
+  /// No description provided for @adminSubmissionsClosedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions are closed. Nobody can offer a song.'**
+  String get adminSubmissionsClosedNotice;
+
+  /// No description provided for @adminReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get adminReopen;
+
+  /// No description provided for @adminSearchUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or address'**
+  String get adminSearchUsers;
+
+  /// No description provided for @adminFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get adminFilterAll;
+
+  /// No description provided for @adminInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite someone'**
+  String get adminInvite;
+
+  /// No description provided for @adminSendInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Send invitation'**
+  String get adminSendInvite;
+
+  /// No description provided for @adminInviteSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation sent.'**
+  String get adminInviteSent;
+
+  /// No description provided for @adminUsersUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The member list could not be loaded.'**
+  String get adminUsersUnavailable;
+
+  /// No description provided for @adminNoMatchingUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody matches that.'**
+  String get adminNoMatchingUsers;
+
+  /// No description provided for @adminActionDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done.'**
+  String get adminActionDone;
+
+  /// No description provided for @adminActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That did not work.'**
+  String get adminActionFailed;
+
+  /// No description provided for @adminCannotActOnSelf.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot change your own role or delete your own account.'**
+  String get adminCannotActOnSelf;
+
+  /// No description provided for @adminLastAdministrator.
+  ///
+  /// In en, this message translates to:
+  /// **'There has to be at least one administrator.'**
+  String get adminLastAdministrator;
+
+  /// No description provided for @adminRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get adminRole;
+
+  /// No description provided for @adminChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get adminChange;
+
+  /// No description provided for @adminChangeRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Change role'**
+  String get adminChangeRole;
+
+  /// No description provided for @adminEmailStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get adminEmailStatus;
+
+  /// No description provided for @adminEmailConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get adminEmailConfirmed;
+
+  /// No description provided for @adminEmailUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not confirmed'**
+  String get adminEmailUnconfirmed;
+
+  /// No description provided for @adminGuidelinesStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution guidelines'**
+  String get adminGuidelinesStatus;
+
+  /// No description provided for @adminGuidelinesAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get adminGuidelinesAccepted;
+
+  /// No description provided for @adminGuidelinesNotAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not accepted yet'**
+  String get adminGuidelinesNotAccepted;
+
+  /// No description provided for @adminLastSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Last signed in'**
+  String get adminLastSignIn;
+
+  /// No description provided for @adminNeverSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'never signed in'**
+  String get adminNeverSignedIn;
+
+  /// No description provided for @adminSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted songs'**
+  String get adminSubmissions;
+
+  /// How many of this member's songs were approved
+  ///
+  /// In en, this message translates to:
+  /// **'{count} approved'**
+  String adminTallyApproved(int count);
+
+  /// How many are still waiting
+  ///
+  /// In en, this message translates to:
+  /// **'{count} waiting'**
+  String adminTallyPending(int count);
+
+  /// How many were turned down
+  ///
+  /// In en, this message translates to:
+  /// **'{count} turned down'**
+  String adminTallyRejected(int count);
+
+  /// No description provided for @adminDeleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this account'**
+  String get adminDeleteAccount;
+
+  /// No description provided for @adminDeleteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get adminDeleteWarning;
+
+  /// Explains what survives deleting an account
+  ///
+  /// In en, this message translates to:
+  /// **'Songs already approved stay in the songbook, credited to the name recorded when they were submitted. Anything still waiting or turned down is removed.'**
+  String get adminDeleteKeepsApproved;
+
+  /// The address the administrator must retype
+  ///
+  /// In en, this message translates to:
+  /// **'Type {address} to confirm.'**
+  String adminDeleteTypeToConfirm(String address);
+
+  /// No description provided for @adminDeletePermanently.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete permanently'**
+  String get adminDeletePermanently;
+
+  /// No description provided for @adminSubmissionsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions'**
+  String get adminSubmissionsSection;
+
+  /// No description provided for @adminSubmissionsOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept new songs'**
+  String get adminSubmissionsOpen;
+
+  /// No description provided for @adminSubmissionsOpenHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn this off to stop accepting anything new, without a redeploy.'**
+  String get adminSubmissionsOpenHelp;
+
+  /// No description provided for @adminRequireConfirmedEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Require a confirmed address'**
+  String get adminRequireConfirmedEmail;
+
+  /// No description provided for @adminRequireConfirmedEmailHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone who has not confirmed their email cannot submit.'**
+  String get adminRequireConfirmedEmailHelp;
+
+  /// No description provided for @adminDailyCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs per person per day'**
+  String get adminDailyCap;
+
+  /// No description provided for @adminDailyCapHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'A limit on how fast one account can fill the queue.'**
+  String get adminDailyCapHelp;
+
+  /// No description provided for @adminGuidelinesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution guidelines'**
+  String get adminGuidelinesSection;
+
+  /// No description provided for @adminGuidelinesHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone reads this and ticks it once, before their first submission.'**
+  String get adminGuidelinesHelp;
+
+  /// No description provided for @actionOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get actionOk;
+
+  /// No description provided for @publishClosedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions are closed'**
+  String get publishClosedTitle;
+
+  /// Reassures the contributor their work is not lost
+  ///
+  /// In en, this message translates to:
+  /// **'New songs are not being accepted at the moment. Your song is still saved on this device.'**
+  String get publishClosedBody;
+
+  /// The address the confirmation link went to
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your email address first. We sent a link to {email}.'**
+  String publishConfirmEmailBody(String email);
+
+  /// No description provided for @publishNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How should we credit you?'**
+  String get publishNameTitle;
+
+  /// No description provided for @publishNameBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name is shown next to the song, so the congregation can see who brought it.'**
+  String get publishNameBody;
+
+  /// No description provided for @publishNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get publishNameLabel;
+
+  /// No description provided for @publishNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please give a name.'**
+  String get publishNameRequired;
+
+  /// No description provided for @publishGuidelinesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you send it'**
+  String get publishGuidelinesTitle;
+
+  /// No description provided for @publishGuidelinesAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read this and my song follows it.'**
+  String get publishGuidelinesAgree;
+
+  /// No description provided for @publishGuidelinesAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree and send'**
+  String get publishGuidelinesAccept;
+
+  /// No description provided for @publishRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent'**
+  String get publishRefusedTitle;
+
+  /// No description provided for @publishDailyLimitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have already sent as many songs today as the limit allows. Please try again tomorrow.'**
+  String get publishDailyLimitBody;
+
+  /// The frozen name recorded when the song was submitted
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted by {name}'**
+  String submittedBy(String name);
+
+  /// The frozen name of a deleted account
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted by {name}, who has since left'**
+  String submittedByFormerMember(String name);
 }
 
 class _AppLocalizationsDelegate

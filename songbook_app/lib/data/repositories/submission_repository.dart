@@ -23,8 +23,15 @@ class SubmissionRepository {
   SubmissionRepository(this._client);
 
   /// Columns needed to render a submission. `payload` carries the song itself.
+  ///
+  /// `submitted_by_name` and `owner_id` are here for attribution: the first is
+  /// the frozen name to credit, the second only to tell whether the account
+  /// still exists. The address is deliberately NOT selected -- a moderator needs
+  /// to know who submitted a song, not how to email them, and `profiles` carries
+  /// no address anyway.
   static const _columns =
-      'id, status, rejection_reason, submitted_at, number, title, payload';
+      'id, status, rejection_reason, submitted_at, number, title, payload, '
+      'submitted_by_name, owner_id';
 
   /// Whether the signed-in user may moderate.
   ///

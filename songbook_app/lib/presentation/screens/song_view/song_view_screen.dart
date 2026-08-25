@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../../data/models/notation.dart';
 import '../../../data/models/song.dart';
 import '../../../data/models/song_id.dart';
-import '../../../data/models/submission.dart';
 import '../../../data/models/view_config.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../domain/services/chord_sheet_exporter.dart';
@@ -16,11 +15,11 @@ import '../../providers/autoscroll_provider.dart';
 import '../../providers/book_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/providers.dart';
+import '../import/publish_flow.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/song_provider.dart';
 import '../../providers/setlist_provider.dart';
 import '../../../router/app_router.dart';
-import '../auth/auth_screen.dart';
 import 'widgets/chord_view.dart';
 import 'widgets/song_controls_sheet.dart';
 import 'widgets/sheet_music_view.dart';
@@ -311,94 +310,19 @@ class _SongViewScreenState extends ConsumerState<SongViewScreen>
   /// enters `public.songs` as `pending` and reaches the shared songbook only
   /// when a moderator approves it. The device's own copy is untouched — sharing
   /// gives the song a second home rather than moving it — which is also why
-  /// none of the stops below has to preserve anything before it navigates.
+  /// none of the stops has to preserve anything before it navigates.
+  ///
+  /// The stops themselves live in [PublishFlow], because there are five of them
+  /// now and they are shared with nothing else: submissions can be closed, an
+  /// address may be unconfirmed, a contributor needs a name to be credited as,
+  /// and the guidelines have to have been accepted. Each of those is also a
+  /// database rule, so a flow that only asked about signing in would leave the
+  /// other four to fail as an unexplained refusal.
   Future<void> _shareSong(Song song) async {
-    final l10n = AppLocalizations.of(context);
-    final repository = ref.read(submissionRepositoryProvider);
     // The menu item is hidden without a backend; this is the guard, not a path
     // the interface offers.
-    if (repository == null) return;
-
-    if (!ref.read(isSignedInProvider)) {
-      final wantsToSignIn = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(l10n.shareSongSignInTitle),
-          content: Text(l10n.shareSongSignInBody),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(l10n.actionCancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(l10n.signIn),
-            ),
-          ],
-        ),
-      );
-      if (wantsToSignIn != true || !mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const AuthScreen()),
-      );
-      // The auth screen reports no verdict of its own and can be abandoned, so
-      // ask the provider what actually happened rather than trusting the pop.
-      if (!mounted || !ref.read(isSignedInProvider)) return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.shareSongTitle),
-        content: Text(l10n.shareSongBody(song.title)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.actionCancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.shareSongConfirm),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    try {
-      // Asked at the moment of sending rather than when the menu was built. The
-      // queue is shared state: the same song sent from another device is not in
-      // anything this screen holds, and a second pending row for one hymn is a
-      // moderator's problem rather than this user's.
-      final sent = await repository.mySubmissions();
-      final already = sent.any((submission) =>
-          submission.status != SubmissionStatus.rejected &&
-          submission.song.number == song.number &&
-          submission.song.title == song.title);
-      if (!mounted) return;
-      if (already) {
-        _showShareResult(l10n.shareSongAlreadySent);
-        return;
-      }
-      await repository.submit(song);
-      if (!mounted) return;
-      // So "Songs I sent in" shows it without a manual refresh.
-      ref.invalidate(mySubmissionsProvider);
-      _showShareResult(l10n.shareSongSent);
-    } catch (_) {
-      // Deliberately one message for every failure. The server-side gate is the
-      // authority here and it can refuse for reasons this build has no vocabulary
-      // for yet — submissions closed, a daily cap — so guessing at a specific
-      // cause would be worse than saying plainly that it did not go.
-      if (!mounted) return;
-      _showShareResult(l10n.shareSongFailed);
-    }
-  }
-
-  void _showShareResult(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
-    );
+    if (ref.read(submissionRepositoryProvider) == null) return;
+    await PublishFlow(ref: ref, context: context).run(song);
   }
 
   /// Deletes this user song, after asking.

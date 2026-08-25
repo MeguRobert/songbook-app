@@ -41,11 +41,28 @@ const _localised = [
   'lib/presentation/screens/song_view/widgets/chord_view.dart',
   'lib/presentation/screens/song_view/widgets/sheet_music_view.dart',
   'lib/router/app_router.dart',
+  'lib/presentation/screens/admin/admin_gate.dart',
+  'lib/presentation/screens/admin/admin_overview_screen.dart',
+  'lib/presentation/screens/admin/admin_users_screen.dart',
+  'lib/presentation/screens/admin/admin_user_detail_screen.dart',
+  'lib/presentation/screens/admin/admin_settings_screen.dart',
+  'lib/presentation/screens/admin/role_label.dart',
+  'lib/presentation/screens/import/publish_flow.dart',
+  'lib/presentation/screens/moderation/moderation_queue_screen.dart',
+  'lib/presentation/screens/moderation/my_submissions_screen.dart',
 ];
 
 /// Literals that are not interface text, with the reason each is here.
 const _allowed = <String>{
   'Songbook App', // package description in a doc comment
+  // Language names labelling the three guidelines boxes in admin settings.
+  // Deliberately NOT translated: each labels a field holding that language's own
+  // text, so it is an endonym — a Hungarian speaker looks for "Magyar", not
+  // "Hungarian". Translating them would make the label change language while the
+  // box underneath it did not.
+  'Magyar',
+  'Română',
+  'English',
 };
 
 /// Widget slots that put a string in front of the user.
