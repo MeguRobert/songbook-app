@@ -2,7 +2,8 @@
 
 **Date:** 2026-08-22
 **Branch:** `admin-panel`
-**Status:** implemented and verified locally. **Not deployed.**
+**Status:** implemented, verified locally, **migrations deployed to production
+2026-08-25**. The Edge Function and the app itself are not deployed yet.
 
 Read alongside `2026-08-22-admin-panel-and-roles-design.md` (the decisions) and
 `2026-08-22-admin-panel-implementation-plan.md` (the intended steps). This file
@@ -124,16 +125,35 @@ no in-app path to the first administrator, which is true in general and wrong
 here: migration `20260822120000` rewrites `role = 'admin'` to `'administrator'`,
 and the one existing row is yours. You come out of the push as the Administrator.
 
-### The push
+### The push — DONE 2026-08-25
+
+`npx supabase db push` applied all 8 migrations to `sjsgrxvebzsuubebbfwx`.
+Verified against the live project afterwards:
+
+| check | result |
+|---|---|
+`app_settings` read as `anon` | the seeded Hungarian guidelines come back |
+`user_roles` read as `anon` | **HTTP 401**, not `200 []` |
+`admin_audit` read as `anon` | HTTP 401 |
+`roles` | member 10, moderator 50, administrator 90 |
+`can_moderate()` signed out | false |
+`songs` | all 8 hymnal rows intact |
+`user_roles` | the existing row is now `administrator`; a second account was backfilled as `member` |
+
+That `401` rather than `200 []` is worth noting: it is the exact signal
+20260728120200 was written to produce, confirmed in the cloud where the original
+drift was found.
+
+### Still to deploy
 
 ```bash
-cd <this worktree>
-npx supabase db push          # 8 migrations, dry-run verified
 npx supabase functions deploy admin-users
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` is provided to deployed functions automatically; it
-does not need setting by hand.
+does not need setting by hand. Until this runs, `/admin/users` cannot load the
+member list — everything else works, because everything else goes through RLS
+rather than the function.
 
 ### Order matters
 
