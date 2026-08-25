@@ -1312,6 +1312,17 @@ class AppLocalizationsRo extends AppLocalizations {
   }
 
   @override
+  String importNoticePhotoLowercaseCRaised(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count acorduri au fost citite ca un c mic și stocate ca do major (C). În tipar, C și c au aceeași formă la două dimensiuni, așa că unul mic este aproape întotdeauna o majusculă căreia cititorul i-a greșit dimensiunea — dacă pagina înseamnă într-adevăr minorul, scrie Cm.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get roleMember => 'Membru';
 
   @override

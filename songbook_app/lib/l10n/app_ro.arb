@@ -342,6 +342,7 @@
   "importNoticePhotoNoChords": "Nu am recunoscut niciun acord — au fost importate doar versurile.",
   "importNoticePhotoNothingLegible": "Nu am găsit nimic lizibil în fotografia aceasta.",
   "importNoticePhotoGermanNoteNames": "{text} va fi stocat sub denumirea engleză (H este si natural). Aplicația păstrează o singură scriere pentru fiecare notă, ca transpunerea să rămână exactă.",
+  "importNoticePhotoLowercaseCRaised": "{count, plural, other{{count} acorduri au fost citite ca un c mic și stocate ca do major (C). În tipar, C și c au aceeași formă la două dimensiuni, așa că unul mic este aproape întotdeauna o majusculă căreia cititorul i-a greșit dimensiunea — dacă pagina înseamnă într-adevăr minorul, scrie Cm.}}",
   "roleMember": "Membru",
   "roleModerator": "Moderator",
   "roleAdministrator": "Administrator",

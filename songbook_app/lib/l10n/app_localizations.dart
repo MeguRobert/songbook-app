@@ -2152,6 +2152,12 @@ abstract class AppLocalizations {
   /// **'{text} will be stored under the English name (H is B natural). The app keeps one spelling per pitch so transposing stays exact.'**
   String importNoticePhotoGermanNoteNames(String text);
 
+  /// Photo reader: a bare lowercase c on a chord row, stored as C major rather than C minor. `count` is how many. C and c are the same shape at two sizes and no other note letter is, so a small one is almost always a mis-sized capital - measured on 084-van-egy-ut (6 of its 12 chords) and 125-nincs-mas-isten (3).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{{count} chords were read as a lowercase c and stored as C major. In print C and c are the same shape at two sizes, so a small one is almost always a capital the reader mis-sized — if your page really means the minor, write Cm.}}'**
+  String importNoticePhotoLowercaseCRaised(int count);
+
   /// Role name shown to users. One of three; see the roles table.
   ///
   /// In en, this message translates to:

@@ -40,6 +40,8 @@ const _samples = <ImportNoticeCode, ImportNotice>{
       ImportNotice(ImportNoticeCode.photoNothingLegible),
   ImportNoticeCode.photoGermanNoteNames: ImportNotice(
       ImportNoticeCode.photoGermanNoteNames, text: 'H7, hm'),
+  ImportNoticeCode.photoLowercaseCRaised:
+      ImportNotice(ImportNoticeCode.photoLowercaseCRaised, count: 6),
   ImportNoticeCode.timewiseScore: ImportNotice(ImportNoticeCode.timewiseScore),
   ImportNoticeCode.noNotes: ImportNotice(ImportNoticeCode.noNotes),
   ImportNoticeCode.extraVoicesKept:

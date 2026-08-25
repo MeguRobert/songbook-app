@@ -212,6 +212,7 @@ class PhotoTextBridge {
     final lines = <String>[];
     final german = <String>{};
     var chordRows = 0;
+    var raisedC = 0;
 
     for (var index = 0; index < columns.length; index++) {
       final block = _layOutColumn(columns[index], titled: index == 0);
@@ -220,6 +221,7 @@ class PhotoTextBridge {
       lines.addAll(block.lines);
       german.addAll(block.german);
       chordRows += block.chordRows;
+      raisedC += block.raisedC;
     }
 
     if (lines.isEmpty) {
@@ -249,6 +251,13 @@ class PhotoTextBridge {
       final names = german.toList()..sort();
       notices.add(ImportNotice(ImportNoticeCode.photoGermanNoteNames,
           text: names.join(', ')));
+    }
+    if (raisedC > 0) {
+      // Said rather than decided in silence. No photograph can prove whether
+      // the page meant C major or C minor, and the review box is where the
+      // person holding the page settles it.
+      notices.add(ImportNotice(ImportNoticeCode.photoLowercaseCRaised,
+          count: raisedC));
     }
     return PhotoReading(chordPro: lines.join('\n'), notices: notices);
   }
@@ -346,6 +355,30 @@ class PhotoTextBridge {
     return glyph < _furnitureNarrow * typical ||
         glyph > _furnitureFlat * word.height;
   }
+
+  /// A chord that is nothing but a lowercase `c`.
+  ///
+  /// `C` and `c` are the same shape at two sizes, and no other note letter is:
+  /// `a`, `b`, `d`, `e`, `f`, `g` and `h` all change form between cases, so an
+  /// engine that returns one of those in lowercase read a lowercase letter and
+  /// is believed. `c` it cannot be believed about, and a songbook that writes
+  /// its minors as `em`, `am`, `gm`, `dm`, `hm` and `fiszm` — every
+  /// lowercase chord in the measurement corpus and in the whole shipped
+  /// catalogue does, eleven of them, and not one is a bare root — does not
+  /// print a bare `c` for C minor.
+  ///
+  /// Measured: `084-van-egy-ut` prints italic capital `C` twelve times and the
+  /// engine returned `c` for six of them, which is the whole of that page's
+  /// 0.583 chord recall. `125-nincs-mas-isten` does it three times. Every one
+  /// reached storage as `Cm`, because `c` is a perfectly good chord token and
+  /// nothing had cause to look twice — silently wrong music, which is
+  /// worse than music that is missing.
+  ///
+  /// Only on a chord row, and only from a photograph. A `c` typed or pasted by
+  /// hand is deliberate and keeps the Central European reading that
+  /// [ChordTransposer] documents; this is a repair of a known OCR confusion,
+  /// the same kind of thing as [_repairOcr] and applied at the same stage.
+  static final _lowercaseC = RegExp(r'^c$');
 
   /// The angle, in degrees, by which the page appears to be tilted.
   ///
@@ -654,7 +687,7 @@ class PhotoTextBridge {
     final rows = groupRows(words)
         .where((row) => !_isNoiseRow(row))
         .toList();
-    if (rows.isEmpty) return const _Block([], {}, 0);
+    if (rows.isEmpty) return const _Block([], {}, 0, 0);
 
     final lines = <String>[];
     // Either signal will do: set larger than the body, or opening with a hymn
@@ -676,6 +709,7 @@ class PhotoTextBridge {
     final breaks = _verseBreaks(rows);
     final german = <String>{};
     var chordRows = 0;
+    var raisedC = 0;
 
     var index = 0;
     while (index < rows.length) {
@@ -690,13 +724,18 @@ class PhotoTextBridge {
       }
 
       chordRows++;
+      // Before anything reads the row's symbols, so the German check, the
+      // layout and the stored chord all see the same token.
+      final cased = _raiseLowercaseC(row);
+      final chordRow = cased.row;
+      raisedC += cased.raised;
       // Case-insensitive, because a Hungarian songbook prints its minors in
       // lowercase throughout: `hm` is B minor and is renamed on the way into
       // storage exactly as `Hm` is. Matching only the capital meant a page
       // spelling its minors the Hungarian way had its chords renamed without a
       // word to the person reviewing it - measured on `166-tekozlo-fiu`, which
       // prints `hm` and raised nothing.
-      german.addAll(row.map((w) => w.text).where((t) =>
+      german.addAll(chordRow.map((w) => w.text).where((t) =>
           (t.startsWith('H') || t.startsWith('h')) &&
           parser.isChordToken(t)));
 
@@ -707,17 +746,17 @@ class PhotoTextBridge {
       if (!pairs) {
         // An intro or turnaround with nothing underneath. Kept: the app stores
         // chords with positions past the end of an empty lyric.
-        lines.add(_layOut(row).line);
+        lines.add(_layOut(chordRow).line);
         index++;
         continue;
       }
 
       final lyrics = _layOut(_repairOcr(below));
-      lines.add(_layOutChords(row, lyrics.anchors, _charWidth(below)));
+      lines.add(_layOutChords(chordRow, lyrics.anchors, _charWidth(below)));
       lines.add(lyrics.line);
       index += 2;
     }
-    return _Block(lines, german, chordRows);
+    return _Block(lines, german, chordRows, raisedC);
   }
 
   /// Render [row] as text, recording where each word landed.
@@ -862,6 +901,24 @@ class PhotoTextBridge {
     return anchors.last.$2;
   }
 
+  /// [row] with a lowercase `c` raised to `C`. See [_lowercaseC] for why.
+  ///
+  /// Returns the row unchanged, and an empty count, when there is nothing to
+  /// raise — which is every row of every other page in the corpus.
+  ({List<OcrWord> row, int raised}) _raiseLowercaseC(List<OcrWord> row) {
+    var raised = 0;
+    final out = <OcrWord>[];
+    for (final word in row) {
+      if (_lowercaseC.hasMatch(word.text)) {
+        raised++;
+        out.add(word.saying('C'));
+      } else {
+        out.add(word);
+      }
+    }
+    return (row: raised == 0 ? row : out, raised: raised);
+  }
+
   /// `1`/`i` and `6`/`ő` confusions undone, and the space an engine puts before
   /// its own punctuation closed.
   ///
@@ -952,7 +1009,11 @@ class _Block {
   final List<String> lines;
   final Set<String> german;
   final int chordRows;
-  const _Block(this.lines, this.german, this.chordRows);
+
+  /// How many lowercase `c` chords were raised to `C`. See
+  /// `PhotoTextBridge._lowercaseC`.
+  final int raisedC;
+  const _Block(this.lines, this.german, this.chordRows, this.raisedC);
 }
 
 extension on String {

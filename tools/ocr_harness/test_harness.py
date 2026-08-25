@@ -107,11 +107,24 @@ class Warnings(unittest.TestCase):
         self.assertEqual(('german-chords',),
                          reading.slugs_for(['photoGermanNoteNames']))
 
-    def test_the_code_map_and_the_prose_map_agree_on_the_slugs(self):
-        # Two arms, one vocabulary. A slug on one side and not the other would
-        # score the same page differently depending on which engine read it.
-        self.assertEqual(set(reading.WARNING_CODES.values()),
-                         {slug for _, slug in reading.WARNING_SLUGS})
+    def test_every_sentence_the_worker_emits_has_a_code_too(self):
+        """One vocabulary, and it runs one way.
+
+        A slug the remote worker can say and the app has no code for would be a
+        notice with no translation: the worker answers in its own English, which
+        is what `ImportNoticeCode.fromReader` carries verbatim, and a page scored
+        through the worker would then report something no phone could ever
+        report. So every prose slug must be a code.
+
+        Not the other way round. The two arms read with different engines and a
+        repair calibrated on one engine's confusions is not a claim the other has
+        to make: `lowercase-c-raised` answers Tesseract returning `c` for the
+        italic capital `C` of `084-van-egy-ut` six times out of twelve, and
+        EasyOCR reads that page's case correctly (`C G7 F C`). Porting it would
+        be code with nothing behind it.
+        """
+        self.assertLessEqual({slug for _, slug in reading.WARNING_SLUGS},
+                             set(reading.WARNING_CODES.values()))
 
     def test_no_page_expects_the_show_through_claim_any_more(self):
         # Both arms withdrew it: `has_show_through` fires on every page in the
@@ -127,10 +140,63 @@ class Warnings(unittest.TestCase):
 
     def test_every_slug_either_arm_can_emit_is_mapped(self):
         # The reminder to add the slug rather than to rewrite the match. Six
-        # each: the worker's prose, and the six ImportNoticeCodes the app's
-        # reader raises.
+        # sentences the remote worker can emit, and seven ImportNoticeCodes the
+        # app's own reader raises - the extra one is `photoLowercaseCRaised`,
+        # which answers a Tesseract confusion EasyOCR does not have. See
+        # test_every_sentence_the_worker_emits_has_a_code_too.
         self.assertEqual(6, len(reading.WARNING_SLUGS))
-        self.assertEqual(6, len(reading.WARNING_CODES))
+        self.assertEqual(7, len(reading.WARNING_CODES))
+
+
+class RepairNotices(unittest.TestCase):
+    """A notice about the reader is reported, never scored.
+
+    `warnings_ok` asks whether the reader told the user the right things about
+    the PAGE. `lowercase-c-raised` is about the reader instead: Tesseract
+    returns `c` for the italic capital `C` of `084-van-egy-ut` six times out of
+    twelve and EasyOCR reads the same page as `C G7 F C`, so the two arms owe
+    the user different sentences about the same photograph. Scored the ordinary
+    way it would mark whichever arm was right - in gold, the Python arm fails to
+    raise it on four pages; out of gold, the browser arm raises it unasked on
+    four.
+    """
+
+    def blank(self, warnings):
+        return reading.parse("G C\nAz Urra bizom", tuple(warnings))
+
+    def test_a_repair_notice_raised_unasked_does_not_cost_the_page(self):
+        got = metrics.score(self.blank([]),
+                            self.blank(["lowercase-c-raised"]),
+                            page="p", engine="browser", tier="A")
+        self.assertEqual(1.0, got.values["warnings_ok"])
+
+    def test_a_repair_notice_gold_asks_for_is_not_missed(self):
+        # The mirror: a gold file that names it must not penalise the arm whose
+        # engine had nothing to repair.
+        got = metrics.score(self.blank(["lowercase-c-raised"]),
+                            self.blank([]),
+                            page="p", engine="easyocr", tier="A")
+        self.assertEqual(1.0, got.values["warnings_ok"])
+
+    def test_it_is_still_reported(self):
+        # Not scored is not the same as not said. The reviewer wants to know a
+        # judgment call was made - that is what raising it is for.
+        got = metrics.score(self.blank([]),
+                            self.blank(["lowercase-c-raised"]),
+                            page="p", engine="browser", tier="A")
+        self.assertTrue(any("lowercase-c-raised" in note
+                            for note in got.notes),
+                        got.notes)
+
+    def test_an_ordinary_notice_is_still_scored(self):
+        # The exemption is a named set, not a hole in the metric.
+        got = metrics.score(self.blank([]), self.blank(["two-songs"]),
+                            page="p", engine="browser", tier="A")
+        self.assertEqual(0.0, got.values["warnings_ok"])
+
+    def test_every_repair_code_is_a_slug_something_can_emit(self):
+        self.assertLessEqual(reading.REPAIR_CODES,
+                             set(reading.WARNING_CODES.values()))
 
 
 class Accents(unittest.TestCase):

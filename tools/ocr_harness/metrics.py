@@ -247,11 +247,20 @@ def score(gold: reading_mod.Reading, got: reading_mod.Reading, *,
     got_warnings = set(got.warnings)
     missing = sorted(want_warnings - got_warnings)
     extra = sorted(got_warnings - want_warnings)
+    # A repair notice says what the reader did about its own confusion, and the
+    # two arms confuse different things - see reading.REPAIR_CODES. Reported,
+    # never scored.
+    repaired = sorted(set(extra) & reading_mod.REPAIR_CODES)
+    extra = [slug for slug in extra if slug not in reading_mod.REPAIR_CODES]
+    missing = [slug for slug in missing
+               if slug not in reading_mod.REPAIR_CODES]
     values["warnings_ok"] = float(not missing and not extra)
     if missing:
         notes.append("warning not raised: " + ", ".join(missing))
     if extra:
         notes.append("warning raised unasked: " + ", ".join(extra))
+    if repaired:
+        notes.append("the reader repaired and said so: " + ", ".join(repaired))
 
     blocked = unclassifiable(gold.chords)
     if blocked:

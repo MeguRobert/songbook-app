@@ -94,6 +94,23 @@ enum ImportNoticeCode {
   /// spelling. Carries [ImportNotice.text] — the names, sorted and joined.
   photoGermanNoteNames,
 
+  /// A bare lowercase `c` on a chord row was stored as `C` major rather than as
+  /// C minor. Carries [ImportNotice.count] — how many.
+  ///
+  /// `C` and `c` are the same shape at two sizes, and no other note letter is:
+  /// `a`, `b`, `d`, `e`, `f`, `g` and `h` all change form between cases, so an
+  /// engine returning one of those in lowercase read a lowercase letter. A
+  /// small `c` on a photographed chord row is almost always a capital the
+  /// reader mis-sized — measured on `084-van-egy-ut`, which prints italic
+  /// capital `C` twelve times and gave back `c` six times, and on
+  /// `125-nincs-mas-isten`, three times.
+  ///
+  /// Central European songbooks really do write case for quality, though, and
+  /// no photograph can prove which was meant. So this says what it did rather
+  /// than deciding in silence: the review box is editable ChordPro, and `Cm` is
+  /// two keystrokes.
+  photoLowercaseCRaised,
+
   // ---------------------------------------------------------------------------
   // MusicXmlImporter — lossy, but the score still imports
   // ---------------------------------------------------------------------------

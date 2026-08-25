@@ -342,6 +342,7 @@
   "importNoticePhotoNoChords": "Egyetlen akkordot sem ismertem fel — csak a szöveg került be.",
   "importNoticePhotoNothingLegible": "Ezen a fényképen nem találtam olvasható szöveget.",
   "importNoticePhotoGermanNoteNames": "A(z) {text} az angol néven lesz eltárolva (a H a B alaphangot jelenti). Az alkalmazás hangonként egyetlen írásmódot tart, hogy a transzponálás pontos maradjon.",
+  "importNoticePhotoLowercaseCRaised": "{count, plural, other{{count} akkordot kisbetűs c-ként olvastam be, és C-ként (C-dúr) tároltam el. Nyomtatásban a C és a c ugyanaz az alak két méretben, ezért a kicsi majdnem mindig nagybetű, amit a felismerő félreméretezett — ha a lapon valóban a moll szerepel, írd át Cm-re.}}",
   "roleMember": "Tag",
   "roleModerator": "Moderátor",
   "roleAdministrator": "Rendszergazda",

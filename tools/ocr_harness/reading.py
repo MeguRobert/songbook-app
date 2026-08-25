@@ -39,7 +39,27 @@ WARNING_CODES = {
     "photoTwoSongs": "two-songs",
     "photoNoChords": "no-chords",
     "photoGermanNoteNames": "german-chords",
+    "photoLowercaseCRaised": "lowercase-c-raised",
 }
+
+# Notices that describe what the READER did, not what the PAGE is.
+#
+# Every other slug is a property of the photograph: it is too compressed, it
+# holds two songs, it prints German note names, nothing on it was legible. Any
+# engine looking at that page should say the same thing, so gold can name it and
+# an arm that stays quiet is wrong.
+#
+# `lowercase-c-raised` is not like that. It says the reader met an ambiguity of
+# its own making and chose - Tesseract returns `c` for the italic capital `C` of
+# `084-van-egy-ut` six times out of twelve, and EasyOCR reads the same page as
+# `C G7 F C` and has nothing to report. Scored the ordinary way it would mark
+# whichever arm was right: put it in gold and the Python arm fails to raise it
+# on four pages, leave it out and the browser arm raises it unasked on four.
+#
+# So `warnings_ok` skips these on both sides, and `metrics.score` still prints
+# them - the reviewer wants to know a judgment call was made, which is the whole
+# point of raising it.
+REPAIR_CODES = frozenset({"lowercase-c-raised"})
 
 # The prose `photo_import_worker.py` emits, and the same slugs. Kept because the
 # worker answers over the wire in its own words - which is what

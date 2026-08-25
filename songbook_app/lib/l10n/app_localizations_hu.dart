@@ -1308,6 +1308,17 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
+  String importNoticePhotoLowercaseCRaised(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count akkordot kisbetűs c-ként olvastam be, és C-ként (C-dúr) tároltam el. Nyomtatásban a C és a c ugyanaz az alak két méretben, ezért a kicsi majdnem mindig nagybetű, amit a felismerő félreméretezett — ha a lapon valóban a moll szerepel, írd át Cm-re.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get roleMember => 'Tag';
 
   @override

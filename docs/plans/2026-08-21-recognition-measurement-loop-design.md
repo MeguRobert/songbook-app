@@ -645,13 +645,208 @@ would be a second copy of the rule, which is the failure that module exists to
 prevent — and which had just happened, one commit earlier, to the hyphen-joined
 chord run.
 
+## 2026-08-25, fifth session: the page's own printed lines, and a mis-sized C
+
+**0.827 → 0.925 mean over seven pages**, in three changes, no page falling on
+any of them.
+
+| page | before | after |
+|---|---|---|
+| `084-van-egy-ut` | 0.715 | **0.993** |
+| `125-nincs-mas-isten` | 0.581 | **0.849** |
+| `098-szivemben-orom-dalol` | 0.880 | **0.919** |
+| `151-zengjed-a-dalt` | 0.913 | **0.997** |
+| `166-tekozlo-fiu` | 0.957 | **0.962** |
+| `app-jezus-szivedbe-lat` | 0.965 | **0.969** |
+| `185-jezus-krisztusom` | 0.778 | 0.778 |
+| **mean** | **0.827** | **0.925** |
+
+### A photographed page is not only type
+
+The session opened on the item the handoff called the worst reading defect on a
+headline page: `125-nincs-mas-isten` came back as 48 lyric lines against 33
+expected, with a lyric character error rate of **0.559** where every other
+reviewed page was under 0.21, and most of it was a column of one-character
+words — `!` `;` `,` `)` `]` `i` `I`.
+
+Dumping the engine's raw boxes said what they were at once. Twenty-two of them,
+1 to 5 pixels wide on a page measuring 19 to the glyph, tracking from x 69 at
+the head of the page to x 146 at its foot: the **printed box around the text**,
+sliced into pieces by Tesseract's own line finding, and following the page's
+tilt as it went. The centre rule between the columns and the right border gave
+more of the same, and four near-square specks of 2 to 6 pixels were dirt.
+
+The same dump found three more, on three more pages, none of them narrow:
+
+| page | returned as | box | per glyph, against its own height |
+|---|---|---|---|
+| `125-nincs-mas-isten` | `TT` | 575 × 30 | 9.6 |
+| `151-zengjed-a-dalt` | `A`, twice | 944 × 25 | 37.8 |
+| `app-jezus-szivedbe-lat` | `s` | 922 × 13 | 70.9 |
+
+The top of `125`'s box, the letterbox edge where `151`'s photograph stops, and
+the **status bar of the phone** that took the screenshot. That last one was
+already on the remaining-work list as "phone chrome read as content" and nobody
+had looked at what it actually was.
+
+So: two rules, because neither dimension finds them alone.
+
+* **Narrower than 0.32** of the page's typical glyph width. The slices are 1–5
+  px against 19. The narrowest *real* thing on any reviewed page is `098`'s full
+  stop at 0.39 and `185`'s dotted leader at 0.45; the narrowest anywhere is
+  `109`'s 9-pixel Hungarian article `a` at 0.35, which this keeps by eight
+  percent — as much room as the evidence has.
+* **Wider than 5×** its own height, per glyph, because a horizontal rule is not
+  narrow at all. The widest real glyphs measured are the em dash the engine
+  returns for a page's `->` at 3.9, `105`'s marker-drawn `2` at 1.2 and `185`'s
+  merged chord pair `DG` at 1.9.
+
+**Confidence was the other candidate, and it was measured and rejected.** It is
+what the Python arm filters on, and here it does not separate: `125`'s border
+slices came back at **82, 78, 74 and 72** against real words at 87 to 96. No
+gate catches the rules without taking real text off the harder pages with it.
+Tesseract is confident about line art.
+
+Filtered in three places rather than one, because the recogniser asks the bridge
+about the whole-page read before `read` ever sees a word: a rule standing
+between the columns is ink exactly where the gutter is looked for, and `125`
+prints the top of its box across the head of the second column, where it joined
+the heading row.
+
+Not ported to the Python arm, which does not have the defect. EasyOCR returns
+regions rather than words and already filters on confidence, and `align 125`
+shows no fragment of any border. Its `125` is bad — lyric CER 1.490 — for the
+unrelated reason that it never splits the columns at all.
+
+`125` 0.581 → **0.804**, lyric CER 0.559 → **0.072**. `151` 0.913 → 0.997. The
+screenshot's stray `s` line gone, and its lyric CER to 0.000.
+
+### A stage direction is not a chord
+
+`109-tart-meg-a-kegyelem` prints `B  Asus4  A  - Intro x1` and
+`Gm  A7  Dm  - Intro`. The dash and the `x1` were already separators, so `Intro`
+was the one unrecognised token the row tolerates — kept, and stored as a chord
+in the column the page printed the word in. `symbols` had been saying so for two
+sessions: *chord symbols the token rule cannot spell: Intro*.
+
+The tolerance is for a **misread** chord, and this was not one. A small
+vocabulary of section names is skipped like punctuation instead, which also
+hands the row its one tolerance back for a genuine misread standing beside the
+direction.
+
+Asked strictly **after** `is_chord_token`, never before, which is what makes the
+rule unable to lose a chord: `Coda`, `Bridge` and `Cor` all open with note
+letters. Capitalised and case-sensitively so, because that is how a page prints
+an instruction and because `intro`, `verse`, `cor`, `tag` and `solo` are
+ordinary words in one language or another — and because the pattern ships to the
+gold editor, which cannot pass flags.
+
+Calibrated the way the tolerance rule was: against every line of every gold file
+and of every song the app ships, **284 of them, and it reclassifies none**.
+`Refrén`, `-> Refrén`, `1. Versszak` and `Átvezető rész` all stand on their own
+lines on `125` and all stay lyrics, by the clause that was already there — a row
+with no chord on it is not a chord row.
+
+Left out on purpose: `Tag`, `Solo`, `Cor`, `Ending`, `Instrumental`. Each is an
+ordinary word somewhere and none appears on any page here to calibrate against.
+**No Romanian page is in the corpus**, so `Strofă` and `Refren` are the app's
+localisation talking rather than a measurement.
+
+The browser arm cannot show this — `109` finds no chords there at all — so the
+Python arm is where it reads: `109` 0.348 → 0.362, chord recall 0.167 → 0.182,
+which is the answer key losing a chord that was never achievable.
+
+### `C` and `c` are the same shape at two sizes
+
+The biggest single jump of the session, and it was hiding behind a metric that
+looked healthy. `084-van-egy-ut` read **12 chords against 12 expected** and
+scored **0.583** for chord recall, because six of the twelve were wrong rather
+than missing:
+
+```
+gold:  C G G7 C F C G C F C G C
+read:  C G G7 c F c G c F c G c
+```
+
+The page prints italic capital `C` twelve times over. `c` is a perfectly good
+chord token, so nothing had cause to look twice, and
+`ChordTransposer._minorFromCase` stored **C minor** six times. Music that is
+wrong reads as music that is right, which makes this worse than the missing
+chords three sessions were spent on.
+
+`C` and `c` are the same shape at two sizes, and **no other note letter is**:
+`a`, `b`, `d`, `e`, `f`, `g` and `h` all change form between cases, so an engine
+returning one of those in lowercase read a lowercase letter and is believed.
+Only `c` cannot be believed about. And a songbook that writes its minors as
+`em`, `am`, `gm`, `dm`, `hm` and `fiszm` does not print a bare `c` for C minor:
+**every lowercase chord in the corpus and in the whole shipped catalogue spells
+its `m` out — eleven of them, and not one a bare root.**
+
+Robert's call on the shape, and it is his book: he has never seen a bare `c`
+mean C minor but would not rule it out, and asked whether the user could decide.
+So the reading **says what it did** rather than deciding in silence —
+`ImportNoticeCode.photoLowercaseCRaised`, with a count, in three languages — and
+the review box is editable ChordPro where `Cm` is two keystrokes. What it is not
+is a third state in storage: `ChordPosition.chord` is a plain string read by the
+transposer, `ChordView`, the exporter, the SATB engraver, capo and search, and
+an "undecided" value would have to be understood by all six. The app already
+makes that argument about `H` and `B`.
+
+Scoped to the photograph, not to the notation. A `c` typed or pasted by hand is
+deliberate and keeps the Central European reading `ChordTransposer` documents;
+this lives beside `PhotoTextBridge._repairOcr`, which is the same kind of thing,
+and it runs on chord rows only — a `c` standing as a word in the lyrics is a
+letter of Hungarian.
+
+`084` 0.715 → **0.993**, chord recall 0.583 → **1.000**. `125` → 0.849, `098` →
+0.919, and the screenshot's chords now match gold symbol for symbol.
+
+### And a metric could not score it either way
+
+Not ported to the Python arm, which does not have the confusion: EasyOCR reads
+`084` as `C G7 F C` and `125` as `Em C G Em G D CD G`, with no lowercase root
+anywhere. That asymmetry broke `warnings_ok`, and the break is instructive.
+
+Put the slug in gold and the Python arm reports it **unraised** on four pages.
+Leave it out and the browser arm reports it **unasked** on four. Either way the
+metric marks whichever arm was right.
+
+Every other slug is a property of the **page** — too compressed, two songs
+across it, German note names, nothing legible — and any engine looking at that
+page should say the same thing, so gold can name it and an arm that stays quiet
+is wrong. `lowercase-c-raised` is a property of the **reader**. So
+`reading.REPAIR_CODES` names that class, `warnings_ok` skips it on both sides,
+and the run still prints *the reader repaired and said so* — because telling the
+reviewer a judgment call was made is the entire point of raising it.
+
+### What the corpus says is next
+
+The extra lyric lines are three different defects, not the one the previous
+handoff named. Measured against gold, line by line:
+
+1. **A merged chord run that `splitMergedChords` did not split.** `185` reads
+   `C   DGD` as a *lyric* line — one chord and one unknown is under the
+   tolerance floor — which is both its extra line and most of its 0.600 chord
+   recall. `125` does the same with `CGD`, `CDG` and `E mGD`. This is now the
+   largest measurable defect left, and `185` is the lowest reviewed page.
+2. **`098`'s next-song header.** `99. Több erőt  a-t.` is the head of song 99
+   bleeding in — the page is named `chords-next-song-header` and the corpus has
+   been waiting for someone to read the filename.
+3. **Row grouping**, which is the only part the old item 8 got right: `098`
+   splits `Szívemben béke, hála, öröm dalol.` into two rows and swaps their
+   order.
+
+Also still open: `125`'s tilted intro row (`Cadd9o E ——` / `5US2 G5-Gsus2
+D4/Fis`), `084`'s one-line `átíte` at conf 5, `low-resolution` on a born-digital
+screenshot, and `105-kosz-jol-vagyok` still untranscribed.
+
 ## Verify
 
 ```bash
-python -m unittest discover -s tools -p "test_*.py"       # expect 326
+python -m unittest discover -s tools -p "test_*.py"       # expect 339
 python -m tools.ocr_harness run                           # the Python arm
 python -m tools.ocr_harness run --engine browser          # what actually ships
 cd songbook_app && flutter analyze --no-fatal-infos       # expect exit 0, 0 issues
-cd songbook_app && flutter test                           # expect 1217
+cd songbook_app && flutter test                           # expect 1286
 cd songbook_app && flutter build web --release --no-web-resources-cdn
 ```

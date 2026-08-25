@@ -1304,6 +1304,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String importNoticePhotoLowercaseCRaised(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count chords were read as a lowercase c and stored as C major. In print C and c are the same shape at two sizes, so a small one is almost always a capital the reader mis-sized — if your page really means the minor, write Cm.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get roleMember => 'Member';
 
   @override
