@@ -90,7 +90,7 @@
       "layout": "single column, printed chords with a handwritten transposition written beside each",
       "stresses": [
         "TWO competing chord sets on one page: printed (Dm, G7, B, A, Gm, A7, Asus4) and handwritten in blue pen a whole tone up (Em, A7, C, H, Am, H7, Hsus4)",
-        "which set the user wants is a product decision, not an OCR setting - this page is why tier C exists",
+        "DECIDED 2026-08-22: the printed set wins wherever both exist, and the pen only counts where there is no printed chord. Gold records the printed chords only; the pen ones are scored as false positives, which is what tier C is for",
         "printed chords use superscript quality: D with superscript m, A with superscript sus4, A with superscript 7",
         "B in this book means B flat, and the handwritten C above it confirms the transposition - so the H-is-B rule must not fire on the printed B",
         "stage directions inline with chords: - Intro x1, - Intro",

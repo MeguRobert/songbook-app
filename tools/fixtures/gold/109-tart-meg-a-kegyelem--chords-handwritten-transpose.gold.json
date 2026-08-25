@@ -3,7 +3,7 @@
   "tier": "C",
   "engine": "text",
   "reviewed_by": null,
-  "drafted_from": "easyocr",
+  "drafted_from": "vision",
   "_review_checklist": [
     "Compare every line against the photograph, not against the app.",
     "Chord rows are monospaced: a chord's character column IS its position, so keep the alignment when you edit a lyric.",
@@ -20,9 +20,11 @@
     "verse 2 has no chord rows and must inherit verse 1 chords by line position (chord_carry.dart)",
     "the header and first staff of song 110 (Te veled) are visible at the bottom edge"
   ],
-  "_drafted_from": "easyocr reading, uncorrected",
+  "_drafted_from_note": "transcribed from the photograph, PRINTED chord set only. Every printed chord here carries a handwritten transposition a whole tone up; printed wins wherever both exist, and the pen only counts where there is no printed chord - Robert, 2026-08-22. Chord columns from measured ink spans, mapped to columns with PhotoTextBridge's own interpolation rule.",
   "number": 109,
-  "title": "Tart meg a kegyelem",
-  "warnings": [],
-  "chordpro": "{title: 109. Tart még a kegyelem}\n\n1 Tart nag 0 kegyclem; és a szívem örül,\n1} €                 A H\nJénus cljöut hnoznám; rajtam megkönyörüll\n                        G7  A7\nKiny újtota karját, szelíden fclemeltj\nBC                A     4 A H ~ Intro xl\nAnig élek, azt a percet nem feledem.\n2. Nyiíva áll az ajtó, ma is bejöhetek [\nA trontercmben várnak; nekem ott a helyem.\nJenus mellctt élni; ez a legjobb dolog\n             C D F\nÉs velem tapsol és táncol a Menny,\nGmn                A 747\nJerus gyozelméröl zengek új éneket:\nD\"  66  G A\nÉs velem tápsolés táncol a Menny,\nGimn /YYn A Bárány dicsóségét hirdetem! D\" Em  Intro\nDmn                110. Te veled"
+  "title": "Tart még a kegyelem",
+  "warnings": [
+    "low-resolution"
+  ],
+  "chordpro": "   Dm                      G7\n1. Tart még a kegyelem, és a szívem örül,\nB                         A\nJézus eljött hozzám, rajtam megkönyörült.\nDm                      G7\nKinyújtota karját, szelíden felemelt,\nB                       Asus4   A    - Intro x1\nAmig élek, azt a percet nem feledem.\n\n2. Nyitva áll az ajtó, ma is bejöhetek,\nA trónteremben várnak, nekem ott a helyem.\nJézus mellett élni, ez a legjobb dolog,\nUgrálok és táncolok, mert szabad vagyok.\n\n        Dm   C   F         G\nÉs velem tapsol és táncol a Menny,\nGm                       A7\nJézus győzelméről zengek új éneket.\n         Dm  C    F         G\nÉs velem tapsol és táncol a Menny,\nGm          A7        Dm     - Intro\nA Bárány dicsőségét hirdetem!"
 }
