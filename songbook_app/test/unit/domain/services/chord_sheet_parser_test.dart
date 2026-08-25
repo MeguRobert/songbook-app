@@ -82,15 +82,16 @@ void main() {
       // H+add is a legal chord shape and `hadd` is a Hungarian word, so the
       // token alone is ambiguous. Pinned so the trade-off stays visible.
       expect(parser.isChordToken('Hadd'), isTrue);
-      // It does not matter in practice: `hadd` introduces a clause, so it is
-      // never alone on a line, and one ordinary word makes the line lyrics.
+      // It does not matter in practice: `hadd` introduces a clause, so it
+      // arrives with two or three ordinary words beside it, and more than one
+      // unrecognised token makes the line lyrics.
       expect(parser.isChordLine('Hadd menjek el'), isFalse);
     });
 
     test('an accidental spelled out in letters is still an accidental', () {
       // Hungarian and German print the sign as a syllable. Measured on the
       // corpus, `fiszm` alone cost 166-tekozlo-fiu three of its ten chord rows:
-      // the all-or-nothing rule threw every chord on those rows away with it.
+      // the row rule threw every chord on those rows away with it.
       expect(parser.isChordToken('fiszm'), isTrue, reason: 'F sharp minor');
       expect(parser.isChordToken('Fis'), isTrue, reason: 'F sharp');
       expect(parser.isChordToken('D4/Fis'), isTrue, reason: 'sharp bass');
@@ -120,6 +121,64 @@ void main() {
       expect(parser.isChordToken('ici-picit'), isFalse);
       expect(parser.isChordToken('A-'), isFalse);
       expect(parser.isChordLine('ici-picit göröngyös'), isFalse);
+    });
+  });
+
+  group('ChordSheetParser.isChordLine — one unreadable token', () {
+    test('three chords carry a stray token', () {
+      // The row that motivated this: 185-jezus-krisztusom prints `G D em H7`
+      // and the recogniser returns the H7 as HÁ or HSX, because the 7 is struck
+      // through in pen. The old all-or-nothing rule threw G, D and em away with
+      // it, twice on one page, and took its chord recall to 0.200.
+      expect(parser.isChordLine('G    D      em HÁ'), isTrue);
+      expect(parser.isChordLine('G     D       em    HSX'), isTrue);
+      // Measured on the corpus too: `£` for an E, `en` for an `em`, and a `!`
+      // the printed column rule of 125-nincs-mas-isten left behind.
+      expect(parser.isChordLine('D   E        A     £'), isTrue);
+      expect(parser.isChordLine('G      D            en  G'), isTrue);
+      expect(parser.isChordLine('! Em    C   G'), isTrue);
+    });
+
+    test('two chords carry one only when it does not read as a word', () {
+      // `5US2` is a misread `Csus2` — a capital and a digit, nothing like a
+      // Hungarian word.
+      expect(parser.isChordLine('5US2 G5-Gsus2 D4/Fis'), isTrue);
+      // Plain lowercase letters are exactly the shape of a word, so two chords
+      // is not enough to overrule them.
+      expect(parser.isChordLine('A G szívemben'), isFalse);
+      expect(parser.isChordLine('a e dal'), isFalse);
+    });
+
+    test('one chord never carries anything', () {
+      // The line this whole family of rules exists to protect. `A` is the
+      // Hungarian definite article, and one chord beside one word is the
+      // commonest lyric shape there is.
+      expect(parser.isChordLine('A szívemben'), isFalse);
+      expect(parser.isChordLine('C   DGD'), isFalse);
+      expect(parser.isChordLine('Em de'), isFalse);
+    });
+
+    test('two unreadable tokens are a line of words', () {
+      expect(parser.isChordLine('G D em HÁ HSX'), isFalse);
+      expect(parser.isChordLine('Hadd menjek el'), isFalse);
+      expect(parser.isChordLine('a szívemben is Te élsz.'), isFalse);
+    });
+
+    test('and a line with no chord at all is untouched', () {
+      // Nothing for the tolerance to hang off, which is why `Csak Egy Az` is
+      // still safe: not one of its words is a chord token.
+      expect(parser.isChordLine('Csak Egy Az'), isFalse);
+      expect(parser.isChordLine('Nézd, közeleg az éj'), isFalse);
+    });
+
+    test('the tolerated token is kept, in the column the page printed it', () {
+      // Visibly wrong where a moderator can fix it. A silently missing chord is
+      // the harder thing to notice.
+      final parsed =
+          parser.parse('G    D      em HÁ\nJézus Krisztusom, mentő');
+      final chords = parsed.verses.single.lines.single.chords;
+      expect(chords.map((c) => c.chord), ['G', 'D', 'Em', 'BÁ']);
+      expect(chords.last.position, 15);
     });
   });
 

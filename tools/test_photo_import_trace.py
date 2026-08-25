@@ -85,13 +85,28 @@ class RowReasons(unittest.TestCase):
         self.assertTrue(ok)
         self.assertIn('G D em', why)
 
-    def test_one_unreadable_token_is_named_as_the_cause(self):
-        # The case that costs a real chord row: a struck-through 7 read as X
-        # discards G, D and em with it. Naming the token is what makes that
-        # visible instead of looking like three missed chords.
+    def test_one_unreadable_token_is_tolerated_and_named(self):
+        # It used to cost the row: a struck-through 7 read as X discarded G, D
+        # and em with it. Three recognised chords is enough to read the stray
+        # token as a misread rather than as a word, and the reason still names
+        # it - the chord that reaches storage is wrong, and saying which one
+        # is what makes that fixable rather than mysterious.
         ok, why = worker.chord_row_reason(['G', 'D', 'em', 'HX'])
+        self.assertTrue(ok)
+        self.assertIn('HX', why)
+
+    def test_two_unreadable_tokens_still_cost_the_row(self):
+        # Two is a line of words, not a chord row with a spelling problem.
+        ok, why = worker.chord_row_reason(['G', 'D', 'em', 'HX', 'YZ'])
         self.assertFalse(ok)
         self.assertIn('HX', why)
+
+    def test_one_lowercase_word_beside_two_chords_still_costs_the_row(self):
+        # `A szivemben` is the line this floor exists to protect, and a
+        # lowercase word is its shape.
+        ok, why = worker.chord_row_reason(['A', 'G', 'szivemben'])
+        self.assertFalse(ok)
+        self.assertIn('szivemben', why)
 
 
 class RowRecords(unittest.TestCase):

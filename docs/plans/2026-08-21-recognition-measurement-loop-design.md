@@ -555,13 +555,103 @@ threshold. Until there is, the cleaning runs on every page.
   at 0.0370. Kept as a failure rather than papered over, because the metric is
   the only thing that will remember.
 
+## 2026-08-22, fourth session: one unreadable token no longer costs the row
+
+Robert's call: tolerate it. **0.748 → 0.827 mean over seven pages**, and the
+worst page in the corpus moved more than any single change has moved anything.
+
+| page | before | after |
+|---|---|---|
+| `185-jezus-krisztusom` | 0.453 | **0.778** |
+| `166-tekozlo-fiu` | 0.881 | **0.957** |
+| `098-szivemben-orom-dalol` | 0.799 | **0.880** |
+| `125-nincs-mas-isten` | 0.513 | **0.581** |
+| **mean** | **0.748** | **0.827** |
+
+### The rule, and why it has two thresholds
+
+`185-jezus-krisztusom` prints `G D em H7` over two of its lines. The 7 is struck
+through in pen, so the recogniser returns `HÁ` on one row and `HSX` on the other,
+and the all-or-nothing rule threw `G`, `D` and `em` away with it — twice on one
+page. Chord recall 0.200.
+
+One unrecognised token is now tolerated when the row carries enough recognised
+chords:
+
+- **three chords** is enough for any stray token;
+- **two** is enough when the stray token does not look like a word — it carries a
+  capital, a digit or a symbol. A chord is printed as a capital, or as a
+  lowercase minor which is already a chord token, so a misread one rarely comes
+  back as plain lowercase letters — and plain lowercase letters are exactly the
+  shape of a Hungarian word.
+
+Calibrated rather than guessed, and the calibration is the whole reason there are
+two numbers. Candidates measured against every lyric line of every gold file and
+of every song the app ships — 171 real lines:
+
+| rule | recovers | breaks (real) | breaks (adversarial) |
+|---|---|---|---|
+| one unknown, ≥1 chord | 13 | 0 | `A szívemben` |
+| one unknown, ≥2 chords | 7 | 0 | `A G szívemben`, `a e dal`, … |
+| one unknown, ≥3 chords | 6 | 0 | `a e b dal` |
+| **≥3, or ≥2 when the stray token is not a lowercase word** | **7** | **0** | `a e b dal` |
+
+`≥1` is out on the spot: it turns `A szívemben` into a chord row, which is the
+line this whole family of rules exists to protect. `≥2` for anything turns
+`A G szívemben` into one. The composite recovers everything `≥2` does with the
+safety of `≥3`, and the one thing it still misreads is `a e b dal` — three bare
+note letters and one word, which is not a line any hymnal prints.
+
+Two things worth noticing in that table. My own first guess — *tolerate only when
+the stray token starts with a note letter* — recovered **one** of the seven,
+because `!`, `£` and `5US2` do not start with note letters and those are exactly
+the misreads that happen. And the 13 that `≥1` recovers are almost all garbage:
+`; Em`, `. Em`, `C DGD`. Recovering more is not the goal.
+
+What the seven actually are, all six on real pages plus the intro line:
+
+| page | stray token | the row |
+|---|---|---|
+| `185` | `HÁ` | `G D em HÁ` |
+| `185` | `HSX` | `G D em HSX` |
+| `166` | `£` | `D E A £` — an `E` |
+| `166` | `fiszmn` | `A E fiszmn E D` — a `fiszm` |
+| `098` | `en` | `G D en G` — an `em` |
+| `125` | `!` | `! Em C G` — the printed column rule |
+| `125` | `5US2` | `5US2 G5-Gsus2 D4/Fis` — a `Csus2` |
+
+### The cost, and it is a real one
+
+Chord **precision** fell on three pages — `098` 0.923 → 0.882, `125` 0.917 →
+0.871, `166` 1.000 → 0.944 — because the tolerated token is *kept* rather than
+dropped. `HÁ` reaches storage as a chord, in the column the page printed it in.
+
+Kept on purpose. It is visibly wrong somewhere a moderator can fix it, and a
+silently missing chord is the harder thing to notice — the same reasoning that
+keeps a lowercase `a` becoming A minor rather than being dropped. F1 rose on
+every page, which is the trade being favourable: on `185`, precision 1.000 →
+0.818 against recall 0.200 → 0.600.
+
+The gate flagged the precision drops, correctly. They are the price, not a
+mistake.
+
+### And the third place the rule has to live
+
+`chord_row_reason` counts, and a count is not a regex — so `editor.rules()` could
+not ship it the way it ships the patterns. The two thresholds and the
+lowercase-word pattern now travel beside the patterns as `thresholds()`, and the
+preview does the counting from them. A literal `3` written into `editor.html`
+would be a second copy of the rule, which is the failure that module exists to
+prevent — and which had just happened, one commit earlier, to the hyphen-joined
+chord run.
+
 ## Verify
 
 ```bash
-python -m unittest discover -s tools -p "test_*.py"       # expect 321
+python -m unittest discover -s tools -p "test_*.py"       # expect 326
 python -m tools.ocr_harness run                           # the Python arm
 python -m tools.ocr_harness run --engine browser          # what actually ships
 cd songbook_app && flutter analyze --no-fatal-infos       # expect exit 0, 0 issues
-cd songbook_app && flutter test                           # expect 1203
+cd songbook_app && flutter test                           # expect 1217
 cd songbook_app && flutter build web --release --no-web-resources-cdn
 ```

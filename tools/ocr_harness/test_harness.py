@@ -235,9 +235,12 @@ class Unspellable(unittest.TestCase):
         # The list `unclassifiable` cannot produce: a symbol so unspellable
         # that its whole row reads as lyrics never contributes a chord to look
         # at, so it hid from the report entirely.
+        # Two chords and a stray token shaped like a chord but spelled like a
+        # word: under the tolerance floor, so the row is still lost and still
+        # worth naming.
         self.assertEqual(
-            [('A  Amaj7sharp9  D', 'Amaj7sharp9')],
-            metrics.rows_lost_to_a_token('A  Amaj7sharp9  D'))
+            [('A  fiszem  D', 'fiszem')],
+            metrics.rows_lost_to_a_token('A  fiszem  D'))
 
     def test_a_lyric_line_is_not_named(self):
         self.assertEqual(

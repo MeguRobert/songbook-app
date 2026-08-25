@@ -57,6 +57,26 @@ def rules() -> dict:
         "separator": worker._SEPARATOR.pattern,
         "continuation": worker._CONTINUATION.pattern,
         "parenthesised": worker._PARENTHESISED.pattern,
+        "lowercase_word": worker._LOWERCASE_WORD.pattern,
+    }
+
+
+def thresholds() -> dict:
+    """The counts `chord_row_reason` weighs, for the preview to weigh too.
+
+    Beside [rules] rather than inside it, because these are not patterns and the
+    tests that keep the patterns honest - every one compiles, every one uses only
+    syntax JavaScript shares - are about patterns.
+
+    Shipped for the same reason the patterns are. `chord_row_reason` tolerates
+    one unrecognised token once a row carries enough recognised chords, and a
+    count cannot be expressed as a regex; a literal 3 written into the page would
+    be a second copy of the rule, which is exactly what this module exists to
+    avoid.
+    """
+    return {
+        "tolerate_after": worker._TOLERATE_AFTER,
+        "tolerate_after_odd_token": worker._TOLERATE_AFTER_ODD_TOKEN,
     }
 
 
@@ -142,6 +162,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._json(200, {
                 "slugs": list(SLUGS),
                 "rules": rules(),
+                "thresholds": thresholds(),
                 "pages": [_page_json(p) for p in gold.pages(with_gold=True)],
             })
             return

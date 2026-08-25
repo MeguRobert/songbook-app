@@ -89,9 +89,10 @@ class ChordSheetParser {
   /// `H` is B natural in Hungarian, German and Polish notation, so it is a root
   /// like any other; [ChordTransposer.toEnglishNotation] renames it on the way
   /// into storage. Admitting it costs one collision: `Hadd` is a Hungarian word
-  /// that parses as H+add. The all-or-nothing rule in [isChordLine] contains
-  /// it — a line needs *every* token to be chord-shaped — so only a line
-  /// consisting of that single word is misread, which no real song produces.
+  /// that parses as H+add. [isChordLine] contains it: a line needs every token
+  /// but at most one to be chord-shaped, and `hadd` introduces a clause, so it
+  /// arrives with two or three ordinary words beside it. Only a line consisting
+  /// of that single word is misread, which no real song produces.
   ///
   /// Extensions may carry their own accidental (`Em7b5`, `C7#9`) — that `b` is
   /// part of a numbered extension, which is why it is only allowed in front of
@@ -125,6 +126,16 @@ class ChordSheetParser {
   /// One chord symbol, with hyphen runs excluded — see [isSingleChord].
   static final RegExp _oneChordToken = RegExp('^$_oneChord\$');
 
+  /// How many recognised chords a row needs before ONE unrecognised token is
+  /// tolerated instead of making the whole row lyrics. See [isChordLine] for
+  /// what these cost and what they bought.
+  static const _tolerateAfter = 3;
+  static const _tolerateAfterOddToken = 2;
+
+  /// What a Hungarian word looks like and a misread chord does not: plain
+  /// lowercase letters, no capital, no digit, no symbol.
+  static final RegExp _lowercaseWord = RegExp(r'^[a-záéíóöőúüű]+$');
+
   /// `-7`, `-m` — the chord before this one, with something added.
   ///
   /// The songbook writes `A  -7  D` where `-7` is the same A carrying a
@@ -139,9 +150,11 @@ class ChordSheetParser {
   // where losing a line of words is not.
   //
   // The rule is gone, because that argument does not survive the corpus. The
-  // ambiguity only arises when a root letter stands *among words*, and the
-  // all-or-nothing rule in [isChordLine] already keeps such a line as lyrics.
-  // A line holding nothing but one letter is not a lyric — not in a hymnal.
+  // ambiguity only arises when a root letter stands *among words*, and
+  // [isChordLine] already keeps such a line as lyrics: one chord and one
+  // unrecognised token is under the tolerance floor, which is exactly where
+  // `A szívemben` sits. A line holding nothing but one letter is not a lyric —
+  // not in a hymnal.
   //
   // What it cost, measured: `084-van-egy-ut` prints `C` over one line and `G`
   // over the next, `151-zengjed-a-dalt` prints `D` and `A`. Four real chords on
@@ -253,12 +266,42 @@ class ChordSheetParser {
 
   /// Returns true when [line] should be read as a row of chords.
   ///
-  /// Every token must be either a chord or bar-line/dash/repeat punctuation
-  /// ([_separator]), and at least one must be a real chord. One ordinary word is
-  /// still enough to make the whole line lyrics, which is what keeps a line like
-  /// `Csak Egy Az` intact even though each of its words starts with a note
-  /// letter — that all-or-nothing property is the reason this regex is not
-  /// `ChordTransposer`'s.
+  /// All-but-one, not all-or-nothing. Every token must be a chord or
+  /// bar-line/dash/repeat punctuation ([_separator]), and at least one must be a
+  /// real chord — except that ONE unrecognised token is tolerated when the line
+  /// carries enough recognised chords to leave no doubt what it is.
+  ///
+  /// It used to be all-or-nothing, and a single misread glyph cost the whole
+  /// row. Measured on the photograph corpus: `185-jezus-krisztusom` prints
+  /// `G D em H7` over two of its lines and the recogniser returns that `H7` as
+  /// `HÁ` and `HSX`, so six chords entered the song as words and the page scored
+  /// 0.200 for chord recall. `166-tekozlo-fiu` lost a row to `£` standing in for
+  /// an `E`, `098-szivemben-orom-dalol` one to `en` for `em`,
+  /// `125-nincs-mas-isten` one to a `!` its printed column rule left behind.
+  ///
+  /// Two thresholds, because one is not safe at two chords and three alone is
+  /// not generous enough:
+  ///
+  /// * [_tolerateAfter] chords is enough for any stray token; and
+  /// * [_tolerateAfterOddToken] is enough when the stray token does not look
+  ///   like a word — it carries a capital, a digit or a symbol. A chord is
+  ///   printed as a capital, or as a lowercase minor which is already a chord
+  ///   token, so a misread one rarely comes back as plain lowercase letters —
+  ///   and plain lowercase letters are exactly the shape of a Hungarian word.
+  ///
+  /// Calibrated, not guessed. Over every lyric line of every gold file and of
+  /// every song the app ships, 171 of them, this reclassifies **none**. It does
+  /// misread `a e b dal` — three bare note letters and one word, which is not a
+  /// line any hymnal prints. Requiring only two chords for anything turns
+  /// `A G szívemben` into a chord row, and requiring one turns `A szívemben`
+  /// into one, which is the line this family of rules exists to protect. That is
+  /// the floor, and it is why `Csak Egy Az` is still safe: none of its words is
+  /// a chord token, so there is nothing for the tolerance to hang off.
+  ///
+  /// The tolerated token is kept rather than dropped. It reaches storage as a
+  /// chord in the column the page printed it in — visibly wrong somewhere the
+  /// moderator can fix it, where a silently missing chord is the harder thing to
+  /// notice.
   ///
   /// A line whose only chord is a bare root (`A`, `d`, `A -`) is a chord line.
   /// It used not to be; see the note above [isChordToken] for why that changed.
@@ -267,6 +310,7 @@ class ChordSheetParser {
     if (tokens.isEmpty) return false;
 
     final chords = <String>[];
+    final unknown = <String>[];
     for (final token in tokens) {
       if (_separator.hasMatch(token)) continue;
       // Tolerated like punctuation. An orphan one — CRAFT drops lone glyphs, so
@@ -274,13 +318,25 @@ class ChordSheetParser {
       // rather than costing the row its real chords. The "at least one chord"
       // rule below still keeps a lyric line of dashes out.
       if (isContinuation(token)) continue;
-      if (!isChordToken(token)) return false;
-      chords.add(token);
+      (isChordToken(token) ? chords : unknown).add(token);
     }
 
     // Punctuation on its own is a rule drawn under a heading, not music.
     if (chords.isEmpty) return false;
-    return true;
+    if (unknown.length > 1) return false;
+    if (unknown.isEmpty) return true;
+    return toleratesOneUnknown(chords.length, unknown.single);
+  }
+
+  /// Whether [chordCount] recognised chords are enough to read [unknown] as a
+  /// misread chord rather than as a word.
+  ///
+  /// Public so `PhotoTextBridge` and the measurement harness can ask the same
+  /// question this asks, instead of each counting for itself.
+  bool toleratesOneUnknown(int chordCount, String unknown) {
+    if (chordCount >= _tolerateAfter) return true;
+    return chordCount >= _tolerateAfterOddToken &&
+        !_lowercaseWord.hasMatch(_unwrap(unknown));
   }
 
   /// Parses [input] into verses plus whatever metadata it carried.

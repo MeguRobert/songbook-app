@@ -23,7 +23,20 @@ class RulesAreShippedNotCopied(unittest.TestCase):
 
     def test_every_pattern_the_preview_needs_is_shipped(self):
         self.assertEqual({"chord_token", "separator", "continuation",
-                          "parenthesised"}, set(editor.rules()))
+                          "parenthesised", "lowercase_word"},
+                         set(editor.rules()))
+
+    def test_the_counts_the_preview_needs_are_shipped_too(self):
+        # `chord_row_reason` tolerates one unrecognised token once a row carries
+        # enough recognised chords, and a count is not a regex. The preview has
+        # to do that counting client-side, so it is given the numbers rather
+        # than left to hard-code them.
+        self.assertEqual({"tolerate_after", "tolerate_after_odd_token"},
+                         set(editor.thresholds()))
+        self.assertEqual(editor.worker._TOLERATE_AFTER,
+                         editor.thresholds()["tolerate_after"])
+        self.assertEqual(editor.worker._TOLERATE_AFTER_ODD_TOKEN,
+                         editor.thresholds()["tolerate_after_odd_token"])
 
     def test_the_patterns_are_the_workers_own(self):
         # Not equal-looking strings: the same objects' patterns. A second copy
@@ -35,6 +48,8 @@ class RulesAreShippedNotCopied(unittest.TestCase):
         self.assertEqual(worker._CONTINUATION.pattern, shipped["continuation"])
         self.assertEqual(worker._PARENTHESISED.pattern,
                          shipped["parenthesised"])
+        self.assertEqual(worker._LOWERCASE_WORD.pattern,
+                         shipped["lowercase_word"])
 
     def test_the_shipped_pattern_decides_what_the_worker_decides(self):
         """The invariant shipping the pattern is FOR, and the one that broke.
@@ -74,8 +89,10 @@ class RulesAreShippedNotCopied(unittest.TestCase):
         # A literal `/^[A-GH...` in the page means someone re-introduced the
         # copy. The preview must build its rules from what the server sent.
         html = PAGE.read_text(encoding="utf-8")
-        self.assertIn("buildRules(data.rules)", html)
+        self.assertIn("buildRules(data.rules, data.thresholds)", html)
         self.assertNotIn("A-GHa-gh", html)
+        # And no hard-coded copy of the counts either.
+        self.assertNotIn("chords.length >= 3", html)
 
     def test_the_page_no_longer_knows_about_a_bare_root_state(self):
         html = PAGE.read_text(encoding="utf-8")
@@ -115,7 +132,7 @@ class Serving(unittest.TestCase):
         status, body = self.get("/api/pages")
         self.assertEqual(200, status)
         data = json.loads(body)
-        self.assertEqual({"slugs", "rules", "pages"}, set(data))
+        self.assertEqual({"slugs", "rules", "thresholds", "pages"}, set(data))
         self.assertTrue(data["pages"])
 
     def test_a_page_carries_its_lines_and_its_provenance(self):

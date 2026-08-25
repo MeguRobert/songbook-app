@@ -201,8 +201,8 @@ Box = collections.namedtuple("Box", "text x0 y0 x1 y1 confidence",
 # An accidental may be a sign or a syllable. Hungarian and German print it as
 # one: `isz`/`is` is a sharp (`fiszm` is F sharp minor, `Fis` is F sharp) and
 # `esz`/`sz` is a flat (`Esz` is E flat). Measured on the corpus, `fiszm` alone
-# cost `166-tekozlo-fiu` three of its ten chord rows, because the all-or-nothing
-# rule threw every chord on those rows away with it. A bare `s` is deliberately
+# cost `166-tekozlo-fiu` three of its ten chord rows, because the row rule threw
+# every chord on those rows away with it. A bare `s` is deliberately
 # NOT a flat: it would read `Gsus2` as G flat carrying `us2`.
 _ACCIDENTAL = r"(?:#|b|isz|is|esz|sz)"
 _ONE_CHORD = (r"[A-GHa-gh]" + _ACCIDENTAL + r"?"
@@ -223,11 +223,23 @@ _ONE_CHORD = (r"[A-GHa-gh]" + _ACCIDENTAL + r"?"
 # as chords - the same drift that comment was written about.
 _CHORD_TOKEN = re.compile("^(?:" + _ONE_CHORD + r")(?:-(?:" + _ONE_CHORD
                           + r"))*$")
+# How many recognised chords a row needs before ONE unrecognised token is
+# tolerated instead of making the whole row lyrics. See `chord_row_reason` for
+# what these cost and what they bought; they are shipped to the gold editor,
+# which colours rows client-side and cannot call the function.
+_TOLERATE_AFTER = 3
+_TOLERATE_AFTER_ODD_TOKEN = 2
+# What a Hungarian word looks like and a misread chord does not: plain lowercase
+# letters, no capital, no digit, no symbol.
+_LOWERCASE_WORD = re.compile(r"^[a-záéíóöő"
+                             r"úüű]+$")
 # A row whose only chord is a bare root — `A`, `d`, `A -` — used to be resolved
 # towards lyrics by a `_BARE_ROOT` regex here, on the grounds that `A` is the
 # Hungarian definite article. The rule is gone: the ambiguity only arises when a
-# root letter stands among words, and one ordinary word already makes the whole
-# row lyrics. A row holding nothing but one letter is not a line of words.
+# root letter stands among words, and `chord_row_reason` already keeps such a row
+# as lyrics: one chord and one unrecognised token is under the tolerance floor,
+# which is exactly where `A szivemben` sits. A row holding nothing but one letter
+# is not a line of words.
 #
 # It cost four real chords on two pages — `C` and `G` on 084-van-egy-ut, `D` and
 # `A` on 151-zengjed-a-dalt — every one stored as a word. Removed to match
@@ -344,26 +356,75 @@ def is_continuation(token: str) -> bool:
 def chord_row_reason(texts) -> tuple[bool, str]:
     """Whether [texts] is a row of chords, and why.
 
-    All-or-nothing: one ordinary word makes the whole row lyrics. A row whose
-    only chord is a bare root reads as lyrics too — `A` is the Hungarian
-    definite article, and losing a chord is recoverable where losing a line of
-    words is not.
+    All-but-one, not all-or-nothing. Every token has to be a chord symbol or
+    punctuation, except that ONE unrecognised token is tolerated when the row
+    carries enough recognised chords to make it obvious what the row is.
+
+    It used to be all-or-nothing, and that cost whole rows to a single misread
+    glyph. Measured on the corpus: `185-jezus-krisztusom` prints `G D em H7` over
+    two of its lines and the recogniser returns the `H7` as `HÁ` and `HSX`, so
+    six chords went into the song as words and the page scored 0.200 for chord
+    recall. `166-tekozlo-fiu` lost a row to `£` standing in for an `E` and
+    another to `fiszmn` for `fiszm`; `098-szivemben-orom-dalol` lost one to `en`
+    for `em`; `125-nincs-mas-isten` lost one to a `!` the printed column rule
+    left behind.
+
+    Two thresholds, because one is not safe at two chords and three is not
+    generous enough:
+
+    * [_TOLERATE_AFTER] chords is enough for any stray token; and
+    * [_TOLERATE_AFTER_ODD_TOKEN] is enough when the stray token does not look
+      like a word - it carries a capital, a digit or a symbol. A chord is
+      printed as a capital (or as a lowercase minor, which is already a chord
+      token), so a misread one rarely comes back as plain lowercase letters,
+      and plain lowercase letters are exactly the shape of a Hungarian word.
+
+    Calibrated, not guessed. Against every lyric line of every gold file and of
+    every song the app ships - 171 of them - this rule reclassifies **none**.
+    What it does misread is `a e b dal`: three bare note letters and one word,
+    which is not a line any hymnal prints. The weaker `>= 2 chords for anything`
+    version turns `A G szívemben` into a chord row, and `>= 1` turns
+    `A szívemben` into one - which is the line this whole family of rules exists
+    to protect, so that is the floor.
+
+    The tolerated token is kept rather than dropped. It reaches storage as a
+    chord in the column the page printed it in, which is visibly wrong in a
+    place the moderator can fix; a silently missing chord is the harder thing to
+    notice.
 
     The reason exists because the two ways to lose a chord are indistinguishable
     downstream and are fixed in different places: the recogniser never returned
     the symbol, or it returned it and this rule then threw the whole row away.
     A reading that comes out short is the same reading either way.
     """
-    chords = []
+    chords, unknown = [], []
     for text in texts:
         if _SEPARATOR.match(text) or is_continuation(text):
             continue
-        if not is_chord_token(text):
-            return False, f"not a chord symbol: {text!r}"
-        chords.append(text)
+        (chords if is_chord_token(text) else unknown).append(text)
     if not chords:
         return False, "separators only, no chord symbol"
+    if len(unknown) > 1:
+        return False, "not chord symbols: " + " ".join(repr(u) for u in unknown)
+    if unknown:
+        if not tolerates_one_unknown(chords, unknown[0]):
+            return False, f"not a chord symbol: {unknown[0]!r}"
+        return True, ("chords: " + " ".join(chords)
+                      + f" (tolerating {unknown[0]!r})")
     return True, "chords: " + " ".join(chords)
+
+
+def tolerates_one_unknown(chords, unknown: str) -> bool:
+    """Whether [chords] are enough to read one [unknown] token as a misread.
+
+    The gold editor colours rows as you type and cannot call this, so it is
+    handed the two thresholds and the word pattern instead - see
+    `editor.rules()`. Keep the shape simple enough to say twice.
+    """
+    if len(chords) >= _TOLERATE_AFTER:
+        return True
+    return (len(chords) >= _TOLERATE_AFTER_ODD_TOKEN
+            and not _LOWERCASE_WORD.match(unknown))
 
 
 def is_chord_row(texts) -> bool:
@@ -377,7 +438,7 @@ def split_regions(row):
     The recogniser returns *regions*, not words, and a chord row is mostly white
     space — so a widely spaced row comes back as `G` and `C   D - C`: two
     regions holding four chords. Every rule above is written about one token, so
-    that second region reads as an ordinary word and the all-or-nothing test
+    that second region reads as an ordinary word and the row test
     then emits the whole row as lyrics. That is how a page of large, clean,
     well-separated chords loses every one of them, and it was doing so on the
     cleanest page in the corpus.

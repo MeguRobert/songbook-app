@@ -214,12 +214,18 @@ const $ = (id) => document.getElementById(id);
 // preview for two more rounds. One source of truth instead.
 let RULES = null;
 
-function buildRules(patterns) {
+function buildRules(patterns, thresholds) {
   RULES = {
     chord: new RegExp(patterns.chord_token),
     sep: new RegExp(patterns.separator),
     cont: new RegExp(patterns.continuation),
     paren: new RegExp(patterns.parenthesised),
+    word: new RegExp(patterns.lowercase_word),
+    // Counts, not patterns: `chord_row_reason` counts, and a count is not a
+    // regex. Shipped for the same reason the patterns are — a literal 3 here
+    // would be a second copy of the rule.
+    tolerateAfter: thresholds.tolerate_after,
+    tolerateAfterOddToken: thresholds.tolerate_after_odd_token,
   };
 }
 
@@ -230,20 +236,28 @@ const unwrap = (t) => {
 const isChord = (t) => RULES.chord.test(unwrap(t));
 const isCont = (t) => RULES.cont.test(unwrap(t));
 
-/** Mirrors `chord_row_reason`: every token either a chord or punctuation, and
- *  at least one a chord. Nothing else — a row of one letter is a chord row. */
+/** Mirrors `chord_row_reason`: every token but at most one either a chord or
+ *  punctuation, and at least one a chord. A row of one letter is a chord row.
+ *
+ *  The one tolerated token is what saves a row from a single misread glyph —
+ *  `G D em HÁ` is a chord row. The thresholds come from the server, so this
+ *  counts but does not decide. */
 function rowKind(line) {
   if (!RULES) return 'plain';
   const tokens = line.split(/\s+/).filter(Boolean);
   if (!tokens.length) return 'blank';
   const chords = [];
+  const unknown = [];
   for (const t of tokens) {
     if (RULES.sep.test(t) && !isCont(t)) continue;
     if (isCont(t)) continue;
-    if (!isChord(t)) return 'lyric';
-    chords.push(t);
+    (isChord(t) ? chords : unknown).push(t);
   }
-  return chords.length ? 'chord' : 'lyric';
+  if (!chords.length || unknown.length > 1) return 'lyric';
+  if (!unknown.length) return 'chord';
+  if (chords.length >= RULES.tolerateAfter) return 'chord';
+  return (chords.length >= RULES.tolerateAfterOddToken
+          && !RULES.word.test(unwrap(unknown[0]))) ? 'chord' : 'lyric';
 }
 
 // ------------------------------------------------------------------- rendering
@@ -774,7 +788,7 @@ window.addEventListener('beforeunload', (e) => {
 
 (async function start() {
   const data = await (await fetch('/api/pages')).json();
-  buildRules(data.rules);
+  buildRules(data.rules, data.thresholds);
   state.pages = data.pages;
   state.slugs = data.slugs;
   // Whatever still holds an engine's own reading first: those need transcribing
