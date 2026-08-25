@@ -1048,6 +1048,38 @@ class AppLocalizationsRo extends AppLocalizations {
   String get mySubmissionsEmpty => 'Nu ai trimis încă niciun cântec.';
 
   @override
+  String get menuShareSong => 'Împarte cu adunarea';
+
+  @override
+  String get shareSongTitle => 'Trimiți acest cântec?';
+
+  @override
+  String shareSongBody(String title) {
+    return '„$title” ajunge la moderatori. Intră în cartea de cântări comună doar după ce unul dintre ei îl aprobă, iar copia ta rămâne pe acest dispozitiv oricum.';
+  }
+
+  @override
+  String get shareSongConfirm => 'Trimite';
+
+  @override
+  String get shareSongSignInTitle => 'Autentifică-te pentru a trimite';
+
+  @override
+  String get shareSongSignInBody =>
+      'Trimiterea are nevoie de un cont, ca adunarea să vadă cine a contribuit cântecul. Cântecul este deja salvat pe acest dispozitiv și rămâne acolo.';
+
+  @override
+  String get shareSongSent => 'Trimis spre aprobare.';
+
+  @override
+  String get shareSongAlreadySent =>
+      'Ai trimis deja acest cântec. Așteaptă aprobarea.';
+
+  @override
+  String get shareSongFailed =>
+      'Cântecul nu a putut fi trimis. Verifică conexiunea și încearcă din nou.';
+
+  @override
   String get approve => 'Aprobă';
 
   @override

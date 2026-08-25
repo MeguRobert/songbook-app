@@ -1046,6 +1046,38 @@ class AppLocalizationsHu extends AppLocalizations {
   String get mySubmissionsEmpty => 'Még nem küldtél be éneket.';
 
   @override
+  String get menuShareSong => 'Megosztás a gyülekezettel';
+
+  @override
+  String get shareSongTitle => 'Megosztod ezt az éneket?';
+
+  @override
+  String shareSongBody(String title) {
+    return 'A(z) „$title” a moderátorokhoz kerül. Csak akkor lesz része a közös énekeskönyvnek, ha valamelyikük jóváhagyja; a saját példányod így is, úgy is ezen az eszközön marad.';
+  }
+
+  @override
+  String get shareSongConfirm => 'Küldés';
+
+  @override
+  String get shareSongSignInTitle => 'Jelentkezz be a megosztáshoz';
+
+  @override
+  String get shareSongSignInBody =>
+      'A megosztáshoz fiók kell, hogy a gyülekezet lássa, ki küldte be az éneket. Az ének már mentve van ezen az eszközön, és itt is marad.';
+
+  @override
+  String get shareSongSent => 'Elküldve jóváhagyásra.';
+
+  @override
+  String get shareSongAlreadySent =>
+      'Ezt az éneket már beküldted. Jóváhagyásra vár.';
+
+  @override
+  String get shareSongFailed =>
+      'Az éneket nem sikerült elküldeni. Ellenőrizd a kapcsolatot, és próbáld újra.';
+
+  @override
   String get approve => 'Jóváhagyás';
 
   @override

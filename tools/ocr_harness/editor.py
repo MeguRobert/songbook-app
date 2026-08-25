@@ -153,7 +153,21 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if name not in known:
                 self._json(404, {"error": "unknown page"})
                 return
-            self._send(200, (gold.PHOTOS / name).read_bytes(), "image/jpeg")
+            # Listed but absent is a NORMAL state, not an exceptional one: the
+            # manifest is committed and the photographs are not, so every
+            # machine except the one that took them has the list without the
+            # images. Reading straight through raised FileNotFoundError inside
+            # the handler, which drops the connection with no response at all —
+            # the client then reports a disconnect, which says nothing about
+            # what is wrong. Say what is missing instead.
+            photo = gold.PHOTOS / name
+            if not photo.is_file():
+                self._json(404, {
+                    "error": "photograph not on this machine",
+                    "file": name,
+                })
+                return
+            self._send(200, photo.read_bytes(), "image/jpeg")
             return
         self._json(404, {"error": "not found"})
 

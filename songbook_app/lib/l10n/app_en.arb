@@ -1384,6 +1384,47 @@
   "@mySubmissionsEmpty": {
     "description": "Empty own-submissions list"
   },
+  "menuShareSong": "Share with the congregation",
+  "@menuShareSong": {
+    "description": "Overflow-menu action that sends a user's own song to the moderators"
+  },
+  "shareSongTitle": "Share this song?",
+  "@shareSongTitle": {
+    "description": "Title of the confirmation before submitting"
+  },
+  "shareSongBody": "“{title}” goes to the moderators. It joins the shared songbook only after one of them approves it, and your copy stays on this device either way.",
+  "@shareSongBody": {
+    "description": "Explains submit-then-review before the user commits",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shareSongConfirm": "Send",
+  "@shareSongConfirm": {
+    "description": "Confirms the submission"
+  },
+  "shareSongSignInTitle": "Sign in to share",
+  "@shareSongSignInTitle": {
+    "description": "Title shown when a signed-out user tries to share"
+  },
+  "shareSongSignInBody": "Sharing needs an account, so the congregation can see who contributed the song. Your song is already saved on this device and stays there.",
+  "@shareSongSignInBody": {
+    "description": "Why an account is required to submit"
+  },
+  "shareSongSent": "Sent for review.",
+  "@shareSongSent": {
+    "description": "Confirmation after a successful submission"
+  },
+  "shareSongAlreadySent": "You have already sent this song in. It is waiting for review.",
+  "@shareSongAlreadySent": {
+    "description": "Shown when the same song is already in the queue"
+  },
+  "shareSongFailed": "The song could not be sent. Check your connection and try again.",
+  "@shareSongFailed": {
+    "description": "Shown when the submission call fails"
+  },
   "approve": "Approve",
   "@approve": {
     "description": "Accepts a submission into the shared catalogue"

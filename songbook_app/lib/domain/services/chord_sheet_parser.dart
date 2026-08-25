@@ -109,12 +109,21 @@ class ChordSheetParser {
   /// because the all-or-nothing rule threw every chord on those rows away with
   /// it. A bare `s` is deliberately NOT a flat, German short forms
   /// notwithstanding — it would read `Gsus2` as G flat and `us2`.
-  static final RegExp _accidental = RegExp(r'(?:#|b|isz|is|esz|sz)');
-  static final RegExp _chordToken = RegExp(
-    '^[A-GHa-gh]${_accidental.pattern}?'
-    r'(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*'
-    '(?:/[A-GHa-gh]${_accidental.pattern}?)?\$',
-  );
+  ///
+  /// Chords joined by hyphens are one token, because that is how the book prints
+  /// two chords played in succession over one syllable: `Amaj7-A7`,
+  /// `Cadd9-Csus2`, `G5-Gsus2`, `D-E`. Every part has to be a chord on its own,
+  /// which is what keeps `ici-picit` a word. [chordsIn] separates them again on
+  /// the way into storage, so nothing ever transposes a symbol naming two
+  /// pitches.
+  static const _accidental = r'(?:#|b|isz|is|esz|sz)';
+  static const _oneChord = '[A-GHa-gh]$_accidental?'
+      r'(?:maj|min|m|dim|aug|sus|add|\+|°|[#b]?\d+)*'
+      '(?:/[A-GHa-gh]$_accidental?)?';
+  static final RegExp _chordToken = RegExp('^(?:$_oneChord)(?:-(?:$_oneChord))*\$');
+
+  /// One chord symbol, with hyphen runs excluded — see [isSingleChord].
+  static final RegExp _oneChordToken = RegExp('^$_oneChord\$');
 
   /// `-7`, `-m` — the chord before this one, with something added.
   ///
@@ -199,11 +208,7 @@ class ChordSheetParser {
   /// on its own, which is what keeps `ici-picit` a word. They are separated
   /// again on the way into storage — see [chordsIn] — so nothing downstream ever
   /// has to transpose a symbol naming two pitches.
-  bool isChordToken(String token) {
-    if (isSingleChord(token)) return true;
-    final parts = _unwrap(token).split('-');
-    return parts.length > 1 && parts.every(_chordToken.hasMatch);
-  }
+  bool isChordToken(String token) => _chordToken.hasMatch(_unwrap(token));
 
   /// Returns true when [token] is ONE chord symbol, hyphen runs excluded.
   ///
@@ -213,7 +218,7 @@ class ChordSheetParser {
   /// `G - C - D - ( C )` with real spaces in it, and the glyph boxes put each
   /// chord back where the page had it. Character offsets inside the merged token
   /// cannot - the run is set far wider than its letters.
-  bool isSingleChord(String token) => _chordToken.hasMatch(_unwrap(token));
+  bool isSingleChord(String token) => _oneChordToken.hasMatch(_unwrap(token));
 
   /// The chords in [token], and where each sits relative to its start.
   ///
@@ -224,9 +229,9 @@ class ChordSheetParser {
   /// with the second chord silently in the wrong key.
   List<(String, int)> chordsIn(String token) {
     final bare = _unwrap(token);
-    if (_chordToken.hasMatch(bare)) return [(bare, 0)];
+    if (_oneChordToken.hasMatch(bare)) return [(bare, 0)];
     final parts = bare.split('-');
-    if (parts.length < 2 || !parts.every(_chordToken.hasMatch)) {
+    if (parts.length < 2 || !parts.every(_oneChordToken.hasMatch)) {
       return [(bare, 0)];
     }
     final out = <(String, int)>[];
