@@ -16,7 +16,9 @@
 //       -o <out>/harness.js tool/browser_reader_harness.dart
 //
 // The page then exposes `window.readPage('<url>')`, which resolves to
-// `{chordPro, warnings, words, ms}` or `{error}`. `warnings` holds
+// `{chordPro, warnings, words, boxes, trace, ms}` or `{error}`.
+// `boxes` is every word the engine returned and the glyphs inside it;
+// `trace --boxes` is what prints it. `warnings` holds
 // ImportNoticeCode names, since the prose is in the app's localisations.
 import 'dart:async';
 import 'dart:convert';
@@ -99,6 +101,44 @@ Future<JSString> _read(String url) async {
       // substring match on English wording it replaced.
       'warnings': [for (final notice in payload.notices) notice.code.name],
       'words': read.words.length,
+      // Every word the engine returned, with the glyph boxes inside it.
+      //
+      // Not a measurement of the app - a window into the one input every rule
+      // in `PhotoTextBridge` is a proportion over. Three of the five reading
+      // defects fixed so far were invisible until someone looked at these:
+      // `125-nincs-mas-isten`'s column of `!` turned out to be 1-to-5-pixel
+      // slices of the printed box around the page, `151-zengjed-a-dalt`
+      // returned its letterbox edge as a 944x25 `A`, and `084-van-egy-ut`
+      // returned its italic capital `C` as a lowercase `c` at full cap height.
+      // Each time the dump was added by hand, measured with, and deleted again.
+      //
+      // The glyphs matter as much as the words: `splitMergedChords` decides
+      // where `DGD` comes apart from the gaps between them, so a merge that
+      // did not split can only be explained by the boxes it was looking at.
+      //
+      // Always emitted. The harness prints them only for `trace --boxes`, and
+      // one page's worth is a few hundred rows of JSON on a wire that is
+      // already carrying the page's whole text.
+      'boxes': [
+        for (final word in read.words)
+          {
+            't': word.text,
+            'x0': word.x0.round(),
+            'y0': word.y0.round(),
+            'x1': word.x1.round(),
+            'y1': word.y1.round(),
+            'glyphs': [
+              for (final glyph in word.symbols)
+                {
+                  't': glyph.text,
+                  'x0': glyph.x0.round(),
+                  'y0': glyph.y0.round(),
+                  'x1': glyph.x1.round(),
+                  'y1': glyph.y1.round(),
+                },
+            ],
+          },
+      ],
       // What each stage measured, the way the Python arm has always reported
       // it. Without this the only account of why a page read the way it did
       // was of the engine that does not run on a phone.

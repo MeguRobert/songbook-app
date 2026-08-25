@@ -48,6 +48,84 @@ void main() {
   List<String> textsOf(List<OcrWord> words) =>
       words.map((w) => w.text).toList();
 
+  group('a piece that is not a chord is cut again', () {
+    // `185-jezus-krisztusom` returns `D G D` as the single word `DGD`, glyphs
+    // 52 px wide with gaps of 46 and 30. The gate is 0.6 of the glyph width -
+    // 31.2 - so the first gap cuts and the second misses **by 1.2 pixels**. That
+    // left `D` and `GD`, `GD` is not a chord symbol, and the all-or-nothing
+    // guard threw the whole split away: the row read as a lyric line, which is
+    // both that page's extra line and most of its 0.600 chord recall.
+    //
+    // Measured over every multi-glyph word on all nine pages of the corpus, the
+    // gate cannot simply be lowered: the Hungarian `ha` of `151-zengjed-a-dalt`
+    // carries a gap of 0.38 of its glyph width and the `CGD` of
+    // `125-nincs-mas-isten` needs 0.42 cut. A gate between them would be luck.
+    //
+    // So the gate stays where it is and keeps deciding which words are even
+    // candidates - `De` at 0.15 and `ha` at 0.38 never open at all - and a piece
+    // that comes out of an opened word without reading as a chord is cut once
+    // more at its own widest gap.
+    test('DGD becomes D, G and D even when the second gap misses the gate', () {
+      // The real geometry: 52 px glyphs, gaps of 46 and 30, gate 31.2.
+      final split = bridge.splitMergedChords(
+          [merged('DGD', width: 52, gaps: [46, 30])]);
+      expect(textsOf(split), ['D', 'G', 'D']);
+    });
+
+    test('the pieces keep the columns they were printed in', () {
+      final split = bridge.splitMergedChords(
+          [merged('DGD', width: 52, gaps: [46, 30])]);
+      expect(split[0].x1, lessThan(split[1].x0));
+      expect(split[1].x1, lessThan(split[2].x0));
+    });
+
+    test('a piece that cannot become chords abandons the whole split', () {
+      // `bőrömbe` on 105-kosz-jol-vagyok: 20 px glyphs, one gap of 16 that
+      // clears the gate of 12. It cuts to `bő` + `römbe`, and `bő` cuts again
+      // to `b` - a chord - and `ő`, which is not one. All or nothing still.
+      final split = bridge.splitMergedChords(
+          [merged('bőrömbe', width: 20, gaps: [8, 16, 2, 2, 5, 3])]);
+      expect(textsOf(split), ['bőrömbe']);
+    });
+
+    test('a word the gate never opens is never a candidate', () {
+      // This is the guard that matters, and it is the gate rather than the chord
+      // check. `De` and `ha` and `be` and `de` are ordinary Hungarian words that
+      // would partition into bare note letters, and their gaps are 0.14 to 0.38
+      // of their glyph width - nowhere near 0.6. Measured on 084-van-egy-ut,
+      // 151-zengjed-a-dalt, 125-nincs-mas-isten and 166-tekozlo-fiu.
+      for (final (text, width, gap) in [
+        ('De', 27.0, 4.0),
+        ('Ha', 28.5, 5.0),
+        ('ha', 10.5, 4.0),
+        ('be', 24.5, -10.0),
+        ('de', 19.0, -5.0),
+      ]) {
+        final split = bridge
+            .splitMergedChords([merged(text, width: width, gaps: [gap])]);
+        expect(textsOf(split), [text],
+            reason: '$text must not become two chords');
+      }
+    });
+
+    test('prose the gate does open still cannot become chords', () {
+      // `ici-picit` on 084-van-egy-ut: 9 px glyphs, every gap between 6 and 8,
+      // so a gate of 5.4 cuts it into all nine of its letters. `i` is not a
+      // chord and cannot be cut further, so the split is abandoned - which is
+      // what has always happened, and this is the test that says the new
+      // recursion did not change it.
+      final split = bridge.splitMergedChords(
+          [merged('ici-picit', width: 9, gaps: [7, 7, 7, 6, 8, 6, 7, 7])]);
+      expect(textsOf(split), ['ici-picit']);
+    });
+
+    test('the recursion terminates on a single glyph', () {
+      final split = bridge.splitMergedChords(
+          [merged('xy', width: 20, gaps: [40])]);
+      expect(textsOf(split), ['xy']);
+    });
+  });
+
   group('a merged run of chords is pulled apart', () {
     test('DGD becomes D, G and D', () {
       // The exact case from 185-jezus-krisztusom, which reported no chords at

@@ -647,7 +647,7 @@ chord run.
 
 ## 2026-08-25, fifth session: the page's own printed lines, and a mis-sized C
 
-**0.827 → 0.925 mean over seven pages**, in three changes, no page falling on
+**0.827 → 0.944 mean over seven pages**, in four changes, no page falling on
 any of them.
 
 | page | before | after |
@@ -658,8 +658,8 @@ any of them.
 | `151-zengjed-a-dalt` | 0.913 | **0.997** |
 | `166-tekozlo-fiu` | 0.957 | **0.962** |
 | `app-jezus-szivedbe-lat` | 0.965 | **0.969** |
-| `185-jezus-krisztusom` | 0.778 | 0.778 |
-| **mean** | **0.827** | **0.925** |
+| `185-jezus-krisztusom` | 0.778 | **0.911** |
+| **mean** | **0.827** | **0.944** |
 
 ### A photographed page is not only type
 
@@ -819,16 +819,89 @@ is wrong. `lowercase-c-raised` is a property of the **reader**. So
 and the run still prints *the reader repaired and said so* — because telling the
 reviewer a judgment call was made is the entire point of raising it.
 
+### A merged run that misses the gate by a pixel
+
+**0.925 → 0.944**, and it is the whole of one page: `185-jezus-krisztusom`
+0.778 → **0.911**, chord recall 0.600 → 0.867, lyric CER 0.049 → **0.000**, its
+extra lyric line gone.
+
+`185` returns `D G D` as the single word `DGD`: 52-pixel glyphs with gaps of 46
+and 30, against a gate of 0.6 × 52 = 31.2. The first gap cut and the second
+**missed by 1.2 pixels**. That left `D` and `GD`, `GD` is not a chord symbol,
+and the all-or-nothing guard threw the entire split away — so the row read as a
+lyric line. Both that page's extra line and most of its chord recall, on the
+lowest-scoring reviewed page in the corpus.
+
+The obvious move is to lower `_symbolGap`, and measuring first said not to. Over
+every multi-glyph word on all nine pages, gap as a share of the word's own
+median glyph width:
+
+| must stay whole | | needs cutting | |
+|---|---|---|---|
+| `ici-picit` (084) | 0.89 | `GD` (125) | 0.85 |
+| `ha` (151) | **0.38** | `DGD` (185) | 0.58 |
+| `Ha` (151) | 0.21 | `CDG` (125) | 0.46 |
+| `De` (084) | 0.15 | `CGD` (125) | **0.42** |
+| `be` (125) | −0.41 | | |
+
+`ha`, `De`, `be` and `de` are ordinary Hungarian words that **partition into bare
+note letters**, so the chord check would not save them either — `De` becoming
+`D e` in the middle of a lyric is a worse bug than a lost chord row. Between
+`ha` at 0.38 and `CGD` at 0.42 there is a factor of 1.1. A threshold there would
+be luck.
+
+`ici-picit` at 0.89 is worth dwelling on: the gate *already* cuts it into all
+nine of its letters, and it survives only because `i` is not a chord token. **The
+gate was never the prose guard** — the all-chords check is. So the two jobs get
+separated: the gate decides which words are *candidates*, and inside a word it
+has already opened, a piece that does not read as a chord is cut once more at its
+own widest gap, recursively, until every piece is a chord or the split is
+abandoned.
+
+It recovers `DGD` and changes nothing else. `bőrömbe` cuts to `bő` and `römbe`,
+`bő` cuts again to a perfectly good `b` and an `ő` that is not a chord, and the
+split is abandoned exactly as before.
+
+Still lost, and now recorded in the code rather than left to be rediscovered:
+`125`'s `CGD` and `CDG` and `109`'s `GA`. Their gaps never open the gate at all,
+and telling them from `ha` needs to know the row is chords — which
+`splitMergedChords` cannot ask, because it must run before `deskew` and
+`OcrWord.movedTo` does not carry glyph boxes. **That is the next structural
+change this file will need.**
+
+Nothing to port: EasyOCR returns regions and no glyph boxes at all, so
+`splitMergedChords` has no Python counterpart. `split_regions` splits on the
+whitespace inside a region — a different problem with a different fix.
+
+### `trace --boxes`, which should have existed three fixes ago
+
+Every word the engine returned, the glyphs inside it, each box as a share of the
+page's median glyph width, and each glyph gap against the split gate with the
+ones that clear it marked.
+
+Three of this session's four fixes were invisible without this, and each time it
+was added to `browser_reader_harness.dart` by hand, measured with, and deleted
+again: the 1-to-5-pixel border slices of `125`, the 944×25 letterbox edge of
+`151` returned as `A`, and the italic capital `C` of `084` returned as a
+lowercase `c` at full cap height. It answered `DGD` in one run.
+
+`boxes` now rides on the harness payload, where `words` was only ever a count.
+The browser arm fills it; the EasyOCR arm reports none and says so — which is
+itself the reason the two arms need different fixes for the same-looking defect.
+
 ### What the corpus says is next
 
 The extra lyric lines are three different defects, not the one the previous
 handoff named. Measured against gold, line by line:
 
-1. **A merged chord run that `splitMergedChords` did not split.** `185` reads
-   `C   DGD` as a *lyric* line — one chord and one unknown is under the
-   tolerance floor — which is both its extra line and most of its 0.600 chord
-   recall. `125` does the same with `CGD`, `CDG` and `E mGD`. This is now the
-   largest measurable defect left, and `185` is the lowest reviewed page.
+1. **The merged runs the gate never opens.** `185`'s `DGD` is fixed; `125`'s
+   `CGD` (gap 0.42 of its glyph width) and `CDG` (0.46) and `109`'s `GA` (0.50)
+   are not, because Hungarian `ha` sits at 0.38 and a threshold in a factor of
+   1.1 would be luck. **The fix is structural**: `splitMergedChords` needs to
+   know its row is chords, which means running after `groupRows` — which
+   means `deskew` must stop dropping glyph boxes (`OcrWord.movedTo` does not
+   carry `symbols`). That single change also unblocks anything else that wants
+   to reason about a chord row's glyphs.
 2. **`098`'s next-song header.** `99. Több erőt  a-t.` is the head of song 99
    bleeding in — the page is named `chords-next-song-header` and the corpus has
    been waiting for someone to read the filename.
@@ -847,6 +920,6 @@ python -m unittest discover -s tools -p "test_*.py"       # expect 339
 python -m tools.ocr_harness run                           # the Python arm
 python -m tools.ocr_harness run --engine browser          # what actually ships
 cd songbook_app && flutter analyze --no-fatal-infos       # expect exit 0, 0 issues
-cd songbook_app && flutter test                           # expect 1286
+cd songbook_app && flutter test                           # expect 1292
 cd songbook_app && flutter build web --release --no-web-resources-cdn
 ```

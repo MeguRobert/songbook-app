@@ -850,26 +850,81 @@ class PhotoTextBridge {
 
     final pieces = <OcrWord>[];
     for (final run in runs) {
-      final text = run.map((s) => s.text).join().trim();
-      if (text.isEmpty) continue;
-      pieces.add(OcrWord(
-        text: text,
-        x0: run.first.x0,
-        y0: word.y0,
-        x1: run.last.x1,
-        y1: word.y1,
-      ));
+      // All or nothing, and the run is asked rather than told: a piece that does
+      // not read as a chord is cut once more at its own widest gap. See
+      // [_chordPieces].
+      final split = _chordPieces(word, run);
+      if (split == null) return [word];
+      pieces.addAll(split);
     }
     if (pieces.length < 2) return [word];
-    // The guard that protects prose: all or nothing.
-    for (final piece in pieces) {
-      if (!parser.isChordToken(piece.text) &&
-          !parser.isContinuation(piece.text) &&
-          !_isChordPunctuation(piece.text)) {
-        return [word];
+    return pieces;
+  }
+
+  /// [glyphs] as pieces that are every one a chord, or null when no cut of them
+  /// is.
+  ///
+  /// The gate above decides which words are *candidates*; this decides where
+  /// inside one the chords actually are. Separating the two is what recovers
+  /// `185-jezus-krisztusom`'s `DGD`: 52-pixel glyphs with gaps of 46 and 30
+  /// against a gate of 31.2, so the first gap cut and the second missed **by 1.2
+  /// pixels**. That left `D` and `GD`, `GD` is not a chord symbol, and the
+  /// whole split was thrown away — the row read as a lyric line, which was both
+  /// that page's extra line and most of its 0.600 chord recall.
+  ///
+  /// The gate could not simply be lowered. Measured over every multi-glyph word
+  /// on all nine pages of the corpus: the Hungarian `ha` of
+  /// `151-zengjed-a-dalt` carries a gap of 0.38 of its glyph width, `De` on
+  /// `084-van-egy-ut` 0.15, `be` and `de` less than nothing — and
+  /// `125-nincs-mas-isten`'s `CGD` needs 0.42 cut. Any gate between 0.38 and
+  /// 0.42 would be luck, and every one of those words partitions into bare note
+  /// letters, so the chord check alone would not save them. `De` becoming
+  /// `D e` in the middle of a lyric is a worse bug than a lost chord row.
+  ///
+  /// So the gate stays at [_symbolGap] and keeps prose from ever being a
+  /// candidate, and this runs only inside a word the gate already opened. It
+  /// recovers `DGD` and changes nothing else in the corpus: `bőrömbe` cuts to
+  /// `bő` and `römbe`, `bő` cuts again to a perfectly good `b` and an `ő` that
+  /// is not a chord, and the split is abandoned exactly as before.
+  ///
+  /// `125-nincs-mas-isten`'s `CGD`, `CDG` and `109`'s `GA` are still lost. Their
+  /// gaps never open the gate at all, and telling them from `ha` needs to know
+  /// the row is chords — which this cannot ask, because it has to run before
+  /// [deskew], and [OcrWord.movedTo] does not carry glyph boxes.
+  List<OcrWord>? _chordPieces(OcrWord word, List<OcrWord> glyphs) {
+    final text = glyphs.map((g) => g.text).join().trim();
+    if (text.isEmpty) return const [];
+    if (parser.isChordToken(text) ||
+        parser.isContinuation(text) ||
+        _isChordPunctuation(text)) {
+      return [
+        OcrWord(
+          text: text,
+          x0: glyphs.first.x0,
+          y0: word.y0,
+          x1: glyphs.last.x1,
+          y1: word.y1,
+        ),
+      ];
+    }
+    // One glyph that is not a chord is the end of it, which is also what bounds
+    // the recursion: every call is strictly shorter than the one above it.
+    if (glyphs.length < 2) return null;
+
+    var at = 1;
+    var widest = glyphs[1].x0 - glyphs[0].x1;
+    for (var i = 2; i < glyphs.length; i++) {
+      final gap = glyphs[i].x0 - glyphs[i - 1].x1;
+      if (gap > widest) {
+        widest = gap;
+        at = i;
       }
     }
-    return pieces;
+    final left = _chordPieces(word, glyphs.sublist(0, at));
+    if (left == null) return null;
+    final right = _chordPieces(word, glyphs.sublist(at));
+    if (right == null) return null;
+    return [...left, ...right];
   }
 
   /// Brackets and dashes a chord row carries, as their own pieces.

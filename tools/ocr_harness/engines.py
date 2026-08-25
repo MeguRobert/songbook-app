@@ -34,6 +34,12 @@ class Result:
     trace: list[dict]
     seconds: float
 
+    # Every word the engine returned, with the glyphs inside it, when the engine
+    # can say. Only the browser arm can: EasyOCR returns regions and no glyph
+    # boxes at all, which is why `splitMergedChords` exists on the app side and
+    # `split_regions` on the worker side. `trace --boxes` prints them.
+    boxes: list[dict] = dataclasses.field(default_factory=list)
+
 
 class EasyOcr:
     """The Python arm of the reading path: EasyOCR plus the shared bridge."""

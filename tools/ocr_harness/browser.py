@@ -218,9 +218,11 @@ class Browser:
             # than crashing the run.
             trace.append({"stage": "refused", "message": answer["refused"]})
             return Result(engine=self.name, seconds=answer.get("seconds", 0.0),
-                          trace=trace, reading=reading_mod.parse("", ()))
+                          trace=trace, reading=reading_mod.parse("", ()),
+                          boxes=answer.get("boxes") or [])
         return Result(
             engine=self.name, seconds=answer.get("seconds", 0.0), trace=trace,
+            boxes=answer.get("boxes") or [],
             reading=reading_mod.parse(
                 answer["chordPro"],
                 reading_mod.slugs_for(answer.get("warnings", []))))

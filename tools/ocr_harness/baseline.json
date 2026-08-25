@@ -160,15 +160,15 @@
       "185-jezus-krisztusom--chords-highlighted.jpg": {
         "number_exact": 0.0,
         "title_cer": 0.0,
-        "lyric_cer": 0.0494,
-        "lyric_cer_folded": 0.0494,
-        "chord_recall": 0.6,
-        "chord_precision": 0.8182,
-        "chord_f1": 0.6923,
-        "placement": 0.6923,
-        "placement_near": 0.6923,
+        "lyric_cer": 0.0,
+        "lyric_cer_folded": 0.0,
+        "chord_recall": 0.8667,
+        "chord_precision": 0.8667,
+        "chord_f1": 0.8667,
+        "placement": 0.8667,
+        "placement_near": 0.8667,
         "warnings_ok": 0.0,
-        "headline": 0.7784,
+        "headline": 0.9111,
         "gold": "886c28d56932"
       },
       "app-jezus-szivedbe-lat--chords-screenshot.jpg": {

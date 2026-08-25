@@ -6,6 +6,8 @@
     python -m tools.ocr_harness run                         read, score, table
     python -m tools.ocr_harness run --engine vision         the ceiling
     python -m tools.ocr_harness trace 185                   why each row went where
+    python -m tools.ocr_harness trace 185 --engine browser --boxes
+                                            what the engine actually returned
     python -m tools.ocr_harness symbols                     chords no rule can spell
     python -m tools.ocr_harness accept                      promote to baseline
 
@@ -134,6 +136,62 @@ def cmd_run(args) -> int:
     return 0
 
 
+def print_boxes(boxes) -> None:
+    """Every word the engine returned, and the glyphs inside it.
+
+    The one input every rule in `PhotoTextBridge` is a proportion over, and the
+    thing to look at first when a page reads wrongly. Three of the reading
+    defects fixed so far were invisible without it: `125-nincs-mas-isten`'s
+    column of `!` was 1-to-5-pixel slices of the printed box around the page,
+    `151-zengjed-a-dalt` returned its letterbox edge as a 944x25 `A`, and
+    `084-van-egy-ut` returned its italic capital `C` as a lowercase `c` at full
+    cap height.
+
+    Sorted by row and then by x, so it reads like the page. `w/glyph` is the
+    width per character, which is what the furniture rule and the gutter rule
+    both measure against the page median printed in the header; `gap` is the
+    pixels between this glyph and the one before it, which is what
+    `splitMergedChords` compares against 0.6 of the word's own median glyph
+    width.
+    """
+    import statistics
+
+    if not boxes:
+        print("  (this engine reports no boxes)")
+        return
+    measurable = [b for b in boxes if b["t"] and b["x1"] > b["x0"]]
+    median = (statistics.median((b["x1"] - b["x0"]) / len(b["t"])
+                                for b in measurable) if measurable else 0.0)
+    heights = (statistics.median(b["y1"] - b["y0"] for b in boxes)
+               if boxes else 0.0)
+    print(f"  {len(boxes)} words; median {median:.1f} px per glyph, "
+          f"{heights:.0f} px tall")
+    for box in sorted(boxes, key=lambda b: (b["y0"] // 20, b["x0"])):
+        width = box["x1"] - box["x0"]
+        height = box["y1"] - box["y0"]
+        per = width / max(1, len(box["t"]))
+        print(f"    {box['t']!r:16} x {box['x0']:>5}-{box['x1']:<5} "
+              f"y {box['y0']:>5}-{box['y1']:<5} "
+              f"w{width:>4} h{height:>4} "
+              f"w/glyph {per:>6.1f} ({per / median:>5.2f}x)"
+              if median else
+              f"    {box['t']!r:16} w{width:>4} h{height:>4}")
+        glyphs = box.get("glyphs") or []
+        if len(glyphs) < 2:
+            continue
+        widths = [g["x1"] - g["x0"] for g in glyphs if g["x1"] > g["x0"]]
+        gate = 0.6 * (statistics.median(widths) if widths else 0.0)
+        parts = []
+        previous = None
+        for glyph in glyphs:
+            if previous is not None:
+                gap = glyph["x0"] - previous["x1"]
+                parts.append(f"|{gap:+d}{'!' if gap >= gate else ''}|")
+            parts.append(f"{glyph['t']}")
+            previous = glyph
+        print(f"      glyphs gate {gate:>5.1f}  " + " ".join(parts))
+
+
 def cmd_trace(args) -> int:
     engine = engines.engine(args.engine)
     pages = gold.pages(args.pages)
@@ -158,6 +216,8 @@ def cmd_trace(args) -> int:
                       f"  ({record['reason']})")
             else:
                 print(f"  {stage}: " + json.dumps(record, ensure_ascii=False))
+        if getattr(args, "boxes", False):
+            print_boxes(result.boxes)
         print()
         print(result.reading.chordpro)
         print()
@@ -292,6 +352,9 @@ def main(argv=None) -> int:
     p = sub.add_parser("trace", help="every stage decision for a page")
     add_pages(p)
     p.add_argument("--engine", default="easyocr", choices=engines.names())
+    p.add_argument("--boxes", action="store_true",
+                   help="every word the engine returned, and its glyphs "
+                        "(browser engine only)")
     p.set_defaults(func=cmd_trace)
 
     p = sub.add_parser("align", help="measured geometry, for writing gold by hand")
