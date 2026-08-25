@@ -188,10 +188,21 @@ class PhotoTextBridge {
       ]);
     }
 
+    // The page's own printed lines dropped before anything measures anything,
+    // because every rule below is a proportion taken over the words: a border
+    // slice widens the gutter search, joins the heading row, and stands as a
+    // lyric line of its own.
+    final furnished = withoutFurniture(words);
+    if (furnished.isEmpty) {
+      return const PhotoReading(chordPro: '', notices: [
+        ImportNotice(ImportNoticeCode.photoNothingLegible),
+      ]);
+    }
+
     // Merged chord runs pulled apart first, so everything below — grouping,
     // classification, layout — sees the chords the page prints rather than one
     // nonsense symbol standing for three.
-    final split = splitMergedChords(words);
+    final split = splitMergedChords(furnished);
 
     // Straightened before anything else looks at it, because grouping is what
     // tilt breaks, and columns are found on x once the page is square.
@@ -240,6 +251,100 @@ class PhotoTextBridge {
           text: names.join(', ')));
     }
     return PhotoReading(chordPro: lines.join('\n'), notices: notices);
+  }
+
+  /// How far out of proportion with the page's own type a box has to be before
+  /// it is a printed line rather than a word.
+  ///
+  /// Two numbers because neither dimension finds them alone, and both are the
+  /// midpoint of a gap measured in a real browser over the whole corpus.
+  ///
+  /// [_furnitureNarrow] is a share of the page's typical glyph width. The
+  /// vertical rules of `125-nincs-mas-isten` came back as 22 separate words —
+  /// `!` `;` `,` `)` `]` `i` `I`, boxes 1 to 5 pixels wide against a page
+  /// measuring 19 to the glyph, so 0.05 to 0.26 of it. The narrowest *real*
+  /// thing on any reviewed page is the full stop of `098-szivemben-orom-dalol`
+  /// at 0.39, and the dotted leader of `185-jezus-krisztusom` at 0.45. 0.32
+  /// sits between 0.26 and 0.39 with the same 1.2 either side. It also keeps
+  /// the 9-pixel Hungarian article `a` of `109-tart-meg-a-kegyelem`, at 0.35
+  /// the narrowest real glyph anywhere in the corpus — by eight percent, which
+  /// is as much room as the evidence has.
+  ///
+  /// [_furnitureFlat] is a multiple of the box's *own* height, because a
+  /// horizontal rule is not narrow at all. `151-zengjed-a-dalt` returned its
+  /// letterbox edge twice as `A`, 944 by 25; the screenshot
+  /// `app-jezus-szivedbe-lat` returned the phone's status bar as `s`, 922 by
+  /// 13; `125-nincs-mas-isten` returned the top of its printed box as `TT`,
+  /// 575 by 30. Per glyph those are 37.8, 70.9 and 9.6 times their own height.
+  /// No letter is: the widest real glyphs measured are the em dash the engine
+  /// returns for the page's `->` at 3.9, the marker-drawn `2` of
+  /// `105-kosz-jol-vagyok` at 1.2, and the merged chord pair `DG` of
+  /// `185-jezus-krisztusom` at 1.9. 5 clears the em dash by 1.3 and the nearest
+  /// rule by 1.9.
+  ///
+  /// Confidence was the other candidate, and it was measured and rejected. It
+  /// is what the Python arm filters on, and on these boxes it does not
+  /// separate: on `125-nincs-mas-isten` the border slices came back at 82, 78,
+  /// 74 and 72 while the real words sat at 87 to 96, so no gate catches the
+  /// rules without taking real text off the harder pages with it. Tesseract is
+  /// confident about line art.
+  static const _furnitureNarrow = 0.32;
+  static const _furnitureFlat = 5.0;
+
+  /// Below this there is no distribution to compare a box against, and a median
+  /// taken over a handful of words is an opinion rather than a measurement.
+  static const _minWordsForFurniture = 6;
+
+  /// [words] with the page's printed lines and specks of dirt removed.
+  ///
+  /// A photographed songbook page is not only type. It carries a box around the
+  /// text, a rule between its columns, the edge where a letterboxed photograph
+  /// stops, and — when the photograph is a screenshot — the status bar of the
+  /// phone. An OCR engine is asked for words and returns words, so every one of
+  /// those arrives as one: the engine's own line finding slices a tilted border
+  /// into a column of `!` and `;`, and a horizontal rule comes back as `A` or
+  /// `s` or `TT`.
+  ///
+  /// They cost out of all proportion to their size. On `125-nincs-mas-isten` 22
+  /// border slices were most of a lyric character error rate of 0.559, where
+  /// every other reviewed page is under 0.21: each one either stood as a lyric
+  /// line of its own — 48 lines against 33 expected — or attached itself to a
+  /// real row, and a stray token on a chord row is stored as a chord in the
+  /// column the border happened to be printed in.
+  ///
+  /// The test is shape, not confidence, and the numbers are on
+  /// [_furnitureNarrow] and [_furnitureFlat]. It is measured against the page
+  /// rather than in pixels because the same page photographed closer is the
+  /// same page: `151-zengjed-a-dalt` measures 12 to the glyph and
+  /// `185-jezus-krisztusom` 39, and an absolute gate would be wrong on both.
+  ///
+  /// A page too small to measure is returned untouched. So is a page that is
+  /// *all* rules — nothing there is out of proportion with anything, which is
+  /// the right answer: this may only act on evidence the page itself provides.
+  List<OcrWord> withoutFurniture(List<OcrWord> words) {
+    if (words.length < _minWordsForFurniture) return words;
+    final measurable = [
+      for (final word in words)
+        if (word.text.isNotEmpty && word.width > 0 && word.height > 0) word,
+    ];
+    if (measurable.length < _minWordsForFurniture) return words;
+    final typical = _median(measurable.map((w) => w.width / w.text.length));
+    if (typical <= 0) return words;
+    return [
+      for (final word in words)
+        if (!_isFurniture(word, typical)) word,
+    ];
+  }
+
+  /// Whether [word] is shaped like a printed line rather than a letter, on a
+  /// page whose glyphs measure [typical] pixels across.
+  ///
+  /// A box with no size to it is kept: there is nothing to compare it against.
+  bool _isFurniture(OcrWord word, double typical) {
+    if (word.text.isEmpty || word.width <= 0 || word.height <= 0) return false;
+    final glyph = word.width / word.text.length;
+    return glyph < _furnitureNarrow * typical ||
+        glyph > _furnitureFlat * word.height;
   }
 
   /// The angle, in degrees, by which the page appears to be tilted.
@@ -315,7 +420,11 @@ class PhotoTextBridge {
   /// of a single-column page that count is roughly the number of rows, and in a
   /// real gutter it is the page's heading and nothing else.
   List<({double from, double to, double cut})> columnGutters(
-      List<OcrWord> words) {
+      List<OcrWord> rawWords) {
+    // Cleaned here as well as in [read], because the recogniser asks this
+    // question of the whole-page read before any of that — and a rule between
+    // the columns is ink standing exactly where the gutter is looked for.
+    final words = withoutFurniture(rawWords);
     if (words.length < 2 * _minColumnWords) return const [];
     final measurable =
         words.where((w) => w.text.isNotEmpty && w.width > 0).toList();
@@ -454,7 +563,12 @@ class PhotoTextBridge {
   /// where the cut falls - so most of the page became one spanning row and the
   /// two columns interleaved again, which is the failure this whole thing is
   /// here to fix.
-  List<OcrWord> headingRow(List<OcrWord> words) {
+  List<OcrWord> headingRow(List<OcrWord> rawWords) {
+    // The heading is the one row the recogniser keeps from the whole-page read,
+    // so a rule that joins it is a rule in the title. `125-nincs-mas-isten`
+    // prints the top of its box across the head of the second column, and the
+    // engine returned it as `TT`.
+    final words = withoutFurniture(rawWords);
     final cuts = columnCuts(words);
     if (cuts.isEmpty) return const [];
     final rows = groupRows(words);
