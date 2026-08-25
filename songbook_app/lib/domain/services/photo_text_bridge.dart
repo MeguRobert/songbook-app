@@ -112,7 +112,41 @@ class PhotoTextBridge {
   /// in it — show-through merged into a real line gave 132px for 60px letters —
   /// and sizing the gate from the row let such a box widen its own gate and
   /// swallow the chord row above it.
-  static const _sameRow = 0.6;
+  ///
+  /// **A centre is not a baseline**, and that is why the gate has to be this
+  /// wide. A word's box is only as tall as the ink in it: `öröm` is all
+  /// x-height, `Szívemben` carries a capital and an accent, `nyugalom` has
+  /// descenders. On `098-szivemben-orom-dalol` the boxes run 22 to 59 px against
+  /// a median of 34, so two words on one flat baseline differ by up to half that
+  /// spread — about 0.5 of the median — before any tilt is added. At 0.6 the
+  /// last line of that page split in two and reordered, its `Szívemben` landing
+  /// 21.9 px from the row's running mean against a gate of 20.1: **short by 1.8
+  /// pixels**.
+  ///
+  /// 0.75 is the middle of a measured plateau, not a fitted value. Swept over
+  /// the corpus:
+  ///
+  /// | gate | mean | `098` | `125` |
+  /// |---|---|---|---|
+  /// | 0.60 | 0.947 | 0.940 | 0.849 |
+  /// | 0.62 – 0.64 | 0.950 | 0.960 | 0.849 |
+  /// | 0.66 – 0.80 | 0.950 | 0.960 | 0.846 |
+  /// | 1.00 | 0.943 | 0.927 | 0.828 |
+  /// | 1.40 | 0.721 | 0.858 | 0.746 |
+  ///
+  /// 0.62 to 0.64 is very slightly better and is a notch two steps wide, which
+  /// is fitting to this corpus rather than reading it; 0.66 to 0.80 is flat and
+  /// wide, and the middle of it costs `125-nincs-mas-isten` 0.007 of lyric
+  /// character error — one or two characters — for 0.020 on `098`. Past 1.0 a
+  /// word from the next line starts joining this one, which is the failure this
+  /// gate exists to prevent, and 1.4 takes the whole corpus down by a quarter.
+  ///
+  /// **The Python arm keeps 0.6 and must.** EasyOCR returns regions that already
+  /// span a whole line rather than words, so there is no typography spread to
+  /// allow for and a wider gate simply merges adjacent lines: measured at 0.75
+  /// it takes that arm from 0.633 to 0.490, with `151-zengjed-a-dalt` falling
+  /// 0.993 to 0.272.
+  static const _sameRow = 0.75;
 
   /// A verse break has to clear both bars: taller than one blank line, and well
   /// above the page's usual line spacing. The first alone turns a loosely set

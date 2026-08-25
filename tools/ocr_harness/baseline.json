@@ -132,15 +132,15 @@
       "098-szivemben-orom-dalol--chords-next-song-header.jpg": {
         "number_exact": 1.0,
         "title_cer": 0.0,
-        "lyric_cer": 0.0636,
-        "lyric_cer_folded": 0.0636,
+        "lyric_cer": 0.003,
+        "lyric_cer_folded": 0.003,
         "chord_recall": 0.9412,
         "chord_precision": 0.9412,
         "chord_f1": 0.9412,
         "placement": 0.9412,
         "placement_near": 0.9412,
         "warnings_ok": 1.0,
-        "headline": 0.9396,
+        "headline": 0.9598,
         "gold": "b254eb7b99c1"
       },
       "151-zengjed-a-dalt--chords-letterboxed.jpg": {
@@ -187,15 +187,15 @@
       "125-nincs-mas-isten--chords-two-column-ruled.jpg": {
         "number_exact": 1.0,
         "title_cer": 0.4,
-        "lyric_cer": 0.0724,
-        "lyric_cer_folded": 0.0673,
+        "lyric_cer": 0.0791,
+        "lyric_cer_folded": 0.0741,
         "chord_recall": 0.6923,
         "chord_precision": 0.973,
         "chord_f1": 0.809,
         "placement": 0.809,
         "placement_near": 0.809,
         "warnings_ok": 1.0,
-        "headline": 0.8485,
+        "headline": 0.8463,
         "gold": "52c50a046d0a"
       },
       "166-tekozlo-fiu--chords-two-column-italic.jpg": {

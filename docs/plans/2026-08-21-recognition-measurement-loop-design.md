@@ -647,19 +647,19 @@ chord run.
 
 ## 2026-08-25, fifth session: the page's own printed lines, and a mis-sized C
 
-**0.827 → 0.947 mean over seven pages**, in five changes, no page falling on
+**0.827 → 0.950 mean over seven pages**, in six changes
 any of them.
 
 | page | before | after |
 |---|---|---|
 | `084-van-egy-ut` | 0.715 | **0.993** |
 | `125-nincs-mas-isten` | 0.581 | **0.849** |
-| `098-szivemben-orom-dalol` | 0.880 | **0.940** |
+| `098-szivemben-orom-dalol` | 0.880 | **0.960** |
 | `151-zengjed-a-dalt` | 0.913 | **0.997** |
 | `166-tekozlo-fiu` | 0.957 | **0.962** |
 | `app-jezus-szivedbe-lat` | 0.965 | **0.969** |
 | `185-jezus-krisztusom` | 0.778 | **0.911** |
-| **mean** | **0.827** | **0.947** |
+| **mean** | **0.827** | **0.950** |
 
 ### A photographed page is not only type
 
@@ -919,23 +919,61 @@ songs *side by side* and that all of them were read, which would be untrue here:
 there is one song and the top edge of the next, with no verse of it to import.
 Gold agrees — `098`'s answer is ten lyric lines and no extra warning.
 
-### The page is curled, not tilted
+### The page was not curled. A centre is not a baseline
 
-`098`'s remaining extra line is a different defect and a harder one. Its last
-lyric row comes back split and reordered — `béke, hála, öröm dalol.` and then
-`Szívemben` — and the boxes say why. Measured over its own rows, the baseline
-slope is **+1.24°** near the top of the page and **−1.07°** at the foot: the
-paper bends, because it is a bound book held open under a phone.
+**This corrects the section that stood here, and the message of commit
+`2607826`, which cannot be corrected.** Both said `098-szivemben-orom-dalol`
+splits its last lyric row because the paper is bent — "+1.24 degrees at the top
+of the page and -1.07 at the foot". That was measured badly: from the `y0` of two
+words in one row, and `y0` moves with accents and descenders far more than the
+baseline does. Fitted properly, line by line by least squares, the page's slope
+is **+0.88 degrees throughout**, and the worst spread on any page in the corpus
+is 19 px of residual against a 23 px gate. **No page here is bent enough to
+matter.** A session that had gone off to build a local baseline would have found
+nothing.
 
-`estimateSkew` fits one global angle by projection profile, and no single angle
-straightens a bend. What is left over after deskewing exceeds `_sameRow`, so
-`groupRows` cuts a line in two and the halves sort out of order.
+Two more hypotheses were measured and rejected on the way:
 
-This is the same defect behind `084`'s 9-lines-against-8 and `125`'s
-39-against-33, and it is now the largest one left. Fixing it means a *local*
-baseline rather than a global angle — fit the skew per band of the page, or group
-rows by following each line's own drift rather than by a fixed y tolerance.
+* **`estimateSkew` picks the wrong angle.** It does not. Against a
+  least-squares fit inside each line, its error is at most 0.6 degrees anywhere
+  in the corpus, and the residual that error leaves is under the row gate on
+  every page.
+* **Rows should be clustered on the box bottom rather than its centre**, the
+  bottom being the baseline give or take a descender. Measured over 141 lines,
+  the centre is *tighter*: median within-line spread 9.2 px against 12.0.
 
+What is actually true is smaller and duller. **A word's box is only as tall as
+the ink in it.** `öröm` is all x-height; `Szívemben` carries a capital and an
+accent; `nyugalom` has descenders. On `098` the boxes run 22 to 59 px against a
+median of 34, so two words on one flat baseline differ in centre by up to half
+that spread — about 0.5 of the median — before any tilt is added at all. At
+`_sameRow` 0.6 the gate was 20.1 px and that page's `Szívemben` sat **21.9 px**
+from its row's running mean. Short by 1.8 pixels.
+
+So the gate was swept over the whole corpus rather than nudged:
+
+| gate | mean | `098` | `125` |
+|---|---|---|---|
+| 0.60 | 0.947 | 0.940 | 0.849 |
+| 0.62 – 0.64 | **0.950** | 0.960 | 0.849 |
+| 0.66 – 0.80 | **0.950** | 0.960 | 0.846 |
+| 1.00 | 0.943 | 0.927 | 0.828 |
+| 1.40 | 0.721 | 0.858 | 0.746 |
+
+0.62 to 0.64 scores the same and costs `125` nothing, and it is a notch two
+steps wide — fitting this corpus rather than reading it. 0.66 to 0.80 is flat and
+wide, and **0.75** is the middle of it. The price is 0.007 of lyric character
+error on `125`, one or two characters, against 0.020 on `098`. Past 1.0 a word
+from the next line starts joining this one, which is the failure the gate exists
+to prevent; 1.4 takes the corpus down by a quarter.
+
+**And the Python arm must keep 0.6.** EasyOCR returns regions that already span a
+whole line, so there is no typography spread to allow for and a wider gate simply
+merges adjacent lines: at 0.75 that arm falls from 0.633 to **0.490**, with
+`151-zengjed-a-dalt` going 0.993 to 0.272. Measured, then reverted. That is the
+third time this session the two arms have needed different answers to the same
+question, and it is worth saying plainly: **the bridge and the worker share a
+vocabulary, not a geometry.**
 
 ### What the corpus says is next
 
@@ -950,11 +988,13 @@ handoff named. Measured against gold, line by line:
    means `deskew` must stop dropping glyph boxes (`OcrWord.movedTo` does not
    carry `symbols`). That single change also unblocks anything else that wants
    to reason about a chord row's glyphs.
-2. **A curled page, not a tilted one** — see above. `098` splits and reorders
-   its last lyric row, `084` reads 9 lines against 8, `125` 39 against 33.
-   Largest remaining defect, and it wants a local baseline rather than one
-   global angle.
-3. **~~Row grouping~~**, which the old item 8 half-saw: `098`
+2. **`125`'s tilted intro row**, still the largest single unread thing:
+   `Em7 Cadd9-Csus2 G5-Gsus2 D4/Fis` arrives as `Cadd9o   E ——` and
+   `5US2 G5-Gsus2  D4/Fis`, plus a `FAS` at confidence 10. It is the only row on
+   any reviewed page that is simply not read.
+3. **`084`'s `átíte`** — one garbage line at confidence 5 and glyph width 0.46 of
+   the page median, just above the furniture gate. That page's only defect.
+4. **~~Row grouping~~**, which the old item 8 half-saw: `098`
    splits `Szívemben béke, hála, öröm dalol.` into two rows and swaps their
    order.
 
@@ -969,6 +1009,6 @@ python -m unittest discover -s tools -p "test_*.py"       # expect 339
 python -m tools.ocr_harness run                           # the Python arm
 python -m tools.ocr_harness run --engine browser          # what actually ships
 cd songbook_app && flutter analyze --no-fatal-infos       # expect exit 0, 0 issues
-cd songbook_app && flutter test                           # expect 1298
+cd songbook_app && flutter test                           # expect 1302
 cd songbook_app && flutter build web --release --no-web-resources-cdn
 ```
