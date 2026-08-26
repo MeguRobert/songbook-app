@@ -1,33 +1,36 @@
 name: CI
 
-# The gate for work that is NOT a push to master.
+# The gate for work that is NOT a push to a deploying branch.
 #
-# `deploy-pages.yml` already runs analyze and test before it builds, so master is
-# covered — but only master. A pull request, or a push to a working branch, ran
-# nothing at all: the first thing that ever checked a branch was the deploy that
-# happened after it was merged, which is the one place a red build is expensive.
+# `deploy-pages.yml` (master) and `deploy-staging.yml` (staging) each run analyze
+# and test before they build, so both of those are covered. Everything else — a
+# pull request, a push to a working branch — ran nothing at all: the first thing
+# that ever checked a branch was the deploy that happened after it was merged,
+# which is the one place a red build is expensive.
 #
-# Deliberately the same three checks as the deploy job and no more, so "CI is
+# Deliberately the same three checks as the deploy jobs and no more, so "CI is
 # green" means the same thing on a branch as it does on master. If a check is
-# added here it belongs there too.
+# added here it belongs in both deploys too.
 #
-# ONE DELIBERATE EXCEPTION, 2026-08-22: the deploy also runs the browser walk
+# ONE DELIBERATE EXCEPTION, 2026-08-22: the deploys also run the browser walk
 # (tools/browser-smoke/) and this workflow does not. The walk needs a release web
 # build, which is the slowest thing in the pipeline, and it earns that cost by
-# gating the commits that actually reach users — which arrive on master, the one
-# branch this workflow ignores. Adding it here would spend eight minutes on the
-# rare fork pull request and change nothing about what ships. If branch work
-# becomes normal again, move it here as its own job (not into `verify`, so the
-# fast analyze/test signal still arrives first) and stage the build exactly as
-# the deploy does, under a `songbook-app/` directory to match `--base-href`.
+# gating the commits that reach a served site — which arrive on master and
+# staging, the two branches this workflow ignores. Adding it here would spend
+# eight minutes on the rare fork pull request and change nothing about what
+# ships. Since 2026-08-26 the ordinary path for feature work is the `staging`
+# branch, which does get the walk, so the gap this comment describes is narrower
+# than it was: it now covers only working branches and fork pull requests.
 
 on:
   pull_request:
   push:
     branches-ignore:
-      # master is gated by the deploy workflow. Running both would double the
-      # minutes and give two statuses that can only ever agree.
+      # Both of these are gated by their own deploy workflow, which runs the
+      # same three checks before it builds. Running this one too would double
+      # the minutes and give two statuses that can only ever agree.
       - master
+      - staging
   workflow_dispatch:
 
 permissions:

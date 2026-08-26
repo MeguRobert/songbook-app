@@ -1,0 +1,5 @@
+{
+  "SUPABASE_URL": "https://STAGING_PROJECT_REF.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_STAGING_KEY_PENDING",
+  "PHOTO_IMPORT_ENDPOINT": "https://STAGING_OMR_HOST/extract"
+}

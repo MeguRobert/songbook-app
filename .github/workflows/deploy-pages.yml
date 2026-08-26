@@ -116,19 +116,44 @@ jobs:
         # flag produces an app that does not start at all. The files ship in
         # the build output either way.
         #
-        # PHOTO_IMPORT_ENDPOINT points the sheet-music half of photo import at
-        # the project's Cloud Run service. Only that half: a photographed chord
-        # sheet is read in the browser and needs no address. It is passed here
-        # rather than defaulted in code so a test never has an address to reach
-        # for, and it is not a secret — the service is publicly reachable by
-        # design (a browser calls it directly, so Google IAM cannot gate it) and
-        # is instead gated by a signed-in user's Supabase token.
+        # environment/prod.json carries the Supabase project, the publishable key
+        # and the Cloud Run address; environment/README.md says why all three are
+        # committed rather than held as Actions secrets, and why none of them is
+        # a secret in the first place.
+        #
+        # **This line is what makes a build production.** The compile-time
+        # defaults in supabase_config.dart are STAGING, so naming this file is
+        # the only thing that points the app at the congregation's data. Do not
+        # remove it on the assumption the defaults will cover it — they will, and
+        # they will cover it with staging.
+        #
+        # PHOTO_IMPORT_ENDPOINT covers only the sheet-music half of photo import:
+        # a photographed chord sheet is read in the browser and needs no address.
         run: |
           flutter build web --release \
             --base-href /songbook-app/ \
             --no-web-resources-cdn \
-            --dart-define=PHOTO_IMPORT_ENDPOINT=https://songbook-omr-541713551179.europe-central2.run.app/extract \
+            --dart-define-from-file=environment/prod.json \
             --build-number=${{ steps.version.outputs.build }}
+
+      # A production deploy that quietly built against staging would be a very
+      # expensive thing to notice late, and the failure is silent by nature —
+      # the app works, it just talks to the wrong database. So assert it, on the
+      # compiled output rather than on the flags we believe we passed.
+      - name: Confirm this build points at production
+        working-directory: songbook_app
+        run: |
+          set -euo pipefail
+          expected=$(python3 -c "import json;print(json.load(open('environment/prod.json'))['SUPABASE_URL'])")
+          if ! grep -qF "$expected" build/web/main.dart.js; then
+            echo "::error::main.dart.js does not contain $expected — this build is NOT production."
+            exit 1
+          fi
+          if grep -qF 'STAGING_PROJECT_REF' build/web/main.dart.js; then
+            echo "::error::main.dart.js still carries the staging placeholder default."
+            exit 1
+          fi
+          echo "Build points at $expected." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Report deployed version
         working-directory: songbook_app

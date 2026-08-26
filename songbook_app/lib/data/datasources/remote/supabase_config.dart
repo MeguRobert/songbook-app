@@ -10,14 +10,28 @@
 /// What must NEVER appear here is the `service_role` key, which bypasses RLS
 /// entirely. That one lives only in server-side contexts.
 ///
-/// Overridable at build time so a fork or a staging project needs no code edit:
-///   flutter build web --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
+/// Supplied at build time from `environment/<flavor>.json`, one file per
+/// environment (see `environment/README.md`):
+///
+///   flutter build web --dart-define-from-file=environment/prod.json
+///
+/// **The defaults below are STAGING, and that is the whole point.** They used to
+/// be production, which meant any build that did not pass the flag — a local
+/// `flutter run`, a fork, a workflow with a mistyped filename — silently talked
+/// to the live project. Nothing failed; it quietly read and wrote the
+/// congregation's catalogue. Production is now the case that must be stated out
+/// loud, and it is stated in exactly one reviewed place,
+/// `.github/workflows/deploy-pages.yml`. An unconfigured build lands somewhere
+/// harmless instead.
+///
+/// So do not "fix" these back to the production values. A wrong default here
+/// fails in the one direction that has no undo.
 class SupabaseConfig {
   const SupabaseConfig._();
 
   static const String url = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://sjsgrxvebzsuubebbfwx.supabase.co',
+    defaultValue: 'https://STAGING_PROJECT_REF.supabase.co',
   );
 
   /// Supabase renamed this concept: `anonKey` is deprecated in favour of
@@ -43,9 +57,12 @@ class SupabaseConfig {
   /// One step remains and it is not in this codebase: the legacy JWT secret is
   /// still enabled in the dashboard (Settings → JWT Keys) and nothing depends on
   /// it any more. Disabling it is what actually closes the exposure.
+  ///
+  /// Staging by default, for the reason given on the class. The production key
+  /// now lives only in `environment/prod.json`.
   static const String publishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: 'sb_publishable_jFokPzHYcASM1-6cUzUwmQ_4YLVYiOa',
+    defaultValue: 'sb_publishable_STAGING_KEY_PENDING',
   );
 
   /// A short budget for the catalogue fetch.

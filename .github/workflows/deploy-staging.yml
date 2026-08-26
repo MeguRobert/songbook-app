@@ -1,0 +1,266 @@
+name: Deploy staging
+
+# The pre-production site. Same gates as the production deploy, same build
+# flags, a different Supabase project and a different origin.
+#
+# WHY A DIFFERENT ORIGIN AND NOT A SUBPATH. `shared_preferences` on web is
+# `localStorage`, which is scoped per ORIGIN and not per path. Every GitHub Pages
+# project site under one account is `<account>.github.io/<repo>/` — one origin —
+# so staging on a subpath, or in a second repo under the same account, would
+# share settings, setlists and the cached catalogue with production. A staging
+# bug that wrote nonsense into those keys would write it into a real
+# congregation member's browser. Hence a separate account/organisation: a
+# distinct hostname is a distinct origin, with its own localStorage and its own
+# service-worker scope.
+#
+# The site is served from a second repository. This workflow builds here — one
+# copy of the code, one set of gates — and pushes only the built bytes there.
+
+on:
+  push:
+    branches:
+      - staging
+    # Same reasoning as deploy-pages.yml: prose changes nothing about the site.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.planning/**'
+      - '.github/last-keepalive.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Deliberately NOT the `pages` group used by deploy-pages.yml. These two
+  # deploy to different sites and must never cancel one another.
+  group: staging-pages
+  cancel-in-progress: true
+
+env:
+  # The repository that serves the staging site, and the account or organisation
+  # that owns it. Edit here, in one place.
+  #
+  # It is named `songbook-app` like this one on purpose: the build carries
+  # `--base-href /songbook-app/`, so an identically named repo means the staging
+  # site's paths match production's exactly, and tools/browser-smoke needs no
+  # per-environment special case.
+  STAGING_PAGES_REPO: STAGING_ORG_PLACEHOLDER/songbook-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The build number is the commit count; a shallow clone reports 1.
+          fetch-depth: 0
+
+      # environment/staging.json ships with placeholder values so this workflow
+      # exists before the Supabase project does. A build against a placeholder
+      # would deploy a site that cannot reach any database and would look, from
+      # the outside, like a backend outage. Refuse instead, and say what to do.
+      - name: Check the staging config has been filled in
+        working-directory: songbook_app
+        run: |
+          set -euo pipefail
+          for placeholder in STAGING_PROJECT_REF STAGING_KEY_PENDING STAGING_OMR_HOST; do
+            if grep -qF "$placeholder" environment/staging.json; then
+              echo "::error::environment/staging.json still contains $placeholder."
+              echo "Fill in the staging Supabase project ref, its sb_publishable_ key,"
+              echo "and the songbook-omr-staging host. See environment/README.md."
+              exit 1
+            fi
+          done
+          echo "Staging config looks filled in."
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned to the same version as deploy-pages.yml and ci.yml. A staging
+          # build on a different SDK than production is not a rehearsal.
+          flutter-version: '3.35.2'
+          channel: stable
+          cache: true
+          pub-cache: true
+
+      - name: Install dependencies
+        working-directory: songbook_app
+        run: flutter pub get
+
+      # The same three checks as the production deploy, in the same order, so
+      # "staging is green" means what "master is green" means.
+      - name: Analyze
+        working-directory: songbook_app
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        working-directory: songbook_app
+        run: flutter test
+
+      - name: Test import tooling (Python)
+        run: python -m unittest discover -s tools -p "test_*.py"
+
+      - name: Derive build number from commit count
+        id: version
+        run: echo "build=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Build web
+        working-directory: songbook_app
+        # Byte-for-byte the production invocation except for the environment
+        # file. --no-web-resources-cdn is required, not an optimisation: the CSP
+        # in web/index.html will not let a Google CDN execute script in this
+        # origin, so a build without it does not start at all.
+        run: |
+          flutter build web --release \
+            --base-href /songbook-app/ \
+            --no-web-resources-cdn \
+            --dart-define-from-file=environment/staging.json \
+            --build-number=${{ steps.version.outputs.build }}
+
+      # The mirror image of the production guard. Between them, neither
+      # environment can quietly become the other: production fails if it does not
+      # carry the production project, and staging fails if it carries it at all.
+      #
+      # Asserted on the compiled output rather than on the flags we believe we
+      # passed, because the failure this catches is precisely a flag not taking
+      # effect.
+      - name: Confirm this build points at staging
+        working-directory: songbook_app
+        run: |
+          set -euo pipefail
+          staging=$(python3 -c "import json;print(json.load(open('environment/staging.json'))['SUPABASE_URL'])")
+          prod=$(python3 -c "import json;print(json.load(open('environment/prod.json'))['SUPABASE_URL'])")
+
+          if ! grep -qF "$staging" build/web/main.dart.js; then
+            echo "::error::main.dart.js does not contain $staging — the staging define did not take."
+            exit 1
+          fi
+          if grep -qF "$prod" build/web/main.dart.js; then
+            echo "::error::main.dart.js contains the PRODUCTION project $prod. Refusing to deploy."
+            echo "A staging site talking to the live database is the one outcome this whole"
+            echo "environment exists to prevent."
+            exit 1
+          fi
+          echo "Build points at $staging, and not at production." >> "$GITHUB_STEP_SUMMARY"
+
+      # web/index.html is static and shared by both builds, and its
+      # Content-Security-Policy names the production Cloud Run host literally
+      # (unlike Supabase, which is a `*.supabase.co` wildcard and so needs
+      # nothing here). Rewriting the built copy — not the source — keeps
+      # production's CSP byte-identical rather than widening it to permit a host
+      # only staging ever calls.
+      #
+      # The host is read out of staging.json rather than written here again, so
+      # the CSP and the endpoint the app actually calls cannot drift apart.
+      - name: Point the CSP and the page title at staging
+        working-directory: songbook_app
+        run: |
+          set -euo pipefail
+          prod_host=$(python3 -c "
+          import json, urllib.parse
+          print(urllib.parse.urlparse(json.load(open('environment/prod.json'))['PHOTO_IMPORT_ENDPOINT']).netloc)")
+          staging_host=$(python3 -c "
+          import json, urllib.parse
+          raw = json.load(open('environment/staging.json'))['PHOTO_IMPORT_ENDPOINT']
+          print(urllib.parse.urlparse(raw).netloc if raw.strip() else '')")
+
+          if [ -n "$staging_host" ]; then
+            sed -i "s|https://${prod_host}|https://${staging_host}|g" build/web/index.html
+            grep -qF "$staging_host" build/web/index.html \
+              || { echo "::error::CSP rewrite did not take."; exit 1; }
+            grep -qF "$prod_host" build/web/index.html \
+              && { echo "::error::the production OMR host is still in the CSP."; exit 1; }
+            echo "CSP connect-src now names $staging_host." >> "$GITHUB_STEP_SUMMARY"
+          else
+            # A staging build with no reader is a supported state: the import
+            # screen explains it rather than offering a dead button. Then the
+            # production host has no business in staging's CSP either.
+            sed -i "s|https://${prod_host}||g" build/web/index.html
+            echo "No staging OMR host configured; removed it from the CSP." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # So a tab, a screenshot or a bug report is never ambiguous about which
+          # site it came from. The URL says it too, but the tab is what you see.
+          sed -i 's|<title>Songbook</title>|<title>Songbook (staging)</title>|' build/web/index.html
+          grep -qF '<title>Songbook (staging)</title>' build/web/index.html \
+            || { echo "::error::title rewrite did not take."; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null
+          npm i --silent playwright@1.59.1
+          npx playwright install --with-deps chromium
+
+      # Walks THESE bytes, including the rewritten index.html, so a pass is
+      # evidence about what is about to be served. Staged under a
+      # `songbook-app/` directory because the build carries
+      # `--base-href /songbook-app/`; served at the server root every asset
+      # would 404 and every check would fail for a reason unrelated to the app.
+      #
+      # Retried once, and the retry reported rather than hidden, for the
+      # `stableSemantics` reason spelled out in deploy-pages.yml.
+      - name: Browser walk
+        timeout-minutes: 12
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: |
+          set -o pipefail
+          site="$RUNNER_TEMP/site"
+          mkdir -p "$site/songbook-app"
+          cp -r songbook_app/build/web/. "$site/songbook-app/"
+
+          python3 -m http.server 8795 --bind 127.0.0.1 --directory "$site" &
+          server=$!
+          trap 'kill $server 2>/dev/null || true' EXIT
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:8795/songbook-app/index.html && break
+            sleep 1
+          done
+
+          walk() { node tools/browser-smoke/smoke.js --base http://127.0.0.1:8795/songbook-app; }
+          if walk; then
+            echo "Browser walk: passed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "First walk failed — retrying once (see the step log for which check)."
+            if walk; then
+              echo "Browser walk: **passed on retry** — first attempt failed. Flake, or a real intermittent bug; the log names the check." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "Browser walk: **failed twice**. Screenshots are in the \`browser-walk-shots\` artifact." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          fi
+
+      - name: Keep the walk's screenshots when it failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-walk-shots
+          path: tools/browser-smoke/shots
+          if-no-files-found: warn
+
+      # Pushes the built site to the staging repository's `gh-pages` branch,
+      # which that repo serves. An SSH deploy key rather than a personal access
+      # token: it can write to that one repository and nothing else, and it
+      # cannot be widened by accident the way a token's scopes can.
+      - name: Publish to the staging site
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.STAGING_PAGES_DEPLOY_KEY }}
+          external_repository: ${{ env.STAGING_PAGES_REPO }}
+          publish_branch: gh-pages
+          publish_dir: songbook_app/build/web
+          # Each deploy replaces the site rather than accumulating history in a
+          # branch nobody reads.
+          force_orphan: true
+          commit_message: 'staging build ${{ steps.version.outputs.build }} from ${{ github.sha }}'
+
+      - name: Say where it went
+        run: |
+          owner="${STAGING_PAGES_REPO%%/*}"
+          echo "Deployed build ${{ steps.version.outputs.build }} to https://${owner}.github.io/songbook-app/" >> "$GITHUB_STEP_SUMMARY"

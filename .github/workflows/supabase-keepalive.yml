@@ -4,9 +4,17 @@ name: Supabase keepalive
 # activity. This does a real query once a day so that never happens while the
 # app has no users yet.
 #
+# Both projects, since 2026-08-26: production and staging. Staging is the one
+# more likely to pause, because weeks can pass without anybody opening it — and
+# a paused staging project is worse than an obviously broken one, since the
+# first thing you would do with it is rehearse a migration that then cannot run.
+#
 # Why a REST query and not a health-check ping: the pause criterion is *database*
 # activity. Hitting an endpoint that never touches Postgres may not count, so
 # this selects an actual row.
+#
+# The SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY repository secrets this used to
+# read are no longer referenced by anything and can be deleted.
 #
 # Why GitHub Actions: this repo is public, so standard runners are free and
 # unmetered. See the `keep-workflow-enabled` job below for the one way this
@@ -24,26 +32,62 @@ permissions:
 
 jobs:
   ping:
-    name: Query the database
+    name: Query the database (${{ matrix.flavor }})
     runs-on: ubuntu-latest
+    strategy:
+      # Both projects are checked even when one is unhappy. A paused production
+      # project must not hide a paused staging one, or vice versa.
+      fail-fast: false
+      matrix:
+        flavor: [prod, staging]
     steps:
+      - uses: actions/checkout@v4
+
       - name: Select one row through PostgREST
+        working-directory: songbook_app
+        # Read from environment/<flavor>.json rather than from Actions secrets,
+        # which is a change made 2026-08-26 and worth explaining.
+        #
+        # These values are not secrets — the `sb_publishable_` key is designed to
+        # ship inside the client and is already in every deployed bundle; see
+        # environment/README.md. Holding a second copy in a secret bought no
+        # secrecy and cost something real: the production key lived in two
+        # places, so rotating it could go half-done and leave the keepalive
+        # authenticating with a stale key against a project the app was reaching
+        # fine. Reading the same file the build reads means the thing that pings
+        # a project cannot disagree with the app that talks to it.
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          # This project uses Supabase's newer key format (sb_publishable_...),
-          # not a legacy `anon` JWT. Named for what it actually is, so nobody
-          # later pastes a service key in because the name said "anon".
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          FLAVOR: ${{ matrix.flavor }}
         run: |
           set -euo pipefail
 
-          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_PUBLISHABLE_KEY:-}" ]; then
-            echo "::error::SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY is not set."
-            echo "Set both under Settings -> Secrets and variables -> Actions."
+          config="environment/${FLAVOR}.json"
+          if [ ! -f "$config" ]; then
+            echo "::error::$config does not exist."
+            exit 1
+          fi
+
+          # An environment whose config is still a placeholder has no project to
+          # keep awake yet. Skip it with a notice rather than failing: a job that
+          # is red every morning for a known reason teaches you to ignore a red
+          # job, which is how the real outage gets missed.
+          if grep -qE 'STAGING_PROJECT_REF|STAGING_KEY_PENDING' "$config"; then
+            echo "::notice::$config is still a placeholder — no $FLAVOR project to ping yet."
+            exit 0
+          fi
+
+          read_key() { python3 -c "import json,sys;print(json.load(open('$config'))[sys.argv[1]])" "$1"; }
+          SUPABASE_URL=$(read_key SUPABASE_URL)
+          SUPABASE_PUBLISHABLE_KEY=$(read_key SUPABASE_PUBLISHABLE_KEY)
+
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::$config has an empty SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY."
             echo "Failing loudly on purpose: a keepalive that silently does"
             echo "nothing is worse than no keepalive, because you would trust it."
             exit 1
           fi
+
+          echo "Pinging $FLAVOR at $SUPABASE_URL"
 
           # `songs` is readable by anon (approved rows only, per the RLS select
           # policy), so this needs no privileged key.
@@ -58,18 +102,21 @@ jobs:
 
           case "${code}" in
             200)
-              echo "::notice::Project is awake; database query succeeded."
+              echo "::notice::The ${FLAVOR} project is awake; database query succeeded."
               ;;
             540)
-              echo "::error::HTTP 540 -- the project is PAUSED. A keepalive"
+              echo "::error::HTTP 540 -- the ${FLAVOR} project is PAUSED. A keepalive"
               echo "cannot un-pause it: resume it once from the dashboard, after"
               echo "which this job keeps it awake."
               exit 1
               ;;
             401|403)
-              echo "::error::Auth rejected (${code}). The publishable key is"
-              echo "probably stale -- keys can be reissued when a project is"
-              echo "restored from a pause. Refresh the secret and the app config."
+              echo "::error::Auth rejected (${code}) by the ${FLAVOR} project. The"
+              echo "publishable key is probably stale -- keys can be reissued when"
+              echo "a project is restored from a pause. There is one place to fix"
+              echo "it: songbook_app/environment/${FLAVOR}.json. Committing that"
+              echo "also rebuilds the site with the new key, which is the point of"
+              echo "keeping it in one file."
               exit 1
               ;;
             *)
