@@ -727,6 +727,29 @@ class AppLocalizationsRo extends AppLocalizations {
   String get importSectionPreview => 'PREVIZUALIZARE';
 
   @override
+  String get importSectionLines => 'LINII';
+
+  @override
+  String get importLineKindChords => 'acorduri';
+
+  @override
+  String get importLineKindLyric => 'versuri';
+
+  @override
+  String get importLineOverridden => 'tu ai stabilit asta';
+
+  @override
+  String get importTokenEditTitle => 'Corectează acordul';
+
+  @override
+  String get importTokenEditHint =>
+      'Cititorul citește greșit un caracter din când în când — `Csus2` poate reveni ca `5US2`. De obicei atât trebuie corectat.';
+
+  @override
+  String get importLinesHint =>
+      'Atinge un acord pentru a-l corecta. Folosește butoanele când un rând întreg a fost citit ca tipul greșit.';
+
+  @override
   String importVerseCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

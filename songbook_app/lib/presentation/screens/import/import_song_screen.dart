@@ -22,6 +22,7 @@ import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 import '../../../router/app_router.dart';
 import '../../widgets/content_pane.dart';
+import '../../widgets/import/line_list.dart';
 import '../../widgets/import/photo_pane.dart';
 import '../song_view/widgets/chord_view.dart';
 import '../song_view/widgets/sheet_music_view.dart';
@@ -163,6 +164,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   Uint8List? _photoBytes;
   String? _photoName;
 
+  /// Which lines the person reviewing overruled the parser about.
+  ///
+  /// Sparse: an entry exists only where somebody disagreed, so empty means the
+  /// parser decides everything - the behaviour that shipped before the line list
+  /// existed. Cleared on every Parse, because an override belongs to the text it
+  /// was made against and line 7 is a different line after a re-read.
+  LineKinds _kinds = const LineKinds.none();
+
   /// The song being corrected, read once when the screen opens. Null when
   /// adding, and also when [ImportSongScreen.editingId] names a song that is no
   /// longer stored (deleted from another route since the link was made).
@@ -265,7 +274,19 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   }
 
   void _parsePasted() {
-    final result = _parser.parse(_sheetController.text);
+    // A fresh read of fresh text: whatever was overruled was overruled about
+    // the old lines.
+    _kinds = const LineKinds.none();
+    _reparse();
+  }
+
+  /// Re-reads the box with the current overrides and replaces the draft.
+  ///
+  /// One parse, feeding both the line list and the preview, so the badge on a
+  /// row and the chords under it can never disagree about that row - the same
+  /// discipline `_preview` and `_draft` already keep.
+  void _reparse() {
+    final result = _parser.parse(_sheetController.text, kinds: _kinds);
     _accept(_PendingImport(
       verses: result.verses,
       title: result.title,
@@ -273,6 +294,51 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       warnings: result.warnings,
       source: _ImportSource.pastedText,
     ));
+  }
+
+  /// Sets or clears one line's kind, and re-reads.
+  void _setLineKind(int index, LineKind? kind) {
+    _kinds = kind == null
+        ? _kinds.withoutLine(index)
+        : _kinds.withLine(index, kind);
+    _reparse();
+  }
+
+  /// Replaces one token in one line, keeping every other column where it was.
+  ///
+  /// A chord's column IS its position, so only this row may move: the
+  /// replacement is spliced at the token's own offset and the rest of the line
+  /// follows it, which shifts the chords to its right by the difference in
+  /// length and leaves every other line alone.
+  ///
+  /// The override on this line is CLEARED. Correcting the token is what makes
+  /// the parser agree by itself, and an override that outlives its reason keeps
+  /// a row claiming to be chords long after that stopped being true.
+  void _replaceToken(int index, int column, String was, String now) {
+    final lines = _sheetController.text.split(RegExp(r'\r\n|\r|\n'));
+    if (index < 0 || index >= lines.length) return;
+    final line = lines[index];
+    if (column < 0 || column + was.length > line.length) return;
+    if (line.substring(column, column + was.length) != was) return;
+    lines[index] =
+        line.replaceRange(column, column + was.length, now);
+    _sheetController.text = lines.join('\n');
+    _kinds = _kinds.withoutLine(index);
+    _reparse();
+  }
+
+  /// Asks for a corrected spelling of [token], then applies it.
+  Future<void> _editToken(int index, int column, String token) async {
+    final replacement = await showDialog<String>(
+      context: context,
+      builder: (context) => _TokenDialog(token: token),
+    );
+    // An empty answer is a cancel: deleting a chord is what the words box is
+    // for, and doing it from here would silently shorten the row.
+    final trimmed = replacement?.trim();
+    if (trimmed == null || trimmed.isEmpty || trimmed == token) return;
+    if (!mounted) return;
+    _replaceToken(index, column, token, trimmed);
   }
 
   /// Photographs a song and treats the answer as any other import.
@@ -805,6 +871,16 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
               ],
 
               const Divider(height: 32),
+              Text(l10n.importSectionLines, style: _sectionStyle(theme)),
+              const SizedBox(height: 8),
+              LineList(
+                text: _sheetController.text,
+                kinds: _kinds,
+                onKind: _setLineKind,
+                onToken: _editToken,
+              ),
+
+              const Divider(height: 32),
               Row(
                 children: [
                   Text(l10n.importSectionPreview, style: _sectionStyle(theme)),
@@ -893,6 +969,72 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
         fontWeight: FontWeight.bold,
         letterSpacing: 1.2,
       );
+}
+
+/// Correcting one token of a chord row.
+///
+/// Its own widget because it owns a `TextEditingController`, and a controller has
+/// to outlive the dialog's exit animation. Built inline first, disposed the
+/// moment `showDialog` returned, and the route still had a `TextField` on it -
+/// *A TextEditingController was used after being disposed*, caught by the test
+/// for this before anyone tapped it.
+class _TokenDialog extends StatefulWidget {
+  const _TokenDialog({required this.token});
+
+  final String token;
+
+  @override
+  State<_TokenDialog> createState() => _TokenDialogState();
+}
+
+class _TokenDialogState extends State<_TokenDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.token);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.importTokenEditTitle),
+      // Width-bounded: an AlertDialog gives its content no width to work with,
+      // and a Column holding a TextField then asks for an infinite one.
+      content: SizedBox(
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.importTokenEditHint,
+                style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              style: const TextStyle(fontFamily: 'monospace'),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+              onSubmitted: (value) => Navigator.of(context).pop(value),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.actionCancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: Text(l10n.actionSave),
+        ),
+      ],
+    );
+  }
 }
 
 /// Book name with completions from the books already in the catalogue, so a

@@ -723,6 +723,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importSectionPreview => 'PREVIEW';
 
   @override
+  String get importSectionLines => 'LINES';
+
+  @override
+  String get importLineKindChords => 'chords';
+
+  @override
+  String get importLineKindLyric => 'words';
+
+  @override
+  String get importLineOverridden => 'you set this';
+
+  @override
+  String get importTokenEditTitle => 'Correct this chord';
+
+  @override
+  String get importTokenEditHint =>
+      'The reader misreads a glyph now and then — `Csus2` can come back as `5US2`. Correcting it here is usually all a row needs.';
+
+  @override
+  String get importLinesHint =>
+      'Tap a chord to correct it. Use the buttons when a whole row was read as the wrong kind.';
+
+  @override
   String importVerseCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

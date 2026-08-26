@@ -312,6 +312,16 @@ class ChordSheetParser {
 
   static final RegExp _token = RegExp(r'\S+');
 
+  /// The tokens of [line], each with the column it starts at.
+  ///
+  /// Public so the import screen's line list can show a row as chips without
+  /// re-inventing the split. A chip has to BE a token - the same run of
+  /// non-whitespace this parser reads - or tapping one would edit something the
+  /// parser never saw, and the two would drift apart the first time either
+  /// changed.
+  List<(String, int)> tokensIn(String line) =>
+      [for (final m in _token.allMatches(line)) (m.group(0)!, m.start)];
+
   /// Returns true when [token] is unambiguously a chord symbol.
   ///
   /// Surrounding parentheses are tolerated, so `(Em)` is a chord.

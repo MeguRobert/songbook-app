@@ -1336,6 +1336,48 @@ abstract class AppLocalizations {
   /// **'PREVIEW'**
   String get importSectionPreview;
 
+  /// Import screen: heading over the editable list of parsed lines, where a row can be made chords or lyrics and a token corrected.
+  ///
+  /// In en, this message translates to:
+  /// **'LINES'**
+  String get importSectionLines;
+
+  /// Import screen, line list: the button and badge for a row read as chords. Lower case: it is a label on a small chip, not a sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'chords'**
+  String get importLineKindChords;
+
+  /// Import screen, line list: the button and badge for a row read as lyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'words'**
+  String get importLineKindLyric;
+
+  /// Import screen, line list: marks a row whose kind a person chose rather than the parser deciding. Shown as a tooltip on the badge.
+  ///
+  /// In en, this message translates to:
+  /// **'you set this'**
+  String get importLineOverridden;
+
+  /// Import screen: title of the dialog that opens when a chord token in the line list is tapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct this chord'**
+  String get importTokenEditTitle;
+
+  /// Import screen: why the token-edit dialog exists. The example is real, from 125-nincs-mas-isten.
+  ///
+  /// In en, this message translates to:
+  /// **'The reader misreads a glyph now and then — `Csus2` can come back as `5US2`. Correcting it here is usually all a row needs.'**
+  String get importTokenEditHint;
+
+  /// Import screen: how to use the line list.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a chord to correct it. Use the buttons when a whole row was read as the wrong kind.'**
+  String get importLinesHint;
+
   /// How many verses the importer recovered
   ///
   /// In en, this message translates to:

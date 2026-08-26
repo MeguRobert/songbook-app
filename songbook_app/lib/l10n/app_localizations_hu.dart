@@ -725,6 +725,29 @@ class AppLocalizationsHu extends AppLocalizations {
   String get importSectionPreview => 'ELŐNÉZET';
 
   @override
+  String get importSectionLines => 'SOROK';
+
+  @override
+  String get importLineKindChords => 'akkordok';
+
+  @override
+  String get importLineKindLyric => 'szöveg';
+
+  @override
+  String get importLineOverridden => 'te állítottad be';
+
+  @override
+  String get importTokenEditTitle => 'Akkord javítása';
+
+  @override
+  String get importTokenEditHint =>
+      'A felismerő néha félreolvas egy karaktert — a `Csus2`-ből `5US2` lehet. Általában ennyi javítás kell egy sorhoz.';
+
+  @override
+  String get importLinesHint =>
+      'Koppints egy akkordra a javításához. A gombokat akkor használd, ha egy egész sor rossz típusként lett beolvasva.';
+
+  @override
   String importVerseCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
