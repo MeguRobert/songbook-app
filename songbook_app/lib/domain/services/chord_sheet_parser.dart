@@ -382,6 +382,20 @@ class ChordSheetParser {
   /// question this asks. See [_direction].
   bool isDirection(String token) => _direction.hasMatch(_unwrap(token));
 
+  /// Returns true when [token] is punctuation a chord row may carry - a dash,
+  /// a bar line, a repeat count. See [_separator].
+  ///
+  /// Public for the import screen's line list, which colours a chip by whether
+  /// this parser reads it. A separator is read, and stored as nothing, so it is
+  /// not a misread worth tapping.
+  bool isSeparator(String token) => _separator.hasMatch(token);
+
+  /// Returns true when [line] is a whole-line directive - `{title: ...}`,
+  /// `{soc}` - which [parse] consumes before it ever asks what kind of line it
+  /// is. The line list leaves these out for the same reason: a kind button on
+  /// one could not do anything.
+  bool isDirective(String line) => _directive.hasMatch(line.trim());
+
   /// Returns true when [line] should be read as a row of chords.
   ///
   /// All-but-one, not all-or-nothing. Every token must be a chord or

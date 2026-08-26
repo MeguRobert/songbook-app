@@ -179,4 +179,84 @@ void main() {
       expect(seen.kinds, [(2, LineKind.lyric)]);
     });
   });
+
+  group('what is worth tapping', () {
+    testWidgets('a continuation or a separator is not marked as a misread',
+        (tester) async {
+      // `-7` is the chord before it with a seventh, `x2` a repeat mark: the
+      // parser reads both and stores neither as a chord, so neither is worth
+      // correcting. Found by using the screen in a browser - the 149 fixture's
+      // `-7`, read perfectly, was underlined in red as the token most in need
+      // of a tap.
+      await pumpList(tester,
+          text: 'A     -7    D   x2\nMondd, ki a dzsungel királya?');
+      await tester.pumpAndSettle();
+
+      for (final fine in ['A', '-7', 'D', 'x2']) {
+        expect(tester.widget<Text>(find.text(fine)).style?.decoration, isNull,
+            reason: '$fine is read by the parser and is not a misread');
+      }
+    });
+  });
+
+  group('what is not a row', () {
+    testWidgets('a directive line is not listed, and the indexes still count it',
+        (tester) async {
+      // `{title: ...}` is the reader's, not the page's; the title has its own
+      // field above. Listed, it wore a "words" badge and two kind buttons that
+      // could not do anything, because the parser reads a directive before it
+      // ever asks about a line's kind.
+      final seen = taps();
+      await pumpList(tester,
+          text: '{title: 149 Mondd, ki a dzsungel királya}\n'
+              'D     G\n'
+              'Az Úr irgalma',
+          onKind: (i, k) => seen.kinds.add((i, k)));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('{title:'), findsNothing);
+      expect(find.widgetWithText(TextButton, 'words'), findsNWidgets(2));
+
+      // The lyric row is still line 2: hiding a row must not renumber the rest.
+      await tester.tap(find.widgetWithText(TextButton, 'chords').last);
+      await tester.pumpAndSettle();
+      expect(seen.kinds, [(2, LineKind.chords)]);
+    });
+  });
+
+  group('what a screen reader hears', () {
+    testWidgets('a row is its own node, not part of one label for the list',
+        (tester) async {
+      // Found in a browser: every static text in the list - the hint, each
+      // badge, each lyric line - had merged into one label on the list item,
+      // and only the buttons were left as nodes of their own. A screen reader
+      // read the hint and every lyric on the page as a single utterance, and
+      // nothing could say which row a button belonged to. In a ListView, as on
+      // the screen, because that is where the merging happens.
+      final handle = tester.ensureSemantics();
+      await pumpScreen(
+        tester,
+        Scaffold(
+          body: ListView(
+            children: [
+              const Text('above'),
+              LineList(
+                text: 'D     G\nAz Úr irgalma',
+                kinds: const LineKinds.none(),
+                onKind: (_, __) {},
+                onToken: (_, __, ___) {},
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final row = tester.getSemantics(find.text('Az Úr irgalma'));
+      expect(row.label, contains('Az Úr irgalma'));
+      expect(row.label, isNot(contains('Tap a chord')));
+      expect(row.label, isNot(contains('above')));
+      handle.dispose();
+    });
+  });
 }

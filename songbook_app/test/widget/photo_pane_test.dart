@@ -82,6 +82,36 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets('to a screen reader it is one thing, with a named image in it',
+      (tester) async {
+    // Found in a browser: inside the import screen's ListView, the heading and
+    // the file name had merged into the item holding the pane, and the image's
+    // own unlabelled semantics flagged that item as an image - at which point
+    // the browser hung the merged label off an element nothing reads. PHOTO was
+    // on screen and nowhere in the accessibility tree. In a ListView here too,
+    // because that is where it happens.
+    final handle = tester.ensureSemantics();
+    await pumpScreen(
+      tester,
+      Scaffold(
+        body: ListView(
+          children: [
+            const Text('neighbour'),
+            PhotoPane(bytes: onePixelPng, height: 200, name: 'x.jpg'),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final pane = tester.getSemantics(find.text('PHOTO'));
+    expect(pane.label, startsWith('PHOTO'));
+    expect(pane.label, isNot(contains('neighbour')));
+    final image = tester.getSemantics(find.byType(Image));
+    expect(image.label, 'x.jpg');
+    handle.dispose();
+  });
+
   testWidgets('bytes that do not decode do not take the review down',
       (tester) async {
     // The reading is already in hand by the time this is built, and it is the

@@ -69,6 +69,12 @@ class LineList extends StatelessWidget {
         rows.add(const SizedBox(height: 10));
         continue;
       }
+      // A directive is the reader's, not the page's: `{title: ...}` has its own
+      // field above, and the parser consumes it before it ever asks about a
+      // line's kind, so a kind button on it could not do anything. Listed, it
+      // wore a "words" badge and two dead buttons. Skipped, not gapped - the
+      // index `i` still counts it, which is what keeps the rest honest.
+      if (parser.isDirective(line)) continue;
       rows.add(_Row(
         index: i,
         line: line,
@@ -122,7 +128,16 @@ class _Row extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
+      // One accessibility node per row. Without this, every static text in the
+      // list - the hint, each badge, each lyric line - merged into a single
+      // label on the ListView item that holds the list, and only the buttons
+      // were left as nodes of their own: a screen reader read the hint and
+      // every lyric on the page as one utterance, and a browser test could not
+      // tell which row a button belonged to. Seen in a real browser; invisible
+      // to `find.text`, which does not care how labels are grouped.
+      child: Semantics(
+        container: true,
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Solid when a person chose, outlined when the parser did. The
@@ -166,6 +181,7 @@ class _Row extends StatelessWidget {
             onPressed: () => onKind(index, isChords ? LineKind.lyric : null),
           ),
         ],
+        ),
       ),
     );
   }
@@ -181,6 +197,20 @@ class _Chips extends StatelessWidget {
   final String line;
   final ChordSheetParser parser;
   final void Function(int column, String token) onTap;
+
+  /// Whether the parser reads [token] as something - a chord, a continuation
+  /// like `-7`, a repeat mark, a stage direction.
+  ///
+  /// Not just [ChordSheetParser.isChordToken]. It was, and the 149 fixture's
+  /// `-7` - read perfectly, and meaning "the chord before me with a seventh" -
+  /// came up underlined in red as the token most in need of correcting. Only a
+  /// token the parser reads as *nothing* is a misread, and that is the one
+  /// that reaches storage as a chord if the row is chords.
+  bool _readable(String token) =>
+      parser.isChordToken(token) ||
+      parser.isContinuation(token) ||
+      parser.isSeparator(token) ||
+      parser.isDirection(token);
 
   @override
   Widget build(BuildContext context) {
@@ -200,15 +230,14 @@ class _Chips extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 13,
-                  // A token the rule cannot spell is marked, because that is the
-                  // one worth tapping. It still reaches storage as a chord if the
-                  // row is chords, which is the point of saying so here.
-                  color: parser.isChordToken(token)
+                  // A token the parser cannot read is marked, because that is
+                  // the one worth tapping. It still reaches storage as a chord
+                  // if the row is chords, which is the point of saying so here.
+                  color: _readable(token)
                       ? theme.colorScheme.onSurface
                       : theme.colorScheme.error,
-                  decoration: parser.isChordToken(token)
-                      ? null
-                      : TextDecoration.underline,
+                  decoration:
+                      _readable(token) ? null : TextDecoration.underline,
                 ),
               ),
             ),

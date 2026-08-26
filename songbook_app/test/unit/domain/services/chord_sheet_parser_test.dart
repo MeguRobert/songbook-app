@@ -764,4 +764,24 @@ G  C  D
       expect(verse2.lines[1].chords.length, 3);
     });
   });
+
+  group('ChordSheetParser — what the line list asks', () {
+    // The import screen's line list colours a chip by whether the parser can
+    // read it, and hides a line the parser never asks about. Both questions
+    // are the parser's own rules, asked through it rather than re-spelled.
+    test('a separator is punctuation a chord row may carry', () {
+      expect(parser.isSeparator('-'), isTrue);
+      expect(parser.isSeparator('x2'), isTrue);
+      expect(parser.isSeparator('|:'), isTrue);
+      expect(parser.isSeparator('D'), isFalse);
+      expect(parser.isSeparator('szív'), isFalse);
+    });
+
+    test('a directive is a whole line in braces', () {
+      expect(parser.isDirective('{title: 149 Mondd}'), isTrue);
+      expect(parser.isDirective('  {soc}  '), isTrue);
+      expect(parser.isDirective('D  G'), isFalse);
+      expect(parser.isDirective('{not closed'), isFalse);
+    });
+  });
 }
