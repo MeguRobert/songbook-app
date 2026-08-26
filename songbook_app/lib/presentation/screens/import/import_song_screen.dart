@@ -24,6 +24,7 @@ import '../../../router/app_router.dart';
 import '../../widgets/content_pane.dart';
 import '../../widgets/import/line_list.dart';
 import '../../widgets/import/photo_pane.dart';
+import '../../widgets/import/review_panes.dart';
 import '../song_view/widgets/chord_view.dart';
 import '../song_view/widgets/sheet_music_view.dart';
 
@@ -904,48 +905,28 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
               // widgets, chosen the same way the song view chooses them, so this
               // is not an approximation that can drift.
               //
-              // Beside the photograph when there is one and the screen is wide
+              // Beside the photograph when there is one and the pane is wide
               // enough to hold both, which is the whole point: a reading is
               // checked against the page it came from, not admired on its own.
-              // Under 900 they stack, photograph first - a phone is where photos
-              // get taken, and scrolling past the page to reach the reading is
-              // the right order.
+              // Where they sit, and at what width, is [ReviewPanes]'s decision -
+              // and its test's, because the number was wrong once and nothing
+              // here could see it.
               if (preview != null)
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final photo = _photoBytes;
-                    final rendered = SizedBox(
-                      height: 340,
-                      child: preview.hasNotation
-                          ? SheetMusicView(
-                              song: preview, transpose: 0, showChords: true)
-                          : ChordView(song: preview, transpose: 0),
-                    );
-                    if (photo == null) return rendered;
-                    final pane = PhotoPane(
-                      bytes: photo,
-                      name: _photoName,
-                      height: 340,
-                    );
-                    if (constraints.maxWidth < 900) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          pane,
-                          const SizedBox(height: 12),
-                          rendered,
-                        ],
-                      );
-                    }
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: pane),
-                        const SizedBox(width: 16),
-                        Expanded(child: rendered),
-                      ],
-                    );
-                  },
+                ReviewPanes(
+                  photo: _photoBytes == null
+                      ? null
+                      : PhotoPane(
+                          bytes: _photoBytes!,
+                          name: _photoName,
+                          height: 340,
+                        ),
+                  preview: SizedBox(
+                    height: 340,
+                    child: preview.hasNotation
+                        ? SheetMusicView(
+                            song: preview, transpose: 0, showChords: true)
+                        : ChordView(song: preview, transpose: 0),
+                  ),
                 ),
               // And still say what Save is waiting for, underneath it.
               if (blockers.isNotEmpty)
