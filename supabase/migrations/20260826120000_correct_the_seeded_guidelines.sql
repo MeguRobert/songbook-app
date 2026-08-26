@@ -37,7 +37,19 @@ update public.app_settings
  where id = 1
    and guidelines_ro = 'Trimite doar cântări care se cântă cu adevărat la închinare. Scrie versurile și acordurile cu atenție — cineva va cânta din ele. Nu trimite glume, teste sau cântări pe care nu ai dreptul să le distribui.';
 
--- `updated_at` is deliberately NOT touched. It means "when an administrator last
--- changed these settings", and it is shown as such; a spelling fix arriving in a
--- migration is not that, and moving it would tell the next administrator that
--- somebody edited the settings when nobody did.
+-- `updated_at` MOVES, and cannot be stopped from moving. app_settings carries
+-- `app_settings_touch_updated_at`, a BEFORE UPDATE trigger reusing
+-- `touch_updated_at()` from 20260728120000, so any write to this row stamps
+-- now() regardless of what the statement asks for. Holding the old value would
+-- mean disabling a trigger in the middle of a migration, which is a heavier
+-- tool than a spelling fix has earned.
+--
+-- An earlier draft of this file claimed the opposite. It was wrong, and the
+-- check that was supposed to catch it printed the timestamp without comparing
+-- it to the value from before the update -- an assertion that could not fail.
+--
+-- It costs nothing here: `updated_at` is parsed into AppSettings and rendered by
+-- no screen, so no administrator is shown a date implying somebody edited these
+-- settings. `updated_by` is genuinely untouched and stays null, and that is the
+-- column that would name a person. If `updated_at` is ever put on screen, this
+-- is the write that makes it lie.
