@@ -10,9 +10,9 @@ import 'helpers.dart';
 /// The photo-import entry point.
 ///
 /// The picker itself is a platform channel and cannot be driven here, so these
-/// cover what surrounds it: the button exists, each of the two engines is asked
-/// for only when it is the one chosen, and neither being available says so
-/// instead of failing silently.
+/// cover what surrounds it: the button is on the first screen beside Parse, each
+/// of the two engines is asked for only when it is the one chosen, and neither
+/// being available says so instead of failing silently.
 class _FakePhotoImportService implements PhotoImportService {
   final PhotoImportPayload? payload;
   final PhotoImportException? error;
@@ -29,29 +29,21 @@ class _FakePhotoImportService implements PhotoImportService {
   }
 }
 
-/// Opens the "More ways to add" expander that holds the non-paste sources.
-///
-/// Photo lives in there beside the file picker, both demoted behind one
-/// disclosure so pasting a chord sheet keeps the screen — it is what actually
-/// happens most of the time.
-Future<void> openMoreWays(WidgetTester tester) async {
-  await tester.tap(find.text('More ways to add'));
-  await tester.pumpAndSettle();
-}
-
 void main() {
-  testWidgets('the Photo button waits inside "More ways to add"',
+  testWidgets('Photo sits beside Parse, with nothing to open first',
       (tester) async {
+    // It used to wait two taps away inside a "More ways to add" expander,
+    // sharing that drawer with a MusicXML file picker that needs a score
+    // exported from MuseScore first. That gave the rarest path equal billing and
+    // hid the one this app is for: the songs being added are in books, and a
+    // book is photographed.
     await pumpScreen(tester, const ImportSongScreen());
     await tester.pumpAndSettle();
 
-    expect(find.text('Photo'), findsNothing);
-
-    await openMoreWays(tester);
-
     expect(find.text('Photo'), findsOneWidget);
-    // Beside the file picker, not instead of it.
-    expect(find.text('MusicXML file'), findsOneWidget);
+    expect(find.text('Parse'), findsOneWidget);
+    expect(find.text('More ways to add'), findsNothing);
+    expect(find.text('MusicXML file'), findsNothing);
   });
 
   testWidgets('with no reader available, tapping Photo says why rather than '
@@ -61,7 +53,6 @@ void main() {
     // engine in, which is exactly the state a non-web build is in.
     await pumpScreen(tester, const ImportSongScreen());
     await tester.pumpAndSettle();
-    await openMoreWays(tester);
 
     await tester.tap(find.text('Photo'));
     await tester.pumpAndSettle();
@@ -87,7 +78,6 @@ void main() {
       ],
     );
     await tester.pumpAndSettle();
-    await openMoreWays(tester);
 
     await tester.tap(find.text('Photo'));
     await tester.pumpAndSettle();
@@ -106,7 +96,6 @@ void main() {
     // routes to the notation engine is what says it.
     await pumpScreen(tester, const ImportSongScreen());
     await tester.pumpAndSettle();
-    await openMoreWays(tester);
 
     expect(find.textContaining('Press the book flat'), findsNothing);
 
@@ -125,7 +114,6 @@ void main() {
     // to point at.
     await pumpScreen(tester, const ImportSongScreen());
     await tester.pumpAndSettle();
-    await openMoreWays(tester);
 
     await tester.tap(find.text('This page has sheet music'));
     await tester.pumpAndSettle();

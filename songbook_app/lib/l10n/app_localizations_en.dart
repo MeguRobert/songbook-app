@@ -684,9 +684,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'G       C\nAz Úrra bízom életem\n\nor [G]Az Úrra [C]bízom életem';
 
   @override
-  String get importMusicXmlFile => 'MusicXML file';
-
-  @override
   String get importParse => 'Parse';
 
   @override
@@ -923,13 +920,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voiceBass => 'Bass';
 
   @override
-  String get importMoreWays => 'More ways to add';
-
-  @override
-  String get importMusicXmlHint =>
-      'The only path that brings in engraved notation. Export from MuseScore first.';
-
-  @override
   String get accountSection => 'ACCOUNT';
 
   @override
@@ -1119,6 +1109,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get importPhotoHint =>
       'Reads the words and chords on the page, on your device.';
+
+  @override
+  String get importSectionPhoto => 'PHOTO';
+
+  @override
+  String get importPhotoZoomHint => 'Pinch or scroll to zoom.';
 
   @override
   String get importPhotoSheetMusic => 'This page has sheet music';

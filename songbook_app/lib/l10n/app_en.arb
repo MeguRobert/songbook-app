@@ -903,10 +903,6 @@
   "@importPasteHint": {
     "description": "Placeholder showing both accepted shapes — chords on their own line above the words, or inline in brackets. The example line stays Hungarian in every language because the songs are Hungarian; only the connective changes."
   },
-  "importMusicXmlFile": "MusicXML file",
-  "@importMusicXmlFile": {
-    "description": "Button that opens a file picker for .xml/.musicxml/.mxl"
-  },
   "importParse": "Parse",
   "@importParse": {
     "description": "Button that reads the pasted text into a song"
@@ -1234,14 +1230,6 @@
   "@voiceBass": {
     "description": "Lowest voice of a four-part score"
   },
-  "importMoreWays": "More ways to add",
-  "@importMoreWays": {
-    "description": "Expander holding the import paths that are not pasting. Collapsed by default: pasting a chord sheet is what actually happens most of the time, and the file path needs a score exported from MuseScore first."
-  },
-  "importMusicXmlHint": "The only path that brings in engraved notation. Export from MuseScore first.",
-  "@importMusicXmlHint": {
-    "description": "Says what the file path is for, so demoting it does not make it look like a lesser version of paste"
-  },
   "accountSection": "ACCOUNT",
   "@accountSection": {
     "description": "Settings section header for the optional account"
@@ -1482,6 +1470,14 @@
     "description": "Shown when this build carries no sheet-music reader, so the toggle cannot work"
   },
   "importPhotoHint": "Reads the words and chords on the page, on your device.",
+  "importSectionPhoto": "PHOTO",
+  "@importSectionPhoto": {
+    "description": "Import screen: heading over the photograph shown beside the preview, so a reading can be compared against the page it came from."
+  },
+  "importPhotoZoomHint": "Pinch or scroll to zoom.",
+  "@importPhotoZoomHint": {
+    "description": "Import screen: how to magnify the photograph shown beside the preview."
+  },
   "@importPhotoHint": {
     "description": "Explanation under the Photo button for the ordinary chord-sheet path"
   },

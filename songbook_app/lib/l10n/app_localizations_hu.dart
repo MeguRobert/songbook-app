@@ -686,9 +686,6 @@ class AppLocalizationsHu extends AppLocalizations {
       'G       C\nAz Úrra bízom életem\n\nvagy [G]Az Úrra [C]bízom életem';
 
   @override
-  String get importMusicXmlFile => 'MusicXML fájl';
-
-  @override
   String get importParse => 'Feldolgozás';
 
   @override
@@ -927,13 +924,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get voiceBass => 'Basszus';
 
   @override
-  String get importMoreWays => 'További lehetőségek';
-
-  @override
-  String get importMusicXmlHint =>
-      'Csak ez a mód hoz be kottát is. Előbb exportáld a MuseScore-ból.';
-
-  @override
   String get accountSection => 'FIÓK';
 
   @override
@@ -1123,6 +1113,12 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get importPhotoHint =>
       'Beolvassa a lap szövegét és akkordjait, az eszközödön.';
+
+  @override
+  String get importSectionPhoto => 'FÉNYKÉP';
+
+  @override
+  String get importPhotoZoomHint => 'Nagyításhoz csippents vagy görgess.';
 
   @override
   String get importPhotoSheetMusic => 'Ezen a lapon kotta van';

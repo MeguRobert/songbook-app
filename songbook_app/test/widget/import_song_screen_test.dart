@@ -28,13 +28,22 @@ Future<void> pasteAndParse(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
 }
 
+/// Scrolls the preview into view.
+///
+/// It sits below the fold, and a ListView does not build what is not on screen —
+/// so `find.text('PREVIEW')` reports it missing when it is perfectly correct,
+/// two rows further down. What is above it has changed more than once (a "More
+/// ways to add" expander, then the sheet-music question under the Photo button),
+/// which is the argument for scrolling rather than counting on the layout.
+Future<void> revealPreview(WidgetTester tester) async {
+  await tester.scrollUntilVisible(find.text('PREVIEW'), 200,
+      scrollable: find.byType(Scrollable).first);
+  await tester.pumpAndSettle();
+}
+
 /// Names the song and scrolls the preview into view.
 ///
-/// A title is what makes the draft valid enough to render at all. The scroll is
-/// needed because the preview sits below the fold — the file picker moved behind
-/// a "More ways to add" expander, which added a row above it — and every `find.*`
-/// skips offstage widgets by default, so the assertions below would look at an
-/// empty viewport and report the preview missing when it is built and correct.
+/// A title is what makes the draft valid enough to render at all.
 Future<void> nameAndRevealPreview(WidgetTester tester, String title) async {
   await tester.enterText(find.widgetWithText(TextField, 'Title'), title);
   await tester.pumpAndSettle();
@@ -60,6 +69,7 @@ void main() {
     await pasteAndParse(tester, _twoLine);
 
     expect(find.text('DETAILS'), findsOneWidget);
+    await revealPreview(tester);
     expect(find.text('PREVIEW'), findsOneWidget);
     // Two blank-line-separated blocks became two verses.
     expect(find.text('2 verses'), findsOneWidget);

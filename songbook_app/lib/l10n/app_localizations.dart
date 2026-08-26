@@ -1270,12 +1270,6 @@ abstract class AppLocalizations {
   /// **'G       C\nAz Úrra bízom életem\n\nor [G]Az Úrra [C]bízom életem'**
   String get importPasteHint;
 
-  /// Button that opens a file picker for .xml/.musicxml/.mxl
-  ///
-  /// In en, this message translates to:
-  /// **'MusicXML file'**
-  String get importMusicXmlFile;
-
   /// Button that reads the pasted text into a song
   ///
   /// In en, this message translates to:
@@ -1611,18 +1605,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bass'**
   String get voiceBass;
-
-  /// Expander holding the import paths that are not pasting. Collapsed by default: pasting a chord sheet is what actually happens most of the time, and the file path needs a score exported from MuseScore first.
-  ///
-  /// In en, this message translates to:
-  /// **'More ways to add'**
-  String get importMoreWays;
-
-  /// Says what the file path is for, so demoting it does not make it look like a lesser version of paste
-  ///
-  /// In en, this message translates to:
-  /// **'The only path that brings in engraved notation. Export from MuseScore first.'**
-  String get importMusicXmlHint;
 
   /// Settings section header for the optional account
   ///
@@ -1965,6 +1947,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reads the words and chords on the page, on your device.'**
   String get importPhotoHint;
+
+  /// Import screen: heading over the photograph shown beside the preview, so a reading can be compared against the page it came from.
+  ///
+  /// In en, this message translates to:
+  /// **'PHOTO'**
+  String get importSectionPhoto;
+
+  /// Import screen: how to magnify the photograph shown beside the preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinch or scroll to zoom.'**
+  String get importPhotoZoomHint;
 
   /// Toggle asking whether the photographed page carries engraved notation
   ///

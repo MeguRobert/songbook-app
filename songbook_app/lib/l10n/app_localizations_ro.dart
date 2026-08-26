@@ -688,9 +688,6 @@ class AppLocalizationsRo extends AppLocalizations {
       'G       C\nAz Úrra bízom életem\n\nsau [G]Az Úrra [C]bízom életem';
 
   @override
-  String get importMusicXmlFile => 'Fișier MusicXML';
-
-  @override
   String get importParse => 'Procesează';
 
   @override
@@ -929,13 +926,6 @@ class AppLocalizationsRo extends AppLocalizations {
   String get voiceBass => 'Bas';
 
   @override
-  String get importMoreWays => 'Alte moduri de adăugare';
-
-  @override
-  String get importMusicXmlHint =>
-      'Singura cale care aduce și partitura. Exportă mai întâi din MuseScore.';
-
-  @override
   String get accountSection => 'CONT';
 
   @override
@@ -1126,6 +1116,13 @@ class AppLocalizationsRo extends AppLocalizations {
   @override
   String get importPhotoHint =>
       'Citește versurile și acordurile de pe pagină, pe dispozitivul tău.';
+
+  @override
+  String get importSectionPhoto => 'FOTOGRAFIE';
+
+  @override
+  String get importPhotoZoomHint =>
+      'Apropie degetele sau derulează pentru mărire.';
 
   @override
   String get importPhotoSheetMusic => 'Pagina aceasta are partitură';

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -23,6 +22,7 @@ import '../../providers/providers.dart';
 import '../../providers/song_provider.dart';
 import '../../../router/app_router.dart';
 import '../../widgets/content_pane.dart';
+import '../../widgets/import/photo_pane.dart';
 import '../song_view/widgets/chord_view.dart';
 import '../song_view/widgets/sheet_music_view.dart';
 
@@ -33,7 +33,7 @@ import '../song_view/widgets/sheet_music_view.dart';
 /// would freeze whichever language happened to be active when Parse was
 /// pressed, and `initState` is the wrong place to reach for an inherited widget
 /// anyway.
-enum _ImportSource { savedSong, pastedText, file, photo }
+enum _ImportSource { savedSong, pastedText, photo }
 
 /// What an importer produced, whatever the source.
 ///
@@ -57,7 +57,7 @@ class _PendingImport {
   /// Shown so it is obvious which source produced what is on screen.
   final _ImportSource source;
 
-  /// The picked file's name, when [source] is [_ImportSource.file].
+  /// The picked photograph's name, when [source] is [_ImportSource.photo].
   final String? fileName;
 
   const _PendingImport({
@@ -86,15 +86,14 @@ class _PendingImport {
   String sourceLabel(AppLocalizations l10n) => switch (source) {
         _ImportSource.savedSong => l10n.importSourceSaved,
         _ImportSource.pastedText => l10n.importSourcePasted,
-        // A file name is the same in every language; the fallback only fires if
-        // the picker ever returns a file with no name.
-        _ImportSource.file => fileName ?? l10n.importMusicXmlFile,
+        // A file name is the same in every language; the fallback only fires
+        // if the picker ever returns a file with no name.
         _ImportSource.photo => fileName ?? l10n.importSourcePhoto,
       };
 }
 
-/// Adds a song by pasting a chord sheet or opening a MusicXML file — or
-/// corrects one that was already saved, when [editingId] names it.
+/// Adds a song by pasting a chord sheet or photographing a page — or corrects
+/// one that was already saved, when [editingId] names it.
 ///
 /// The songs being added are overwhelmingly ones that already exist — from a
 /// chord site, a MuseScore file, or a book that was never digitised — so
@@ -122,6 +121,11 @@ class ImportSongScreen extends ConsumerStatefulWidget {
 
 class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   static const _parser = ChordSheetParser();
+
+  /// Still needed, though the file picker is gone: the sheet-music photo path
+  /// comes back as MusicXML from the engraving service, and this is what reads
+  /// it. Only the *upload* button was removed - the notation editor imports
+  /// files, this screen photographs pages.
   static const _musicXml = MusicXmlImporter();
   static const _chordCarry = ChordCarry();
 
@@ -150,12 +154,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
 
   String? _fileError;
 
-  /// Whether the "More ways to add" expander is open.
+  /// The photograph that was read, kept so it can be shown beside the preview.
   ///
-  /// Collapsed on open, and not remembered between visits: pasting is the path
-  /// almost every import takes, and a picker left expanded would compete with
-  /// the box the user is about to type into on every subsequent visit too.
-  bool _showMoreWays = false;
+  /// It used to be dropped the moment the reader had finished with it, which
+  /// left the review surface with nothing to check the reading against - the one
+  /// thing the gold editor does that this screen did not. Held in memory only:
+  /// nothing about a photograph is stored, and it goes when the screen does.
+  Uint8List? _photoBytes;
+  String? _photoName;
 
   /// The song being corrected, read once when the screen opens. Null when
   /// adding, and also when [ImportSongScreen.editingId] names a song that is no
@@ -330,6 +336,15 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
         }
         return;
       }
+      // Held before the read rather than after it: a page that reads badly is
+      // exactly the one worth looking at, and a refusal further down would
+      // otherwise leave the reviewer with nothing on screen to look at.
+      if (mounted) {
+        setState(() {
+          _photoBytes = bytes;
+          _photoName = file.name;
+        });
+      }
 
       // Only now: until the picker closes, nothing is being read, and a
       // button claiming otherwise over an open picker would be a lie the user
@@ -436,64 +451,6 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       // convenience must never turn a successful import into a failed one.
     }
     return null;
-  }
-
-  Future<void> _pickMusicXmlFile() async {
-    final l10n = AppLocalizations.of(context);
-    setState(() {
-      _picking = true;
-      _fileError = null;
-    });
-    try {
-      final picked = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['xml', 'musicxml', 'mxl'],
-        // Required on web, and avoids a second read on mobile.
-        withData: true,
-      );
-      if (picked == null || picked.files.isEmpty) return; // cancelled
-      final file = picked.files.single;
-
-      final name = file.name.toLowerCase();
-      if (!name.endsWith('.xml') &&
-          !name.endsWith('.musicxml') &&
-          !name.endsWith('.mxl')) {
-        setState(
-            () => _fileError = l10n.importErrorNotMusicXml(file.name));
-        return;
-      }
-
-      final bytes = file.bytes;
-      if (bytes == null) {
-        setState(() => _fileError = l10n.importErrorUnreadable(file.name));
-        return;
-      }
-
-      // .mxl is zipped MusicXML rather than a separate format.
-      final isCompressed = name.endsWith('.mxl');
-      final result = isCompressed
-          ? _musicXml.importCompressed(bytes)
-          : _musicXml.importXml(utf8.decode(bytes, allowMalformed: true));
-
-      _accept(_PendingImport(
-        verses: result.verses,
-        notation: result.notation,
-        title: result.title,
-        key: result.key,
-        timeSignature: result.timeSignature,
-        warnings: result.warnings,
-        source: _ImportSource.file,
-        fileName: file.name,
-      ));
-    } on MusicXmlImportException catch (e) {
-      setState(() => _fileError = l10n.importNoticeText(e.notice));
-    } catch (e) {
-      // A malformed file must not take the screen down with it — the user
-      // still has a pasted draft in progress they would otherwise lose.
-      setState(() => _fileError = l10n.importErrorFailed('$e'));
-    } finally {
-      if (mounted) setState(() => _picking = false);
-    }
   }
 
   /// The key, guessed from the first chord when the source declares none.
@@ -688,12 +645,31 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
               onChanged: (_) => setState(() => _pending = _savedPending),
             ),
             const SizedBox(height: 8),
-            // Parse alone on its row. It used to share the row with the file
-            // picker, which gave equal billing to a path that needs a score
-            // exported from MuseScore first — while pasting a chord sheet is what
-            // actually happens most of the time.
+            // Parse and Photo side by side, both first-class.
+            //
+            // Photo used to sit two taps away behind a "more ways" expander,
+            // alongside a MusicXML picker that needs a score exported from
+            // MuseScore first. That gave equal billing to the rarest path and
+            // hid the one this app is for: the songs being added are in books,
+            // and a book is photographed. The picker is gone - the notation
+            // editor still imports MusicXML, but not from here.
             Row(
               children: [
+                OutlinedButton.icon(
+                  onPressed: _picking ? null : _pickPhoto,
+                  icon: _readingPhoto
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.photo_camera_outlined),
+                  // Reading a page is seconds on the device and can be a minute
+                  // on the sheet-music service, so the button says what it is
+                  // doing rather than going quiet.
+                  label: Text(_readingPhoto
+                      ? l10n.importPhotoReading
+                      : l10n.importPhoto),
+                ),
                 const Spacer(),
                 FilledButton.tonalIcon(
                   onPressed:
@@ -703,145 +679,52 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
                 ),
               ],
             ),
-
-            // The file path, demoted but not hidden: it is the only one that
-            // produces engraved notation, and the landing point for a photo
-            // pipeline later, so the expander says what it is for rather than
-            // just tucking it away.
-            //
-            // A failed pick needs no special case — the button is inside here, so
-            // this is necessarily open when the error appears below.
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () =>
-                    setState(() => _showMoreWays = !_showMoreWays),
-                icon: Icon(_showMoreWays
-                    ? Icons.expand_less
-                    : Icons.expand_more),
-                label: Text(l10n.importMoreWays),
-              ),
-            ),
-            // Each path with its own explanation directly under it, rather
-            // than one line of prose over both. `importMusicXmlHint` says
-            // "export from MuseScore first", which was written when the file
-            // picker was alone in here — read as a heading over the Photo
-            // button too, it claims a requirement photos do not have.
-            if (_showMoreWays) ...[
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            // The one question the app cannot answer for itself, directly under
+            // the button it changes. A checkbox rather than two buttons: it is
+            // one gesture with a property, not two features.
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: InkWell(
+                onTap: _picking
+                    ? null
+                    : () => setState(
+                        () => _photoHasSheetMusic = !_photoHasSheetMusic),
+                // The box and its words are one control, and without this they
+                // are not: the label was swept up into the surrounding group and
+                // the checkbox left with no accessible name, so a screen reader
+                // announced "checkbox, not checked" and nothing about what it
+                // does.
+                child: MergeSemantics(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // The only path that yields real notation, and the lyrics
-                      // come free from <lyric> elements.
-                      OutlinedButton.icon(
-                        onPressed: _picking ? null : _pickMusicXmlFile,
-                        // The spinner belongs to whichever path is actually
-                        // working. Both buttons are disabled while either runs,
-                        // but showing it here during a photo read said the file
-                        // picker was busy when it was not.
-                        icon: _picking && !_readingPhoto
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.piano_outlined),
-                        label: Text(l10n.importMusicXmlFile),
+                      Checkbox(
+                        value: _photoHasSheetMusic,
+                        onChanged: _picking
+                            ? null
+                            : (on) => setState(
+                                () => _photoHasSheetMusic = on ?? false),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4, bottom: 12),
-                        child: Text(
-                          l10n.importMusicXmlHint,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _picking ? null : _pickPhoto,
-                        icon: _readingPhoto
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.photo_camera_outlined),
-                        // Reading a page is seconds on the device and can be a
-                        // minute on the sheet-music service, so the button says
-                        // what it is doing rather than going quiet.
-                        label: Text(_readingPhoto
-                            ? l10n.importPhotoReading
-                            : l10n.importPhoto),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          l10n.importPhotoHint,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      // The one question the app cannot answer for itself. A
-                      // checkbox rather than two buttons: it is one gesture
-                      // with a property, not two features, and a second button
-                      // would have to explain what "notation" means to earn
-                      // its place.
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: InkWell(
-                          onTap: _picking
-                              ? null
-                              : () => setState(() =>
-                                  _photoHasSheetMusic = !_photoHasSheetMusic),
-                          // The box and its words are one control, and without
-                          // this they are not: the label was swept up into the
-                          // surrounding group and the checkbox itself was left
-                          // with no accessible name, so a screen reader
-                          // announced "checkbox, not checked" and nothing about
-                          // what it does.
-                          child: MergeSemantics(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Checkbox(
-                                  value: _photoHasSheetMusic,
-                                  onChanged: _picking
-                                      ? null
-                                      : (on) => setState(() =>
-                                          _photoHasSheetMusic = on ?? false),
-                                ),
-                                Flexible(
-                                  child: Text(l10n.importPhotoSheetMusic),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Worth more than any code here: a curled page took the
-                      // reading from 63 notes to 6, because staff detection
-                      // needs straight lines. Tilt it survives; curl it does
-                      // not.
-                      if (_photoHasSheetMusic)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4, bottom: 4),
-                          child: Text(
-                            l10n.importPhotoSheetMusicHint,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
+                      Flexible(child: Text(l10n.importPhotoSheetMusic)),
                     ],
                   ),
                 ),
               ),
-            ],
+            ),
+            // Worth more than any code here: a curled page took the reading from
+            // 63 notes to 6, because staff detection needs straight lines. Tilt
+            // it survives; curl it does not.
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 4),
+              child: Text(
+                _photoHasSheetMusic
+                    ? l10n.importPhotoSheetMusicHint
+                    : l10n.importPhotoHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
 
             if (_fileError != null) ...[
               const SizedBox(height: 12),
@@ -944,13 +827,49 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
               // Shown as soon as anything was read, titled or not. The real view
               // widgets, chosen the same way the song view chooses them, so this
               // is not an approximation that can drift.
+              //
+              // Beside the photograph when there is one and the screen is wide
+              // enough to hold both, which is the whole point: a reading is
+              // checked against the page it came from, not admired on its own.
+              // Under 900 they stack, photograph first - a phone is where photos
+              // get taken, and scrolling past the page to reach the reading is
+              // the right order.
               if (preview != null)
-                SizedBox(
-                  height: 340,
-                  child: preview.hasNotation
-                      ? SheetMusicView(
-                          song: preview, transpose: 0, showChords: true)
-                      : ChordView(song: preview, transpose: 0),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final photo = _photoBytes;
+                    final rendered = SizedBox(
+                      height: 340,
+                      child: preview.hasNotation
+                          ? SheetMusicView(
+                              song: preview, transpose: 0, showChords: true)
+                          : ChordView(song: preview, transpose: 0),
+                    );
+                    if (photo == null) return rendered;
+                    final pane = PhotoPane(
+                      bytes: photo,
+                      name: _photoName,
+                      height: 340,
+                    );
+                    if (constraints.maxWidth < 900) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          pane,
+                          const SizedBox(height: 12),
+                          rendered,
+                        ],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: pane),
+                        const SizedBox(width: 16),
+                        Expanded(child: rendered),
+                      ],
+                    );
+                  },
                 ),
               // And still say what Save is waiting for, underneath it.
               if (blockers.isNotEmpty)
