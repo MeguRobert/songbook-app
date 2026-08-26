@@ -152,7 +152,38 @@ async function regionBelow(page, pattern) {
   }, pattern.source);
 }
 
+/**
+ * The box of the first node whose label is `label`, or null.
+ *
+ * A string matches the whole label exactly. A RegExp is tried against the whole
+ * label and against each newline-separated part of it, because Flutter merges
+ * a block's static text into one node: the photo pane arrives as
+ * `PHOTO\n<file> - Pinch or scroll to zoom.` and `/^PHOTO$/` has to find it.
+ *
+ * For asking where something is rather than whether it exists - the question
+ * a layout decision (side by side, or stacked) can only be answered by.
+ */
+async function boxOf(page, label) {
+  const source = label instanceof RegExp ? label.source : null;
+  return page.evaluate(([wanted, re]) => {
+    const pattern = re ? new RegExp(re) : null;
+    const hit = (s) => pattern
+      ? pattern.test(s) || s.split('\n').some((p) => pattern.test(p.trim()))
+      : s === wanted;
+    for (const n of document.querySelectorAll('flt-semantics')) {
+      const own = (n.textContent || '').trim();
+      const aria = (n.getAttribute('aria-label') || '').trim();
+      if (!hit(own) && !hit(aria)) continue;
+      const r = n.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) continue;
+      return { x: Math.round(r.x), y: Math.round(r.y),
+               width: Math.round(r.width), height: Math.round(r.height) };
+    }
+    return null;
+  }, [label instanceof RegExp ? null : label, source]);
+}
+
 module.exports = {
   enableSemantics, texts, clickLabel, waitForText, expand, isEnabled,
-  regionBelow,
+  regionBelow, boxOf,
 };

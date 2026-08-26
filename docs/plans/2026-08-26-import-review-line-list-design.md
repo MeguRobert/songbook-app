@@ -93,7 +93,7 @@ the rest of that row and nothing else.
 PASTE          text box + [Parse]  +  [Photo]      <- promoted
 DETAILS        title · number · book · warnings    (unchanged)
 LINES          the new editable list
-PHOTO ┆ PREVIEW    side by side >= 900px, stacked below it
+PHOTO ┆ PREVIEW    side by side >= 720px (was 900 - see the end), stacked below it
 ```
 
 Gone: `_pickMusicXmlFile`, `_showMoreWays`, the expander, `importMusicXmlFile`,
@@ -166,3 +166,63 @@ pane), then the line list.
   photograph — **not one routed through a messenger**, which returns 0.026 bytes
   per pixel with EXIF stripped and destroys `ő` and `ű`.
 * Forcing an unspellable token to be stored as a chord. See above.
+
+## What using it found
+
+_Added later on 2026-08-26, after the screen above was built, opened in a real
+browser (`e2e/import.e2e.cjs` against a release build, then two corpus pages by
+hand) and used to correct a page. Every widget test was green throughout._
+
+**The photograph and the preview never sat side by side.** The row above says
+"side by side ≥ 900px". The screen lives in a `ContentPane.list`, which caps it
+at `ContentWidths.list` = 800 and pads it 16 a side, so the `LayoutBuilder`
+was never handed more than 768 and the side-by-side branch was dead code from
+the day it shipped — at 1100 wide, at 1400 wide, at any width. The breakpoint is
+now **720**, lives in its own widget (`ReviewPanes`) beside the arithmetic, and
+its test pins it under `ContentWidths.list - 32`. Two panes of 352 and a 16
+gutter: a phone's width each, which is what the song view is designed for, and
+enough of the page to see which row a chord belongs to; the pane zooms for the
+rest.
+
+**The list was one utterance to a screen reader.** Flutter merges a block's
+static text into the nearest node that already exists — here the `ListView`
+item holding the list — so the hint, every badge and every lyric line became a
+single label, and only the buttons were nodes of their own. Nothing could say
+which row a button belonged to. Each row is now a `Semantics(container: true)`,
+which is also what let the browser walk address a row at all. The photo pane
+had the same defect with a twist: the image's own unlabelled semantics flagged
+the merged item as an image, and the browser hung its label off an auxiliary
+element nothing reads — *PHOTO* was on screen and nowhere in the tree. The pane
+is now its own node with a labelled image inside it.
+
+**`-7` was underlined red.** The chip colour asked only `isChordToken`, so a
+continuation the parser reads perfectly well — `-7`, the chord before it with a
+seventh — was marked as the token most in need of correcting, on a fixture
+where the reader had it right. A chip is marked only when the parser reads it
+as *nothing*: not a chord, not a continuation, not a separator, not a stage
+direction. `isSeparator` and `isDirective` became public for this, so the list
+asks the parser rather than re-spelling its rules.
+
+**`{title: …}` had a row.** With a "words" badge and two kind buttons that
+could do nothing, because the parser consumes a directive before it ever asks
+about a line's kind. Directives are left out of the list; the index still counts
+them, so nothing below is renumbered.
+
+### Measured, and left for a decision
+
+On `125-nincs-mas-isten` — 61 gold lines, two columns — the line list runs
+**2,426 px** from `LINES` to `PREVIEW`, so the photograph the reviewer is meant
+to check each row against sits two and a half screens below the rows. On `185`
+it is 400 px and unremarkable. The gold editor does not have this problem
+because its photograph is a **sticky 40% column beside the lines**
+(`editor.html`: `grid-template-columns: minmax(320px,40%) 1fr`, `#shot
+{position: sticky}`), and the preview is what sits below. The table above
+records Robert's decision as "beside the preview"; the app now does that
+faithfully. Whether the photograph should instead stay beside the *lines* on a
+wide screen — the arrangement he was actually praising — is his call, and it
+is a layout change, not a fix.
+
+Also seen, not changed: the reading of `185` puts `195` in the number box (the
+page prints 485 with 185 handwritten over it), and `HÁ`/`HSX` for the
+struck-through `H7` — both the reader's, recorded in the measurement loop's
+design record. The pane's file-name hint ellipsises at 352 wide.

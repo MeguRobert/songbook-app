@@ -20,6 +20,14 @@
  * Audiveris MusicXML with no <work-title>, and one bar whose notes all sit off
  * the melody, which the renderer receives as a bar with nothing in it.
  *
+ * The chord-sheet half also works the review surface that made the screen
+ * "more like the golden generator": the photograph kept beside the reading,
+ * and the line list - a chord corrected by tapping it, a row's kind overruled
+ * and handed back. Those are widget-tested too; this is the layer the widget
+ * suite cannot see. It was this file, run for the first time against the new
+ * screen, that found the photograph and the preview never sat side by side:
+ * the breakpoint was 900 and the screen's pane is 800.
+ *
  * Two assertions here were wrong before they were right, and both mistakes are
  * worth remembering:
  *
@@ -35,8 +43,8 @@ const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const {
-  enableSemantics, texts, clickLabel, waitForText, expand, isEnabled,
-  regionBelow,
+  enableSemantics, texts, clickLabel, waitForText, isEnabled, regionBelow,
+  boxOf,
 } = require('./dom.cjs');
 
 const APP = process.env.APP_URL || 'http://127.0.0.1:8912';
@@ -77,6 +85,140 @@ function count(settled) {
 }
 
 /**
+ * The rows of the LINES list, top to bottom.
+ *
+ * A row is one semantics node holding a kind badge, the line's text (a lyric
+ * row) or one chip per token (a chord row), and its two kind buttons. It is
+ * found from the buttons inwards: the `chords` button whose next sibling is
+ * `words`, and the element that holds them both is the row. Each row being one
+ * node is itself a fix this file prompted - before it, every static text in the
+ * list had merged into one label and no row could be told from another.
+ */
+async function lineRows(page) {
+  return page.evaluate(() => {
+    const own = (n) => {
+      const a = n.getAttribute('aria-label');
+      if (a) return a.trim();
+      return [...n.childNodes]
+        .filter((c) => c.nodeType === 3 ||
+          (c.nodeType === 1 && c.tagName !== 'FLT-SEMANTICS'))
+        .map((c) => c.textContent).join('').trim();
+    };
+    const rows = [];
+    for (const kind of document.querySelectorAll('flt-semantics[role="button"]')) {
+      if (own(kind) !== 'chords') continue;
+      const next = kind.nextElementSibling;
+      if (!next || own(next) !== 'words') continue;
+      const row = kind.parentElement;
+      const nodes = [...row.querySelectorAll('flt-semantics')];
+      const chips = nodes
+        .filter((n) => n.getAttribute('role') === 'button' && n !== kind && n !== next)
+        .map(own);
+      const texts = nodes
+        .filter((n) => n.getAttribute('role') !== 'button')
+        .map(own).filter(Boolean);
+      const r = row.getBoundingClientRect();
+      rows.push({ y: Math.round(r.y), badge: texts[0] || '',
+                  text: texts.slice(1).join(' '), chips });
+    }
+    return rows;
+  });
+}
+
+/** Clicks chip `chip` of row `row` (both indexes into `lineRows`). */
+async function clickChip(page, row, chip) {
+  return page.evaluate(([r, c]) => {
+    const own = (n) => (n.getAttribute('aria-label') ||
+      [...n.childNodes].filter((k) => k.nodeType === 3 ||
+        (k.nodeType === 1 && k.tagName !== 'FLT-SEMANTICS'))
+        .map((k) => k.textContent).join('')).trim();
+    let i = 0;
+    for (const kind of document.querySelectorAll('flt-semantics[role="button"]')) {
+      if (own(kind) !== 'chords') continue;
+      const next = kind.nextElementSibling;
+      if (!next || own(next) !== 'words') continue;
+      if (i++ !== r) continue;
+      const chips = [...kind.parentElement.querySelectorAll('flt-semantics[role="button"]')]
+        .filter((n) => n !== kind && n !== next);
+      if (!chips[c]) return null;
+      chips[c].click();
+      return own(chips[c]);
+    }
+    return null;
+  }, [row, chip]);
+}
+
+/** Clicks the `chords` or `words` kind button of row `row`. */
+async function clickKind(page, row, which) {
+  return page.evaluate(([r, w]) => {
+    const own = (n) => (n.getAttribute('aria-label') ||
+      [...n.childNodes].filter((k) => k.nodeType === 3 ||
+        (k.nodeType === 1 && k.tagName !== 'FLT-SEMANTICS'))
+        .map((k) => k.textContent).join('')).trim();
+    let i = 0;
+    for (const kind of document.querySelectorAll('flt-semantics[role="button"]')) {
+      if (own(kind) !== 'chords') continue;
+      const next = kind.nextElementSibling;
+      if (!next || own(next) !== 'words') continue;
+      if (i++ !== r) continue;
+      (w === 'chords' ? kind : next).click();
+      return true;
+    }
+    return false;
+  }, [row, which]);
+}
+
+/**
+ * Works the review surface on a chord sheet that has just been read.
+ *
+ * Deliberately independent of what the reader returned: it takes the first
+ * chord row and the first lyric row whatever they hold, so a better reading
+ * next month does not break the walk. The replacement chord is one no hymnal
+ * page in the corpus prints, so finding it afterwards means it got there.
+ */
+async function reviewLines(page) {
+  const out = {};
+  out.photoBox = await boxOf(page, /^PHOTO$/);
+  out.previewBox = await boxOf(page, '1.');
+  const before = await lineRows(page);
+  out.rows = before.length;
+  const chordRow = before.findIndex((r) => r.chips.length > 0);
+  const lyricRow = before.findIndex((r) => r.chips.length === 0);
+  out.chordRow = chordRow;
+  out.lyricRow = lyricRow;
+  if (chordRow === -1 || lyricRow === -1) return out;
+
+  // --- a chord, corrected by tapping it -------------------------------------
+  out.was = await clickChip(page, chordRow, 0);
+  out.dialog = await waitForText(page, /^Correct this chord$/, { timeout: 10000 });
+  if (out.dialog) {
+    // The dialog's field has focus (autofocus), and Enter is its Save.
+    await page.keyboard.press('Control+A');
+    await page.keyboard.type('Bm7');
+    await page.keyboard.press('Enter');
+    await waitForText(page, /^Bm7$/, { timeout: 10000 });
+    await page.waitForTimeout(800);
+    const after = await lineRows(page);
+    out.chipNow = after[chordRow] && after[chordRow].chips[0];
+    out.bm7Nodes = (await page.evaluate(() =>
+      [...document.querySelectorAll('flt-semantics')]
+        .filter((n) => (n.getAttribute('aria-label') || n.textContent || '').trim() === 'Bm7')
+        .length));
+  }
+
+  // --- a lyric row, overruled and handed back -------------------------------
+  await clickKind(page, lyricRow, 'chords');
+  await page.waitForTimeout(800);
+  const overruled = await lineRows(page);
+  out.overruledChips = overruled[lyricRow] ? overruled[lyricRow].chips.length : -1;
+  await clickKind(page, lyricRow, 'chords'); // the kind it now is: hands it back
+  await page.waitForTimeout(800);
+  const restored = await lineRows(page);
+  out.restoredChips = restored[lyricRow] ? restored[lyricRow].chips.length : -1;
+  return out;
+}
+
+/**
  * A fresh page per import.
  *
  * Navigating to `#/import` twice does nothing at all: the document and the hash
@@ -84,14 +226,17 @@ function count(settled) {
  * import from last time. The second run was reading the first run's screen and
  * looking for a checkbox that had been scrolled off it.
  */
-async function importPhoto(browser, errors, { sheetMusic, photo, shot }) {
-  const page = await browser.newPage({ viewport: { width: 1100, height: 1500 } });
+async function importPhoto(browser, errors, { sheetMusic, photo, shot, exercise }) {
+  // Tall enough for the whole screen: paste box, details, the line list and
+  // the review row. The semantics tree carries only what is laid out, so a
+  // row below the fold is a row that does not exist to this walk.
+  const page = await browser.newPage({ viewport: { width: 1100, height: 2000 } });
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message));
   await page.goto(`${APP}/#/import`, { waitUntil: 'networkidle' });
   await page.waitForSelector('flt-glass-pane, flutter-view', { timeout: 45000 });
   await enableSemantics(page);
-  await expand(page, 'More ways to add', 'Photo');
+  const firstScreen = await texts(page);
 
   if (sheetMusic) {
     await clickLabel(page, 'This page has sheet music');
@@ -115,12 +260,21 @@ async function importPhoto(browser, errors, { sheetMusic, photo, shot }) {
   // whose preview never rendered.
   const region = await regionBelow(page, /^PREVIEW/);
   if (region && region.height > 40) {
+    // Only the rendered half when the photograph sits beside it: a photograph
+    // is full of ink, and clipping it in would let a blank preview pass.
+    const photo = await boxOf(page, /^PHOTO$/);
+    if (photo) {
+      const half = Math.round(region.width / 2);
+      region.x = half;
+      region.width = region.width - half;
+    }
     await page.screenshot({ path: path.join(SHOTS, shot + '.png'), clip: region });
   }
   const seen = await texts(page);
   const canSave = await saveable(page);
+  const extra = exercise ? await exercise(page) : {};
   await page.close();
-  return { settled, seen, canSave };
+  return { settled, seen, canSave, firstScreen, ...extra };
 }
 
 (async () => {
@@ -134,7 +288,12 @@ async function importPhoto(browser, errors, { sheetMusic, photo, shot }) {
       sheetMusic: false,
       photo: path.join(HERE, 'chord-sheet.png'),
       shot: 'chord-sheet',
+      exercise: reviewLines,
     });
+    check('chord sheet: Photo is on the first screen, nothing to open first',
+      chords.firstScreen.includes('Photo') &&
+        !chords.firstScreen.includes('More ways to add'),
+      'the expander is gone; this walk used to click it');
     const chordCount = count(chords.settled);
     check('chord sheet: the page was read',
       chordCount !== null && chordCount.unit.startsWith('verse'),
@@ -153,6 +312,30 @@ async function importPhoto(browser, errors, { sheetMusic, photo, shot }) {
     check('chord sheet: the preview has something in it',
       chordInk.inkShare > 0.2,
       `${chordInk.inkShare}% ink in the preview`);
+
+    // ---- the review surface ----------------------------------------------
+    check('review: the photograph is kept on screen beside the reading',
+      Boolean(chords.photoBox) && chords.seen.some((t) => /chord-sheet\.png/.test(t)),
+      chords.photoBox ? 'no file name under the photograph' : 'no PHOTO pane');
+    // The decision this pins: side by side on a desktop window. It shipped
+    // stacked at every width, because 900 was asked of a pane that is 768.
+    check('review: at 1100 wide the preview sits beside the photograph, not under it',
+      Boolean(chords.photoBox && chords.previewBox) &&
+        chords.previewBox.x - chords.photoBox.x > 250 &&
+        Math.abs(chords.previewBox.y - chords.photoBox.y) < 200,
+      `PHOTO at ${JSON.stringify(chords.photoBox)}, preview at ${JSON.stringify(chords.previewBox)}`);
+    check('review: the line list has a row per line, chord rows as chips',
+      chords.rows >= 4 && chords.chordRow !== -1 && chords.lyricRow !== -1,
+      `${chords.rows} rows; first chord row ${chords.chordRow}, first lyric row ${chords.lyricRow}`);
+    check('review: tapping a chord opens its correction',
+      chords.dialog === 'Correct this chord',
+      `tapped "${chords.was}", saw: ${chords.dialog}`);
+    check('review: the corrected chord replaces the chip and reaches the preview',
+      chords.chipNow === 'Bm7' && chords.bm7Nodes >= 2,
+      `chip now "${chords.chipNow}"; Bm7 appears in ${chords.bm7Nodes} node(s) (chip + preview = 2)`);
+    check('review: a lyric row overruled to chords becomes chips, and is handed back',
+      chords.overruledChips > 0 && chords.restoredChips === 0,
+      `chips while overruled: ${chords.overruledChips}, after handing back: ${chords.restoredChips}`);
 
     // ---- A page of sheet music, answered by the stub ---------------------
     if (!SERVICE_PATH) {
