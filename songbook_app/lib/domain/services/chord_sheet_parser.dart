@@ -4,6 +4,73 @@ import '../../data/models/lyric_line.dart';
 import '../../data/models/verse.dart';
 import 'import_notice.dart';
 
+/// Which lines a person has overruled the parser about.
+///
+/// [ChordSheetParser.isChordLine] is right about almost every row, and where it
+/// is wrong it is usually because a glyph was misread — `Csus2` coming back as
+/// `5US2` leaves the row one unrecognised token over the tolerance, so the whole
+/// thing reads as lyrics. The fix for that is to correct the token, after which
+/// the parser agrees by itself and nothing here is needed.
+///
+/// This is for the residue: a row the reader cannot be talked into classifying
+/// correctly, which a person holding the page can see plainly. The import screen
+/// offers it per line.
+///
+/// **Sparse on purpose.** An entry exists only where somebody disagreed with the
+/// parser, so an empty [LineKinds] means "the parser decides everything" — which
+/// is the behaviour that shipped before this existed, to the character. Nothing
+/// is recorded that the parser can work out for itself, so there is no second
+/// opinion to keep in step with the first.
+///
+/// Indexes are into the lines of the text as split by [ChordSheetParser.parse],
+/// counting blank lines and directives, and they are only meaningful against the
+/// text they were made from. An index past the end is ignored rather than
+/// throwing: the screen clears these whenever it re-parses, and a stale one
+/// arriving anyway should not take the import down.
+enum LineKind { chords, lyric }
+
+class LineKinds {
+  const LineKinds(this._byIndex);
+
+  const LineKinds.none() : _byIndex = const {};
+
+  final Map<int, LineKind> _byIndex;
+
+  bool get isEmpty => _byIndex.isEmpty;
+
+  /// What line [index] was overruled to be, or null when nobody said.
+  LineKind? kindOf(int index) => _byIndex[index];
+
+  /// Null when nobody said, so a caller can fall through to the parser's own
+  /// answer with `?? isChordLine(raw)` rather than having to ask twice.
+  bool? isChords(int index) => switch (_byIndex[index]) {
+        LineKind.chords => true,
+        LineKind.lyric => false,
+        null => null,
+      };
+
+  /// Whether line [index] may serve as the lyric under a chord row. The mirror
+  /// of [isChords], and separate because the parser asks the two questions of
+  /// different lines.
+  bool? isLyric(int index) => switch (_byIndex[index]) {
+        LineKind.lyric => true,
+        LineKind.chords => false,
+        null => null,
+      };
+
+  /// The same overrides with [index] set to [kind].
+  LineKinds withLine(int index, LineKind kind) =>
+      LineKinds({..._byIndex, index: kind});
+
+  /// The same overrides with [index] left to the parser again.
+  ///
+  /// What a corrected token does. The row is re-read on its merits, because the
+  /// reason for the override is gone — an override that outlives its evidence
+  /// keeps a row claiming to be chords long after that stopped being true.
+  LineKinds withoutLine(int index) =>
+      LineKinds({..._byIndex}..remove(index));
+}
+
 /// The result of parsing a pasted chord sheet.
 ///
 /// Directives are optional in real-world pastes, so [title] and [key] are null
@@ -390,7 +457,12 @@ class ChordSheetParser {
   }
 
   /// Parses [input] into verses plus whatever metadata it carried.
-  ParsedChordSheet parse(String input) {
+  ///
+  /// [kinds] overrules [isChordLine] on the lines it names and nothing else. It
+  /// exists for the import screen's line list, where somebody looking at the
+  /// photograph can see a row the reader classified wrongly. Omitted - which is
+  /// every caller but that one - the parse is what it always was.
+  ParsedChordSheet parse(String input, {LineKinds? kinds}) {
     final lines = input.split(RegExp(r'\r\n|\r|\n'));
 
     final verses = <Verse>[];
@@ -463,9 +535,12 @@ class ChordSheetParser {
         continue;
       }
 
-      if (isChordLine(raw)) {
+      // The person holding the page overrules the rule, where they said so.
+      // Null when they did not, which is every line unless the import screen
+      // put something in - see [LineKinds].
+      if (kinds?.isChords(i) ?? isChordLine(raw)) {
         final next = i + 1 < lines.length ? lines[i + 1] : null;
-        if (next != null && _isLyricLine(next)) {
+        if (next != null && (kinds?.isLyric(i + 1) ?? _isLyricLine(next))) {
           pending.add(_parseChordsOverLyrics(raw, next, lineNo, warnings));
           i++; // the lyric line was consumed as part of this pair
         } else {
