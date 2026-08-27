@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../data/models/song_id.dart';
 import '../l10n/app_localizations.dart';
 
+import '../presentation/providers/crash_provider.dart';
 import '../presentation/screens/song_list/song_list_screen.dart';
 import '../presentation/screens/song_view/song_view_screen.dart';
 import '../presentation/screens/favorites/favorites_screen.dart';
@@ -92,14 +93,24 @@ class AppRoutes {
 }
 
 /// Router provider
-final routerProvider = Provider<GoRouter>((ref) => createAppRouter());
+final routerProvider = Provider<GoRouter>((ref) {
+  return createAppRouter(onNavigate: ref.watch(crashContextProvider).noteRoute);
+});
 
 /// Builds the app's router.
 ///
 /// [initialLocation] exists for tests: on web the browser's URL always wins, so
 /// this is the only way to exercise "somebody pasted that link into a fresh
 /// tab" against the real route table.
-GoRouter createAppRouter({String initialLocation = AppRoutes.home}) {
+///
+/// [onNavigate] is told where the app just went, and exists for one reason: a
+/// crash report that says only "it crashed" cannot be acted on, and one that
+/// says "/import" can. Optional so the router-only tests build exactly what they
+/// built before.
+GoRouter createAppRouter({
+  String initialLocation = AppRoutes.home,
+  void Function(String location)? onNavigate,
+}) {
   // Make an imperative `push` show up in the address bar.
   //
   // Every destination that is not a bottom-bar tab is reached with `push`
@@ -118,6 +129,20 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.home}) {
   return GoRouter(
     initialLocation: initialLocation,
     debugLogDiagnostics: false,
+
+    // Observing, not redirecting — this always returns null.
+    //
+    // A top-level `redirect` rather than a NavigatorObserver because the shell
+    // route owns its own Navigator: an observer on the root would miss every
+    // move between bottom-bar tabs, which is most of the navigating anyone does.
+    // This runs before the per-route redirects further down and does not
+    // interfere with them.
+    redirect: onNavigate == null
+        ? null
+        : (context, state) {
+            onNavigate(state.uri.toString());
+            return null;
+          },
     routes: [
       // Shell route for bottom navigation. Every top-level destination lives
       // in here, so the bottom bar is reachable from all of them — Setlists
