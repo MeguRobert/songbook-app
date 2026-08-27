@@ -225,11 +225,6 @@ void main() {
     testWidgets('each language is saved under its own key', (tester) async {
       final repository = await pumpSettings(tester);
 
-      // The toggle comes first only to wake the Save button up, and is at the
-      // top of the list where it is still on screen. See the skipped test below
-      // for why it is needed at all.
-      await toggle(tester, 'Accept new songs');
-
       await reveal(tester, 'Magyar');
       await tester.enterText(
           find.widgetWithText(TextField, 'Magyar'), 'Új magyar szabály.');
@@ -254,9 +249,6 @@ void main() {
         (tester) async {
       final repository = await pumpSettings(tester);
 
-      // Again only to wake Save up; see the skipped test below.
-      await toggle(tester, 'Accept new songs');
-
       await reveal(tester, 'Magyar');
       await tester.enterText(
           find.widgetWithText(TextField, 'Magyar'), 'Új magyar szabály.');
@@ -269,42 +261,33 @@ void main() {
       expect(settings.guidelines['en'], 'Only songs actually sung in worship.');
     });
 
-    /// SKIPPED BECAUSE THE SCREEN IS BROKEN, not because the test is.
+    /// The single most likely reason to open this screen, and it used to be the
+    /// one that did not work.
     ///
-    /// The Save button reads `_draft == null ? null : _save`, and `_draft` is
-    /// seeded by `_seed()` — which runs inside the `data:` branch of the body,
-    /// *after* the `AppBar` above it has already been built. So on the one frame
-    /// where the settings arrive, Save is built disabled and nothing schedules
-    /// another build.
+    /// Save reads `_draft == null ? null : _save`, and `_draft` was seeded by
+    /// `_seed()` inside the `data:` branch of the body — *after* the `AppBar`
+    /// above it had been built. So on the one frame where the settings arrived,
+    /// Save was built disabled and nothing scheduled another build. A switch or
+    /// the cap stepper calls `setState` and woke it; typing in a guidelines box
+    /// does not, because a `TextField` listens to its own controller internally.
+    /// An administrator who came to edit only the guidelines typed three
+    /// paragraphs at a dead button, with nothing on screen suggesting they flick
+    /// a switch first.
     ///
-    /// A switch or the cap stepper calls `setState`, which rebuilds and wakes
-    /// Save up. Typing in a guidelines box does not: the `TextEditingController`
-    /// lives in the `State` but the `TextField` listens to it internally, and the
-    /// screen never rebuilds. **So an administrator who edits only the
-    /// guidelines — the single most likely reason to open this screen — types
-    /// three paragraphs and finds the Save button dead**, with no explanation
-    /// and nothing on screen suggesting they should flick a switch first.
-    ///
-    /// Fixes: seed the draft in `initState`/on the first data frame with a
-    /// `setState`, or drop the `_draft == null` guard in favour of the loaded
-    /// value. Not made here because this branch is tests only. When it is made,
-    /// delete `skip` and the "wake the Save button up" toggles in the two tests
-    /// above.
-    testWidgets(
-      'editing only the guidelines is enough to enable Save',
-      (tester) async {
-        final repository = await pumpSettings(tester);
+    /// The seed now runs above the `AppBar` in the same build. Nothing here
+    /// touches a switch, which is the whole point of the test.
+    testWidgets('editing only the guidelines is enough to enable Save',
+        (tester) async {
+      final repository = await pumpSettings(tester);
 
-        await reveal(tester, 'Magyar');
-        await tester.enterText(
-            find.widgetWithText(TextField, 'Magyar'), 'Új magyar szabály.');
-        await tester.pumpAndSettle();
+      await reveal(tester, 'Magyar');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Magyar'), 'Új magyar szabály.');
+      await tester.pumpAndSettle();
 
-        await tapSave(tester);
+      await tapSave(tester);
 
-        expect(saved(repository).guidelines['hu'], 'Új magyar szabály.');
-      },
-      skip: true,
-    );
+      expect(saved(repository).guidelines['hu'], 'Új magyar szabály.');
+    });
   });
 }

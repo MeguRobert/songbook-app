@@ -419,6 +419,7 @@
   "publishGuidelinesAccept": "Accept și trimit",
   "publishRefusedTitle": "Nu a fost trimisă",
   "publishDailyLimitBody": "Ai trimis deja astăzi atâtea cântări câte permite limita. Te rugăm să încerci mâine.",
+  "publishProfileSaveFailed": "Nu s-a putut salva. Verifică conexiunea și încearcă din nou.",
   "submittedBy": "Trimisă de {name}",
   "submittedByFormerMember": "Trimisă de {name}, care a plecat de atunci",
 

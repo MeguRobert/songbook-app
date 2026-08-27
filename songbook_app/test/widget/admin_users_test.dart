@@ -124,17 +124,6 @@ Finder inDialog(String text) => find.descendant(
       matching: find.text(text),
     );
 
-/// Lets the work behind a dismissed dialog run **without pumping a frame**.
-///
-/// **A workaround for a defect in the screen, not a testing preference.**
-/// `_promptInvite` calls `controller.dispose()` on the line after
-/// `await showDialog(...)` returns — before the dialog's exit transition has
-/// finished. The next frame rebuilds the still-mounted `TextFormField`,
-/// `EditableText` re-subscribes to the controller, and the framework throws
-/// `A TextEditingController was used after being disposed.` See the skipped test
-/// at the foot of this file, and the fuller note in `moderation_queue_test.dart`.
-Future<void> settleWithoutAFrame(WidgetTester tester) => tester.idle();
-
 void main() {
   setUpAll(() => registerFallbackValue(AppRole.member));
 
@@ -327,7 +316,7 @@ void main() {
 
       await tester.enterText(find.byType(TextFormField), 'dora@example.org');
       await tester.tap(find.widgetWithText(FilledButton, 'Send invitation'));
-      await settleWithoutAFrame(tester);
+      await tester.pumpAndSettle();
 
       // The safe default matters: an invitation is accepted by whoever holds
       // the address, and the rung it lands on is not renegotiated afterwards.
@@ -343,7 +332,7 @@ void main() {
       await tester.tap(inDialog('Moderator'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Send invitation'));
-      await settleWithoutAFrame(tester);
+      await tester.pumpAndSettle();
 
       verify(() =>
               repository.invite('dora@example.org', role: AppRole.moderator))
@@ -356,32 +345,28 @@ void main() {
 
       await tester.enterText(find.byType(TextFormField), 'dora@example.org');
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-      await settleWithoutAFrame(tester);
+      await tester.pumpAndSettle();
 
       verifyNever(() => repository.invite(any(), role: any(named: 'role')));
     });
 
-    /// SKIPPED BECAUSE THE SCREEN IS BROKEN, not because the test is.
-    ///
-    /// `_promptInvite` disposes its `TextEditingController` on the line after
-    /// `await showDialog(...)` returns, while the dialog's exit transition is
-    /// still rebuilding the `TextFormField`. Every dismissal throws
+    /// `_promptInvite` used to dispose its `TextEditingController` on the line
+    /// after `await showDialog(...)` returned, while the exit transition was
+    /// still rebuilding the `TextFormField`. Every dismissal threw
     /// `A TextEditingController was used after being disposed.` in a debug
-    /// build. Full write-up on the matching skipped test in
-    /// `moderation_queue_test.dart`; the same line is in
-    /// `admin_user_detail_screen._promptDelete`.
-    testWidgets(
-      'the invite dialog can be dismissed without a framework error',
-      (tester) async {
-        await pumpUsers(tester, users: theCongregation());
-        await openInvite(tester);
+    /// build, and left a listener on a disposed `ChangeNotifier` in a release
+    /// one. `_InviteDialog` owns it now; this pumps the transition out to prove
+    /// it. Full write-up on the matching test in `moderation_queue_test.dart`.
+    testWidgets('the invite dialog can be dismissed without a framework error',
+        (tester) async {
+      await pumpUsers(tester, users: theCongregation());
+      await openInvite(tester);
 
-        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-        await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'dora@example.org');
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
 
-        expect(find.byType(AlertDialog), findsNothing);
-      },
-      skip: true,
-    );
+      expect(find.byType(AlertDialog), findsNothing);
+    });
   });
 }

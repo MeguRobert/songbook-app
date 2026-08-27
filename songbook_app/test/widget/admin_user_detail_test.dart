@@ -167,21 +167,6 @@ Future<void> openDelete(WidgetTester tester) async {
 FilledButton deleteConfirmButton(WidgetTester tester) => tester
     .widget<FilledButton>(find.widgetWithText(FilledButton, 'Delete permanently'));
 
-/// Lets the work behind a dismissed dialog run **without pumping a frame**.
-///
-/// **A workaround for a defect in the screen, not a testing preference.**
-/// `_promptDelete` calls `controller.dispose()` on the line after
-/// `await showDialog(...)` returns — before the dialog's exit transition has
-/// finished — and the next frame throws
-/// `A TextEditingController was used after being disposed.` So the delete tests
-/// assert on the repository and on the router's location, neither of which needs
-/// a frame. See the skipped test at the foot of this file, and the fuller note
-/// in `moderation_queue_test.dart`.
-///
-/// The role picker has no text field and so is not affected: those tests settle
-/// normally and can assert on the snackbar.
-Future<void> settleWithoutAFrame(WidgetTester tester) => tester.idle();
-
 void main() {
   setUpAll(() => registerFallbackValue(AppRole.member));
 
@@ -437,7 +422,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'bela@example.org');
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Delete permanently'));
-      await settleWithoutAFrame(tester);
+      await tester.pumpAndSettle();
 
       verify(() => harness.repository.deleteUser('u2')).called(1);
       // Off a detail screen for an account that no longer exists.
@@ -451,33 +436,29 @@ void main() {
       await tester.enterText(find.byType(TextField), 'bela@example.org');
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-      await settleWithoutAFrame(tester);
+      await tester.pumpAndSettle();
 
       verifyNever(() => harness.repository.deleteUser(any()));
       expect(whereWeAre(harness.router), '/admin/users/u2');
     });
 
-    /// SKIPPED BECAUSE THE SCREEN IS BROKEN, not because the test is.
-    ///
-    /// `_promptDelete` disposes its `TextEditingController` on the line after
-    /// `await showDialog(...)` returns, while the dialog's exit transition is
-    /// still rebuilding the `TextField`. Every dismissal throws
+    /// `_promptDelete` used to dispose its `TextEditingController` on the line
+    /// after `await showDialog(...)` returned, while the exit transition was
+    /// still rebuilding the `TextField`. Every dismissal threw
     /// `A TextEditingController was used after being disposed.` in a debug
-    /// build. Full write-up on the matching skipped test in
-    /// `moderation_queue_test.dart`; the same line is in
-    /// `admin_users_screen._promptInvite`.
-    testWidgets(
-      'the delete dialog can be dismissed without a framework error',
-      (tester) async {
-        await pumpDetail(tester, users: [account()]);
-        await openDelete(tester);
+    /// build, and left a listener on a disposed `ChangeNotifier` in a release
+    /// one. `_DeleteDialog` owns it now; this pumps the transition out to prove
+    /// it. Full write-up on the matching test in `moderation_queue_test.dart`.
+    testWidgets('the delete dialog can be dismissed without a framework error',
+        (tester) async {
+      await pumpDetail(tester, users: [account()]);
+      await openDelete(tester);
 
-        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-        await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'bela@example.org');
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
 
-        expect(find.byType(AlertDialog), findsNothing);
-      },
-      skip: true,
-    );
+      expect(find.byType(AlertDialog), findsNothing);
+    });
   });
 }

@@ -1574,6 +1574,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You have already sent as many songs today as the limit allows. Please try again tomorrow.';
 
   @override
+  String get publishProfileSaveFailed =>
+      'That could not be saved. Check your connection and try again.';
+
+  @override
   String submittedBy(String name) {
     return 'Submitted by $name';
   }

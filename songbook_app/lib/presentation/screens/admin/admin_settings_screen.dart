@@ -75,12 +75,25 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     final l10n = AppLocalizations.of(context);
     final settings = ref.watch(appSettingsProvider);
 
+    // Seeded here, above the AppBar, rather than in the `data:` branch below it.
+    // A widget tree is built top-down, so seeding in the body meant that on the
+    // one frame the settings arrived, Save had already been built disabled — and
+    // nothing scheduled another build. A switch or the cap stepper calls
+    // `setState` and woke it up; typing in a guidelines box does not, because a
+    // `TextField` listens to its own controller internally. So an administrator
+    // who opened this screen to edit only the guidelines — the likeliest reason
+    // to open it at all — typed three paragraphs at a dead Save button, with
+    // nothing on screen suggesting they flick a switch first.
+    final loaded = settings.valueOrNull;
+    if (loaded != null) _seed(loaded);
+    final seeded = _draft;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.adminSettingsTitle),
         actions: [
           TextButton(
-            onPressed: _draft == null || _saving ? null : _save,
+            onPressed: seeded == null || _saving ? null : _save,
             child: _saving
                 ? const SizedBox(
                     height: 16,
@@ -94,8 +107,9 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       body: settings.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => Center(child: Text(l10n.authErrorNetwork)),
-        data: (loaded) {
-          _seed(loaded);
+        data: (_) {
+          // Non-null by construction: reaching `data:` means the value was
+          // there when the seed ran above.
           final draft = _draft!;
 
           return ContentPane.form(

@@ -182,50 +182,11 @@ class PublishFlow {
   }
 
   Future<bool> _promptDisplayName() async {
-    final l10n = _l10n;
-    final controller = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
     final name = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.publishNameTitle),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.publishNameBody),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: controller,
-                autofocus: true,
-                decoration: InputDecoration(labelText: l10n.publishNameLabel),
-                validator: (value) => (value == null || value.trim().isEmpty)
-                    ? l10n.publishNameRequired
-                    : null,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? false) {
-                Navigator.of(dialogContext).pop(controller.text);
-              }
-            },
-            child: Text(l10n.actionSave),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => const _NameDialog(),
     );
 
-    controller.dispose();
     if (name == null) return false;
 
     final repository = ref.read(adminRepositoryProvider);
@@ -235,6 +196,11 @@ class PublishFlow {
       ref.invalidate(myProfileProvider);
       return true;
     } catch (_) {
+      // Said out loud, like every other refusal in this flow. A silent `false`
+      // here closed the dialog, cleared the stop, and left the gate asking for
+      // a name that had in fact not been stored — with nothing on screen to
+      // explain the second asking.
+      _say(_l10n.publishProfileSaveFailed);
       return false;
     }
   }
@@ -294,6 +260,9 @@ class PublishFlow {
       ref.invalidate(myProfileProvider);
       return true;
     } catch (_) {
+      // The worst of the two silences: the contributor ticked the box, tapped
+      // Accept, and watched the dialog close on a record that was never made.
+      _say(_l10n.publishProfileSaveFailed);
       return false;
     }
   }
@@ -366,4 +335,72 @@ class PublishFlow {
         SubmissionRefusal.dailyLimitReached => _l10n.publishDailyLimitBody,
         SubmissionRefusal.unknown => _l10n.shareSongFailed,
       };
+}
+
+/// Asking what to credit the song to.
+///
+/// Its own `StatefulWidget` because it owns a `TextEditingController`, and a
+/// controller has to outlive the dialog's exit animation. Built inline first and
+/// disposed the moment `showDialog` returned — while the popped route was still
+/// transitioning out, so the next frame rebuilt the `TextFormField`,
+/// `EditableText` re-subscribed, and the framework threw *A
+/// TextEditingController was used after being disposed*. The same defect the
+/// three admin dialogs carried; the pattern is `_TokenDialog` in
+/// `import_song_screen.dart`.
+class _NameDialog extends StatefulWidget {
+  const _NameDialog();
+
+  @override
+  State<_NameDialog> createState() => _NameDialogState();
+}
+
+class _NameDialogState extends State<_NameDialog> {
+  final _controller = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.publishNameTitle),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.publishNameBody),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _controller,
+              autofocus: true,
+              decoration: InputDecoration(labelText: l10n.publishNameLabel),
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? l10n.publishNameRequired
+                  : null,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.actionCancel),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (_formKey.currentState?.validate() ?? false) {
+              Navigator.of(context).pop(_controller.text);
+            }
+          },
+          child: Text(l10n.actionSave),
+        ),
+      ],
+    );
+  }
 }

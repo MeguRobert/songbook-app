@@ -419,6 +419,7 @@
   "publishGuidelinesAccept": "Elfogadom és elküldöm",
   "publishRefusedTitle": "Nem sikerült elküldeni",
   "publishDailyLimitBody": "Ma már annyi éneket küldtél be, amennyit a korlát engedélyez. Kérlek, próbáld újra holnap.",
+  "publishProfileSaveFailed": "Ezt nem sikerült elmenteni. Ellenőrizd a kapcsolatot, és próbáld újra.",
   "submittedBy": "Beküldte: {name}",
   "submittedByFormerMember": "Beküldte: {name} — a fiókja azóta megszűnt",
 

@@ -101,26 +101,6 @@ Future<void> openReject(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-/// Lets the work behind a dismissed dialog run **without pumping a frame**.
-///
-/// **A workaround for a defect in the screen, not a testing preference.**
-/// [_promptReject] calls `controller.dispose()` on the line after
-/// `await showDialog(...)` returns — which is before the dialog's exit
-/// transition has finished. The next frame rebuilds the still-mounted
-/// `TextFormField`, `EditableText` re-subscribes to the controller, and the
-/// framework throws `A TextEditingController was used after being disposed.`
-/// followed by a cascade that cannot be drained with `takeException`.
-///
-/// So these tests settle the microtask queue and assert on the repository
-/// instead of on the frame. What they cannot cover as a result: the snackbar
-/// after a decision, and the dialog actually leaving the screen.
-///
-/// The same premature dispose is in `admin_users_screen._promptInvite` and
-/// `admin_user_detail_screen._promptDelete`. See the skipped test at the foot of
-/// this file — when the screens dispose after the route is gone, that test goes
-/// green and this helper can be replaced with `pumpAndSettle`.
-Future<void> settleWithoutAFrame(WidgetTester tester) => tester.idle();
-
 void main() {
   group('what the queue shows', () {
     testWidgets('a row carries the song and who submitted it', (tester) async {
@@ -281,7 +261,7 @@ void main() {
       await tester.enterText(
           find.byType(TextFormField), 'Only two of the four verses.');
       await tester.tap(confirmReject());
-      await settleWithoutAFrame(tester);
+      await tester.pumpAndSettle();
 
       // This string is the only thing the contributor ever reads back, so it
       // has to arrive intact rather than as a flag.
@@ -295,47 +275,39 @@ void main() {
 
       await tester.enterText(find.byType(TextFormField), 'Changed my mind');
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-      await settleWithoutAFrame(tester);
+      await tester.pumpAndSettle();
 
       verifyNever(() => repository.reject(any(), any()));
       verifyNever(() => repository.approve(any()));
     });
 
-    /// SKIPPED BECAUSE THE SCREEN IS BROKEN, not because the test is.
+    /// The dismissal itself, which used to be the thing this screen got wrong.
     ///
-    /// `_promptReject` calls `controller.dispose()` on the line after
-    /// `await showDialog(...)` returns. The dialog route is popped but its exit
-    /// transition has not finished, so the next frame rebuilds the still-mounted
-    /// `TextFormField`; `EditableText` re-subscribes to the controller and the
-    /// framework throws:
+    /// `_promptReject` built its `TextEditingController` inline and disposed it
+    /// on the line after `await showDialog(...)` returned. The route was popped
+    /// but still transitioning out, so the next frame rebuilt the
+    /// `TextFormField`, `EditableText` re-subscribed, and the framework threw
     ///
     ///     A TextEditingController was used after being disposed.
     ///
-    /// It fires on **every** dismissal — Cancel and confirm alike, typed in or
-    /// not — and brings down a cascade of four more assertions that
-    /// `takeException` cannot drain. In release the assertion is compiled out,
-    /// which is why nobody has seen it: what is left is a listener registered on
-    /// a disposed `ChangeNotifier`.
+    /// on **every** dismissal — Cancel and confirm alike — with a cascade behind
+    /// it that `takeException` could not drain. In release the assertion is
+    /// compiled out, which is why nobody saw it: what was left was a listener
+    /// registered on a disposed `ChangeNotifier`.
     ///
-    /// The fix is to own the controller in the `State` and dispose it there, or
-    /// to dispose it once the route has actually gone. It was not made here
-    /// because this branch is tests only. When it is made, delete `skip` and
-    /// replace [settleWithoutAFrame] with `pumpAndSettle` throughout.
-    ///
-    /// The identical line is in `admin_users_screen._promptInvite` and
-    /// `admin_user_detail_screen._promptDelete`.
-    testWidgets(
-      'the dialog can be dismissed without a framework error',
-      (tester) async {
-        await pumpQueue(tester, queue: [pendingSubmission()]);
-        await openReject(tester);
+    /// `_RejectDialog` owns the controller now, so it outlives the animation.
+    /// This test is the guard: it pumps the exit transition to completion, which
+    /// is exactly what the old code could not survive.
+    testWidgets('the dialog can be dismissed without a framework error',
+        (tester) async {
+      await pumpQueue(tester, queue: [pendingSubmission()]);
+      await openReject(tester);
 
-        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-        await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'Typed and abandoned');
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
 
-        expect(find.byType(AlertDialog), findsNothing);
-      },
-      skip: true,
-    );
+      expect(find.byType(AlertDialog), findsNothing);
+    });
   });
 }

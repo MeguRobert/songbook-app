@@ -7,6 +7,7 @@ import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/data/models/submission.dart';
 import 'package:songbook_app/data/models/verse.dart';
 import 'package:songbook_app/data/models/app_settings.dart';
+import 'package:songbook_app/data/repositories/admin_repository.dart';
 import 'package:songbook_app/data/repositories/submission_repository.dart';
 import 'package:songbook_app/presentation/providers/admin_provider.dart';
 import 'package:songbook_app/presentation/providers/providers.dart';
@@ -30,6 +31,8 @@ import 'helpers.dart';
 /// `test/unit/domain/services/publish_gate_test.dart` already tests the gate.
 
 class _MockSubmissions extends Mock implements SubmissionRepository {}
+
+class _MockAdmin extends Mock implements AdminRepository {}
 
 Song userSong({
   String ref = 'abc',
@@ -66,6 +69,7 @@ Future<void> pumpSongView(
   WidgetTester tester,
   Song song, {
   SubmissionRepository? submissions,
+  AdminRepository? admin,
   bool signedIn = true,
   bool emailConfirmed = true,
   String? displayName = 'Someone',
@@ -81,6 +85,7 @@ Future<void> pumpSongView(
       songByIdProvider
           .overrideWith((ref, id) async => id == song.id ? song : null),
       submissionRepositoryProvider.overrideWithValue(submissions),
+      adminRepositoryProvider.overrideWithValue(admin),
       isSignedInProvider.overrideWithValue(signedIn),
       isEmailConfirmedProvider.overrideWithValue(emailConfirmed),
       appSettingsProvider.overrideWith((ref) async => settings),
@@ -224,6 +229,80 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('could not be sent'), findsOneWidget);
+    });
+  });
+
+  /// The two writes the gate makes on the contributor's behalf.
+  ///
+  /// Both used to `return false` on failure with nothing said: the contributor
+  /// typed their name, or ticked the guidelines and tapped Accept, the dialog
+  /// closed, and the flow ended. No song sent, no message, nothing to retry —
+  /// and with the repository now checking that its UPDATE actually matched a
+  /// row, a refusal by RLS lands here rather than passing for a save.
+  group('clearing a stop fails', () {
+    testWidgets('a name that could not be stored is reported', (tester) async {
+      final submissions = _MockSubmissions();
+      final admin = _MockAdmin();
+      when(() => admin.setDisplayName(any()))
+          .thenThrow(const AdminFailure(AdminFailureCode.forbidden));
+
+      await pumpSongView(tester, userSong(),
+          submissions: submissions, admin: admin, displayName: null);
+      await openMenu(tester);
+      await tester.tap(find.text('Share with the congregation'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('How should we credit you?'), findsOneWidget);
+      await tester.enterText(find.byType(TextFormField), 'Anna Kovács');
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('could not be saved'), findsOneWidget);
+      verifyNever(() => submissions.submit(any()));
+    });
+
+    testWidgets('an acceptance that was never recorded is reported',
+        (tester) async {
+      final submissions = _MockSubmissions();
+      final admin = _MockAdmin();
+      when(() => admin.acceptGuidelines())
+          .thenThrow(const AdminFailure(AdminFailureCode.forbidden));
+
+      await pumpSongView(tester, userSong(),
+          submissions: submissions, admin: admin, guidelinesAccepted: false);
+      await openMenu(tester);
+      await tester.tap(find.text('Share with the congregation'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Before you send it'), findsOneWidget);
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Agree and send'));
+      await tester.pumpAndSettle();
+
+      // The worst silence of the two: the tick is the whole record that the
+      // rules were shown, and it had not been made.
+      expect(find.textContaining('could not be saved'), findsOneWidget);
+      verifyNever(() => submissions.submit(any()));
+    });
+
+    testWidgets('a name that stored cleanly moves the gate on', (tester) async {
+      final submissions = _MockSubmissions();
+      final admin = _MockAdmin();
+      when(() => admin.setDisplayName(any())).thenAnswer((_) async {});
+
+      await pumpSongView(tester, userSong(),
+          submissions: submissions, admin: admin, displayName: null);
+      await openMenu(tester);
+      await tester.tap(find.text('Share with the congregation'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'Anna Kovács');
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      // No complaint on a write that worked — the message is for failures.
+      expect(find.textContaining('could not be saved'), findsNothing);
+      verify(() => admin.setDisplayName('Anna Kovács')).called(1);
     });
   });
 }
