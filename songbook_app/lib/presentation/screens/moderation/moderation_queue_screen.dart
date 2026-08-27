@@ -90,46 +90,11 @@ class _QueueRowState extends ConsumerState<_QueueRow> {
   }
 
   Future<void> _promptReject() async {
-    final l10n = AppLocalizations.of(context);
-    final controller = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
     final reason = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.reject),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: controller,
-            autofocus: true,
-            maxLines: 3,
-            decoration: InputDecoration(labelText: l10n.rejectReasonLabel),
-            // A rejection with no reason is also refused by a database check;
-            // validating here just gives a better message than a Postgres error.
-            validator: (value) => (value == null || value.trim().isEmpty)
-                ? l10n.rejectReasonRequired
-                : null,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? false) {
-                Navigator.of(context).pop(controller.text);
-              }
-            },
-            child: Text(l10n.reject),
-          ),
-        ],
-      ),
+      builder: (context) => const _RejectDialog(),
     );
 
-    controller.dispose();
     if (reason == null || !mounted) return;
 
     final repository = ref.read(submissionRepositoryProvider);
@@ -181,6 +146,71 @@ class _QueueRowState extends ConsumerState<_QueueRow> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+/// Asking why a song is being turned down.
+///
+/// Its own `StatefulWidget` because it owns a `TextEditingController`, and a
+/// controller has to outlive the dialog's exit animation. Built inline first and
+/// disposed the moment `showDialog` returned: the route was popped but still
+/// transitioning out, the next frame rebuilt the `TextFormField`, `EditableText`
+/// re-subscribed, and the framework threw *A TextEditingController was used
+/// after being disposed* on every dismissal — Cancel included. In release the
+/// assertion is compiled out and what is left is a listener on a disposed
+/// `ChangeNotifier`. Same shape as `_TokenDialog` in `import_song_screen.dart`,
+/// for the same reason.
+class _RejectDialog extends StatefulWidget {
+  const _RejectDialog();
+
+  @override
+  State<_RejectDialog> createState() => _RejectDialogState();
+}
+
+class _RejectDialogState extends State<_RejectDialog> {
+  final _controller = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.reject),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _controller,
+          autofocus: true,
+          maxLines: 3,
+          decoration: InputDecoration(labelText: l10n.rejectReasonLabel),
+          // A rejection with no reason is also refused by a database check;
+          // validating here just gives a better message than a Postgres error.
+          validator: (value) => (value == null || value.trim().isEmpty)
+              ? l10n.rejectReasonRequired
+              : null,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.actionCancel),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (_formKey.currentState?.validate() ?? false) {
+              Navigator.of(context).pop(_controller.text);
+            }
+          },
+          child: Text(l10n.reject),
+        ),
+      ],
     );
   }
 }

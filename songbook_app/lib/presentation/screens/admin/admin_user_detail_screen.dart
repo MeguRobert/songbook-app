@@ -142,59 +142,13 @@ class _DetailState extends ConsumerState<_Detail> {
   /// and it also makes deleting the *wrong* row nearly impossible -- the mistake
   /// far more likely than deleting the right row by accident.
   Future<void> _promptDelete() async {
-    final l10n = AppLocalizations.of(context);
     final expected = widget.user.email ?? widget.user.id;
-    final controller = TextEditingController();
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(l10n.adminDeleteAccount),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.adminDeleteWarning),
-              const SizedBox(height: 12),
-              // Says outright what survives. Somebody deleting a spammer wants
-              // to know their songs go; somebody removing a member who moved
-              // away needs to know the hymns stay.
-              Text(
-                l10n.adminDeleteKeepsApproved,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              Text(l10n.adminDeleteTypeToConfirm(expected)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                onChanged: (_) => setDialogState(() {}),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(l10n.actionCancel),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Theme.of(context).colorScheme.onError,
-              ),
-              onPressed: controller.text.trim() == expected
-                  ? () => Navigator.of(context).pop(true)
-                  : null,
-              child: Text(l10n.adminDeletePermanently),
-            ),
-          ],
-        ),
-      ),
+      builder: (context) => _DeleteDialog(expected: expected),
     );
 
-    controller.dispose();
     if (confirmed != true || !mounted) return;
 
     final repository = ref.read(adminRepositoryProvider);
@@ -284,6 +238,82 @@ class _DetailState extends ConsumerState<_Detail> {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Typing the address out, for the one action with no undo.
+///
+/// Its own `StatefulWidget` because it owns a `TextEditingController`, and a
+/// controller has to outlive the dialog's exit animation. Built inline first and
+/// disposed the moment `showDialog` returned — while the popped route was still
+/// transitioning out, so the next frame rebuilt the `TextField`, `EditableText`
+/// re-subscribed, and the framework threw *A TextEditingController was used
+/// after being disposed* on every dismissal, Cancel included. Same shape as
+/// `_TokenDialog` in `import_song_screen.dart`.
+class _DeleteDialog extends StatefulWidget {
+  /// What has to be typed exactly: the address, or the id when there is none.
+  final String expected;
+
+  const _DeleteDialog({required this.expected});
+
+  @override
+  State<_DeleteDialog> createState() => _DeleteDialogState();
+}
+
+class _DeleteDialogState extends State<_DeleteDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.adminDeleteAccount),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.adminDeleteWarning),
+          const SizedBox(height: 12),
+          // Says outright what survives. Somebody deleting a spammer wants to
+          // know their songs go; somebody removing a member who moved away
+          // needs to know the hymns stay.
+          Text(
+            l10n.adminDeleteKeepsApproved,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          Text(l10n.adminDeleteTypeToConfirm(widget.expected)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l10n.actionCancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.error,
+            foregroundColor: Theme.of(context).colorScheme.onError,
+          ),
+          onPressed: _controller.text.trim() == widget.expected
+              ? () => Navigator.of(context).pop(true)
+              : null,
+          child: Text(l10n.adminDeletePermanently),
+        ),
+      ],
     );
   }
 }
