@@ -7,13 +7,15 @@ import '../../widgets/content_pane.dart';
 
 /// Where a reader is told to write.
 ///
-/// **PLACEHOLDER — replace this before the app is handed to anyone.** It is a
-/// Dart constant rather than an ARB string on purpose: an address is not a
-/// translation, so keeping it here means it gets filled in once instead of
-/// three times, and it cannot end up right in one language and stale in
-/// another. The brackets are deliberate — an unfilled placeholder should look
-/// unfilled on the screen, not like a plausible address nobody reads.
-const legalContactAddress = '[ADD A CONTACT EMAIL ADDRESS]';
+/// A Dart constant rather than an ARB string on purpose: an address is not a
+/// translation, so keeping it here means it is filled in once instead of three
+/// times, and it cannot end up right in one language and stale in another.
+///
+/// This address is published on two pages of a public site, so it will be
+/// scraped. That is the cost of being reachable, and being reachable is the
+/// point of the section it appears in — a privacy notice that offers no way to
+/// ask a question is not one.
+const legalContactAddress = 'megurobi14@gmail.com';
 
 /// What the app keeps, and what it never uploads.
 ///
