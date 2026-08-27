@@ -112,6 +112,20 @@
         "warnings_ok": 1.0,
         "headline": 0.362,
         "gold": "4a7ca973bcee"
+      },
+      "105-kosz-jol-vagyok--chords-handwritten-red.jpg": {
+        "number_exact": 1.0,
+        "title_cer": 0.0,
+        "lyric_cer": 0.7743,
+        "lyric_cer_folded": 0.7556,
+        "chord_recall": 0.0,
+        "chord_precision": 0.0,
+        "chord_f1": 0.0,
+        "placement": 0.0,
+        "placement_near": 0.0,
+        "warnings_ok": 0.0,
+        "headline": 0.0752,
+        "gold": "cc9f4184eecc"
       }
     },
     "browser": {
