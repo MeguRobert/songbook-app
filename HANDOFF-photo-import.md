@@ -120,23 +120,35 @@ a Google CDN was executing script in this origin all along. The build now passes
 
 ### Not fixed here — separate work, and both worse than the handoff used to say
 
-1. **An owner can silently rewrite their own already-approved song.**
-   `songs_update_own` (`supabase/migrations/20260728120100_songs_rls.sql`) is
-   `using (owner_id = auth.uid())` with no status constraint, and the trigger's
-   entire guard sits inside `if new.status <> old.status` — so a content-only
-   UPDATE on an approved row passes every check and republishes to the whole
-   congregation with no review. The tell that this is an oversight rather than a
-   decision: `songs_delete_own_undecided` *does* restrict to `draft`/`pending`.
-   No test covers the case. Needs a migration and a negative RLS test.
-2. **The legacy HS256 signing key is load-bearing, not retired.** The bundled
-   client key decodes to header `{"alg":"HS256"}`, payload `role: anon` — so the
-   project must keep HS256 verification enabled, and this document used to say
-   "nothing here depends on it", which was wrong. While it stays enabled,
-   anyone obtaining that one symmetric secret can mint a `service_role` token
-   and bypass all RLS. Nothing in the repo leaks it (history was swept). Fix is
-   to reissue the client key in the `sb_publishable_…` format, update
-   `supabase_config.dart`, then disable the legacy secret in the dashboard —
-   note the keep-alive workflow already *claims* the project uses that format.
+1. ~~**An owner can silently rewrite their own already-approved song.**~~
+   **FIXED — see `20260820190000_approved_songs_are_admin_only.sql`.** This
+   entry described the state at `20260728120100`, where `songs_update_own` was
+   `using (owner_id = auth.uid())` with no status constraint and the trigger's
+   whole guard sat inside `if new.status <> old.status`, so a content-only
+   UPDATE on an approved row passed every check.
+
+   Both halves were closed on 2026-08-20. The policy now carries
+   `and status in ('draft', 'pending', 'rejected')` in **both** `using` and
+   `with check`, so `approved` is unreachable to the owner through RLS; and the
+   `old.status = 'approved'` check was hoisted out of the status-change branch
+   in `enforce_song_status_transition()`, where it now fires on any UPDATE by a
+   signed-in non-admin. Two locks, deliberately — the comment in that migration
+   says the second exists for the day somebody loosens the first. Re-verified
+   2026-08-27 by reading the migration and the live trigger body.
+2. **The legacy HS256 signing key — STILL OPEN, and only the dashboard can
+   answer it.** The bundled client key decodes to header `{"alg":"HS256"}`,
+   payload `role: anon`, so the project must keep HS256 verification enabled;
+   this document used to say "nothing here depends on it", which was wrong.
+   While it stays enabled, anyone obtaining that one symmetric secret can mint a
+   `service_role` token and bypass all RLS. Nothing in the repo leaks it
+   (history was swept). Fix is to reissue the client key in the
+   `sb_publishable_…` format, update `supabase_config.dart`, then disable the
+   legacy secret in the dashboard — note the keep-alive workflow already
+   *claims* the project uses that format.
+
+   **Whether it is still enabled cannot be determined from this repository.**
+   A 2026-08-27 audit read every migration, every edge function and every
+   config file and found no way to tell. Robert checks Settings → JWT Keys.
 3. Smaller, left deliberately: an unauthenticated caller can make the OMR
    service re-fetch the Supabase JWKS by sending junk tokens with novel `kid`s,
    which ties up both instances (cap `kid` length before the lookup); the OMR
@@ -280,7 +292,9 @@ Nothing. Working tree is clean.
 - **Audiveris reports no time signature.** One field for a moderator to set.
 - **`--live` has never run.** No API key, by design. The vision-model arm is unmeasured.
 - **The legacy HS256 Supabase key is still listed** as a previous key. Once tokens signed with
-  it have expired it can be revoked (Settings → JWT Keys). Nothing here depends on it.
+  it have expired it can be revoked (Settings → JWT Keys). The line that used to sit here —
+  "nothing here depends on it" — was **wrong**, and is corrected in the numbered item above:
+  the bundled client key is itself HS256, so verification cannot simply be turned off.
 - Background processes on this machine get killed periodically; run servers **detached**
   (`Start-Process -WindowStyle Hidden`), not as harness background tasks.
 
@@ -291,9 +305,10 @@ Nothing. Working tree is clean.
    sheet music with the book pressed flat — and confirm the round trip. This is the only part
    of the feature that has never been exercised by a human.
 3. **Photograph `7569` and `7570`** and run them through, then tune per song.
-4. **The two items above that this branch did not fix** — the approved-song
-   edit gap and the HS256 key. Neither is caused by this work; the first gets
-   worse the more contributors there are.
+4. ~~The two items above that this branch did not fix.~~ **The approved-song
+   edit gap was fixed on 2026-08-20** (`20260820190000_approved_songs_are_admin_only.sql`);
+   only the HS256 key is left, and it is a dashboard check rather than a code
+   change. See the corrected numbered items above.
 5. Optional: a genuine hard spend stop (budget → Pub/Sub → function that unlinks billing).
    Optional: put the OMR call behind a Supabase Edge Function if you ever want the Cloud Run
    URL private rather than merely authenticated.
@@ -402,8 +417,10 @@ boots with no CSP violations.
 Next: (1) fast-forward master and deploy — CI gates the branch first, and the
 build must keep --no-web-resources-cdn or the CSP stops the app starting. (2)
 Then the thing no test covers: photograph a chord sheet and a flattened
-sheet-music page through the deployed PWA and confirm both round trips. (3) Two
-pre-existing holes this branch did not touch, both documented in the handoff: an
-owner can silently rewrite their own already-approved song, and the legacy HS256
-Supabase key is still load-bearing.
+sheet-music page through the deployed PWA and confirm both round trips. (3) One
+pre-existing hole this branch did not touch: the legacy HS256 Supabase key may
+still be load-bearing — a dashboard check, not a code change. (The other hole
+listed here, an owner rewriting their own approved song, was FIXED on 2026-08-20
+by 20260820190000_approved_songs_are_admin_only.sql; this prompt and the two
+items above said otherwise until 2026-08-27.)
 """
