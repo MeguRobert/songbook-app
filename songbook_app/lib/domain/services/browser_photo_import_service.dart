@@ -1,4 +1,6 @@
-import 'dart:typed_data';
+// `foundation` rather than `dart:typed_data`: it re-exports Uint8List, and it
+// is where `debugPrint` lives. Two imports for the same types is a lint.
+import 'package:flutter/foundation.dart';
 
 import 'import_notice.dart';
 import 'page_text_recognizer.dart';
@@ -60,7 +62,8 @@ class BrowserPhotoImportService implements PhotoImportService {
     final trace = <Map<String, Object?>>[];
 
     if (imageBytes.isEmpty) {
-      _record(PhotoImportOutcome.refused, clock, trace);
+      _record(PhotoImportOutcome.refused, clock, trace,
+          bytes: imageBytes.length);
       throw const PhotoImportException('That image is empty.');
     }
 
@@ -73,7 +76,7 @@ class BrowserPhotoImportService implements PhotoImportService {
       // answer from an engine that would not start — one sentence covers both for
       // the user, and they are different mornings' work for whoever fixes it.
       _record(PhotoImportOutcome.failed, clock, trace,
-          stage: error.stage, reason: error.message);
+          bytes: imageBytes.length, stage: error.stage, reason: error.message);
       rethrow;
     } catch (error) {
       // A missing engine, a blocked download, an image the browser refused to
@@ -87,7 +90,7 @@ class BrowserPhotoImportService implements PhotoImportService {
       // for the display was until now also the catch that threw away the only
       // description of what actually happened.
       _record(PhotoImportOutcome.failed, clock, trace,
-          reason: error.toString());
+          bytes: imageBytes.length, reason: error.toString());
       throw const PhotoImportException(
         'That photo could not be read. Try again, or type the words in.',
       );
@@ -102,7 +105,8 @@ class BrowserPhotoImportService implements PhotoImportService {
       // carried alongside the sentence so the screen can say it in the language
       // it is being read in; the sentence stays as the fallback for a caller
       // that has no localisations, which the measurement harness does not.
-      _record(PhotoImportOutcome.illegible, clock, trace, notices: notices);
+      _record(PhotoImportOutcome.illegible, clock, trace,
+          bytes: imageBytes.length, notices: notices);
       throw PhotoImportException(
         'Nothing could be read from that photo.',
         notice: reading.notices.isNotEmpty ? reading.notices.first : null,
@@ -126,10 +130,50 @@ class BrowserPhotoImportService implements PhotoImportService {
     PhotoImportOutcome outcome,
     Stopwatch clock,
     List<Map<String, Object?>> trace, {
+    int? bytes,
     String? stage,
     String? reason,
     List<ImportNotice> notices = const <ImportNotice>[],
   }) {
+    // Said out loud BEFORE the sink is consulted, and deliberately not behind
+    // `kDebugMode`.
+    //
+    // `debugPrint` survives a release build — Flutter's own
+    // `foundation/print.dart` says "logs to console even in release mode" — so
+    // this is the one line here that reaches a browser console on the deployed
+    // site.
+    //
+    // It exists because of the first failure reported from the live app: a
+    // scrolled screenshot that would not read, which left no trace anywhere at
+    // all. The recorder writes to Supabase, and `error_reports` held nothing —
+    // so either the reporter never ran or the write failed, and no evidence
+    // survived to tell those apart. A console line costs nothing and cannot
+    // fail for the same reason the database write can.
+    //
+    // Failures only. A successful read says nothing: this is for the mornings
+    // when somebody reports that it did not work, not a running commentary.
+    if (outcome != PhotoImportOutcome.ok) {
+      // The byte count is printed because it is the ONLY thing known before
+      // the decode. An image the browser refuses to open appends nothing to the
+      // trace, so without this such a failure reports its own size as unknown —
+      // and size is the first thing worth knowing about a screenshot that is
+      // twelve thousand pixels tall.
+      debugPrint('[photo] $outcome in ${clock.elapsedMilliseconds}ms'
+          '${bytes == null ? '' : ', $bytes bytes in'}'
+          '${stage == null ? '' : ' at stage "$stage"'}');
+      if (reason != null) debugPrint('[photo] reason: $reason');
+      if (notices.isNotEmpty) {
+        debugPrint(
+            '[photo] notices: ${notices.map((n) => n.code.name).join(', ')}');
+      }
+      // One line per stage rather than one line for the list. `debugPrint`
+      // throttles long output, and the entry that explains the failure is
+      // usually the last one — which is exactly the end a truncation eats.
+      for (final entry in trace) {
+        debugPrint('[photo] trace: $entry');
+      }
+    }
+
     final sink = recorder;
     if (sink == null) return;
     try {
