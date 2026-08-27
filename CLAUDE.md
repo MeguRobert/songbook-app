@@ -63,7 +63,9 @@ Rules that are not negotiable:
 
 A privileged action is one an administrator or moderator takes **against
 somebody else, or against the project's shared rules**: a role change, an account
-deletion or invitation, a settings edit, a moderation decision.
+deletion or invitation, a settings edit, a moderation decision. All six are
+audited; a seventh needs a value added to `admin_audit`'s check constraint, in
+the same commit as its writer.
 
 `admin_audit` is a different table with different promises, and keeping the two
 apart is the design:
@@ -94,7 +96,17 @@ the SQL editor.
 
 Audit rows record **what changed**, not the content that changed. Booleans and
 numbers go in as `from`/`to`; long text goes in as lengths. Version history is a
-different problem and this is not the table for it.
+different problem and this is not the table for it — that is why a guidelines
+edit is logged as two lengths rather than two paragraphs.
+
+**The one exception, and the test that distinguishes it:** text goes in whole
+when it *is* the decision rather than the object of the decision, and when
+nothing else will keep it. A rejection reason qualifies on both counts — it is
+the moderator's judgement, and `songs.rejection_reason` is nulled the moment the
+song leaves `rejected`, so a length would preserve nothing anybody could act on.
+The guidelines qualify on neither: they are what was edited, and they are still
+sitting in `app_settings` afterwards. Ask both questions before writing prose
+into this table, and never write a contribution's payload into it at all.
 
 ### 3. Both come with tests
 
