@@ -48,6 +48,30 @@ class SupabaseConfig {
     defaultValue: 'sb_publishable_jFokPzHYcASM1-6cUzUwmQ_4YLVYiOa',
   );
 
+  /// Whether favourites and setlists follow the account between devices.
+  ///
+  /// **Off, and this is the switch.**
+  ///
+  ///   flutter build web --dart-define=CROSS_DEVICE_SYNC=true
+  ///
+  /// Read in exactly one place — `main.dart`, where the sync datasource is
+  /// built — so with it off `remoteSyncDataSourceProvider` yields null, both
+  /// repositories take the null branch, and the code path is the one that
+  /// shipped before any of this existed. That is a property the test suite can
+  /// confirm rather than a promise: every test that passed before still passes,
+  /// unchanged.
+  ///
+  /// A compile-time define rather than a settings toggle, for the same reason
+  /// `PHOTO_IMPORT_ENDPOINT` is one: a build that must not talk to a server
+  /// should not contain a switch that makes it. The deployed build turns it on
+  /// in one line of `.github/workflows/deploy-pages.yml`.
+  ///
+  /// See `docs/plans/2026-08-27-cross-device-sync-design.md` for what happens
+  /// on the day it goes on — in particular what a first sign-in does with local
+  /// favourites, and what two devices editing one setlist costs.
+  static const bool crossDeviceSyncEnabled =
+      bool.fromEnvironment('CROSS_DEVICE_SYNC');
+
   /// A short budget for the catalogue fetch.
   ///
   /// The app must stay usable with no network and with a paused project (the
