@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'data/datasources/remote/remote_song_datasource.dart';
+import 'data/datasources/remote/remote_sync_datasource.dart';
 import 'data/datasources/remote/supabase_config.dart';
 import 'data/datasources/remote/supabase_crash_reporter.dart';
 import 'data/repositories/admin_repository.dart';
@@ -96,6 +97,7 @@ void main() {
       // "bundled songs only" rather than a blank screen. Hence the try/catch and
       // the null datasource on failure.
       RemoteSongDataSource? remoteSongs;
+      RemoteSyncDataSource? remoteSync;
       AuthRepository? auth;
       SubmissionRepository? submissions;
       AdminRepository? admin;
@@ -105,6 +107,20 @@ void main() {
           publishableKey: SupabaseConfig.publishableKey,
         );
         remoteSongs = RemoteSongDataSource(Supabase.instance.client);
+
+        // THE CROSS-DEVICE SYNC FLAG, and the only place it is read.
+        //
+        // Off by default, so this build behaves exactly as the one before it:
+        // with a null datasource, FavoritesRepository and SetlistRepository take
+        // the local-only path they have always taken. Turn it on for a build
+        // with
+        //   --dart-define=CROSS_DEVICE_SYNC=true
+        // and see docs/plans/2026-08-27-cross-device-sync-design.md for what
+        // changes on the day it goes on.
+        remoteSync = SupabaseConfig.crossDeviceSyncEnabled
+            ? RemoteSyncDataSource(Supabase.instance.client)
+            : null;
+
         auth = AuthRepository(Supabase.instance.client.auth);
         submissions = SubmissionRepository(Supabase.instance.client);
         admin = AdminRepository(Supabase.instance.client);
@@ -117,6 +133,7 @@ void main() {
         debugPrint('Supabase init failed; using bundled catalogue only: $error');
         if (kDebugMode) debugPrintStack(stackTrace: stack);
         remoteSongs = null;
+        remoteSync = null;
         auth = null;
         submissions = null;
         admin = null;
@@ -133,6 +150,7 @@ void main() {
             // Override SharedPreferences provider with initialized instance
             sharedPreferencesProvider.overrideWithValue(prefs),
             remoteSongDataSourceProvider.overrideWithValue(remoteSongs),
+            remoteSyncDataSourceProvider.overrideWithValue(remoteSync),
             authRepositoryProvider.overrideWithValue(auth),
             submissionRepositoryProvider.overrideWithValue(submissions),
             adminRepositoryProvider.overrideWithValue(admin),

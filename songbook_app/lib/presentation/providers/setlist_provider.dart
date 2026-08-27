@@ -16,6 +16,20 @@ class SetlistsNotifier extends StateNotifier<List<Setlist>> {
 
   SetlistsNotifier(this._ref) : super(const []) {
     _load();
+
+    // Cross-device sync, if this build has it. Synchronous guard first, so with
+    // the flag off this constructor is the one that shipped: a single local
+    // read and nothing else.
+    if (!_ref.read(setlistRepositoryProvider).syncsAcrossDevices) return;
+    _ref.listen(authStateChangesProvider, (_, __) => _syncWithAccount());
+    _syncWithAccount();
+  }
+
+  /// Merges with the account, then reloads from storage. Never throws.
+  Future<void> _syncWithAccount() async {
+    await _ref.read(setlistRepositoryProvider).sync();
+    if (!mounted) return;
+    _load();
   }
 
   void _load() {

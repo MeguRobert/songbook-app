@@ -44,6 +44,29 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
 
   FavoritesNotifier(this._ref) : super(const FavoritesState()) {
     _loadFavorites();
+
+    // Cross-device sync, if this build has it at all. The guard is synchronous
+    // and returns before anything else happens, so a build with the flag off
+    // has precisely the constructor it had before sync existed -- one local
+    // read, no auth stream, no extra state emission.
+    if (!_ref.read(favoritesRepositoryProvider).syncsAcrossDevices) return;
+
+    // On every auth transition, not only at startup: signing in is the moment
+    // the account's favourites become relevant, and signing out is the moment
+    // to stop pushing.
+    _ref.listen(authStateChangesProvider, (_, __) => _syncWithAccount());
+    _syncWithAccount();
+  }
+
+  /// Merges with the account, then reloads from storage.
+  ///
+  /// Never throws and never reports failure: the repository treats an
+  /// unreachable server as "carry on with what is on the device", which is a
+  /// normal state for this app rather than an error to put on screen.
+  Future<void> _syncWithAccount() async {
+    await _ref.read(favoritesRepositoryProvider).sync();
+    if (!mounted) return;
+    _loadFavorites();
   }
 
   void _loadFavorites() {

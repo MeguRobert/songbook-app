@@ -15,6 +15,19 @@ class LocalDataSource {
   static const _userSongsKey = 'user_songs';
   static const _settingsPrefix = 'settings_';
 
+  // Cross-device sync bookkeeping. NEW KEYS, deliberately: `favorites` and
+  // `setlists` keep the exact JSON they have always held. Renaming a stored
+  // field's key is how this app wiped users' favourites once already (see
+  // `Favorite.songId`'s readValue fallback), so nothing that already exists is
+  // reshaped to make room for these.
+  //
+  // A build with sync switched off never writes any of them, and a build that
+  // reads them and finds nothing is in exactly the state a device is in the
+  // first time it ever syncs.
+  static const _favoriteRemovalsKey = 'favorites_removed';
+  static const _setlistRemovalsKey = 'setlists_removed';
+  static const _syncOwnerKey = 'sync_owner';
+
   final SharedPreferences _prefs;
   List<Song>? _cachedSongs;
 
@@ -140,6 +153,73 @@ class LocalDataSource {
     final jsonString = json.encode(setlists.map((s) => s.toJson()).toList());
     return _prefs.setString(_setlistsKey, jsonString);
   }
+
+  // --- Removals (tombstones) ---
+
+  /// When each removed record was removed, keyed by the record's identity —
+  /// a [SongId] string for favourites, a setlist id for setlists.
+  ///
+  /// **A deletion has to be a stored fact, not an absent one.** Absence cannot
+  /// be told apart from "this device has not heard of it yet": read as a
+  /// removal it would delete everything a new device has yet to learn about,
+  /// read as ignorance it would resurrect every favourite anyone has ever
+  /// removed, on the next sync, forever.
+  ///
+  /// A map rather than a list of records: there is exactly one removal per
+  /// identity, and a map says so without needing a rule about duplicates.
+  Map<String, DateTime> _getRemovals(String key) {
+    final jsonString = _prefs.getString(key);
+    if (jsonString == null) return {};
+
+    try {
+      final decoded = json.decode(jsonString) as Map<String, dynamic>;
+      final result = <String, DateTime>{};
+      decoded.forEach((identity, at) {
+        if (at is! String) return;
+        final removedAt = DateTime.tryParse(at);
+        if (removedAt == null) return;
+        result[identity] = removedAt;
+      });
+      return result;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<bool> _saveRemovals(String key, Map<String, DateTime> removals) {
+    final encodable = removals.map(
+      (identity, at) => MapEntry(identity, at.toIso8601String()),
+    );
+    return _prefs.setString(key, json.encode(encodable));
+  }
+
+  /// Favourites this device has removed, and when. Keyed by [SongId.value].
+  Map<String, DateTime> getFavoriteRemovals() =>
+      _getRemovals(_favoriteRemovalsKey);
+
+  Future<bool> saveFavoriteRemovals(Map<String, DateTime> removals) =>
+      _saveRemovals(_favoriteRemovalsKey, removals);
+
+  /// Setlists this device has deleted, and when. Keyed by setlist id.
+  Map<String, DateTime> getSetlistRemovals() =>
+      _getRemovals(_setlistRemovalsKey);
+
+  Future<bool> saveSetlistRemovals(Map<String, DateTime> removals) =>
+      _saveRemovals(_setlistRemovalsKey, removals);
+
+  /// The account id these collections belong to, or null if they have never
+  /// been synced.
+  ///
+  /// Read only to notice that a *different* account has signed in on this
+  /// device — a shared tablet, or a spouse checking something. The collections
+  /// are not thrown away when that happens (they are the user's, and this app
+  /// works signed-out), but the tombstones are, which buys one invariant:
+  /// signing in as someone else can add to their account and can never remove
+  /// from it.
+  String? getSyncOwner() => _prefs.getString(_syncOwnerKey);
+
+  Future<bool> setSyncOwner(String userId) =>
+      _prefs.setString(_syncOwnerKey, userId);
 
   // --- Tag Overrides ---
 
