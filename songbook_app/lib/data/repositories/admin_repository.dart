@@ -146,17 +146,31 @@ class AdminRepository {
   }
 
   /// Writes the settings. Refused by RLS for anyone but an administrator.
+  ///
+  /// The `.select()` is the check, not a convenience. A policy refusal on an
+  /// UPDATE is not an error — Postgres simply matches no row, and PostgREST
+  /// answers 204 — so without asking for the affected rows back, a refusal and a
+  /// save are the same answer and the panel says "Done" to both. Asking makes
+  /// the difference visible: `app_settings` is world-readable
+  /// (`app_settings_read_all`, `for select using (true)`), so a write that
+  /// really happened always hands its row back.
   Future<void> saveSettings(AppSettings settings) async {
     try {
-      await _client
+      final written = await _client
           .from('app_settings')
           .update(settings.toUpdate())
           .eq('id', 1)
+          .select()
           .timeout(SupabaseConfig.fetchTimeout);
+      if (written.isEmpty) {
+        throw const AdminFailure(
+          AdminFailureCode.forbidden,
+          'app_settings update matched no row',
+        );
+      }
+    } on AdminFailure {
+      rethrow;
     } on PostgrestException catch (error) {
-      // A policy refusal on an UPDATE is reported as zero rows affected rather
-      // than an error, so this catches the coarser failures only. The panel is
-      // administrator-gated and the write is re-checked server-side either way.
       throw AdminFailure(AdminFailureCode.forbidden, error.message);
     } catch (error) {
       throw AdminFailure(AdminFailureCode.network, error.toString());
@@ -202,9 +216,9 @@ class AdminRepository {
     if (user == null) {
       throw const AdminFailure(AdminFailureCode.forbidden, 'signed out');
     }
-    await _client.from('profiles').update({
+    await _writeOwnProfile(user.id, {
       'guidelines_accepted_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', user.id);
+    });
   }
 
   /// Sets the name a submission will be credited to.
@@ -213,10 +227,44 @@ class AdminRepository {
     if (user == null) {
       throw const AdminFailure(AdminFailureCode.forbidden, 'signed out');
     }
-    await _client
-        .from('profiles')
-        .update({'display_name': name.trim()})
-        .eq('id', user.id);
+    await _writeOwnProfile(user.id, {'display_name': name.trim()});
+  }
+
+  /// One patch of the caller's own `profiles` row, and proof it landed.
+  ///
+  /// Same reasoning as [saveSettings], and the stakes are higher here because
+  /// these two writes stand between a contributor and the publish gate: a write
+  /// that quietly matched no row leaves the gate asking for the same thing
+  /// forever, with nothing on screen to say why. `profiles` is world-readable
+  /// (`profiles_read_all`), so the row comes back whenever the write happened.
+  ///
+  /// An empty answer is [AdminFailureCode.forbidden] for either of its two
+  /// causes — `profiles_write_own` refused it, or the row was never provisioned.
+  /// Both mean the same thing to the caller: nothing was written.
+  Future<void> _writeOwnProfile(
+    String userId,
+    Map<String, Object?> values,
+  ) async {
+    try {
+      final written = await _client
+          .from('profiles')
+          .update(values)
+          .eq('id', userId)
+          .select()
+          .timeout(SupabaseConfig.fetchTimeout);
+      if (written.isEmpty) {
+        throw AdminFailure(
+          AdminFailureCode.forbidden,
+          'profiles update matched no row for $userId',
+        );
+      }
+    } on AdminFailure {
+      rethrow;
+    } on PostgrestException catch (error) {
+      throw AdminFailure(AdminFailureCode.forbidden, error.message);
+    } catch (error) {
+      throw AdminFailure(AdminFailureCode.network, error.toString());
+    }
   }
 
   /// Calls the Edge Function and turns its error strings into [AdminFailure].
