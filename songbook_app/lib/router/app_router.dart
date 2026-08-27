@@ -11,6 +11,7 @@ import '../presentation/screens/settings/settings_screen.dart';
 import '../presentation/screens/setlists/setlists_screen.dart';
 import '../presentation/screens/setlists/setlist_detail_screen.dart';
 import '../presentation/screens/import/import_song_screen.dart';
+import '../presentation/screens/legal/legal_screen.dart';
 import '../presentation/screens/notation_editor/notation_editor_screen.dart';
 import '../presentation/screens/presentation/presentation_screen.dart';
 import '../presentation/screens/admin/admin_gate.dart';
@@ -69,6 +70,17 @@ class AppRoutes {
   /// A contributor's own submissions. Not administration, but it was pushed
   /// unrouted alongside the queue and had the same problem.
   static const mySubmissions = '/my-submissions';
+
+  /// The privacy notice and the terms of use.
+  ///
+  /// Outside the shell, like [importSong]: a document you read and come back
+  /// from, not a destination competing for a tab. Real paths rather than an
+  /// unrouted push because both have to be *linkable* — the sign-up screen
+  /// points at them, and somebody who asks what the app keeps deserves an
+  /// address they can be sent rather than a screen only reachable by tapping
+  /// through Settings.
+  static const privacy = '/privacy';
+  static const terms = '/terms';
 
   static String adminUserPath(String userId) => '/admin/users/$userId';
 
@@ -215,6 +227,19 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.home}) {
         path: AppRoutes.mySubmissions,
         name: 'mySubmissions',
         builder: (context, state) => const MySubmissionsScreen(),
+      ),
+      // The privacy notice and the terms. Top-level rather than nested under
+      // Settings, so a link to one of them resolves from a cold load — which is
+      // what a link in the sign-up footer has to do.
+      GoRoute(
+        path: AppRoutes.privacy,
+        name: 'privacy',
+        builder: (context, state) => const PrivacyScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.terms,
+        name: 'terms',
+        builder: (context, state) => const TermsScreen(),
       ),
       // Song view route (outside shell for full-screen)
       GoRoute(

@@ -1593,4 +1593,181 @@ class AppLocalizationsRo extends AppLocalizations {
   String submittedByFormerMember(String name) {
     return 'Trimisă de $name, care a plecat de atunci';
   }
+
+  @override
+  String get legalPrivacyTitle => 'Confidențialitate';
+
+  @override
+  String get legalTermsTitle => 'Condiții de utilizare';
+
+  @override
+  String get legalUpdated => 'Ultima actualizare: 27 august 2026';
+
+  @override
+  String get legalContactTitle => 'Cui îi scrii';
+
+  @override
+  String legalContactBody(String address) {
+    return 'Scrie la $address pentru orice ține de pagina aceasta — o întrebare, o corectură sau o cerere de ștergere a contului.';
+  }
+
+  @override
+  String get settingsPrivacy => 'Confidențialitate și condiții';
+
+  @override
+  String get settingsPrivacySubtitle =>
+      'Ce se păstrează și ce nu pleacă niciodată de pe dispozitiv';
+
+  @override
+  String get authLegalNotice =>
+      'Dacă îți faci cont, accepți condițiile de utilizare. Ambele pagini sunt scurte.';
+
+  @override
+  String get privacyIntro =>
+      'Songbook este ținut de o singură adunare, pentru uzul ei. Nu are reclame, nu urmărește pe nimeni și nimic nu se vinde nimănui. Pagina aceasta spune ce se păstrează, unde, cine poate vedea și cum scapi de ele.';
+
+  @override
+  String get privacyNoAccountTitle => 'Nu ai nevoie de cont';
+
+  @override
+  String get privacyNoAccountBody =>
+      'Căutarea, citirea unei cântări, schimbarea tonalității și proiectarea funcționează fără autentificare. Tot ce urmează te privește doar dacă alegi să te autentifici sau să adaugi cântări proprii.';
+
+  @override
+  String get privacyOnDeviceTitle => 'Ce rămâne pe dispozitivul tău';
+
+  @override
+  String get privacyOnDeviceBody =>
+      'Favoritele, listele tale, ultimele câteva căutări, cântările pe care le-ai adăugat dar nu le-ai trimis și toate setările de afișare — tema, mărimea textului, acordurile pornite sau oprite, viteza de derulare, limba — se păstrează în acest browser, pe acest dispozitiv. Nu se încarcă nicăieri, nimeni altcineva nu le vede, iar dacă ștergi datele site-ului din browser dispar definitiv.';
+
+  @override
+  String get privacyServerTitle => 'Ce se păstrează pe server';
+
+  @override
+  String get privacyServerBody =>
+      '• Dacă îți faci cont: adresa de e-mail, parola într-o formă criptată pe care nimeni nu o poate citi înapoi, când a fost creat contul, când te-ai autentificat ultima dată și dacă ți-ai confirmat adresa.\n• Numele afișat pe care îl alegi. Acesta este public: apare lângă orice cântare trimisă de tine.\n• Dacă ai acceptat regulile de contribuție și când.\n• Rolul tău: membru, moderator sau administrator.\n• Fiecare cântare trimisă: titlul, numărul, etichetele, versurile, acordurile și notația, împreună cu momentul trimiterii, al evaluării și cine a evaluat-o.';
+
+  @override
+  String get privacyWhoSeesTitle => 'Cine poate vedea';
+
+  @override
+  String get privacyWhoSeesBody =>
+      '• O cântare aprobată, și numele de lângă ea, se văd de către oricine — inclusiv de cei care nu se autentifică niciodată.\n• O cântare încă în așteptare sau respinsă se vede doar de tine și de moderatori.\n• Adresa ta de e-mail se vede doar de un administrator, și numai în ecranul de conturi. Moderatorul care îți evaluează cântarea vede un nume, niciodată o adresă.\n• Lista cu cine ce rol are se vede doar de un administrator, în același ecran.\n• Când un administrator invită, promovează sau șterge un cont, faptul se scrie într-un jurnal pe care doar administratorii îl pot citi.';
+
+  @override
+  String get privacyPhotosTitle => 'Fotografii';
+
+  @override
+  String get privacyPhotosIntro =>
+      'Sunt două cititoare de fotografii și nu se poartă la fel. Aplicația te întreabă întâi ce fel de pagină ai fotografiat.';
+
+  @override
+  String get privacyPhotosWordsTitle => 'Versuri și acorduri';
+
+  @override
+  String get privacyPhotosWordsBody =>
+      'Se citesc chiar pe dispozitivul tău, de un program care rulează în browser. Fotografia nu pleacă nicăieri. Prima dată browserul descarcă programul de citire și dicționarul lui maghiar din trei arhive publice de cod — unpkg.com, cdn.jsdelivr.net și tessdata.projectnaptha.com. Ele află doar că un browser a cerut acele fișiere și îi văd adresa de rețea. Fotografia nu o văd niciodată.';
+
+  @override
+  String get privacyPhotosNotationTitle => 'Note muzicale';
+
+  @override
+  String get privacyPhotosNotationBody =>
+      'Aceasta chiar încarcă. Fotografia se trimite pe o conexiune criptată către cititorul nostru, care rulează în Google Cloud la Varșovia, și trebuie să fii autentificat ca să îl folosești. Acolo imaginea se scrie într-un dosar temporar, se citește și se șterge imediat ce pleacă răspunsul înapoi. Nu se stochează niciodată și nu ajunge în jurnal. În jurnal ajunge o singură linie: numele fișierului, mărimea lui, identificatorul contului tău, cât a durat citirea și cât s-a găsit. Google păstrează acele linii aproximativ o lună.';
+
+  @override
+  String get privacyOthersTitle => 'Cu cine mai vorbește aplicația';
+
+  @override
+  String get privacyOthersBody =>
+      '• Supabase — baza de date care ține conturile, cântările trimise și catalogul comun.\n• GitHub Pages — de aici îți încarcă browserul aplicația însăși.\n• Google Cloud, Varșovia — cititorul de note, și doar când îl folosești.\n• unpkg.com, cdn.jsdelivr.net și tessdata.projectnaptha.com — programul de citire a fotografiilor, de obicei doar prima dată.\n• fonts.gstatic.com — serverul de fonturi al Google, pentru litera cu care desenează aplicația.\n• Google — doar dacă alegi să te autentifici cu Google.\n\nFiecare dintre ele vede adresa de rețea a dispozitivului tău, ca orice site pe care îl deschizi. În aplicație nu există analiză de trafic, urmărire sau reclame și nu se pune niciun cookie — autentificarea ta rămâne în stocarea proprie a browserului.';
+
+  @override
+  String get privacyGoogleTitle => 'Autentificarea cu Google';
+
+  @override
+  String get privacyGoogleBody =>
+      'Dacă o folosești, Google îi spune cărții de cântări adresa ta de e-mail și datele de bază pe care le dă oricărui site unde te autentifici. Aplicația nu cere nimic altceva — nici contactele, nici calendarul, nici fișierele tale — și folosește doar adresa. Numele afișat lângă cântările tale este cel pe care îl scrii aici, nu cel ținut de Google.';
+
+  @override
+  String get privacyEmailsTitle => 'Ce e-mailuri primești';
+
+  @override
+  String get privacyEmailsBody =>
+      'Trei feluri și nimic altceva: un link ca să îți confirmi adresa, un link ca să îți resetezi parola dacă ceri asta, și o invitație dacă te invită un administrator. Nu există buletin informativ și nici listă de corespondență.';
+
+  @override
+  String get privacyKeepingTitle => 'Cât timp se păstrează';
+
+  @override
+  String get privacyKeepingBody =>
+      'Contul și cântările tale rămân până când le șterge cineva. Nimic nu expiră de la sine.';
+
+  @override
+  String get privacyDeleteTitle => 'Ștergerea contului';
+
+  @override
+  String get privacyDeleteBody =>
+      'Cere-i unui administrator și contul dispare: adresa, parola, numele afișat și rolul. Două lucruri rămân, și e drept să știi asta dinainte.\n\nO cântare de-a ta care a fost aprobată rămâne în cartea de cântări. Până atunci adunarea cântă din ea, iar scoaterea ei ar lăsa un gol. Păstrează numele pe care îl aveai când ai trimis-o, cu mențiunea că persoana a plecat între timp.\n\nCântările încă în așteptare sau respinse rămân și ele, dar le văd doar moderatorii.\n\nNumele trecut lângă o cântare se fixează în clipa trimiterii, așa că schimbarea numelui afișat mai târziu nu îl schimbă, și nici un moderator nu îl poate rescrie din aplicație. Dacă vrei să fii trecut altfel, spune înainte de a trimite.';
+
+  @override
+  String get privacyRightsTitle => 'Ce poți cere';
+
+  @override
+  String get privacyRightsBody =>
+      'O copie a ce se păstrează despre tine, o corectură la oricare dintre ele sau ștergerea. Cere, și se face.';
+
+  @override
+  String get privacyChangesTitle => 'Dacă se schimbă pagina aceasta';
+
+  @override
+  String get privacyChangesBody =>
+      'Se schimbă și data din capul ei. Dacă va fi vorba să se păstreze ceva nou, aici se va spune întâi.';
+
+  @override
+  String get termsIntro =>
+      'Songbook este ținut de o singură adunare, pentru uzul ei. Nu costă nimic și nu este o afacere. Acestea sunt puținele reguli care îl țin folositor.';
+
+  @override
+  String get termsWhatTitle => 'Ce primești';
+
+  @override
+  String get termsWhatBody =>
+      'Aplicația așa cum este, fără promisiunea că va fi mereu disponibilă sau mereu corectă. Cântările sunt scrise și fotografiate de oameni, iar oamenii greșesc. Ce contează, verifică din cartea tipărită.';
+
+  @override
+  String get termsAccountTitle => 'Contul tău';
+
+  @override
+  String get termsAccountBody =>
+      'Un cont, cu adresa ta de e-mail și parola ta. Nu te autentifica în numele altcuiva și nu lăsa pe altcineva să folosească contul tău. Dacă bănuiești că cineva a intrat în contul tău, spune-i imediat unui administrator.';
+
+  @override
+  String get termsContentTitle => 'Ce poți trimite';
+
+  @override
+  String get termsContentBody =>
+      'Cântări care se cântă cu adevărat la închinare, scrise cu atenție, pentru că cineva va cânta din ele. Nu glume, nu teste, nu reclame, nimic jignitor și nimic din viața privată a altcuiva.';
+
+  @override
+  String get termsCopyrightTitle =>
+      'Drepturi de autor — citește partea aceasta';
+
+  @override
+  String get termsCopyrightBody =>
+      'Cele mai multe cărți de cântări sunt încă protejate prin drepturi de autor, iar fotografierea unei pagini nu schimbă asta. Înainte de a trimite o cântare, este responsabilitatea ta să te asiguri că o poți împărtăși: pentru că este destul de veche ca să nu mai fie protejată, pentru că deținătorul drepturilor permite, sau pentru că adunarea are deja o licență care o acoperă. Dacă nu ești sigur, întreabă înainte de a trimite, nu după.\n\nDacă un deținător de drepturi cere scoaterea unei cântări, ea va fi scoasă fără discuție. Adresa este pe pagina de confidențialitate.';
+
+  @override
+  String get termsSubmissionTitle => 'Ce se întâmplă cu o cântare trimisă';
+
+  @override
+  String get termsSubmissionBody =>
+      'Un moderator o citește înainte să o vadă altcineva și fie o aprobă, fie o respinge cu un motiv, fie îți cere să o corectezi. Odată aprobată, devine parte din cartea de cântări comună: rămâne acolo chiar dacă îți ștergi contul mai târziu, iar numele tău rămâne lângă ea.\n\nPăstrezi orice drept ai asupra lucrării tale. Ceea ce dai este permisiunea ca această adunare să țină cântarea în cartea ei și să cânte din ea.';
+
+  @override
+  String get termsModerationTitle => 'Moderarea';
+
+  @override
+  String get termsModerationBody =>
+      'Moderatorii pot corecta, renumerota, respinge sau scoate orice din catalog. Un administrator poate scoate un cont folosit ca să abuzeze de asta. Dacă ți se pare că o hotărâre a fost greșită, spune — aceasta este o adunare, nu o instanță.';
 }

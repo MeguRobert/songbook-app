@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../data/repositories/auth_repository.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../router/app_router.dart';
 import '../../providers/providers.dart';
 import '../../widgets/content_pane.dart';
 import 'auth_messages.dart';
@@ -250,6 +252,36 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             onPressed: _busy ? null : _resetPassword,
                             child: Text(l10n.forgotPassword),
                           ),
+                        // Before the account exists, not after. Somebody about
+                        // to hand over an email address should be able to read
+                        // what happens to it without having to guess that the
+                        // answer is buried in Settings.
+                        //
+                        // `context.push` and not a MaterialPageRoute, even
+                        // though this screen itself is pushed that way: /privacy
+                        // is a top-level route, so it opens above everything on
+                        // the root navigator and pops straight back to here —
+                        // and it gets an address, which is the point of it
+                        // being a route at all.
+                        const SizedBox(height: 24),
+                        Text(
+                          l10n.authLegalNotice,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            TextButton(
+                              onPressed: () =>
+                                  context.push(AppRoutes.privacy),
+                              child: Text(l10n.legalPrivacyTitle),
+                            ),
+                            TextButton(
+                              onPressed: () => context.push(AppRoutes.terms),
+                              child: Text(l10n.legalTermsTitle),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),

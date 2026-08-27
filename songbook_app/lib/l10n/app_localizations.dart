@@ -2625,6 +2625,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submitted by {name}, who has since left'**
   String submittedByFormerMember(String name);
+
+  /// No description provided for @legalPrivacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get legalPrivacyTitle;
+
+  /// No description provided for @legalTermsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of use'**
+  String get legalTermsTitle;
+
+  /// No description provided for @legalUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated 27 August 2026'**
+  String get legalUpdated;
+
+  /// No description provided for @legalContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who to write to'**
+  String get legalContactTitle;
+
+  /// The placeholder contact address, which the project owner fills in
+  ///
+  /// In en, this message translates to:
+  /// **'Write to {address} about anything on this page — a question, a correction, or a request to delete your account.'**
+  String legalContactBody(String address);
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy and terms'**
+  String get settingsPrivacy;
+
+  /// No description provided for @settingsPrivacySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is kept, and what never leaves your device'**
+  String get settingsPrivacySubtitle;
+
+  /// No description provided for @authLegalNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating an account means agreeing to the terms of use. Both pages are short.'**
+  String get authLegalNotice;
+
+  /// No description provided for @privacyIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Songbook is run by one congregation for its own use. There is no advertising, no tracking, and nothing is sold to anyone. This page says what is kept, where it is kept, who can see it and how to get rid of it.'**
+  String get privacyIntro;
+
+  /// No description provided for @privacyNoAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not need an account'**
+  String get privacyNoAccountTitle;
+
+  /// No description provided for @privacyNoAccountBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching the songbook, reading a song, changing its key and projecting it all work signed out. Everything below applies only if you choose to sign in or to add songs of your own.'**
+  String get privacyNoAccountBody;
+
+  /// No description provided for @privacyOnDeviceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What stays on your device'**
+  String get privacyOnDeviceTitle;
+
+  /// No description provided for @privacyOnDeviceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your favourites, your setlists, your last few searches, the songs you have added but not sent in, and every display setting — theme, text size, chords on or off, scrolling speed, language — are held in this browser on this device. They are never uploaded, nobody else can see them, and clearing this site\'s data in your browser deletes them for good.'**
+  String get privacyOnDeviceBody;
+
+  /// No description provided for @privacyServerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is kept on the server'**
+  String get privacyServerTitle;
+
+  /// No description provided for @privacyServerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'• If you create an account: your email address, your password in a scrambled form nobody can read back, when the account was created, when you last signed in, and whether you have confirmed the address.\n• The display name you choose. This one is public: it is shown beside any song you send in.\n• Whether you have accepted the contribution rules, and when.\n• Your role — member, moderator or administrator.\n• Every song you send in: its title, number, tags, words, chords and any notation, together with when you sent it, when it was reviewed and who reviewed it.'**
+  String get privacyServerBody;
+
+  /// No description provided for @privacyWhoSeesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see it'**
+  String get privacyWhoSeesTitle;
+
+  /// No description provided for @privacyWhoSeesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'• An approved song, and the name beside it, is visible to everyone — including people who never sign in.\n• A song still waiting, or one that was refused, is visible only to you and to the moderators.\n• Your email address is visible only to an administrator, and only on the accounts screen. A moderator reviewing your song sees a name, never an address.\n• The list of who holds which role is shown only to an administrator, on the same screen.\n• When an administrator invites, promotes or removes an account, that is written to a log only administrators can read.'**
+  String get privacyWhoSeesBody;
+
+  /// No description provided for @privacyPhotosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photographs'**
+  String get privacyPhotosTitle;
+
+  /// No description provided for @privacyPhotosIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'There are two photo readers and they do not behave the same. The app asks which kind of page you photographed before it does anything.'**
+  String get privacyPhotosIntro;
+
+  /// No description provided for @privacyPhotosWordsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Words and chords'**
+  String get privacyPhotosWordsTitle;
+
+  /// No description provided for @privacyPhotosWordsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Read on your own device, by a program running inside your browser. The photograph is never sent anywhere. The first time you use it, the browser downloads the reading engine and its Hungarian dictionary from three public code archives — unpkg.com, cdn.jsdelivr.net and tessdata.projectnaptha.com. They learn that a browser asked for those files, and they see its network address. They never see the photograph.'**
+  String get privacyPhotosWordsBody;
+
+  /// No description provided for @privacyPhotosNotationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet music'**
+  String get privacyPhotosNotationTitle;
+
+  /// No description provided for @privacyPhotosNotationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This one does upload. The photograph is sent over an encrypted connection to our own reader, which runs on Google Cloud in Warsaw, and you must be signed in to use it. There the image is written to a temporary folder, read, and deleted as soon as the answer is sent back. It is never stored and never written to a log. What is written to the log is a single line: the file name, its size, your account identifier, how long the reading took and how much music was found. Google keeps those lines for about a month.'**
+  String get privacyPhotosNotationBody;
+
+  /// No description provided for @privacyOthersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who else the app talks to'**
+  String get privacyOthersTitle;
+
+  /// No description provided for @privacyOthersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'• Supabase — the database holding accounts, submitted songs and the shared catalogue.\n• GitHub Pages — serves the app itself to your browser.\n• Google Cloud in Warsaw — the sheet-music reader, and only when you use it.\n• unpkg.com, cdn.jsdelivr.net and tessdata.projectnaptha.com — the photo-reading engine, usually only the first time.\n• fonts.gstatic.com — Google\'s font server, for the typeface the app draws with.\n• Google — only if you choose to sign in with Google.\n\nEach of these sees your device\'s network address, as every website you open does. There is no analytics, no tracking and no advertising anywhere in this app, and it sets no cookies at all — your sign-in is kept in your browser\'s own storage.'**
+  String get privacyOthersBody;
+
+  /// No description provided for @privacyGoogleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in with Google'**
+  String get privacyGoogleTitle;
+
+  /// No description provided for @privacyGoogleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If you use it, Google tells the songbook your email address and the basic profile it gives any site you sign in to. The app asks for nothing else — not your contacts, not your calendar, not your files — and uses only the address. The name shown beside your songs is the one you type here, not the one Google holds.'**
+  String get privacyGoogleBody;
+
+  /// No description provided for @privacyEmailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Emails you will get'**
+  String get privacyEmailsTitle;
+
+  /// No description provided for @privacyEmailsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Three kinds and no others: a link to confirm your address, a link to reset your password if you ask for one, and an invitation if an administrator invites you. There is no newsletter and no mailing list.'**
+  String get privacyEmailsBody;
+
+  /// No description provided for @privacyKeepingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How long it is kept'**
+  String get privacyKeepingTitle;
+
+  /// No description provided for @privacyKeepingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account and your songs stay until somebody deletes them. Nothing here expires on its own.'**
+  String get privacyKeepingBody;
+
+  /// No description provided for @privacyDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting your account'**
+  String get privacyDeleteTitle;
+
+  /// No description provided for @privacyDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask an administrator and the account goes: the address, the password, the display name and the role. Two things stay, and it is only fair that you know before you send anything in.\n\nA song of yours that was approved stays in the songbook. By then the congregation is singing from it, and pulling it out would leave a hole. It keeps the name you had when you sent it, shown as somebody who has since left.\n\nSongs still waiting, or refused, stay too, but only the moderators can see them.\n\nThe name recorded beside a song is fixed the moment you send it, so changing your display name later does not change it, and a moderator cannot rewrite it from inside the app either. If you would rather be credited differently, say so before you send.'**
+  String get privacyDeleteBody;
+
+  /// No description provided for @privacyRightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What you can ask for'**
+  String get privacyRightsTitle;
+
+  /// No description provided for @privacyRightsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A copy of what is held about you, a correction to any of it, or deletion. Ask, and it will be done.'**
+  String get privacyRightsBody;
+
+  /// No description provided for @privacyChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If this page changes'**
+  String get privacyChangesTitle;
+
+  /// No description provided for @privacyChangesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The date at the top changes with it. If anything new would be kept, it will be said here first.'**
+  String get privacyChangesBody;
+
+  /// No description provided for @termsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Songbook is run by one congregation, for its own use. It costs nothing and it is not a business. These are the few rules that keep it useful.'**
+  String get termsIntro;
+
+  /// No description provided for @termsWhatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What you are getting'**
+  String get termsWhatTitle;
+
+  /// No description provided for @termsWhatBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The app as it stands, with no promise that it will always be available or always correct. Songs are typed and photographed by people, and people make mistakes. Check anything that matters against the printed book.'**
+  String get termsWhatBody;
+
+  /// No description provided for @termsAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account'**
+  String get termsAccountTitle;
+
+  /// No description provided for @termsAccountBody.
+  ///
+  /// In en, this message translates to:
+  /// **'One account, your own email address, your own password. Do not sign in as anyone else, and do not let anyone else use yours. If you think somebody has got into your account, tell an administrator straight away.'**
+  String get termsAccountBody;
+
+  /// No description provided for @termsContentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What you may send in'**
+  String get termsContentTitle;
+
+  /// No description provided for @termsContentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs that are actually sung in worship, typed carefully, because somebody will sing from them. Not jokes, not tests, not advertising, nothing abusive, and nothing private about another person.'**
+  String get termsContentBody;
+
+  /// No description provided for @termsCopyrightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright — please read this one'**
+  String get termsCopyrightTitle;
+
+  /// No description provided for @termsCopyrightBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Most hymnals and songbooks are still in copyright, and photographing a page does not change that. Before you send a song in, it is your responsibility to be sure you may share it: because it is old enough to be out of copyright, because the rights holder permits it, or because the congregation already holds a licence that covers it. If you are not sure, ask before you send it rather than afterwards.\n\nIf a rights holder asks for a song to be taken down, it will be taken down without argument. The address is on the privacy page.'**
+  String get termsCopyrightBody;
+
+  /// No description provided for @termsSubmissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What happens to a song you send'**
+  String get termsSubmissionTitle;
+
+  /// No description provided for @termsSubmissionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A moderator reads it before anybody else sees it, and either approves it, refuses it with a reason, or asks you to correct it. Once approved it becomes part of the shared songbook: it stays there even if you later delete your account, and your name stays beside it.\n\nYou keep whatever rights you have in your own work. What you are giving is permission for this congregation to keep the song in its songbook and sing from it.'**
+  String get termsSubmissionBody;
+
+  /// No description provided for @termsModerationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderation'**
+  String get termsModerationTitle;
+
+  /// No description provided for @termsModerationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderators may correct, renumber, refuse or remove anything in the catalogue. An administrator may remove an account that is being used to abuse this. If you think a decision was wrong, say so — this is a congregation, not a courtroom.'**
+  String get termsModerationBody;
 }
 
 class _AppLocalizationsDelegate

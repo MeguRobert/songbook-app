@@ -1586,4 +1586,180 @@ class AppLocalizationsHu extends AppLocalizations {
   String submittedByFormerMember(String name) {
     return 'Beküldte: $name — a fiókja azóta megszűnt';
   }
+
+  @override
+  String get legalPrivacyTitle => 'Adatvédelem';
+
+  @override
+  String get legalTermsTitle => 'Felhasználási feltételek';
+
+  @override
+  String get legalUpdated => 'Utoljára frissítve: 2026. augusztus 27.';
+
+  @override
+  String get legalContactTitle => 'Kihez fordulj';
+
+  @override
+  String legalContactBody(String address) {
+    return 'Bármit, ami ezen az oldalon szerepel — kérdést, helyesbítést vagy a fiókod törlésére vonatkozó kérést — írj meg ide: $address.';
+  }
+
+  @override
+  String get settingsPrivacy => 'Adatvédelem és feltételek';
+
+  @override
+  String get settingsPrivacySubtitle =>
+      'Mit tárolunk, és mi nem hagyja el a készülékedet';
+
+  @override
+  String get authLegalNotice =>
+      'A fiók létrehozásával elfogadod a felhasználási feltételeket. Mindkét oldal rövid.';
+
+  @override
+  String get privacyIntro =>
+      'A Songbookot egy gyülekezet tartja fenn a saját használatára. Nincs benne hirdetés, nincs nyomkövetés, és semmit nem adunk el senkinek. Ez az oldal elmondja, mit tárolunk, hol, ki láthatja, és hogyan lehet megszabadulni tőle.';
+
+  @override
+  String get privacyNoAccountTitle => 'Fiók nélkül is működik';
+
+  @override
+  String get privacyNoAccountBody =>
+      'A keresés, az énekek olvasása, a hangnem átírása és a kivetítés bejelentkezés nélkül is működik. Az alábbiak csak akkor vonatkoznak rád, ha bejelentkezel, vagy saját éneket veszel fel.';
+
+  @override
+  String get privacyOnDeviceTitle => 'Ami a készülékeden marad';
+
+  @override
+  String get privacyOnDeviceBody =>
+      'A kedvenceid, a listáid, a legutóbbi kereséseid, a felvett, de még be nem küldött énekeid és minden megjelenítési beállítás — téma, betűméret, akkordok ki- vagy bekapcsolva, görgetési sebesség, nyelv — ebben a böngészőben, ezen a készüléken tárolódik. Ezek soha nem kerülnek fel a szerverre, senki más nem látja őket, és ha a böngészőben törlöd az oldal adatait, végleg eltűnnek.';
+
+  @override
+  String get privacyServerTitle => 'Ami a szerveren tárolódik';
+
+  @override
+  String get privacyServerBody =>
+      '• Ha fiókot hozol létre: az e-mail címed, a jelszavad olyan titkosított formában, amelyet senki nem tud visszaolvasni, a fiók létrehozásának ideje, a legutóbbi bejelentkezésed ideje, és hogy megerősítetted-e a címedet.\n• A választott megjelenítendő neved. Ez nyilvános: megjelenik minden beküldött éneked mellett.\n• Hogy elfogadtad-e a beküldési szabályokat, és mikor.\n• A szereped: tag, moderátor vagy adminisztrátor.\n• Minden beküldött éneked: a címe, száma, címkéi, a szövege, az akkordjai és a kottája, valamint hogy mikor küldted be, mikor bírálták el és ki.';
+
+  @override
+  String get privacyWhoSeesTitle => 'Ki láthatja';
+
+  @override
+  String get privacyWhoSeesBody =>
+      '• A jóváhagyott éneket és a mellette álló nevet mindenki látja — azok is, akik soha nem jelentkeznek be.\n• A még elbírálásra váró vagy elutasított éneket csak te és a moderátorok látjátok.\n• Az e-mail címedet csak adminisztrátor látja, és csak a fiókokat kezelő képernyőn. Az énekedet elbíráló moderátor egy nevet lát, címet soha.\n• Azt a listát, hogy ki milyen szerepet visel, csak adminisztrátor látja, ugyanezen a képernyőn.\n• Ha egy adminisztrátor meghív, előléptet vagy töröl egy fiókot, arról bejegyzés készül egy naplóba, amelyet csak adminisztrátorok olvashatnak.';
+
+  @override
+  String get privacyPhotosTitle => 'Fényképek';
+
+  @override
+  String get privacyPhotosIntro =>
+      'Két fényképolvasó van, és a kettő nem ugyanúgy működik. Az alkalmazás mindig megkérdezi, milyen oldalt fényképeztél, mielőtt bármit tenne.';
+
+  @override
+  String get privacyPhotosWordsTitle => 'Szöveg és akkordok';
+
+  @override
+  String get privacyPhotosWordsBody =>
+      'Ezt a saját készüléked olvassa ki, a böngésződben futó program. A fénykép sehová nem kerül el. Az első alkalommal a böngésző letölti az olvasóprogramot és a magyar szótárát három nyilvános kódtárból — unpkg.com, cdn.jsdelivr.net és tessdata.projectnaptha.com. Ők annyit tudnak meg, hogy egy böngésző elkérte ezeket a fájlokat, és látják a hálózati címét. A fényképet soha nem látják.';
+
+  @override
+  String get privacyPhotosNotationTitle => 'Kotta';
+
+  @override
+  String get privacyPhotosNotationBody =>
+      'Ez viszont feltölt. A fénykép titkosított kapcsolaton át a saját kottaolvasónkhoz kerül, amely a Google felhőjében, Varsóban fut, és csak bejelentkezve használható. Ott a kép egy ideiglenes mappába íródik, a program kiolvassa, majd a válasz elküldésekor törlődik. Soha nem tároljuk, és soha nem kerül naplóba. Ami a naplóba kerül, az egyetlen sor: a fájl neve, a mérete, a fiókod azonosítója, mennyi ideig tartott az olvasás, és mennyi kotta lett belőle. A Google ezeket a sorokat körülbelül egy hónapig őrzi meg.';
+
+  @override
+  String get privacyOthersTitle => 'Kivel beszél még az alkalmazás';
+
+  @override
+  String get privacyOthersBody =>
+      '• Supabase — az adatbázis, amely a fiókokat, a beküldött énekeket és a közös énekeskönyvet tárolja.\n• GitHub Pages — innen tölti be a böngésződ magát az alkalmazást.\n• Google Cloud, Varsó — a kottaolvasó, és csak akkor, ha használod.\n• unpkg.com, cdn.jsdelivr.net és tessdata.projectnaptha.com — a fényképolvasó program, jellemzően csak az első alkalommal.\n• fonts.gstatic.com — a Google betűtípus-szolgáltatása, az alkalmazás betűtípusához.\n• Google — csak akkor, ha a Google-fiókoddal jelentkezel be.\n\nMindegyikük látja a készüléked hálózati címét, ahogy minden megnyitott weboldal. Az alkalmazásban nincs semmilyen látogatottságmérés, nyomkövetés vagy hirdetés, és egyetlen sütit sem használ — a bejelentkezésed a böngésződ saját tárolójában marad.';
+
+  @override
+  String get privacyGoogleTitle => 'Belépés Google-fiókkal';
+
+  @override
+  String get privacyGoogleBody =>
+      'Ha ezt választod, a Google átadja az énekeskönyvnek az e-mail címedet és azokat az alapadatokat, amelyeket minden oldalnak átad, ahová belépsz. Az alkalmazás semmi mást nem kér — se a névjegyeidet, se a naptáradat, se a fájljaidat —, és csak a címet használja. Az énekeid mellett az a név jelenik meg, amelyet itt írsz be, nem az, amelyet a Google tárol.';
+
+  @override
+  String get privacyEmailsTitle => 'Milyen leveleket kapsz';
+
+  @override
+  String get privacyEmailsBody =>
+      'Háromfélét és többet nem: hivatkozást a címed megerősítéséhez, hivatkozást a jelszavad visszaállításához, ha kéred, és meghívót, ha egy adminisztrátor meghív. Nincs hírlevél és nincs levelezőlista.';
+
+  @override
+  String get privacyKeepingTitle => 'Meddig őrizzük';
+
+  @override
+  String get privacyKeepingBody =>
+      'A fiókod és az énekeid addig maradnak meg, amíg valaki nem törli őket. Semmi nem jár le magától.';
+
+  @override
+  String get privacyDeleteTitle => 'A fiókod törlése';
+
+  @override
+  String get privacyDeleteBody =>
+      'Kérd egy adminisztrátortól, és a fiók megszűnik: a cím, a jelszó, a megjelenítendő név és a szerep is. Két dolog viszont megmarad, és tisztességes, hogy ezt előre tudd.\n\nA jóváhagyott éneked az énekeskönyvben marad. Addigra a gyülekezet abból énekel, és ha kivennénk, lyuk maradna a helyén. Az ének megtartja azt a nevet, amelyet a beküldéskor viseltél, azzal a jelzéssel, hogy az illető azóta távozott.\n\nAz elbírálásra váró vagy elutasított énekek szintén megmaradnak, de ezeket már csak a moderátorok látják.\n\nAz ének mellé kerülő név a beküldés pillanatában rögzül, ezért ha később megváltoztatod a megjelenítendő nevedet, az ezen nem változtat, és az alkalmazáson belül moderátor sem tudja átírni. Ha másképp szeretnéd, hogy feltüntessünk, szólj a beküldés előtt.';
+
+  @override
+  String get privacyRightsTitle => 'Mit kérhetsz';
+
+  @override
+  String get privacyRightsBody =>
+      'Másolatot arról, amit rólad tárolunk, bármelyik adat helyesbítését, vagy a törlést. Kérd, és megtesszük.';
+
+  @override
+  String get privacyChangesTitle => 'Ha ez az oldal megváltozik';
+
+  @override
+  String get privacyChangesBody =>
+      'Akkor a tetején lévő dátum is megváltozik. Ha bármi újat kezdenénk tárolni, azt itt mondjuk el először.';
+
+  @override
+  String get termsIntro =>
+      'A Songbookot egy gyülekezet tartja fenn a saját használatára. Ingyenes, és nem üzleti vállalkozás. Ez az a néhány szabály, amitől használható marad.';
+
+  @override
+  String get termsWhatTitle => 'Mit kapsz';
+
+  @override
+  String get termsWhatBody =>
+      'Az alkalmazást úgy, ahogy van, anélkül hogy ígérnénk: mindig elérhető lesz, vagy mindig pontos. Az énekeket emberek gépelik be és fényképezik le, az emberek pedig hibáznak. Ami fontos, azt ellenőrizd a nyomtatott könyvből.';
+
+  @override
+  String get termsAccountTitle => 'A fiókod';
+
+  @override
+  String get termsAccountBody =>
+      'Egy fiók, a saját e-mail címeddel, a saját jelszavaddal. Ne lépj be más nevében, és a sajátodat se add oda senkinek. Ha úgy gondolod, hogy valaki hozzáfért a fiókodhoz, azonnal szólj egy adminisztrátornak.';
+
+  @override
+  String get termsContentTitle => 'Mit küldhetsz be';
+
+  @override
+  String get termsContentBody =>
+      'Olyan énekeket, amelyeket valóban énekelünk az istentiszteleten, gondosan begépelve, mert valaki ezekből fog énekelni. Nem tréfát, nem próbát, nem hirdetést, semmi bántót, és semmi olyat, ami más ember magánügye.';
+
+  @override
+  String get termsCopyrightTitle => 'Szerzői jog — ezt kérjük, olvasd el';
+
+  @override
+  String get termsCopyrightBody =>
+      'A legtöbb énekeskönyv szerzői jogi védelem alatt áll, és attól, hogy lefényképezed az oldalát, ez nem változik. Beküldés előtt a te felelősséged meggyőződni arról, hogy megoszthatod-e az éneket: mert elég régi ahhoz, hogy már ne álljon védelem alatt, mert a jogtulajdonos engedi, vagy mert a gyülekezetnek van rá szóló engedélye. Ha nem vagy biztos benne, inkább előtte kérdezz, ne utána.\n\nHa egy jogtulajdonos kéri egy ének eltávolítását, vita nélkül eltávolítjuk. A címet az adatvédelmi oldalon találod.';
+
+  @override
+  String get termsSubmissionTitle => 'Mi történik a beküldött énekkel';
+
+  @override
+  String get termsSubmissionBody =>
+      'Egy moderátor elolvassa, mielőtt bárki más látná, és vagy jóváhagyja, vagy indoklással elutasítja, vagy javítást kér. A jóváhagyott ének a közös énekeskönyv része lesz: akkor is ott marad, ha később törlöd a fiókodat, és a neved is mellette marad.\n\nA saját művedhez fűződő jogaid megmaradnak. Amit adsz, az engedély arra, hogy ez a gyülekezet az énekeskönyvében tartsa az éneket és énekeljen belőle.';
+
+  @override
+  String get termsModerationTitle => 'Moderálás';
+
+  @override
+  String get termsModerationBody =>
+      'A moderátorok bármit javíthatnak, átszámozhatnak, elutasíthatnak vagy eltávolíthatnak az énekeskönyvből. Az adminisztrátor eltávolíthat olyan fiókot, amellyel visszaélnek. Ha úgy érzed, hogy egy döntés méltánytalan volt, mondd el — ez gyülekezet, nem bíróság.';
 }

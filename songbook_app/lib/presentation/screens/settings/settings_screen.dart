@@ -203,6 +203,16 @@ class SettingsScreen extends ConsumerWidget {
               title: Text(l10n.appTitle),
               subtitle: Text(l10n.settingsTagline),
             ),
+            // In About rather than in a section of its own: this is a fact
+            // about the app, and a heading saying LEGAL would make a page
+            // written to be read look like one written to be scrolled past.
+            // One entry, not two — the privacy page links on to the terms.
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: Text(l10n.settingsPrivacy),
+              subtitle: Text(l10n.settingsPrivacySubtitle),
+              onTap: () => context.push(AppRoutes.privacy),
+            ),
           ],
         ),
       ),
