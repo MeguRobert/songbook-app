@@ -1,5 +1,5 @@
 {
   "SUPABASE_URL": "https://STAGING_PROJECT_REF.supabase.co",
   "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_STAGING_KEY_PENDING",
-  "PHOTO_IMPORT_ENDPOINT": "https://STAGING_OMR_HOST/extract"
+  "PHOTO_IMPORT_ENDPOINT": "https://songbook-omr-staging-541713551179.europe-central2.run.app/extract"
 }
