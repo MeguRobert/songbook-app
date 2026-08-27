@@ -1,5 +1,5 @@
 {
-  "accepted": "2026-08-25",
+  "accepted": "2026-08-26",
   "engines": {
     "easyocr": {
       "084-van-egy-ut--chords-showthrough.jpg": {
@@ -225,6 +225,20 @@
         "warnings_ok": 1.0,
         "headline": 0.2426,
         "gold": "4a7ca973bcee"
+      },
+      "105-kosz-jol-vagyok--chords-handwritten-red.jpg": {
+        "number_exact": 1.0,
+        "title_cer": 0.0,
+        "lyric_cer": 0.1708,
+        "lyric_cer_folded": 0.1621,
+        "chord_recall": 0.1667,
+        "chord_precision": 0.8333,
+        "chord_f1": 0.2778,
+        "placement": 0.1111,
+        "placement_near": 0.1667,
+        "warnings_ok": 1.0,
+        "headline": 0.4245,
+        "gold": "cc9f4184eecc"
       }
     }
   }
