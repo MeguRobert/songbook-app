@@ -1578,6 +1578,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'Ma már annyi éneket küldtél be, amennyit a korlát engedélyez. Kérlek, próbáld újra holnap.';
 
   @override
+  String get publishProfileSaveFailed =>
+      'Ezt nem sikerült elmenteni. Ellenőrizd a kapcsolatot, és próbáld újra.';
+
+  @override
   String submittedBy(String name) {
     return 'Beküldte: $name';
   }

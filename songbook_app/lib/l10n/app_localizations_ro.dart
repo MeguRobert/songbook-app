@@ -1585,6 +1585,10 @@ class AppLocalizationsRo extends AppLocalizations {
       'Ai trimis deja astăzi atâtea cântări câte permite limita. Te rugăm să încerci mâine.';
 
   @override
+  String get publishProfileSaveFailed =>
+      'Nu s-a putut salva. Verifică conexiunea și încearcă din nou.';
+
+  @override
   String submittedBy(String name) {
     return 'Trimisă de $name';
   }

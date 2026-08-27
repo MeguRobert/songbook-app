@@ -2614,6 +2614,12 @@ abstract class AppLocalizations {
   /// **'You have already sent as many songs today as the limit allows. Please try again tomorrow.'**
   String get publishDailyLimitBody;
 
+  /// Shown when storing the contributor name or the guidelines acceptance was refused or never reached the server
+  ///
+  /// In en, this message translates to:
+  /// **'That could not be saved. Check your connection and try again.'**
+  String get publishProfileSaveFailed;
+
   /// The frozen name recorded when the song was submitted
   ///
   /// In en, this message translates to:

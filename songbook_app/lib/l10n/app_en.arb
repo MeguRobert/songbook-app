@@ -1876,6 +1876,10 @@
   "publishGuidelinesAccept": "Agree and send",
   "publishRefusedTitle": "Not sent",
   "publishDailyLimitBody": "You have already sent as many songs today as the limit allows. Please try again tomorrow.",
+  "publishProfileSaveFailed": "That could not be saved. Check your connection and try again.",
+  "@publishProfileSaveFailed": {
+    "description": "Shown when storing the contributor name or the guidelines acceptance was refused or never reached the server"
+  },
   "submittedBy": "Submitted by {name}",
   "@submittedBy": {
     "description": "The frozen name recorded when the song was submitted",
