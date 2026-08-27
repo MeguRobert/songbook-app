@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show AuthState, User;
 
 import '../../data/datasources/local/local_datasource.dart';
 import '../../data/datasources/remote/remote_song_datasource.dart';
+import '../../data/datasources/remote/remote_sync_datasource.dart';
 import '../../data/models/submission.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/song_repository.dart';
@@ -44,6 +45,17 @@ final localDataSourceProvider = Provider<LocalDataSource>((ref) {
 /// the bundled catalogue only. Overridden with null in tests so nothing reaches
 /// for a network.
 final remoteSongDataSourceProvider = Provider<RemoteSongDataSource?>((ref) {
+  return null;
+});
+
+/// The account's copy of favourites and setlists.
+///
+/// Null here, and null in main unless the build sets
+/// `--dart-define=CROSS_DEVICE_SYNC=true` (see
+/// `SupabaseConfig.crossDeviceSyncEnabled`). Null is the shipped state: both
+/// repositories then take the local-only path they have always taken, so the
+/// flag being off is not a quieter version of sync, it is its absence.
+final remoteSyncDataSourceProvider = Provider<RemoteSyncDataSource?>((ref) {
   return null;
 });
 
@@ -146,7 +158,10 @@ final songRepositoryProvider = Provider<SongRepository>((ref) {
 
 /// Favorites repository provider
 final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
-  return FavoritesRepository(ref.watch(localDataSourceProvider));
+  return FavoritesRepository(
+    ref.watch(localDataSourceProvider),
+    ref.watch(remoteSyncDataSourceProvider),
+  );
 });
 
 /// Settings repository provider
@@ -156,7 +171,10 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
 
 /// Setlist repository provider
 final setlistRepositoryProvider = Provider<SetlistRepository>((ref) {
-  return SetlistRepository(ref.watch(localDataSourceProvider));
+  return SetlistRepository(
+    ref.watch(localDataSourceProvider),
+    ref.watch(remoteSyncDataSourceProvider),
+  );
 });
 
 /// Tag repository provider (per-song tag overrides)
