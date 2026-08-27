@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -252,6 +253,24 @@ void main() {
       expect(sink.received.single.message, 'unreportable error');
     });
 
+    test('and that last-resort report still says which build it came from',
+        () async {
+      // This row says nothing at all about what broke, so the build and the
+      // screen it broke on are the only things it can be worth. Filing it
+      // context-less was filing a row nobody could tie to a release.
+      final sink = _RecordingReporter();
+      final reporter = ThrottledCrashReporter(sinks: [sink]);
+      reporter.context
+        ..route = '/import'
+        ..appVersion = '1.1.0'
+        ..buildNumber = '143';
+
+      await reporter.record(_Unprintable(), null);
+
+      expect(sink.received.single.buildNumber, '143');
+      expect(sink.received.single.route, '/import');
+    });
+
     test('a sink that never answers does not hold the app', () async {
       final reporter = ThrottledCrashReporter(
         sinks: [_HangingReporter(), _RecordingReporter()],
@@ -353,6 +372,120 @@ void main() {
       );
 
       await reporter.record(StateError('boom'), null);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // The same table, for the failures that never throw
+  // ---------------------------------------------------------------------------
+  // A handled failure, a degraded result and a silent fallback are the majority
+  // of what goes wrong in this app, and none of them reach the handlers `main`
+  // installs. They share this transport rather than getting a second one,
+  // because when somebody says "it didn't work" there has to be ONE place to
+  // look.
+  group('CrashReport.diagnostic', () {
+    test('goes into the same table under its own event', () {
+      final report = CrashReport.diagnostic(
+        event: DiagnosticEvent.photoImport,
+        message: 'photo import: ok',
+        details: const {'outcome': 'ok', 'ms': 2140},
+        context: CrashContext()
+          ..route = '/import'
+          ..appVersion = '1.1.0'
+          ..buildNumber = '143',
+      );
+
+      final row = report.toRow();
+      expect(row['event'], 'photo_import');
+      expect(row['message'], 'photo import: ok');
+      expect(row['details'], const {'outcome': 'ok', 'ms': 2140});
+      expect(row['build_number'], '143');
+      expect(row.containsKey('stack'), isFalse,
+          reason: 'nothing threw, so there is nothing to put there');
+    });
+
+    test('a crash keeps writing what it always wrote', () {
+      final row = CrashReport.from(StateError('boom'), null).toRow();
+
+      // The column defaults to 'crash' server-side too, so a cached bundle from
+      // before the migration still writes a valid row — but sending it is what
+      // keeps the two sides from disagreeing.
+      expect(row['event'], 'crash');
+      expect(row.containsKey('details'), isFalse,
+          reason: 'an empty object is the column default; sending it says nothing');
+    });
+
+    test('two events that say the same short thing are still counted apart', () {
+      // 'ok' will be the commonest message this ever writes. Fingerprinting on
+      // the message alone would fold two events into one key and let one
+      // event's ceiling silence the other's.
+      final a = CrashReport.diagnostic(event: 'crash', message: 'ok');
+      final b =
+          CrashReport.diagnostic(event: DiagnosticEvent.photoImport, message: 'ok');
+
+      expect(a.fingerprint, isNot(b.fingerprint));
+    });
+
+    test('details too large to send lose their tail, never their head', () {
+      final report = CrashReport.diagnostic(
+        event: DiagnosticEvent.photoImport,
+        message: 'photo import: ok',
+        details: <String, Object?>{
+          'outcome': 'ok',
+          'ms': 2140,
+          for (var i = 0; i < 200; i++) 'column$i': 'x' * 40,
+        },
+      );
+
+      expect(json.encode(report.details).length,
+          lessThanOrEqualTo(CrashReport.maxDetailsLength));
+      expect(report.details['outcome'], 'ok',
+          reason: 'the outcome is what the row is for');
+      expect(report.details['ms'], 2140);
+      expect(report.details.containsKey('column199'), isFalse);
+    });
+
+    test('a value that cannot be encoded costs the numbers, not the row', () {
+      final report = CrashReport.diagnostic(
+        event: DiagnosticEvent.photoImport,
+        message: 'photo import: ok',
+        details: {'outcome': 'ok', 'canvas': Object()},
+      );
+
+      // The event and the build number are still worth writing without them,
+      // and a diagnostic path may not throw.
+      expect(report.details, isEmpty);
+      expect(report.message, 'photo import: ok');
+    });
+
+    test('an event is throttled on its own ceiling, not the crash one', () async {
+      // Five imports in ten minutes is an ordinary evening. Under the crash
+      // ceiling — two per fingerprint — three of them would vanish, and the
+      // table would under-report the feature it exists to measure.
+      final sink = _RecordingReporter();
+      final reporter = ThrottledCrashReporter(sinks: [sink]);
+
+      for (var i = 0; i < 5; i++) {
+        await reporter.note(DiagnosticEvent.photoImport, 'photo import: ok');
+      }
+      expect(sink.received, hasLength(5));
+
+      // Meanwhile the crash ceiling is untouched by all that traffic, which is
+      // the point of the two being separate counters rather than one.
+      for (var i = 0; i < 5; i++) {
+        await reporter.record(StateError('boom'), null);
+      }
+      expect(sink.received.where((r) => r.event == DiagnosticEvent.crash),
+          hasLength(2));
+    });
+
+    test('note never throws, whatever it is handed', () async {
+      final reporter = ThrottledCrashReporter(sinks: [_ThrowingReporter()]);
+
+      // The assertion is that these lines complete.
+      await reporter.note(DiagnosticEvent.photoImport, '');
+      await reporter.note(DiagnosticEvent.photoImport, 'x',
+          details: {'bad': Object()});
     });
   });
 }

@@ -64,6 +64,29 @@ void main() {
         return true;
       };
 
+      // Which build this is, and FIRST — before the context menu, before
+      // preferences, before Supabase.
+      //
+      // Every row this app will ever write carries the build number from this
+      // one read, so anything that happens before it lands is a row that cannot
+      // be tied to a release. Startup is exactly where the rows nobody can
+      // reproduce come from: a service worker will happily serve somebody a
+      // months-old bundle, and "it crashes on launch" against an unknown deploy
+      // is a question with no way in. So this moved above the three awaits that
+      // used to precede it — none of them needs to go first, and each was a
+      // window in which a report arrived version-less.
+      //
+      // Wrapped because on web this reads `version.json` over the network, and a
+      // report from an unknown version still beats no report at all.
+      try {
+        final info = await PackageInfo.fromPlatform();
+        crash.context.appVersion = info.version;
+        crash.context.buildNumber = info.buildNumber;
+      } catch (error, stack) {
+        debugPrint('Could not read the package version: $error');
+        if (kDebugMode) debugPrintStack(stackTrace: stack);
+      }
+
       // Hand selection gestures to Flutter instead of the browser.
       //
       // On web the browser's own context menu wins by default, so Flutter's
@@ -73,18 +96,6 @@ void main() {
       // DOM text under the cursor for it to offer.
       if (kIsWeb) {
         await BrowserContextMenu.disableContextMenu();
-      }
-
-      // Which build this is. Wrapped because on web this reads `version.json`
-      // over the network, and a report from an unknown version still beats no
-      // report at all.
-      try {
-        final info = await PackageInfo.fromPlatform();
-        crash.context.appVersion = info.version;
-        crash.context.buildNumber = info.buildNumber;
-      } catch (error, stack) {
-        debugPrint('Could not read the package version: $error');
-        if (kDebugMode) debugPrintStack(stackTrace: stack);
       }
 
       // Initialize SharedPreferences
@@ -157,6 +168,11 @@ void main() {
             // The router writes the current location into this, and the reporter
             // reads it. Same object on both sides, so a report names the screen.
             crashContextProvider.overrideWithValue(crash.context),
+            // And the reporter itself, for the failures that never throw and so
+            // never reach the handlers above — the photo import that came back
+            // with three of four chord rows being the first of them. One
+            // reporter, so one throttle and one ceiling.
+            crashReporterProvider.overrideWithValue(crash),
           ],
           child: const SongbookApp(),
         ),

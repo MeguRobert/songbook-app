@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/domain/services/browser_photo_import_service.dart';
 import 'package:songbook_app/domain/services/import_notice.dart';
 import 'package:songbook_app/domain/services/page_text_recognizer.dart';
+import 'package:songbook_app/domain/services/photo_import_diagnostics.dart';
 import 'package:songbook_app/domain/services/photo_import_service.dart';
 import 'package:songbook_app/domain/services/photo_text_bridge.dart';
 
@@ -15,7 +16,8 @@ import 'package:songbook_app/domain/services/photo_text_bridge.dart';
 /// screen consumes. What these pin is the wiring, which is the part that was
 /// missing while both halves already worked.
 class _FakeRecognizer implements PageTextRecognizer {
-  _FakeRecognizer(this.words, {this.error, this.notices = const []});
+  _FakeRecognizer(this.words,
+      {this.error, this.notices = const [], this.measurements = const []});
 
   final List<OcrWord> words;
   final Object? error;
@@ -24,9 +26,18 @@ class _FakeRecognizer implements PageTextRecognizer {
   /// a photograph too compressed to hold its accents, show-through erased.
   final List<ImportNotice> notices;
 
+  /// What the real recognizer appends to `trace` as it goes. Until the service
+  /// passed the argument, every one of these numbers was computed and dropped.
+  final List<Map<String, Object?>> measurements;
+
   int calls = 0;
   Uint8List? sawBytes;
   String? sawLanguage;
+
+  /// Whether a sink to measure into was handed over at all. Null here was the
+  /// bug: every stage of the reader checks `trace?.add` and does nothing when
+  /// there is nothing to add to.
+  List<Map<String, Object?>>? sawTrace;
 
   @override
   bool get isSupported => true;
@@ -38,9 +49,30 @@ class _FakeRecognizer implements PageTextRecognizer {
     calls++;
     sawBytes = imageBytes;
     sawLanguage = language;
+    sawTrace = trace;
+    // Appended before any failure, exactly as the real one does: the image's
+    // dimensions are known long before the engine gives up on it.
+    for (final entry in measurements) {
+      trace?.add(entry);
+    }
     if (error != null) throw error!;
     return PageWords(words, notices: notices);
   }
+}
+
+/// Collects what would have been written, so the whole path can be asserted on
+/// with no reporter, no Supabase and no network anywhere near it.
+class _RecordingRecorder extends PhotoImportRecorder {
+  final List<PhotoImportRecord> records = [];
+
+  @override
+  void record(PhotoImportRecord record) => records.add(record);
+}
+
+/// Fails the way a misconfigured sink would.
+class _ThrowingRecorder extends PhotoImportRecorder {
+  @override
+  void record(PhotoImportRecord record) => throw StateError('no sink');
 }
 
 void main() {
@@ -178,5 +210,187 @@ void main() {
       throwsA(isA<PhotoImportException>()
           .having((e) => e.message, 'message', said)),
     );
+  });
+
+  // ---------------------------------------------------------------------------
+  // One row per attempt
+  // ---------------------------------------------------------------------------
+  // `page_text_recognizer_web.dart` measures the image's dimensions and
+  // bytes-per-pixel, the pale fraction and whether show-through suppression
+  // fired, the whole-page word count and each column's — and threads every one
+  // of them through a `trace` argument this service never passed. So the app's
+  // account of why a page read the way it did was of the Python engine that does
+  // not run on a phone.
+  group('the record of an attempt', () {
+    /// A slice of what the real reader appends.
+    const measured = [
+      {
+        'stage': 'image',
+        'width': 2048,
+        'height': 1532,
+        'bytes': 286123,
+        'bytesPerPixel': 0.0912,
+      },
+      {'stage': 'clean', 'paleFraction': 0.0139, 'suppressed': true},
+      {'stage': 'read', 'words': 41, 'columnCuts': <int>[]},
+    ];
+
+    test('the trace argument is actually passed, and what it collects is kept',
+        () async {
+      final recognizer = _FakeRecognizer(page, measurements: measured);
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: recognizer,
+        recorder: recorder,
+      );
+
+      await service.extract(bytes);
+
+      // The one-line fix this group exists for.
+      expect(recognizer.sawTrace, isNotNull,
+          reason: 'without a list to append to, every stage measures into null');
+      expect(recorder.records, hasLength(1));
+
+      final details = recorder.records.single.toDetails();
+      expect(details['outcome'], 'ok');
+      expect(details['width'], 2048);
+      expect(details['bytesPerPixel'], 0.0912);
+      expect(details['words'], 41);
+      expect(details['suppressed'], true);
+      expect(details['ms'], isA<int>());
+    });
+
+    test('a page nothing could be laid out from is not the same failure as a '
+        'reader that never ran', () async {
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(const [], measurements: measured),
+        recorder: recorder,
+      );
+
+      await expectLater(
+          () => service.extract(bytes), throwsA(isA<PhotoImportException>()));
+
+      // `illegible`, not `failed`: the engine answered. The photograph is the
+      // problem, and "take it again" is the right thing to say — which it is not
+      // when the reader itself never loaded.
+      expect(recorder.records.single.outcome, PhotoImportOutcome.illegible);
+      // And the image's own numbers are still there, which is what makes the
+      // advice checkable: a page that measured 900px was always going to fail.
+      expect(recorder.records.single.toDetails()['width'], 2048);
+    });
+
+    test('an empty file is recorded as refused, before the engine is started',
+        () async {
+      final recognizer = _FakeRecognizer(page);
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: recognizer,
+        recorder: recorder,
+      );
+
+      await expectLater(() => service.extract(Uint8List(0)),
+          throwsA(isA<PhotoImportException>()));
+
+      expect(recognizer.calls, 0);
+      expect(recorder.records.single.outcome, PhotoImportOutcome.refused);
+    });
+
+    test('the raw cause is kept even though the user is shown a sentence',
+        () async {
+      // The catch that substitutes the friendly sentence was also the catch that
+      // threw away the only description of what happened. Both are now true at
+      // once: the user gets prose, the record gets the TypeError.
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(const [],
+            error: StateError('TypeError: t.recognize is not a function'),
+            measurements: measured),
+        recorder: recorder,
+      );
+
+      await expectLater(
+        () => service.extract(bytes),
+        throwsA(isA<PhotoImportException>().having((e) => e.message, 'message',
+            contains('could not be read'))),
+      );
+
+      final record = recorder.records.single;
+      expect(record.outcome, PhotoImportOutcome.failed);
+      expect(record.reason, isNotNull);
+      expect(record.toDetails()['reason'], isNotEmpty);
+    });
+
+    test('which stage timed out survives the one sentence all three share',
+        () async {
+      // The script budget (30s), the engine budget (120s) and the read budget
+      // (60s) all collapse into "Reading the photo took too long", which is
+      // right for the screen. `stage` is the same three told apart, and a
+      // download blocked by a DNS filter is a different morning's work from an
+      // engine that would not start.
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(const [],
+            error: const PhotoImportException(
+              'The reader could not be downloaded.',
+              stage: 'script:blocked',
+            )),
+        recorder: recorder,
+      );
+
+      await expectLater(
+          () => service.extract(bytes), throwsA(isA<PhotoImportException>()));
+
+      final record = recorder.records.single;
+      expect(record.stage, 'script:blocked');
+      expect(record.summary, contains('script:blocked'));
+    });
+
+    test('the notices the reviewer was shown are on the record too', () async {
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(page,
+            notices: const [
+              ImportNotice(ImportNoticeCode.photoLowResolution,
+                  text: '1532×2047', count: 106),
+            ],
+            measurements: measured),
+        recorder: recorder,
+      );
+
+      await service.extract(bytes);
+
+      // Codes only. The prose lives in the ARB files, and the text a notice
+      // carries can be a fragment of the song.
+      expect(recorder.records.single.toDetails()['notices'],
+          contains('photoLowResolution'));
+    });
+
+    test('no recorder means no recording, and no behaviour change', () async {
+      // The default, and what every widget test and the measurement harness get.
+      final recognizer = _FakeRecognizer(page, measurements: measured);
+      final service = BrowserPhotoImportService(recognizer: recognizer);
+
+      final payload = await service.extract(bytes);
+
+      expect(payload, isA<ChordProPayload>());
+      // The trace is still passed and still filled; it simply goes nowhere. Not
+      // worth branching on: the list costs one allocation and the alternative is
+      // a reader that behaves differently depending on whether it is watched.
+      expect(recognizer.sawTrace, isNotNull);
+    });
+
+    test('a recorder that throws does not fail an import that worked',
+        () async {
+      // The rule from the crash reporter's own header: recording a failure must
+      // never cause one. It matters most here, on the success path, where a page
+      // that read perfectly would otherwise come back as a failed import.
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(page),
+        recorder: _ThrowingRecorder(),
+      );
+
+      expect(await service.extract(bytes), isA<ChordProPayload>());
+    });
   });
 }

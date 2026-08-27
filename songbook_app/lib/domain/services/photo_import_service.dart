@@ -66,10 +66,32 @@ class PhotoImportException implements Exception {
   /// set the screen renders it instead of [message].
   final ImportNotice? notice;
 
-  const PhotoImportException(this.message, {this.statusCode, this.notice});
+  /// Which stage of the reader gave up, for the record and nothing else.
+  ///
+  /// **Never shown, and that is the point.** From the outside, a CDN that will
+  /// not answer, an engine that will not start and a page that took too long to
+  /// read are one situation — "it did not load" — and telling the user which one
+  /// helps them not at all. To whoever has to fix it they are three faults with
+  /// three causes, and until this field existed all three arrived as the same
+  /// sentence with nothing to tell them apart.
+  ///
+  /// The download case is the one that will actually bite in public: the engine
+  /// comes from `unpkg.com`, which ad-blockers, DNS filters and corporate proxies
+  /// block routinely — and a captive portal answers for it with a sign-in page
+  /// that is a perfectly successful HTTP response defining no `Tesseract`. Those
+  /// three are `script:error`, `script:timeout` and `script:blocked`.
+  final String? stage;
+
+  const PhotoImportException(
+    this.message, {
+    this.statusCode,
+    this.notice,
+    this.stage,
+  });
 
   @override
-  String toString() => 'PhotoImportException: $message';
+  String toString() =>
+      'PhotoImportException: $message${stage == null ? '' : ' [$stage]'}';
 }
 
 /// Turns a photograph of a song into something the app can parse.

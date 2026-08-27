@@ -77,10 +77,20 @@ const _readBudget = Duration(seconds: 60);
 
 /// What the user is told when a stage runs out of time.
 ///
-/// One sentence for all three, because from the outside they are one
-/// situation: it did not load.
-Never _tooSlow() => throw const PhotoImportException(
+/// One sentence for all three, because from the outside they are one situation:
+/// it did not load. **[stage] is the same three told apart**, and it goes only
+/// into the diagnostic record — see [PhotoImportException.stage].
+///
+/// The three collapsing into one message is right for the screen and was wrong
+/// for the log. `engine` blowing its 120 seconds means ten megabytes did not
+/// arrive, which is a connection; `read` blowing its 60 means the engine started
+/// and then could not finish a page, which is a device too slow or an image too
+/// large; `script` blowing its 30 means the CDN never answered at all, which is
+/// most likely a filter rather than a network. Same sentence, three different
+/// things to go and look at.
+Never _tooSlow(String stage) => throw PhotoImportException(
       'Reading the photo took too long. Check your connection and try again.',
+      stage: stage,
     );
 
 /// The longest edge the photo is scaled to before it is read.
@@ -141,7 +151,7 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
     // starting over costs little.
     final worker = await _createWorker(language)
         .toDart
-        .timeout(_engineBudget, onTimeout: _tooSlow);
+        .timeout(_engineBudget, onTimeout: () => _tooSlow('engine'));
     try {
       final whole = await _read(worker, prepared.canvas);
       final cuts = bridge.columnCuts(whole);
@@ -180,7 +190,7 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
     final result = await worker
         .recognize(canvas, JSObject(), output)
         .toDart
-        .timeout(_readBudget, onTimeout: _tooSlow);
+        .timeout(_readBudget, onTimeout: () => _tooSlow('read'));
     return _wordsIn(result.data);
   }
 
@@ -252,7 +262,8 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
       ..height = canvas.height;
     final context = band.getContext('2d') as web.CanvasRenderingContext2D?;
     if (context == null) {
-      throw const PhotoImportException('This browser cannot read images.');
+      throw const PhotoImportException('This browser cannot read images.',
+          stage: 'canvas:band');
     }
     context.drawImage(canvas, left.toDouble(), 0, (right - left).toDouble(),
         canvas.height.toDouble(), 0, 0, (right - left).toDouble(),
@@ -311,7 +322,8 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
           ..height = height;
     final context = canvas.getContext('2d') as web.CanvasRenderingContext2D?;
     if (context == null) {
-      throw const PhotoImportException('This browser cannot read images.');
+      throw const PhotoImportException('This browser cannot read images.',
+          stage: 'canvas:page');
     }
     context.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
@@ -449,22 +461,37 @@ Future<void> _injectTesseract() {
     ..crossOrigin = 'anonymous'
     ..async = true;
 
-  void fail() {
+  /// [why] separates the three ways this download fails, for the record only.
+  ///
+  /// One sentence covers all of them for the user, and it collapsed the three
+  /// things worth knowing:
+  ///
+  /// * `script:error` — the request was refused or 404'd. An ad-blocker, a DNS
+  ///   filter, a corporate proxy, or a CSP that does not allow the origin. This
+  ///   is the case that will actually bite in public.
+  /// * `script:timeout` — nothing answered inside 30 seconds. A stalled
+  ///   connection, which fires no `error` event at all.
+  /// * `script:blocked` — a *successful* response that defines no `Tesseract`. A
+  ///   captive portal's sign-in page or a proxy's block page, both of which are
+  ///   HTML and neither of which fires `error`. Found and fixed once already, and
+  ///   indistinguishable from the others in the log until now.
+  void fail(String why) {
     // Cleared so a later attempt — once there is a network again — is not
     // handed this same failed future for the rest of the session.
     _tesseractLoading = null;
     script.remove();
     if (!done.isCompleted) {
-      done.completeError(const PhotoImportException(
+      done.completeError(PhotoImportException(
         'The reader could not be downloaded. The first photo on a device '
         'needs a connection.',
+        stage: 'script:$why',
       ));
     }
   }
 
   // A stalled request fires neither `load` nor `error`, so a clock is the only
   // way out of one.
-  final giveUp = Timer(_scriptBudget, fail);
+  final giveUp = Timer(_scriptBudget, () => fail('timeout'));
 
   script.addEventListener(
       'load',
@@ -478,7 +505,7 @@ Future<void> _injectTesseract() {
         // below, which every later attempt was then handed — so one airport
         // Wi-Fi broke the feature until the page was reloaded.
         if (!globalContext.has('Tesseract')) {
-          fail();
+          fail('blocked');
           return;
         }
         if (!done.isCompleted) done.complete();
@@ -487,7 +514,7 @@ Future<void> _injectTesseract() {
       'error',
       ((web.Event _) {
         giveUp.cancel();
-        fail();
+        fail('error');
       }).toJS);
   web.document.head!.append(script);
   return done.future;
