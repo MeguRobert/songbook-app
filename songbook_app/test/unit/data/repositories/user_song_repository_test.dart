@@ -97,6 +97,30 @@ void main() {
       expect(repo.getById(stored.id)!.title, 'Javított cím');
     });
 
+    test('update refuses a song with no id rather than storing a second copy',
+        () async {
+      final repo = await makeRepository();
+      final stored = await repo.add(draft());
+
+      // A real guard, not an `assert`: asserts are compiled out of a release
+      // build, and this is the case where the fallthrough is both silent and
+      // permanent. `upsertUserSong` keys on `Song.id`, which for a song with no
+      // explicit id answers `SongId.hymnal(number)` — matching no stored user
+      // song, so the "update" appends a copy filed under an id that collides
+      // with the bundled hymn of the same number.
+      //
+      // `throwsArgumentError` rather than `throwsAssertionError` is the point of
+      // the test: it is the same in release as it is here.
+      expect(
+        () => repo.update(draft(title: 'Javított cím')),
+        throwsArgumentError,
+      );
+
+      expect(repo.getAll(), hasLength(1));
+      expect(repo.getById(stored.id)!.title, 'Az Úrra bízom életem');
+      expect(repo.getById(const SongId.hymnal(1)), isNull);
+    });
+
     test('delete removes only the targeted song', () async {
       final repo = await makeRepository();
       final a = await repo.add(draft(title: 'Egy'));

@@ -56,8 +56,28 @@ class UserSongRepository {
   }
 
   /// Replaces an existing user song. The song must already carry an id.
+  ///
+  /// The guard is a real one rather than an `assert`, because an assert is
+  /// compiled out of a release build and this is exactly the case where the
+  /// fallthrough is silent and permanent. [LocalDataSource.upsertUserSong] keys
+  /// on [Song.id], and a song with no [Song.explicitId] answers that with
+  /// `SongId.hymnal(number)` — which matches no stored user song, so the "update"
+  /// appends a second copy, filed under an id that collides with the bundled
+  /// hymn of the same number.
+  ///
+  /// It throws rather than minting an id, because minting one would do the same
+  /// damage under a nicer name: [update] means *replace the song already
+  /// stored*, and a song with no id has never been stored, so there is nothing
+  /// to replace. Adding one is [add]'s job, and it is the caller — who knows
+  /// whether this is a correction or a new song — that has to say which.
   Future<bool> update(Song song) {
-    assert(song.explicitId != null, 'Cannot update a song with no stored id');
+    if (song.explicitId == null) {
+      throw ArgumentError.value(
+        song.title,
+        'song',
+        'cannot update a song with no stored id',
+      );
+    }
     return _localDataSource.upsertUserSong(song);
   }
 
