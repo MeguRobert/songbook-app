@@ -20,10 +20,12 @@ import '../../domain/services/browser_photo_import_service.dart';
 // compiling there, and reports itself unsupported rather than pretending.
 import '../../domain/services/page_text_recognizer_stub.dart'
     if (dart.library.js_interop) '../../domain/services/page_text_recognizer_web.dart';
+import '../../domain/services/photo_import_diagnostics.dart';
 import '../../domain/services/photo_import_service.dart';
 import '../../domain/services/transposition_service.dart';
 import '../../domain/services/search_service.dart';
 import '../../domain/services/capo_service.dart';
+import 'crash_provider.dart';
 
 // --- Core Providers ---
 
@@ -214,10 +216,21 @@ final userSongRepositoryProvider = Provider<UserSongRepository>((ref) {
 ///
 /// Null only where there is no browser to run the engine in, which the import
 /// screen explains rather than failing on tap.
+///
+/// The recorder is attached here and nowhere deeper, because this is the layer
+/// that is allowed to know a reporter exists: the service and the recogniser
+/// below it are domain code that has to stay runnable under a plain
+/// `flutter test`. With no reporter installed — every test, every build without
+/// a backend — the recorder is null and the reader records nothing.
 final photoTextImportServiceProvider = Provider<PhotoImportService?>((ref) {
   final recognizer = createPageTextRecognizer();
   if (!recognizer.isSupported) return null;
-  return BrowserPhotoImportService(recognizer: recognizer);
+  final reporter = ref.watch(crashReporterProvider);
+  return BrowserPhotoImportService(
+    recognizer: recognizer,
+    recorder:
+        reporter == null ? null : DiagnosticPhotoImportRecorder(reporter),
+  );
 });
 
 /// Reading engraved notation off a photographed page. Opt-in, and a server.

@@ -1,5 +1,16 @@
-# Claude temp files
-.claude/
+# Claude temp files.
+#
+# `.claude/*` rather than `.claude/` because git will not look inside an ignored
+# DIRECTORY, so a negation under one never gets a chance to match.
+#
+# Two things are tracked deliberately. The instrumentation rule in CLAUDE.md is
+# how this repo is built rather than a local preference, and the hook is what
+# makes it land at the moment of an edit instead of being read once at session
+# start and then losing to momentum. Personal permissions (settings.local.json),
+# worktrees, caches and the skills directory stay out.
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
 
 # Playwright screenshots
 .playwright-mcp/
