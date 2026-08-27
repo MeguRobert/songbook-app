@@ -1638,7 +1638,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get privacyOnDeviceBody =>
-      'Favoritele, listele tale, ultimele câteva căutări, cântările pe care le-ai adăugat dar nu le-ai trimis și toate setările de afișare — tema, mărimea textului, acordurile pornite sau oprite, viteza de derulare, limba — se păstrează în acest browser, pe acest dispozitiv. Nu se încarcă nicăieri, nimeni altcineva nu le vede, iar dacă ștergi datele site-ului din browser dispar definitiv.';
+      'Favoritele, listele tale de cântece, ultimele câteva căutări, cântările pe care le-ai adăugat dar nu le-ai trimis și toate setările de afișare — tema, mărimea textului, acordurile pornite sau oprite, viteza de derulare, limba — se păstrează în acest browser, pe acest dispozitiv. Nu se încarcă nicăieri, nimeni altcineva nu le vede, iar dacă ștergi datele site-ului din browser dispar definitiv.';
 
   @override
   String get privacyServerTitle => 'Ce se păstrează pe server';

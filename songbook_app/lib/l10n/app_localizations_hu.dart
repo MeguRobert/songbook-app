@@ -1631,7 +1631,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get privacyOnDeviceBody =>
-      'A kedvenceid, a listáid, a legutóbbi kereséseid, a felvett, de még be nem küldött énekeid és minden megjelenítési beállítás — téma, betűméret, akkordok ki- vagy bekapcsolva, görgetési sebesség, nyelv — ebben a böngészőben, ezen a készüléken tárolódik. Ezek soha nem kerülnek fel a szerverre, senki más nem látja őket, és ha a böngészőben törlöd az oldal adatait, végleg eltűnnek.';
+      'A kedvenceid, az énekrendjeid, a legutóbbi kereséseid, a felvett, de még be nem küldött énekeid és minden megjelenítési beállítás — téma, betűméret, akkordok ki- vagy bekapcsolva, görgetési sebesség, nyelv — ebben a böngészőben, ezen a készüléken tárolódik. Ezek soha nem kerülnek fel a szerverre, senki más nem látja őket, és ha a böngészőben törlöd az oldal adatait, végleg eltűnnek.';
 
   @override
   String get privacyServerTitle => 'Ami a szerveren tárolódik';
