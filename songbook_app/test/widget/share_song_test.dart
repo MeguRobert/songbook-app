@@ -6,6 +6,7 @@ import 'package:songbook_app/data/models/song.dart';
 import 'package:songbook_app/data/models/song_id.dart';
 import 'package:songbook_app/data/models/submission.dart';
 import 'package:songbook_app/data/models/verse.dart';
+import 'package:songbook_app/data/models/app_role.dart';
 import 'package:songbook_app/data/models/app_settings.dart';
 import 'package:songbook_app/data/repositories/admin_repository.dart';
 import 'package:songbook_app/data/repositories/submission_repository.dart';
@@ -29,6 +30,14 @@ import 'helpers.dart';
 /// Each of those is a database rule as well as a prompt, so a test that left
 /// them unmet would be testing the gate, not the sharing, and
 /// `test/unit/domain/services/publish_gate_test.dart` already tests the gate.
+///
+/// The [role] knob is the sixth thing the harness has to present, and the newest.
+/// Since `20260829120000_moderators_publish_their_own_songs.sql` a moderator's
+/// own submission is published rather than queued, so the same taps produce two
+/// different sets of words. Note which half of that each test is pinning: the
+/// CONFIRMATION is predicted from the role, and the SNACKBAR is whatever the
+/// (faked) server said the row landed as — which is why the two can be, and here
+/// deliberately are, set against each other in one case.
 
 class _MockSubmissions extends Mock implements SubmissionRepository {}
 
@@ -65,6 +74,12 @@ Submission pendingSubmission(Song song) => Submission(
       song: song,
     );
 
+Submission approvedSubmission(Song song) => Submission(
+      id: 'row-1',
+      status: SubmissionStatus.approved,
+      song: song,
+    );
+
 Future<void> pumpSongView(
   WidgetTester tester,
   Song song, {
@@ -75,6 +90,7 @@ Future<void> pumpSongView(
   String? displayName = 'Someone',
   bool guidelinesAccepted = true,
   AppSettings settings = const AppSettings(),
+  AppRole role = AppRole.member,
 }) async {
   await pumpScreen(
     tester,
@@ -94,6 +110,10 @@ Future<void> pumpSongView(
             guidelinesAcceptedAt:
                 guidelinesAccepted ? DateTime(2026, 8, 1) : null,
           )),
+      // Overridden rather than driven through a mocked AdminRepository: the flow
+      // reads this provider for wording only, and the tests that supply an
+      // AdminRepository are testing the two writes the gate makes, not the role.
+      currentRoleProvider.overrideWith((ref) async => role),
     ],
   );
   await tester.pumpAndSettle();
@@ -179,7 +199,8 @@ void main() {
       final song = userSong();
       final submissions = _MockSubmissions();
       when(() => submissions.mySubmissions()).thenAnswer((_) async => []);
-      when(() => submissions.submit(any())).thenAnswer((_) async {});
+      when(() => submissions.submit(any()))
+          .thenAnswer((_) async => SubmissionStatus.pending);
 
       await pumpSongView(tester, song, submissions: submissions);
       await openMenu(tester);
@@ -229,6 +250,134 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('could not be sent'), findsOneWidget);
+    });
+  });
+
+  /// A moderator sharing a song of their own.
+  ///
+  /// The queue exists so that somebody other than the contributor looks at a
+  /// song before the congregation sings from it. When they are the same person
+  /// there is no decision left in it, so
+  /// `supabase/migrations/20260829120000_moderators_publish_their_own_songs.sql`
+  /// publishes on the spot. None of that is enforced here — it cannot be, it is
+  /// a trigger — and `supabase/tests/self_publish_test.sql` is where it is
+  /// proved. What these pin is that the app stopped saying the song was sent for
+  /// review, which is the one sentence the change made false.
+  group('a moderator sharing their own song', () {
+    testWidgets('is promised publication rather than review', (tester) async {
+      final submissions = _MockSubmissions();
+      await pumpSongView(tester, userSong(),
+          submissions: submissions, role: AppRole.moderator);
+      await openMenu(tester);
+      await tester.tap(find.text('Share with the congregation'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('goes straight into the shared songbook'),
+          findsOneWidget);
+      expect(find.text('Publish'), findsOneWidget);
+      // The old promise is gone rather than merely joined by a new one.
+      expect(find.textContaining('goes to the moderators'), findsNothing);
+      expect(find.text('Send'), findsNothing);
+    });
+
+    testWidgets('and an administrator gets the same words', (tester) async {
+      // Above moderator on the ladder, so `canModerate` covers them. Asserted
+      // because it is the half of "administrator or moderator" that a rank
+      // comparison could quietly lose.
+      final submissions = _MockSubmissions();
+      await pumpSongView(tester, userSong(),
+          submissions: submissions, role: AppRole.administrator);
+      await openMenu(tester);
+      await tester.tap(find.text('Share with the congregation'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Publish'), findsOneWidget);
+    });
+
+    testWidgets('is told it was published, not queued', (tester) async {
+      final submissions = _MockSubmissions();
+      when(() => submissions.mySubmissions()).thenAnswer((_) async => []);
+      when(() => submissions.submit(any()))
+          .thenAnswer((_) async => SubmissionStatus.approved);
+
+      await pumpSongView(tester, userSong(),
+          submissions: submissions, role: AppRole.moderator);
+      await openMenu(tester);
+      await tester.tap(find.text('Share with the congregation'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Publish'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Published to the songbook.'), findsOneWidget);
+      expect(find.text('Sent for review.'), findsNothing);
+    });
+
+    testWidgets('but the SERVER has the last word on that message',
+        (tester) async {
+      // The role behind the dialog is a prediction and can be stale — an account
+      // demoted while the app was open, or a role lookup that failed and fell
+      // back. The status on the row that comes back is what actually happened,
+      // so a confirmation promising publication is still followed by the honest
+      // "sent for review" when the server queued it after all.
+      final submissions = _MockSubmissions();
+      when(() => submissions.mySubmissions()).thenAnswer((_) async => []);
+      when(() => submissions.submit(any()))
+          .thenAnswer((_) async => SubmissionStatus.pending);
+
+      await pumpSongView(tester, userSong(),
+          submissions: submissions, role: AppRole.moderator);
+      await openMenu(tester);
+      await tester.tap(find.text('Share with the congregation'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Publish'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sent for review.'), findsOneWidget);
+      expect(find.text('Published to the songbook.'), findsNothing);
+    });
+
+    testWidgets('and a song already in the songbook is not called queued',
+        (tester) async {
+      // Wrong before this change too, and wrong more often after it: an approved
+      // twin got "It is waiting for review", which is a different and less
+      // useful thing to be told than "it is already there".
+      final song = userSong();
+      final submissions = _MockSubmissions();
+      when(() => submissions.mySubmissions())
+          .thenAnswer((_) async => [approvedSubmission(song)]);
+
+      await pumpSongView(tester, song,
+          submissions: submissions, role: AppRole.moderator);
+      await openMenu(tester);
+      await tester.tap(find.text('Share with the congregation'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Publish'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('already in the shared songbook'),
+          findsOneWidget);
+      expect(find.textContaining('waiting for review'), findsNothing);
+      verifyNever(() => submissions.submit(any()));
+    });
+
+    testWidgets('a member is still promised, and given, review', (tester) async {
+      final submissions = _MockSubmissions();
+      when(() => submissions.mySubmissions()).thenAnswer((_) async => []);
+      when(() => submissions.submit(any()))
+          .thenAnswer((_) async => SubmissionStatus.pending);
+
+      await pumpSongView(tester, userSong(), submissions: submissions);
+      await openMenu(tester);
+      await tester.tap(find.text('Share with the congregation'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('goes to the moderators'), findsOneWidget);
+      expect(find.text('Publish'), findsNothing);
+
+      await tester.tap(find.text('Send'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sent for review.'), findsOneWidget);
     });
   });
 

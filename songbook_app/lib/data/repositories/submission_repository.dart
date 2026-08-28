@@ -55,12 +55,24 @@ class SubmissionRepository {
     }
   }
 
-  /// Offers a song to the shared catalogue.
+  /// Offers a song to the shared catalogue, and reports where it landed.
   ///
   /// Inserted as `pending`, owned by the caller. The insert policy will not
   /// accept any other combination — a row claiming to be already approved, or
   /// owned by someone else, or canonical hymnal content, is refused server-side.
-  Future<void> submit(Song song) async {
+  /// **That is still true for a moderator's own client**: nobody asks to be
+  /// published. What changed is what the server does with the request, since
+  /// `20260829120000_moderators_publish_their_own_songs.sql` promotes a
+  /// moderator's own submission to `approved` inside the same transaction.
+  ///
+  /// So the status is READ BACK rather than assumed. The alternative — asking
+  /// `is_admin()` first and inferring — would keep a second, guessable copy of
+  /// a rule that lives in the database, and would be wrong in the one case that
+  /// matters: a role that changed, or a role lookup that failed, between the
+  /// question and the write. The row the server wrote is the only account of
+  /// what actually happened, and `select` on an insert costs no extra round
+  /// trip.
+  Future<SubmissionStatus> submit(Song song) async {
     final user = _client.auth.currentUser;
     if (user == null) {
       throw StateError('cannot submit a song while signed out');
@@ -71,7 +83,7 @@ class SubmissionRepository {
       // claim the same one.
       ..remove('id');
 
-    await _client.from('songs').insert({
+    final row = await _client.from('songs').insert({
       'owner_id': user.id,
       'source': 'user',
       'status': 'pending',
@@ -80,7 +92,15 @@ class SubmissionRepository {
       'book': song.book,
       'tags': song.tags,
       'payload': payload,
-    });
+    }).select('status').single();
+
+    final status = row['status'];
+    // `pending` for anything unreadable, matching SubmissionStatus.fromWireName's
+    // own fallback: the song is on the server either way, and claiming it was
+    // published when that is not known would be the one lie worth avoiding here.
+    return status is String
+        ? SubmissionStatus.fromWireName(status)
+        : SubmissionStatus.pending;
   }
 
   /// Songs the signed-in user has submitted, newest first.
