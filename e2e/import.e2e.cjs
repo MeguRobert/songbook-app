@@ -233,6 +233,12 @@ async function importPhoto(browser, errors, { sheetMusic, photo, shot, exercise 
   const page = await browser.newPage({ viewport: { width: 1100, height: 2000 } });
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message));
+  // Every URL this import asked for. The HEIC case below asserts on both
+  // halves of it: that libheif was fetched for the HEIC, and that it was not
+  // fetched for the PNG. An absence is the whole claim of the gate, and only
+  // the request log can show one.
+  const requests = [];
+  page.on('request', (r) => requests.push(r.url()));
   await page.goto(`${APP}/#/import`, { waitUntil: 'networkidle' });
   await page.waitForSelector('flt-glass-pane, flutter-view', { timeout: 45000 });
   await enableSemantics(page);
@@ -274,7 +280,7 @@ async function importPhoto(browser, errors, { sheetMusic, photo, shot, exercise 
   const canSave = await saveable(page);
   const extra = exercise ? await exercise(page) : {};
   await page.close();
-  return { settled, seen, canSave, firstScreen, ...extra };
+  return { settled, seen, canSave, firstScreen, requests, ...extra };
 }
 
 (async () => {
@@ -336,6 +342,46 @@ async function importPhoto(browser, errors, { sheetMusic, photo, shot, exercise 
     check('review: a lyric row overruled to chords becomes chips, and is handed back',
       chords.overruledChips > 0 && chords.restoredChips === 0,
       `chips while overruled: ${chords.overruledChips}, after handing back: ${chords.restoredChips}`);
+
+    // ---- The same page as HEIC, which Chrome cannot decode ---------------
+    //
+    // The failure this whole path exists for, reproduced exactly: a Redmi with
+    // "high efficiency" storage on hands over `ftyp heic`, `createImageBitmap`
+    // throws `InvalidStateError: The source image could not be decoded.` in
+    // about a tenth of a second, and before libheif the app's only answer was
+    // to tell somebody to go and change a camera setting.
+    //
+    // `chord-sheet.heic` is the *same photograph* as the PNG above, re-encoded
+    // by `make_heic.py`, so the two runs are comparable line for line - which
+    // is what makes "it read the same song" a meaningful assertion rather than
+    // just "something came back".
+    const heic = await importPhoto(browser, consoleErrors, {
+      sheetMusic: false,
+      photo: path.join(HERE, 'chord-sheet.heic'),
+      shot: 'chord-sheet-heic',
+    });
+    const heicCount = count(heic.settled);
+    check('heic: the page was read at all',
+      heicCount !== null && heicCount.unit.startsWith('verse'),
+      heicCount ? `${heicCount.n} ${heicCount.unit}` : `settled on: ${heic.settled}`);
+    check('heic: it read the same song the PNG did',
+      heic.seen.some((t) => /dzsungel Kir/i.test(t)),
+      'lyrics present');
+    check('heic: nothing was said about a file that could not be opened',
+      !heic.seen.some((t) => /not an image this browser can open/i.test(t)),
+      'the decode notice is absent');
+    // The gate, from both sides. A JPEG or a PNG must not pay a byte for this:
+    // the library is fetched from inside the `catch` around `createImageBitmap`
+    // and only when the leading bytes say HEIC or HEIF.
+    const heicFetched = heic.requests.filter((u) => /libheif/.test(u));
+    const pngFetched = chords.requests.filter((u) => /libheif/.test(u));
+    check('heic: libheif was fetched to open it',
+      heicFetched.some((u) => /libheif\.wasm$/.test(u)) &&
+        heicFetched.some((u) => /libheif\.js$/.test(u)),
+      heicFetched.map((u) => u.replace(APP, '')).join(', ') || 'nothing fetched');
+    check('png: libheif was not fetched, not one byte of it',
+      pngFetched.length === 0,
+      pngFetched.length ? pngFetched.join(', ') : 'no libheif request in the PNG run');
 
     // ---- A page of sheet music, answered by the stub ---------------------
     if (!SERVICE_PATH) {
