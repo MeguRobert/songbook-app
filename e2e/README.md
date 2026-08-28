@@ -38,6 +38,7 @@ passes — that is how the `J` in the Title box was found.
 | | |
 |---|---|
 | A chord sheet | **entirely real.** The device path: canvas, page cleaning, Tesseract fetched from its CDN, the chords-over-lyrics bridge. `chord-sheet.png` is an actual photograph of song 149. |
+| The same chord sheet as HEIC | **entirely real, including the failure.** Chromium genuinely cannot decode `chord-sheet.heic` — `createImageBitmap` throws `InvalidStateError: The source image could not be decoded.`, which is the error the live app reported from a Redmi Note 15 Pro — and the run then reads it anyway, through the vendored libheif in `songbook_app/web/libheif/`. |
 | A page of sheet music | **the app is real, the reader is stubbed.** `stub_omr.py` answers with real Audiveris output. |
 
 The reader is stubbed for two reasons: the live one requires a Supabase access
@@ -51,6 +52,29 @@ made by `make_fixture.py`: the notes of its second bar are moved to a voice that
 is not the melody. The app renders the melody only, so that bar arrives with
 nothing in it — the exact shape a photographed page of song 151 produced, and
 what the renderer used to throw on.
+
+## The HEIC case, and why it needs a committed fixture
+
+`chord-sheet.heic` is `chord-sheet.png` re-encoded, so the two runs read the same
+photograph and "it read the same song" means something. It is committed rather
+than generated at run time because **nothing on an ordinary machine writes
+HEIC**: ImageMagick lists the format `r--` and cannot encode it, ffmpeg has no
+HEIF muxer, and the browser cannot write what it cannot read. `make_heic.py`
+regenerates it and needs `pip install pillow-heif`, whose wheels bundle libheif
+with the x265 encoder; the e2e run itself needs neither.
+
+That script ends by checking `ftyp` at offset 4 and `heic` at offset 8 — the same
+twelve bytes `sniffImageFormat` reads. A missing encoder does not always fail
+loudly, and a fixture that was quietly a JPEG would make this case pass while
+proving nothing.
+
+The pair of assertions worth keeping is about what was *not* fetched. The HEIC
+run must request `libheif/libheif.js` and `libheif/libheif.wasm`; the PNG run
+must request neither. The gate is the whole design — libheif is reached only from
+inside the `catch` around `createImageBitmap`, and only for `heic`/`heif` bytes —
+and an absence is the only evidence that it holds. AVIF is deliberately not
+covered by the fallback and needs no case here: Chromium decodes it natively,
+measured at 2048x1532 from a `magick`-written `.avif` on the same photograph.
 
 ## Two assertions that were wrong before they were right
 

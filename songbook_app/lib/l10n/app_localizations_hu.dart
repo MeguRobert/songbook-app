@@ -1323,7 +1323,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get importNoticePhotoCouldNotDecode =>
-      'Ezt a fájlt a böngésző nem tudja képként megnyitni. Egyes telefonok HEIC formátumban mentik a fényképeket, és egy nagyon hosszú képernyőkép is túl nagy lehet a megnyitáshoz. Mentsd el újra JPEG vagy PNG formátumban, vagy készítsd el rövidebb részletekben.';
+      'Ezt a fájlt a böngésző nem tudja képként megnyitni. Egy nagyon hosszú képernyőkép túl nagy lehet a megnyitáshoz, egy videó vagy egy sérült fájl pedig egyáltalán nem nyílik meg. Mentsd el újra JPEG vagy PNG formátumban, vagy készítsd el a képernyőképet rövidebb részletekben.';
 
   @override
   String importNoticePhotoGermanNoteNames(String text) {

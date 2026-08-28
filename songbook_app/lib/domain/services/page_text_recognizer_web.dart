@@ -6,6 +6,8 @@ import 'dart:typed_data';
 
 import 'package:web/web.dart' as web;
 
+import 'heif_decoder_web.dart';
+import 'image_format.dart';
 import 'import_notice.dart';
 import 'page_preprocessor.dart';
 import 'page_text_recognizer.dart';
@@ -27,9 +29,18 @@ PageTextRecognizer createPageTextRecognizer() =>
 /// **On demand, not from `index.html`.** The engine and its Hungarian model are
 /// several megabytes; almost every visit to Songbook opens a song rather than
 /// photographs one, so paying for this at startup would slow the app for
-/// everybody to speed it up for nobody. Bundling the files into `web/` would be
-/// worse: Flutter's service worker pre-caches what it finds there, which would
-/// put those megabytes into the install of a user who never takes a photo.
+/// everybody to speed it up for nobody.
+///
+/// **This once said that bundling into `web/` would be worse, because the
+/// service worker pre-caches what it finds there. That is not true and the
+/// claim is withdrawn.** Flutter's generated worker downloads only its `CORE`
+/// list eagerly — `main.dart.js`, `index.html`, `flutter_bootstrap.js` and the
+/// two manifests; everything else is in `RESOURCES`, which its `fetch` handler
+/// caches lazily on first request. `web/libheif/` is a megabyte sitting there
+/// on exactly that basis and costs a user who never photographs a page nothing.
+/// What remains true for Tesseract specifically is that self-hosting would move
+/// only part of it: the Hungarian model is fetched by the engine itself, from
+/// `tessdata.projectnaptha.com`, and no amount of bundling reaches that.
 ///
 /// The cost is that the *first* photo on a device needs a network, and that
 /// "offline afterwards" is a likelihood rather than a promise: the script, the
@@ -306,6 +317,95 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
     return band;
   }
 
+  /// [imageBytes] as pixels, by whatever route will open them.
+  ///
+  /// **The browser goes first, always.** This is the call that has always been
+  /// here and it is unchanged: for a JPEG, a PNG, a WebP, an AVIF — anything the
+  /// browser decodes — nothing below the `try` is reached, no bytes are sniffed
+  /// and no library is fetched. The measurement corpus is entirely JPEG and
+  /// scores the same to the digit as it did before this method existed, which is
+  /// the point of gating it this way round rather than on the format alone.
+  ///
+  /// It also means a browser that *does* decode HEIC — Safari, on the phones
+  /// that invented the format — keeps using its own decoder and never pays for
+  /// the library.
+  Future<web.ImageBitmap> _open(
+      Uint8List imageBytes, List<Map<String, Object?>>? trace) async {
+    try {
+      return await web.window
+          .createImageBitmap(web.Blob([imageBytes.toJS].toJS))
+          .toDart;
+    } catch (error) {
+      final rescued = await _openHighEfficiency(imageBytes, trace);
+      if (rescued != null) return rescued;
+      // The one failure in this file that happens before anything is measured,
+      // and the one the user was told the least about. It is not "the photo
+      // could not be read" - the photo was never opened, so taking it again
+      // produces the same bytes and the same refusal. A screenshot too tall for
+      // a phone's decoder does this, and so does a video picked by mistake.
+      //
+      // The message is the browser's own description rather than a sentence,
+      // and that is deliberate: [PhotoImportException.notice] is set, so the
+      // screen renders the translated sentence and never this - while the
+      // diagnostic row records `message` as its `reason`, which is how
+      // "InvalidStateError: The source image could not be decoded." survives to
+      // be read a week later. Losing that string is what left the first report
+      // of this unanswerable.
+      throw PhotoImportException(
+        '$error',
+        stage: 'decode',
+        notice: const ImportNotice(ImportNoticeCode.photoCouldNotDecode),
+      );
+    }
+  }
+
+  /// A second attempt with libheif, for the two containers that earn one.
+  ///
+  /// Null for every other format, and null again when the rescue itself fails —
+  /// both of which put the caller back on the path it was already on, with the
+  /// browser's own description of the original refusal intact. A rescue that
+  /// does not work has to leave the user exactly where no rescue would have.
+  ///
+  /// The trace entry is written on both outcomes and is the only record that
+  /// this was tried at all. `decoded` false with a `heif:` stage says the
+  /// library was reached and could not do it; no entry at all says the bytes
+  /// were something else entirely.
+  Future<web.ImageBitmap?> _openHighEfficiency(
+      Uint8List imageBytes, List<Map<String, Object?>>? trace) async {
+    // Read from the leading bytes, never from the file name. `.jpg` on a HEIC
+    // is exactly the case this has to catch - see [sniffImageFormat].
+    final format = sniffImageFormat(imageBytes);
+    if (format != ImageFormat.heic && format != ImageFormat.heif) return null;
+
+    // AVIF is deliberately not in that pair. It is the same container and this
+    // build of libheif does not carry an AV1 decoder, while every Chrome since
+    // 85 and every Safari since 16 decodes AVIF natively - so an AVIF that
+    // reaches here failed for a reason libheif cannot mend either.
+    final clock = Stopwatch()..start();
+    try {
+      final bitmap = await decodeHeif(imageBytes);
+      trace?.add({
+        'stage': 'heif',
+        'decoded': true,
+        'ms': clock.elapsedMilliseconds,
+      });
+      return bitmap;
+    } catch (error) {
+      trace?.add({
+        'stage': 'heif',
+        'decoded': false,
+        'ms': clock.elapsedMilliseconds,
+        // Our own stage token and nothing else. The library's own words would
+        // be prose in a table whose rule is measurements only, and the tokens
+        // already separate every failure worth separating: `heif:error` and
+        // `heif:timeout` are the load, `heif:empty` and `heif:pixels` are the
+        // file, `heif:missing` and `heif:start` are the library itself.
+        'why': error is PhotoImportException ? error.stage ?? 'heif' : 'heif',
+      });
+      return null;
+    }
+  }
+
   /// The photograph as greyscale on a canvas, with the reverse page erased —
   /// and what the pixels themselves are worth telling the user.
   ///
@@ -322,31 +422,7 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
   /// word even though suppression costs stroke sharpness.
   Future<_Prepared> _prepare(
       Uint8List imageBytes, List<Map<String, Object?>>? trace) async {
-    final web.ImageBitmap bitmap;
-    try {
-      bitmap = await web.window
-          .createImageBitmap(web.Blob([imageBytes.toJS].toJS))
-          .toDart;
-    } catch (error) {
-      // The one failure in this file that happens before anything is measured,
-      // and the one the user was told the least about. It is not "the photo
-      // could not be read" - the photo was never opened, so taking it again
-      // produces the same bytes and the same refusal. A HEIC does this, and so
-      // does a screenshot too tall for a phone's decoder.
-      //
-      // The message is the browser's own description rather than a sentence,
-      // and that is deliberate: [PhotoImportException.notice] is set, so the
-      // screen renders the translated sentence and never this - while the
-      // diagnostic row records `message` as its `reason`, which is how
-      // "InvalidStateError: The source image could not be decoded." survives to
-      // be read a week later. Losing that string is what left the first report
-      // of this unanswerable.
-      throw PhotoImportException(
-        '$error',
-        stage: 'decode',
-        notice: const ImportNotice(ImportNoticeCode.photoCouldNotDecode),
-      );
-    }
+    final bitmap = await _open(imageBytes, trace);
 
     final pixels = math.max(1, bitmap.width * bitmap.height);
     // Two ceilings, and the looser one wins: the longest edge, which is right

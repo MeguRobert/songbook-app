@@ -99,17 +99,25 @@ enum ImportNoticeCode {
   /// threw, before a single pixel was read, and taking the same photograph
   /// again produces the same file and the same refusal.
   ///
-  /// Two causes fit, and the sentence names both because the app cannot tell
-  /// them apart and the user can. Some phones store photographs as HEIC —
-  /// Xiaomi's "high efficiency" setting, on by default — which no Chrome
-  /// decodes. And a scrolled screenshot tens of thousands of pixels tall can
-  /// simply be beyond what a phone's decoder will allocate. Re-saving as JPEG
-  /// or PNG answers the first; capturing in shorter pieces answers the second.
+  /// **The sentence no longer names HEIC, because the app now reads it.** It
+  /// used to lead with it: Xiaomi's "high efficiency" camera setting is on by
+  /// default, no Chrome on Android decodes the result, and the only advice
+  /// available was to go and change a setting on the phone. `heif_decoder_web`
+  /// decodes those bytes with libheif before this notice is ever raised, so
+  /// naming HEIC here now sends people to fix the one cause that is fixed.
   ///
-  /// [ImageFormat] in the diagnostic row is what tells the two apart
-  /// afterwards — see `sniffImageFormat`. It is deliberately not in the
-  /// sentence: naming a container to somebody holding a phone explains nothing,
-  /// and the advice is the same either way.
+  /// What is left is genuinely a mixture and the sentence says so: a scrolled
+  /// screenshot tens of thousands of pixels tall, beyond what a phone's decoder
+  /// will allocate; a video or a motion photo picked instead of a still; a file
+  /// that arrived damaged; and the residue of HEICs that libheif could not open
+  /// either. Capturing in shorter pieces answers the first, re-saving as JPEG
+  /// or PNG answers most of the rest.
+  ///
+  /// [ImageFormat] in the diagnostic row, plus `heifDecoded` and `heifStage`
+  /// beside it, are what tell those apart afterwards — see `sniffImageFormat`
+  /// and `PhotoImportRecord.toDetails`. None of them belongs in the sentence:
+  /// naming a container to somebody holding a phone explains nothing, and the
+  /// advice is the same either way.
   photoCouldNotDecode,
 
   /// German note names were read and will be stored under their English

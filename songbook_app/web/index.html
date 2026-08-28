@@ -45,6 +45,15 @@
       songbook-omr…      the sheet-music reader on Cloud Run
       fonts.gstatic.com  Roboto, which CanvasKit fetches as its fallback face
 
+    Nothing was added here for the HEIC decoder, and that was the point of
+    vendoring it. `web/libheif/` is served by this origin, so 'self' in
+    script-src covers the glue, 'self' in connect-src covers the fetch this app
+    makes for the .wasm beside it, and 'wasm-unsafe-eval' — already required by
+    CanvasKit — covers instantiating it. Putting it on cdn.jsdelivr.net would
+    have needed no new host either, since that origin is already allowed for
+    Tesseract's worker; it would have added a third party to a feature that
+    otherwise touches no network at all. See web/libheif/README.md.
+
     CanvasKit itself is deliberately NOT on that list. Flutter fetches it from
     www.gstatic.com by default, which would mean a Google CDN executing script
     in this origin for every visit — so the build passes

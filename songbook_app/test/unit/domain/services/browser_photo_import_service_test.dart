@@ -455,6 +455,70 @@ void main() {
       expect(details.containsKey('width'), isFalse);
     });
 
+    test('a HEIC that libheif opened reads like any other photograph',
+        () async {
+      // The point of the whole change, asserted at the layer that files the
+      // row: a phone with "high efficiency" storage on now produces an `ok`
+      // import, and the record still says the file was a HEIC and that the
+      // second decoder is what opened it.
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(page, measurements: [
+          {'stage': 'heif', 'decoded': true, 'ms': 412},
+          ...measured,
+        ]),
+        recorder: recorder,
+      );
+
+      final payload = await service.extract(heic);
+
+      expect(payload, isA<ChordProPayload>());
+      final record = recorder.records.single;
+      expect(record.outcome, PhotoImportOutcome.ok);
+      expect(record.format, ImageFormat.heic);
+      final details = record.toDetails();
+      expect(details['heifDecoded'], true);
+      expect(details['heifMs'], 412);
+    });
+
+    test('a HEIC libheif could not open ends where it ended before', () async {
+      // Degrade, never regress. A rescue that fails has to leave the user on
+      // the path they were already on - the same notice, the same sentence -
+      // and leave behind the one fact that says a rescue was tried at all.
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(
+          const [],
+          measurements: const [
+            {
+              'stage': 'heif',
+              'decoded': false,
+              'ms': 88,
+              'why': 'heif:pixels',
+            },
+          ],
+          error: const PhotoImportException(
+            'InvalidStateError: The source image could not be decoded.',
+            stage: 'decode',
+            notice: ImportNotice(ImportNoticeCode.photoCouldNotDecode),
+          ),
+        ),
+        recorder: recorder,
+      );
+
+      await expectLater(
+        () => service.extract(heic),
+        throwsA(isA<PhotoImportException>().having((e) => e.notice?.code,
+            'notice', ImportNoticeCode.photoCouldNotDecode)),
+      );
+
+      final details = recorder.records.single.toDetails();
+      expect(details['outcome'], 'failed');
+      expect(details['format'], 'heic');
+      expect(details['heifDecoded'], false);
+      expect(details['heifStage'], 'heif:pixels');
+    });
+
     test('a decode failure is a different sentence from an unreadable page',
         () async {
       // "Try again" is the advice for a page nothing could be read from, and it
