@@ -36,6 +36,7 @@ WARNING_CODES = {
     "photoLowResolution": "low-resolution",
     "photoShowThroughRemoved": "show-through-removed",
     "photoNothingLegible": "nothing-legible",
+    "photoCouldNotDecode": "could-not-decode",
     "photoTwoSongs": "two-songs",
     "photoNoChords": "no-chords",
     "photoGermanNoteNames": "german-chords",

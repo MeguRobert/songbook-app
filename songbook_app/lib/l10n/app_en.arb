@@ -1720,6 +1720,10 @@
   "@importNoticePhotoNothingLegible": {
     "description": "Photo reader: the page could not be read at all."
   },
+  "importNoticePhotoCouldNotDecode": "That file is not an image this browser can open. Some phones save photos as HEIC, and a very long screenshot can be too big to open. Save it again as JPEG or PNG, or take it in shorter pieces.",
+  "@importNoticePhotoCouldNotDecode": {
+    "description": "Photo reader: the browser refused to decode the file, so nothing was ever read. Different from importNoticePhotoNothingLegible, which means the page WAS read and held no words - retaking the photo helps there and cannot help here. The two causes are HEIC (Xiaomi and Samsung 'high efficiency' storage, which no Chrome decodes) and a scrolled screenshot too tall for a phone's decoder."
+  },
   "importNoticePhotoGermanNoteNames": "{text} will be stored under the English name (H is B natural). The app keeps one spelling per pitch so transposing stays exact.",
   "importNoticePhotoLowercaseCRaised": "{count, plural, other{{count} chords were read as a lowercase c and stored as C major. In print C and c are the same shape at two sizes, so a small one is almost always a capital the reader mis-sized — if your page really means the minor, write Cm.}}",
   "@importNoticePhotoLowercaseCRaised": {

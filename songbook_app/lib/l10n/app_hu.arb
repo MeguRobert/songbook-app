@@ -347,6 +347,7 @@
   "importNoticePhotoTwoSongs": "{count, plural, other{Ezen a lapon {count} ének van egymás mellett. Mindet beolvastam, olvasási sorrendben — töröld azt, amelyikre nem volt szükséged.}}",
   "importNoticePhotoNoChords": "Egyetlen akkordot sem ismertem fel — csak a szöveg került be.",
   "importNoticePhotoNothingLegible": "Ezen a fényképen nem találtam olvasható szöveget.",
+  "importNoticePhotoCouldNotDecode": "Ezt a fájlt a böngésző nem tudja képként megnyitni. Egyes telefonok HEIC formátumban mentik a fényképeket, és egy nagyon hosszú képernyőkép is túl nagy lehet a megnyitáshoz. Mentsd el újra JPEG vagy PNG formátumban, vagy készítsd el rövidebb részletekben.",
   "importNoticePhotoGermanNoteNames": "A(z) {text} az angol néven lesz eltárolva (a H a B alaphangot jelenti). Az alkalmazás hangonként egyetlen írásmódot tart, hogy a transzponálás pontos maradjon.",
   "importNoticePhotoLowercaseCRaised": "{count, plural, other{{count} akkordot kisbetűs c-ként olvastam be, és C-ként (C-dúr) tároltam el. Nyomtatásban a C és a c ugyanaz az alak két méretben, ezért a kicsi majdnem mindig nagybetű, amit a felismerő félreméretezett — ha a lapon valóban a moll szerepel, írd át Cm-re.}}",
   "roleMember": "Tag",

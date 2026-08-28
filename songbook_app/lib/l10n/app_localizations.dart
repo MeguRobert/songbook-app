@@ -2182,6 +2182,12 @@ abstract class AppLocalizations {
   /// **'Nothing legible was found in that photo.'**
   String get importNoticePhotoNothingLegible;
 
+  /// Photo reader: the browser refused to decode the file, so nothing was ever read. Different from importNoticePhotoNothingLegible, which means the page WAS read and held no words - retaking the photo helps there and cannot help here. The two causes are HEIC (Xiaomi and Samsung 'high efficiency' storage, which no Chrome decodes) and a scrolled screenshot too tall for a phone's decoder.
+  ///
+  /// In en, this message translates to:
+  /// **'That file is not an image this browser can open. Some phones save photos as HEIC, and a very long screenshot can be too big to open. Save it again as JPEG or PNG, or take it in shorter pieces.'**
+  String get importNoticePhotoCouldNotDecode;
+
   /// Photo reader: German/Hungarian note names were read and are renamed on the way into storage. `text` is the names, sorted and joined.
   ///
   /// In en, this message translates to:

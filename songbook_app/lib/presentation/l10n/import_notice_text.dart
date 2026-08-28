@@ -42,6 +42,8 @@ extension ImportNoticeText on AppLocalizations {
         ImportNoticeCode.photoNoChords => importNoticePhotoNoChords,
         ImportNoticeCode.photoNothingLegible =>
           importNoticePhotoNothingLegible,
+        ImportNoticeCode.photoCouldNotDecode =>
+          importNoticePhotoCouldNotDecode,
         ImportNoticeCode.photoGermanNoteNames =>
           importNoticePhotoGermanNoteNames(notice.text ?? ''),
         ImportNoticeCode.photoLowercaseCRaised =>

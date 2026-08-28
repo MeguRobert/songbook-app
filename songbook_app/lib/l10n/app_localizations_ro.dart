@@ -1327,6 +1327,10 @@ class AppLocalizationsRo extends AppLocalizations {
       'Nu am găsit nimic lizibil în fotografia aceasta.';
 
   @override
+  String get importNoticePhotoCouldNotDecode =>
+      'Acest fișier nu este o imagine pe care browserul o poate deschide. Unele telefoane salvează fotografiile în format HEIC, iar o captură de ecran foarte lungă poate fi prea mare ca să fie deschisă. Salvează-l din nou ca JPEG sau PNG, ori fă-l în bucăți mai scurte.';
+
+  @override
   String importNoticePhotoGermanNoteNames(String text) {
     return '$text va fi stocat sub denumirea engleză (H este si natural). Aplicația păstrează o singură scriere pentru fiecare notă, ca transpunerea să rămână exactă.';
   }

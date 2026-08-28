@@ -90,6 +90,28 @@ enum ImportNoticeCode {
   /// Nothing on the page could be read at all.
   photoNothingLegible,
 
+  /// The browser refused to decode the file, so no pixels were ever read.
+  ///
+  /// A different failure from [photoNothingLegible] and it needs different
+  /// advice, which is the whole reason it exists. "Nothing legible" means the
+  /// engine looked at the page and found no words — taking the photograph again
+  /// is the answer. This means the image never opened: `createImageBitmap`
+  /// threw, before a single pixel was read, and taking the same photograph
+  /// again produces the same file and the same refusal.
+  ///
+  /// Two causes fit, and the sentence names both because the app cannot tell
+  /// them apart and the user can. Some phones store photographs as HEIC —
+  /// Xiaomi's "high efficiency" setting, on by default — which no Chrome
+  /// decodes. And a scrolled screenshot tens of thousands of pixels tall can
+  /// simply be beyond what a phone's decoder will allocate. Re-saving as JPEG
+  /// or PNG answers the first; capturing in shorter pieces answers the second.
+  ///
+  /// [ImageFormat] in the diagnostic row is what tells the two apart
+  /// afterwards — see `sniffImageFormat`. It is deliberately not in the
+  /// sentence: naming a container to somebody holding a phone explains nothing,
+  /// and the advice is the same either way.
+  photoCouldNotDecode,
+
   /// German note names were read and will be stored under their English
   /// spelling. Carries [ImportNotice.text] — the names, sorted and joined.
   photoGermanNoteNames,

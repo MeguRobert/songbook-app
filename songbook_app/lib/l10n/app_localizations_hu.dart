@@ -1322,6 +1322,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'Ezen a fényképen nem találtam olvasható szöveget.';
 
   @override
+  String get importNoticePhotoCouldNotDecode =>
+      'Ezt a fájlt a böngésző nem tudja képként megnyitni. Egyes telefonok HEIC formátumban mentik a fényképeket, és egy nagyon hosszú képernyőkép is túl nagy lehet a megnyitáshoz. Mentsd el újra JPEG vagy PNG formátumban, vagy készítsd el rövidebb részletekben.';
+
+  @override
   String importNoticePhotoGermanNoteNames(String text) {
     return 'A(z) $text az angol néven lesz eltárolva (a H a B alaphangot jelenti). Az alkalmazás hangonként egyetlen írásmódot tart, hogy a transzponálás pontos maradjon.';
   }

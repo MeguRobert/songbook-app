@@ -322,9 +322,31 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
   /// word even though suppression costs stroke sharpness.
   Future<_Prepared> _prepare(
       Uint8List imageBytes, List<Map<String, Object?>>? trace) async {
-    final bitmap = await web.window
-        .createImageBitmap(web.Blob([imageBytes.toJS].toJS))
-        .toDart;
+    final web.ImageBitmap bitmap;
+    try {
+      bitmap = await web.window
+          .createImageBitmap(web.Blob([imageBytes.toJS].toJS))
+          .toDart;
+    } catch (error) {
+      // The one failure in this file that happens before anything is measured,
+      // and the one the user was told the least about. It is not "the photo
+      // could not be read" - the photo was never opened, so taking it again
+      // produces the same bytes and the same refusal. A HEIC does this, and so
+      // does a screenshot too tall for a phone's decoder.
+      //
+      // The message is the browser's own description rather than a sentence,
+      // and that is deliberate: [PhotoImportException.notice] is set, so the
+      // screen renders the translated sentence and never this - while the
+      // diagnostic row records `message` as its `reason`, which is how
+      // "InvalidStateError: The source image could not be decoded." survives to
+      // be read a week later. Losing that string is what left the first report
+      // of this unanswerable.
+      throw PhotoImportException(
+        '$error',
+        stage: 'decode',
+        notice: const ImportNotice(ImportNoticeCode.photoCouldNotDecode),
+      );
+    }
 
     final pixels = math.max(1, bitmap.width * bitmap.height);
     // Two ceilings, and the looser one wins: the longest edge, which is right

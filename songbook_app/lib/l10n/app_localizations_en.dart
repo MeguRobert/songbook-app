@@ -1318,6 +1318,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Nothing legible was found in that photo.';
 
   @override
+  String get importNoticePhotoCouldNotDecode =>
+      'That file is not an image this browser can open. Some phones save photos as HEIC, and a very long screenshot can be too big to open. Save it again as JPEG or PNG, or take it in shorter pieces.';
+
+  @override
   String importNoticePhotoGermanNoteNames(String text) {
     return '$text will be stored under the English name (H is B natural). The app keeps one spelling per pitch so transposing stays exact.';
   }

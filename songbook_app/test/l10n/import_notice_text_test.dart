@@ -38,6 +38,8 @@ const _samples = <ImportNoticeCode, ImportNotice>{
   ImportNoticeCode.photoNoChords: ImportNotice(ImportNoticeCode.photoNoChords),
   ImportNoticeCode.photoNothingLegible:
       ImportNotice(ImportNoticeCode.photoNothingLegible),
+  ImportNoticeCode.photoCouldNotDecode:
+      ImportNotice(ImportNoticeCode.photoCouldNotDecode),
   ImportNoticeCode.photoGermanNoteNames: ImportNotice(
       ImportNoticeCode.photoGermanNoteNames, text: 'H7, hm'),
   ImportNoticeCode.photoLowercaseCRaised:

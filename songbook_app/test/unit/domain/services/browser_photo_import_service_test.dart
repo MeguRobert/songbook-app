@@ -422,6 +422,61 @@ void main() {
       ...List.filled(32, 0),
     ]);
 
+    test('the format is on the record even when the decode never ran',
+        () async {
+      // The whole reason it is sniffed in the service and not in the
+      // recogniser. A container the browser will not open throws inside
+      // `createImageBitmap`, so the recogniser appends nothing at all - and the
+      // one measurement that says which of two very different faults this was
+      // would go missing on exactly the failure it exists to explain.
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(const [],
+            error: const PhotoImportException(
+              'InvalidStateError: The source image could not be decoded.',
+              stage: 'decode',
+              notice: ImportNotice(ImportNoticeCode.photoCouldNotDecode),
+            )),
+        recorder: recorder,
+      );
+
+      await expectLater(
+          () => service.extract(heic), throwsA(isA<PhotoImportException>()));
+
+      final record = recorder.records.single;
+      expect(record.format, ImageFormat.heic);
+      expect(record.stage, 'decode');
+      expect(record.bytes, heic.length);
+      final details = record.toDetails();
+      expect(details['format'], 'heic');
+      expect(details['bytes'], heic.length);
+      // No width, no height, no bytesPerPixel: nothing measured them, and an
+      // invented zero would read as a decoded image of no size.
+      expect(details.containsKey('width'), isFalse);
+    });
+
+    test('a decode failure is a different sentence from an unreadable page',
+        () async {
+      // "Try again" is the advice for a page nothing could be read from, and it
+      // is the one thing that cannot work here: the file never opened, so the
+      // same photograph produces the same refusal for ever. The screen renders
+      // the notice in place of the message - see ImportNoticeText.
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(const [],
+            error: const PhotoImportException(
+              'InvalidStateError: The source image could not be decoded.',
+              stage: 'decode',
+              notice: ImportNotice(ImportNoticeCode.photoCouldNotDecode),
+            )),
+      );
+
+      await expectLater(
+        () => service.extract(heic),
+        throwsA(isA<PhotoImportException>().having(
+            (e) => e.notice?.code, 'notice', ImportNoticeCode.photoCouldNotDecode)),
+      );
+    });
+
     test('every outcome carries it, not only the failures', () async {
       // A row that only says `jpeg` when something went wrong cannot answer
       // "does this ever work on that phone?" - which is the question a format

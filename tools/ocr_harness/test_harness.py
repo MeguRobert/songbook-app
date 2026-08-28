@@ -140,12 +140,15 @@ class Warnings(unittest.TestCase):
 
     def test_every_slug_either_arm_can_emit_is_mapped(self):
         # The reminder to add the slug rather than to rewrite the match. Six
-        # sentences the remote worker can emit, and seven ImportNoticeCodes the
-        # app's own reader raises - the extra one is `photoLowercaseCRaised`,
-        # which answers a Tesseract confusion EasyOCR does not have. See
+        # sentences the remote worker can emit, and eight ImportNoticeCodes the
+        # app's own reader raises. The two extras are both about the reader
+        # rather than about the page: `photoLowercaseCRaised` answers a
+        # Tesseract confusion EasyOCR does not have, and `photoCouldNotDecode`
+        # answers a browser refusing to open the file at all - which cannot
+        # happen to a worker that decodes with Pillow. See
         # test_every_sentence_the_worker_emits_has_a_code_too.
         self.assertEqual(6, len(reading.WARNING_SLUGS))
-        self.assertEqual(7, len(reading.WARNING_CODES))
+        self.assertEqual(8, len(reading.WARNING_CODES))
 
 
 class RepairNotices(unittest.TestCase):
