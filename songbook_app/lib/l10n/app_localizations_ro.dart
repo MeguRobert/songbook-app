@@ -1075,6 +1075,14 @@ class AppLocalizationsRo extends AppLocalizations {
   String get shareSongConfirm => 'Trimite';
 
   @override
+  String shareSongPublishBody(String title) {
+    return '„$title” intră direct în cartea de cântări comună. Tu ești moderator, așa că nu mai e nimeni de așteptat — iar copia ta rămâne pe acest dispozitiv oricum.';
+  }
+
+  @override
+  String get shareSongPublish => 'Publică';
+
+  @override
   String get shareSongSignInTitle => 'Autentifică-te pentru a trimite';
 
   @override
@@ -1085,8 +1093,19 @@ class AppLocalizationsRo extends AppLocalizations {
   String get shareSongSent => 'Trimis spre aprobare.';
 
   @override
+  String get shareSongPublished => 'Publicat în cartea de cântări.';
+
+  @override
   String get shareSongAlreadySent =>
       'Ai trimis deja acest cântec. Așteaptă aprobarea.';
+
+  @override
+  String get shareSongAlreadyPublished =>
+      'Acest cântec este deja în cartea de cântări comună.';
+
+  @override
+  String get shareSongNumberTaken =>
+      'Există deja un cântec cu acest număr în această carte. Dă-i alt număr și încearcă din nou.';
 
   @override
   String get shareSongFailed =>

@@ -1069,6 +1069,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareSongConfirm => 'Send';
 
   @override
+  String shareSongPublishBody(String title) {
+    return '“$title” goes straight into the shared songbook. You moderate it, so there is nobody else to wait for — and your copy stays on this device either way.';
+  }
+
+  @override
+  String get shareSongPublish => 'Publish';
+
+  @override
   String get shareSongSignInTitle => 'Sign in to share';
 
   @override
@@ -1079,8 +1087,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareSongSent => 'Sent for review.';
 
   @override
+  String get shareSongPublished => 'Published to the songbook.';
+
+  @override
   String get shareSongAlreadySent =>
       'You have already sent this song in. It is waiting for review.';
+
+  @override
+  String get shareSongAlreadyPublished =>
+      'This song is already in the shared songbook.';
+
+  @override
+  String get shareSongNumberTaken =>
+      'Another song in this book already has this number. Give it a different number and try again.';
 
   @override
   String get shareSongFailed =>

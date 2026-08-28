@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/models/app_role.dart';
 import '../../../data/models/app_settings.dart';
 import '../../../data/models/song.dart';
 import '../../../data/models/submission.dart';
@@ -59,6 +60,22 @@ class PublishFlow {
       if (!cleared) return false;
     }
     return false;
+  }
+
+  /// What the caller may do, for wording only.
+  ///
+  /// [AppRole.member] on any failure, the same safe direction
+  /// `AppRole.fromWireName` takes: a role guessed too low costs a moderator one
+  /// inaccurate sentence in a dialog, and a role guessed too high would promise
+  /// a publication the server is about to refuse. Nothing here is a permission
+  /// check — the database re-decides on the write, and this file cannot reach
+  /// `approved` whatever it believes.
+  Future<AppRole> _role() async {
+    try {
+      return await ref.read(currentRoleProvider.future);
+    } catch (_) {
+      return AppRole.member;
+    }
   }
 
   Future<AppSettings> _settings() async {
@@ -268,16 +285,29 @@ class PublishFlow {
   }
 
   /// Asks once more, then sends.
+  ///
+  /// **Two different sources of truth, on purpose.** What the confirmation
+  /// PROMISES has to be decided before the write, so it is a prediction from the
+  /// caller's role. What the snackbar REPORTS is decided by the server, and
+  /// comes back on the row `submit` inserted. A moderator whose role could not
+  /// be read is therefore told the conservative thing and then given the better
+  /// news — never the reverse, and never a promise the database went on to
+  /// contradict.
   Future<bool> _confirmAndSubmit(Song song) async {
     final l10n = _l10n;
     final repository = ref.read(submissionRepositoryProvider);
     if (repository == null) return false;
 
+    final publishesImmediately = (await _role()).canModerate;
+    if (!context.mounted) return false;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.shareSongTitle),
-        content: Text(l10n.shareSongBody(song.title)),
+        content: Text(publishesImmediately
+            ? l10n.shareSongPublishBody(song.title)
+            : l10n.shareSongBody(song.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -285,7 +315,9 @@ class PublishFlow {
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.shareSongConfirm),
+            child: Text(publishesImmediately
+                ? l10n.shareSongPublish
+                : l10n.shareSongConfirm),
           ),
         ],
       ),
@@ -298,20 +330,33 @@ class PublishFlow {
       // anything this screen holds, and a second pending row for one hymn is a
       // moderator's problem rather than this user's.
       final sent = await repository.mySubmissions();
-      final already = sent.any((submission) =>
-          submission.status != SubmissionStatus.rejected &&
-          submission.song.number == song.number &&
-          submission.song.title == song.title);
+      // The twin itself, not merely whether there is one: an approved twin and a
+      // queued twin are different news, and saying "waiting for review" about a
+      // song that is already in the songbook was wrong before moderators could
+      // publish and is simply wrong more often now.
+      Submission? twin;
+      for (final submission in sent) {
+        if (submission.status != SubmissionStatus.rejected &&
+            submission.song.number == song.number &&
+            submission.song.title == song.title) {
+          twin = submission;
+          break;
+        }
+      }
       if (!context.mounted) return false;
-      if (already) {
-        _say(l10n.shareSongAlreadySent);
+      if (twin != null) {
+        _say(twin.status == SubmissionStatus.approved
+            ? l10n.shareSongAlreadyPublished
+            : l10n.shareSongAlreadySent);
         return false;
       }
 
-      await repository.submit(song);
+      final landed = await repository.submit(song);
       // So "Songs I sent in" shows it without a manual refresh.
       ref.invalidate(mySubmissionsProvider);
-      _say(l10n.shareSongSent);
+      _say(landed == SubmissionStatus.approved
+          ? l10n.shareSongPublished
+          : l10n.shareSongSent);
       return true;
     } catch (error) {
       // Each refusal gets its own message where there is one to give. The
@@ -333,6 +378,10 @@ class PublishFlow {
         // The one stop the client deliberately does not pre-check, so a refusal
         // is the only place it can ever be reported.
         SubmissionRefusal.dailyLimitReached => _l10n.publishDailyLimitBody,
+        // Reachable only since a moderator's submission is published as it is
+        // sent: until then the hymn-number collision happened in the queue, in
+        // front of the moderator pressing Approve.
+        SubmissionRefusal.numberTaken => _l10n.shareSongNumberTaken,
         SubmissionRefusal.unknown => _l10n.shareSongFailed,
       };
 }

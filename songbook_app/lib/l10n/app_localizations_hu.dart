@@ -1073,6 +1073,14 @@ class AppLocalizationsHu extends AppLocalizations {
   String get shareSongConfirm => 'Küldés';
 
   @override
+  String shareSongPublishBody(String title) {
+    return 'A(z) „$title” egyenesen a közös énekeskönyvbe kerül. Te moderálod, így nincs kire várni — a saját példányod pedig így is, úgy is ezen az eszközön marad.';
+  }
+
+  @override
+  String get shareSongPublish => 'Közzététel';
+
+  @override
   String get shareSongSignInTitle => 'Jelentkezz be a megosztáshoz';
 
   @override
@@ -1083,8 +1091,19 @@ class AppLocalizationsHu extends AppLocalizations {
   String get shareSongSent => 'Elküldve jóváhagyásra.';
 
   @override
+  String get shareSongPublished => 'Közzétéve az énekeskönyvben.';
+
+  @override
   String get shareSongAlreadySent =>
       'Ezt az éneket már beküldted. Jóváhagyásra vár.';
+
+  @override
+  String get shareSongAlreadyPublished =>
+      'Ez az ének már benne van a közös énekeskönyvben.';
+
+  @override
+  String get shareSongNumberTaken =>
+      'Ebben a könyvben már van ének ezzel a számmal. Adj neki másik számot, és próbáld újra.';
 
   @override
   String get shareSongFailed =>

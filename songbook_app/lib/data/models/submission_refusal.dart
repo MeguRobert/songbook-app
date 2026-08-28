@@ -27,6 +27,17 @@ enum SubmissionRefusal {
   /// This account has already submitted as many songs today as the cap allows.
   dailyLimitReached,
 
+  /// Another approved song in the same book already carries this hymn number.
+  ///
+  /// Not one of the gate's tokens — this one is a unique-index name, and it is
+  /// here because auto-publication moved the collision forward in time. Before
+  /// `20260829120000_moderators_publish_their_own_songs.sql` a moderator's
+  /// submission waited in the queue and the clash surfaced when they pressed
+  /// Approve; now it surfaces as they share, where the only message available
+  /// was "check your connection and try again". The failure is not new, the
+  /// place it lands is.
+  numberTaken,
+
   /// Reached the server and was refused for a reason not worth its own message.
   unknown,
 }
@@ -40,6 +51,11 @@ const _tokens = <String, SubmissionRefusal>{
   'guidelines_not_accepted': SubmissionRefusal.guidelinesNotAccepted,
   'display_name_required': SubmissionRefusal.displayNameRequired,
   'daily_limit_reached': SubmissionRefusal.dailyLimitReached,
+  // The constraint's own name, from
+  // `20260728120000_songs_and_roles.sql`. Postgres puts it in the message of
+  // every 23505 it raises for that index, and it is ours rather than GoTrue's,
+  // so it is as stable as the snake_case tokens above.
+  'songs_approved_number_unique': SubmissionRefusal.numberTaken,
 };
 
 extension SubmissionRefusalParsing on SubmissionRefusal {

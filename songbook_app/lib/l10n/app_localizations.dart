@@ -1870,6 +1870,18 @@ abstract class AppLocalizations {
   /// **'Send'**
   String get shareSongConfirm;
 
+  /// Replaces shareSongBody for a moderator, whose own submission is published immediately instead of queued
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” goes straight into the shared songbook. You moderate it, so there is nobody else to wait for — and your copy stays on this device either way.'**
+  String shareSongPublishBody(String title);
+
+  /// Replaces shareSongConfirm for a moderator: the button publishes rather than sends for review
+  ///
+  /// In en, this message translates to:
+  /// **'Publish'**
+  String get shareSongPublish;
+
   /// Title shown when a signed-out user tries to share
   ///
   /// In en, this message translates to:
@@ -1888,11 +1900,29 @@ abstract class AppLocalizations {
   /// **'Sent for review.'**
   String get shareSongSent;
 
+  /// Confirmation after a submission the server published immediately
+  ///
+  /// In en, this message translates to:
+  /// **'Published to the songbook.'**
+  String get shareSongPublished;
+
   /// Shown when the same song is already in the queue
   ///
   /// In en, this message translates to:
   /// **'You have already sent this song in. It is waiting for review.'**
   String get shareSongAlreadySent;
+
+  /// Shown when the same song has already been approved, where the queue message would be wrong
+  ///
+  /// In en, this message translates to:
+  /// **'This song is already in the shared songbook.'**
+  String get shareSongAlreadyPublished;
+
+  /// Shown when publishing would collide with an approved song on hymn number
+  ///
+  /// In en, this message translates to:
+  /// **'Another song in this book already has this number. Give it a different number and try again.'**
+  String get shareSongNumberTaken;
 
   /// Shown when the submission call fails
   ///

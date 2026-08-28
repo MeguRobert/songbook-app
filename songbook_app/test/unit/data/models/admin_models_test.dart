@@ -50,6 +50,19 @@ void main() {
           SubmissionRefusal.dailyLimitReached);
     });
 
+    test('a hymn-number collision is named rather than left generic', () {
+      // Not one of the gate's tokens — it is the unique index's own name, and it
+      // is here because a moderator's submission is now published as it is sent,
+      // so the collision that used to surface in the queue surfaces at the
+      // Share button instead. Without this it reads as "check your connection".
+      expect(
+        SubmissionRefusalParsing.fromServerMessage(
+            'PostgrestException(message: duplicate key value violates unique '
+            'constraint "songs_approved_number_unique", code: 23505)'),
+        SubmissionRefusal.numberTaken,
+      );
+    });
+
     test('a token wrapped in Postgres prose is still recognised', () {
       expect(
         SubmissionRefusalParsing.fromServerMessage(

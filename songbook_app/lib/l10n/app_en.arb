@@ -1421,6 +1421,19 @@
   "@shareSongConfirm": {
     "description": "Confirms the submission"
   },
+  "shareSongPublishBody": "“{title}” goes straight into the shared songbook. You moderate it, so there is nobody else to wait for — and your copy stays on this device either way.",
+  "@shareSongPublishBody": {
+    "description": "Replaces shareSongBody for a moderator, whose own submission is published immediately instead of queued",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shareSongPublish": "Publish",
+  "@shareSongPublish": {
+    "description": "Replaces shareSongConfirm for a moderator: the button publishes rather than sends for review"
+  },
   "shareSongSignInTitle": "Sign in to share",
   "@shareSongSignInTitle": {
     "description": "Title shown when a signed-out user tries to share"
@@ -1433,9 +1446,21 @@
   "@shareSongSent": {
     "description": "Confirmation after a successful submission"
   },
+  "shareSongPublished": "Published to the songbook.",
+  "@shareSongPublished": {
+    "description": "Confirmation after a submission the server published immediately"
+  },
   "shareSongAlreadySent": "You have already sent this song in. It is waiting for review.",
   "@shareSongAlreadySent": {
     "description": "Shown when the same song is already in the queue"
+  },
+  "shareSongAlreadyPublished": "This song is already in the shared songbook.",
+  "@shareSongAlreadyPublished": {
+    "description": "Shown when the same song has already been approved, where the queue message would be wrong"
+  },
+  "shareSongNumberTaken": "Another song in this book already has this number. Give it a different number and try again.",
+  "@shareSongNumberTaken": {
+    "description": "Shown when publishing would collide with an approved song on hymn number"
   },
   "shareSongFailed": "The song could not be sent. Check your connection and try again.",
   "@shareSongFailed": {
