@@ -435,6 +435,14 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
         case ChordProPayload(text: final text, notices: final notices):
           final parsed = _parser.parse(text);
           _sheetController.text = text;
+          // The draft below IS this text, freshly parsed, so the box is not
+          // dirty. Without this, [_save]'s re-read fires on every photographed
+          // song and rebuilds the draft as if it had been pasted -- losing the
+          // reader's own notices (too compressed, show-through erased, two
+          // songs on the page) and the file name the DETAILS line credits it
+          // to. The verses come out the same, so nothing was mis-saved; the
+          // evidence about the reading was simply thrown away on the way.
+          _parsedText = text;
           _accept(_PendingImport(
             verses: parsed.verses,
             title: parsed.title,
@@ -666,11 +674,24 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
       // `GoError('There is nothing to pop')`. The update has already completed,
       // so nothing is lost, but in a release build the button just looks dead.
       // The fallback is the song itself — where popping would have landed.
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.go(AppRoutes.songPath(draft.id));
-      }
+      // Land on the song WITHOUT leaving the editor behind in browser history.
+      //
+      // `optionURLReflectsImperativeAPIs` is on (app_router.dart), so every
+      // imperative navigation reports a new URL and the browser records an
+      // entry for it — `pop()` and `pushReplacement()` included. Both were
+      // measured: history grew 3→5→6→7→8→9 across one ordinary journey, and
+      // after saving a correction the system back button went straight back
+      // INTO the editor. On Android that button is the back gesture, so a
+      // saved song was one swipe away from the screen that had just saved it.
+      //
+      // `Router.neglect` performs the navigation without adding an entry, so
+      // the editor's entry is overwritten rather than stacked on. What remains
+      // is one redundant press — the entry beneath is the same song, opened
+      // from the list — and then the list itself.
+      Router.neglect(
+        context,
+        () => context.go(AppRoutes.songPath(draft.id)),
+      );
       return;
     }
 
