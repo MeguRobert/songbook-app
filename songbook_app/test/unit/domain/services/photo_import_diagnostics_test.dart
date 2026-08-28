@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/domain/services/crash_reporter.dart';
 import 'package:songbook_app/domain/services/diagnostic_photo_import_recorder.dart';
+import 'package:songbook_app/domain/services/image_format.dart';
 import 'package:songbook_app/domain/services/import_notice.dart';
 import 'package:songbook_app/domain/services/photo_import_diagnostics.dart';
 
@@ -56,6 +57,59 @@ void main() {
       // is compared against (_minBytesPerPixel, 0.08) has two.
       expect(details['bytesPerPixel'], 0.0912);
       expect(details['paleFraction'], 0.0139);
+    });
+
+    test('the format and the size survive a decode that measured nothing', () {
+      // The row the live app actually produced: 107ms, a reason, and nothing
+      // else at all, because the throw happened before the recogniser appended
+      // its first entry. These two are what a caller can supply from bytes it
+      // already holds, and they are the pair that tells a HEIC from an image
+      // too large for the phone to open.
+      final details = PhotoImportRecord(
+        outcome: PhotoImportOutcome.failed,
+        elapsed: const Duration(milliseconds: 107),
+        bytes: 4112118,
+        format: ImageFormat.heic,
+        stage: 'decode',
+        reason: 'InvalidStateError: The source image could not be decoded.',
+      ).toDetails();
+
+      expect(details['format'], 'heic');
+      expect(details['bytes'], 4112118);
+      expect(details['stage'], 'decode');
+      expect(details.containsKey('width'), isFalse,
+          reason: 'nothing measured it, and a zero would read as a decode');
+    });
+
+    test('the format is an enum name and never anything a user typed', () {
+      // `details` holds measurements. Every value here is a number, a boolean
+      // or the name of an enum this repo defines - which is what makes the
+      // table safe for a moderator to read and an anonymous client to write.
+      for (final format in ImageFormat.values) {
+        final details = PhotoImportRecord(
+          outcome: PhotoImportOutcome.failed,
+          elapsed: Duration.zero,
+          format: format,
+        ).toDetails();
+        expect(details['format'], format.name);
+        expect(details['format'], matches(RegExp(r'^[a-zA-Z]+$')));
+      }
+    });
+
+    test('a caller that says the size wins over the trace saying it again', () {
+      // Same number from both places - the upload's length - so the head is
+      // where it belongs: the clamp eats from the end, and the trace-derived
+      // copy is the one that can be dropped.
+      final details = PhotoImportRecord(
+        outcome: PhotoImportOutcome.ok,
+        elapsed: Duration.zero,
+        bytes: 286123,
+        trace: traceOf(),
+      ).toDetails();
+
+      expect(details['bytes'], 286123);
+      expect(details.keys.toList().indexOf('bytes'),
+          lessThan(details.keys.toList().indexOf('width')));
     });
 
     test('the outcome comes first, because the clamp eats from the end', () {

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/domain/services/browser_photo_import_service.dart';
+import 'package:songbook_app/domain/services/image_format.dart';
 import 'package:songbook_app/domain/services/import_notice.dart';
 import 'package:songbook_app/domain/services/page_text_recognizer.dart';
 import 'package:songbook_app/domain/services/photo_import_diagnostics.dart';
@@ -391,6 +392,87 @@ void main() {
       );
 
       expect(await service.extract(bytes), isA<ChordProPayload>());
+    });
+  });
+
+  group('what the upload was', () {
+    /// The same trace a real single-column read appends, so a success path here
+    /// records exactly what one does in the group above.
+    const measured = [
+      {
+        'stage': 'image',
+        'width': 2048,
+        'height': 1532,
+        'bytes': 286123,
+        'bytesPerPixel': 0.0912,
+        'scale': 1.0,
+        'canvasWidth': 2048,
+        'canvasHeight': 1532,
+      },
+      {'stage': 'clean', 'paleFraction': 0.0139, 'suppressed': true},
+      {'stage': 'read', 'words': 41, 'columnCuts': <int>[]},
+    ];
+
+    /// A HEIC header, the way a phone with "high efficiency" storage on writes
+    /// one. Twelve bytes is all the sniff reads.
+    final heic = Uint8List.fromList([
+      0x00, 0x00, 0x00, 0x18, // box length
+      0x66, 0x74, 0x79, 0x70, // 'ftyp'
+      0x68, 0x65, 0x69, 0x63, // 'heic'
+      ...List.filled(32, 0),
+    ]);
+
+    test('every outcome carries it, not only the failures', () async {
+      // A row that only says `jpeg` when something went wrong cannot answer
+      // "does this ever work on that phone?" - which is the question a format
+      // column is for.
+      final recorder = _RecordingRecorder();
+      final jpeg = Uint8List.fromList(
+          [0xFF, 0xD8, 0xFF, 0xE0, ...List.filled(32, 0)]);
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(page, measurements: measured),
+        recorder: recorder,
+      );
+
+      await service.extract(jpeg);
+
+      final record = recorder.records.single;
+      expect(record.outcome, PhotoImportOutcome.ok);
+      expect(record.format, ImageFormat.jpeg);
+      expect(record.bytes, jpeg.length);
+    });
+
+    test('an empty file is recorded with a format too', () async {
+      // The refusal happens after the sniff, so the row still says what it was
+      // handed - `unknown`, which is the true answer for no bytes.
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(page),
+        recorder: recorder,
+      );
+
+      await expectLater(() => service.extract(Uint8List(0)),
+          throwsA(isA<PhotoImportException>()));
+
+      expect(recorder.records.single.format, ImageFormat.unknown);
+    });
+
+    test('nothing about the file name reaches the record', () async {
+      // The rule for this table: measurements only. A name is content, and a
+      // photograph of the wrong thing is named after it.
+      final recorder = _RecordingRecorder();
+      final service = BrowserPhotoImportService(
+        recognizer: _FakeRecognizer(page, measurements: measured),
+        recorder: recorder,
+      );
+
+      await service.extract(
+          Uint8List.fromList([0xFF, 0xD8, 0xFF, ...List.filled(32, 0)]),
+          fileName: 'private-holiday-photo.jpg');
+
+      final encoded = recorder.records.single.toDetails().toString();
+      expect(encoded, isNot(contains('private')));
+      expect(encoded, isNot(contains('.jpg')));
     });
   });
 }

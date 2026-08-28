@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'image_format.dart';
 import 'import_notice.dart';
 import 'page_text_recognizer.dart';
 import 'photo_import_diagnostics.dart';
@@ -59,9 +60,17 @@ class BrowserPhotoImportService implements PhotoImportService {
     // computed and dropped.
     final trace = <Map<String, Object?>>[];
 
+    // Read here rather than in the recogniser, and that placement is the whole
+    // point of it. A container the browser cannot open throws inside
+    // `createImageBitmap` before the recogniser appends anything at all, so a
+    // measurement taken down there is exactly the measurement that goes
+    // missing on the failure it was added to explain. Up here it is taken from
+    // bytes already in hand, cannot fail, and is filed on every path.
+    final format = sniffImageFormat(imageBytes);
+
     if (imageBytes.isEmpty) {
       _record(PhotoImportOutcome.refused, clock, trace,
-          bytes: imageBytes.length);
+          bytes: imageBytes.length, format: format);
       throw const PhotoImportException('That image is empty.');
     }
 
@@ -74,7 +83,10 @@ class BrowserPhotoImportService implements PhotoImportService {
       // answer from an engine that would not start — one sentence covers both for
       // the user, and they are different mornings' work for whoever fixes it.
       _record(PhotoImportOutcome.failed, clock, trace,
-          bytes: imageBytes.length, stage: error.stage, reason: error.message);
+          bytes: imageBytes.length,
+          format: format,
+          stage: error.stage,
+          reason: error.message);
       rethrow;
     } catch (error) {
       // A missing engine, a blocked download, an image the browser refused to
@@ -88,7 +100,7 @@ class BrowserPhotoImportService implements PhotoImportService {
       // for the display was until now also the catch that threw away the only
       // description of what actually happened.
       _record(PhotoImportOutcome.failed, clock, trace,
-          bytes: imageBytes.length, reason: error.toString());
+          bytes: imageBytes.length, format: format, reason: error.toString());
       throw const PhotoImportException(
         'That photo could not be read. Try again, or type the words in.',
       );
@@ -104,14 +116,15 @@ class BrowserPhotoImportService implements PhotoImportService {
       // it is being read in; the sentence stays as the fallback for a caller
       // that has no localisations, which the measurement harness does not.
       _record(PhotoImportOutcome.illegible, clock, trace,
-          bytes: imageBytes.length, notices: notices);
+          bytes: imageBytes.length, format: format, notices: notices);
       throw PhotoImportException(
         'Nothing could be read from that photo.',
         notice: reading.notices.isNotEmpty ? reading.notices.first : null,
       );
     }
 
-    _record(PhotoImportOutcome.ok, clock, trace, notices: notices);
+    _record(PhotoImportOutcome.ok, clock, trace,
+        bytes: imageBytes.length, format: format, notices: notices);
 
     // The image's own notices first: "that photo is too compressed" explains
     // the wrong letters below it, and reads oddly after them.
@@ -129,6 +142,7 @@ class BrowserPhotoImportService implements PhotoImportService {
     Stopwatch clock,
     List<Map<String, Object?>> trace, {
     int? bytes,
+    ImageFormat? format,
     String? stage,
     String? reason,
     List<ImportNotice> notices = const <ImportNotice>[],
@@ -167,6 +181,7 @@ class BrowserPhotoImportService implements PhotoImportService {
       // twelve thousand pixels tall.
       _say('[photo] $outcome in ${clock.elapsedMilliseconds}ms'
           '${bytes == null ? '' : ', $bytes bytes in'}'
+          '${format == null ? '' : ', ${format.name}'}'
           '${stage == null ? '' : ' at stage "$stage"'}');
       if (reason != null) _say('[photo] reason: $reason');
       if (notices.isNotEmpty) {
@@ -188,6 +203,8 @@ class BrowserPhotoImportService implements PhotoImportService {
         elapsed: clock.elapsed,
         trace: trace,
         notices: notices,
+        bytes: bytes,
+        format: format,
         stage: stage,
         reason: reason,
       ));

@@ -1,3 +1,4 @@
+import 'image_format.dart';
 import 'import_notice.dart';
 
 /// One row per photo import, and why that is the highest-value row in the app.
@@ -55,6 +56,8 @@ class PhotoImportRecord {
     required this.elapsed,
     this.trace = const <Map<String, Object?>>[],
     this.notices = const <ImportNotice>[],
+    this.bytes,
+    this.format,
     this.stage,
     this.reason,
   });
@@ -74,6 +77,23 @@ class PhotoImportRecord {
   /// What the reader and the bridge wanted the user told. Recorded as codes
   /// only — the prose lives in the ARB files and is not this table's business.
   final List<ImportNotice> notices;
+
+  /// The size of the upload, or null when the caller did not say.
+  ///
+  /// Recorded from the argument rather than lifted out of the `image` trace
+  /// entry, because the entry is not there on the failure that most needs the
+  /// number: a container the browser will not open throws before the recogniser
+  /// measures anything, and that row used to report its own size as unknown.
+  final int? bytes;
+
+  /// What the leading bytes said the upload was. See [sniffImageFormat].
+  ///
+  /// **The discriminator this table was missing.** A decode that throws in
+  /// 107ms is either a HEIC — which no Chrome opens — or an image too large for
+  /// a phone's decoder, and the advice differs. Nothing else in the row can
+  /// separate them, because the decode is where everything else would have been
+  /// measured.
+  final ImageFormat? format;
 
   /// Which stage gave up, for the failures that have one. See
   /// [PhotoImportException.stage].
@@ -99,6 +119,11 @@ class PhotoImportRecord {
     final details = <String, Object?>{
       'outcome': outcome.name,
       'ms': elapsed.inMilliseconds,
+      // Ahead of everything the decode measures, because these two are the only
+      // facts a failed decode leaves behind. An enum name and an integer: no
+      // file name, and nothing that identifies the picture or the person.
+      if (format != null) 'format': format!.name,
+      if (bytes != null) 'bytes': bytes,
       if (stage != null) 'stage': stage,
     };
 
@@ -109,7 +134,9 @@ class PhotoImportRecord {
     if (image != null) {
       details['width'] = image['width'];
       details['height'] = image['height'];
-      details['bytes'] = image['bytes'];
+      // Only if the caller did not already say. Same number either way — both
+      // are the upload's length — and the head is where it survives the clamp.
+      details['bytes'] ??= image['bytes'];
       // Rounded, because six decimal places of a ratio is noise and the gate it
       // is compared against (0.08) has two.
       details['bytesPerPixel'] = _round(image['bytesPerPixel']);
