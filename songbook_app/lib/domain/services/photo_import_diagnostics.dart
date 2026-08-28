@@ -127,6 +127,22 @@ class PhotoImportRecord {
       if (stage != null) 'stage': stage,
     };
 
+    // Immediately after the head, and ahead of everything the decode measures,
+    // for the same reason `format` is: a HEIC the library also could not open
+    // appends nothing else at all, and this is then the only evidence that a
+    // second attempt was even made. Three keys, all measurements — a boolean,
+    // a millisecond count, and one of this file's own stage tokens.
+    //
+    // Absent entirely on the ordinary path. No entry means the bytes were not
+    // HEIC or HEIF, or the browser opened them itself and libheif was never
+    // reached; `heifDecoded: false` means it was reached and could not do it.
+    final heif = _stage('heif');
+    if (heif != null) {
+      details['heifDecoded'] = heif['decoded'];
+      details['heifMs'] = heif['ms'];
+      if (heif['why'] != null) details['heifStage'] = heif['why'];
+    }
+
     // Lifted out of the trace by name rather than by position: the recogniser
     // adds stages as it learns to measure more, and a reader of this table
     // should not have to know the order they were appended in.

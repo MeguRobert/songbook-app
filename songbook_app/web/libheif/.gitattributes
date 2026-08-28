@@ -1,0 +1,10 @@
+# Vendored, byte for byte.
+#
+# `libheif.js` is a minified Emscripten build copied verbatim from
+# libheif-js@1.19.8 and README.md records its sha384. On a Windows checkout
+# git's line-ending conversion would rewrite every LF in it, which changes that
+# hash and makes "is this still the file we vendored?" unanswerable. The .wasm
+# is already treated as binary by content detection; this says so out loud for
+# both, so neither depends on a guess.
+*.js -text
+*.wasm -text binary

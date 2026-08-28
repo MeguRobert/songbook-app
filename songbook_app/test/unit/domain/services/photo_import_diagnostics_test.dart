@@ -110,6 +110,102 @@ void main() {
           reason: 'nothing measured it, and a zero would read as a decode');
     });
 
+    test('a HEIC the app opened itself says so, and says what it cost', () {
+      // The rescue is invisible from every other column. `format: heic` says
+      // the phone wrote one; only this pair says whether the browser opened it
+      // or libheif did, and how long the second attempt took - which is the
+      // number that decides whether a megabyte of WebAssembly on a phone is
+      // worth what it buys.
+      final details = PhotoImportRecord(
+        outcome: PhotoImportOutcome.ok,
+        elapsed: const Duration(milliseconds: 3120),
+        bytes: 4112118,
+        format: ImageFormat.heic,
+        trace: [
+          {'stage': 'heif', 'decoded': true, 'ms': 412},
+          ...traceOf(),
+        ],
+      ).toDetails();
+
+      expect(details['heifDecoded'], true);
+      expect(details['heifMs'], 412);
+      expect(details.containsKey('heifStage'), isFalse,
+          reason: 'nothing failed, so there is no stage to name');
+      // Ahead of everything the decode measured, for the same reason `format`
+      // is: on the failure below there is nothing else at all.
+      final keys = details.keys.toList();
+      expect(keys.indexOf('heifDecoded'), lessThan(keys.indexOf('width')));
+    });
+
+    test('a rescue that failed names its stage and measures nothing else', () {
+      // What the live row would now look like for the Redmi that started this:
+      // 107ms of native decode, then a library that could not be reached.
+      // `heifStage` is what separates a phone with no network from a deploy
+      // that did not carry web/libheif/ from a file libheif itself refused.
+      final details = PhotoImportRecord(
+        outcome: PhotoImportOutcome.failed,
+        elapsed: const Duration(milliseconds: 30119),
+        bytes: 4112118,
+        format: ImageFormat.heic,
+        stage: 'decode',
+        reason: 'InvalidStateError: The source image could not be decoded.',
+        trace: const [
+          {
+            'stage': 'heif',
+            'decoded': false,
+            'ms': 30012,
+            'why': 'heif:timeout',
+          },
+        ],
+      ).toDetails();
+
+      expect(details['heifDecoded'], false);
+      expect(details['heifMs'], 30012);
+      expect(details['heifStage'], 'heif:timeout');
+      expect(details.containsKey('width'), isFalse,
+          reason: 'no pixels were ever read, on either attempt');
+    });
+
+    test('an import that never touched libheif records nothing about it', () {
+      // A JPEG, which is every photograph in the measurement corpus and almost
+      // every photograph a user takes. No sniff, no script, no keys.
+      final details = PhotoImportRecord(
+        outcome: PhotoImportOutcome.ok,
+        elapsed: const Duration(milliseconds: 2140),
+        format: ImageFormat.jpeg,
+        trace: traceOf(),
+      ).toDetails();
+
+      expect(details.keys.where((key) => key.startsWith('heif')), isEmpty);
+    });
+
+    test('the stage token is a token, not the library talking', () {
+      // libheif prints its own diagnosis - "Invalid input: Unexpected end of
+      // file: Extent in iloc..." - to the console, and that string names a byte
+      // offset in the user's photograph. `details` takes this file's own token
+      // instead: a fixed vocabulary plus, for one of them, an HTTP status.
+      for (final why in const [
+        'heif:timeout',
+        'heif:error',
+        'heif:blocked',
+        'heif:start',
+        'heif:missing',
+        'heif:empty',
+        'heif:pixels',
+        'heif:size',
+        'heif:wasm:404',
+      ]) {
+        final details = PhotoImportRecord(
+          outcome: PhotoImportOutcome.failed,
+          elapsed: Duration.zero,
+          trace: [
+            {'stage': 'heif', 'decoded': false, 'ms': 12, 'why': why},
+          ],
+        ).toDetails();
+        expect(details['heifStage'], matches(RegExp(r'^[a-z:0-9]+$')));
+      }
+    });
+
     test('the format is an enum name and never anything a user typed', () {
       // `details` holds measurements. Every value here is a number, a boolean
       // or the name of an enum this repo defines - which is what makes the
