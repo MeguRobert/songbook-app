@@ -101,6 +101,41 @@ Never _tooSlow(String stage) => throw PhotoImportException(
 /// already known to be about two seconds, rather than four times that.
 const _longestEdge = 2048;
 
+/// The most pixels the canvas may hold, and the second half of the rule.
+///
+/// **Why a longest-edge cap alone was wrong.** It assumes the page is roughly
+/// as wide as it is tall, which a photograph of a hymnal is and a *scrolled
+/// screenshot* is not. A 1080x12000 screenshot — eleven phone screens of one
+/// song, stitched by the phone itself — came out of that rule at **184x2048**,
+/// and 184 pixels is not a page, it is a stripe. Measured on the corpus page
+/// 185 rendered at a range of widths, with everything else held still:
+///
+/// | rendered width | 184 | 260 | 320 | 400 | 480 | 640 | 768 | 1532 |
+/// |---|---|---|---|---|---|---|---|---|
+/// | score | *refused* | 0.564 | 0.422 | 0.825 | 0.901 | 0.867 | 0.909 | 0.911 |
+///
+/// The page is worth full marks from about 480 pixels wide and worth nothing at
+/// all below 260. The old rule put a real screenshot at 184.
+///
+/// **Why this number and not another.** 2048x1536 is the area of the
+/// photograph the whole reader was calibrated on, and it is the *only* value
+/// that leaves an ordinary photograph untouched: for any 4:3 image, in either
+/// orientation, `sqrt(2048*1536 / (w*h))` and `2048 / max(w, h)` are the same
+/// number — 3L²/4 pixels against a long edge L makes the two agree exactly at
+/// 3·2048²/4. Every phone camera defaults to 4:3 and every page in the
+/// measurement corpus is between 1.33 and 1.34, so the corpus reads at the
+/// identical scale it did before, and the score is unchanged to the digit.
+///
+/// The two rules are combined with `max`, not `min`, so **no image is ever
+/// rendered smaller than it was before this existed** — which is what makes a
+/// reading regression impossible by construction rather than by measurement.
+/// The cost is bounded on the other side too: for anything more elongated than
+/// 4:3 the area rule wins, and it holds the canvas at the same pixel count a
+/// 4:3 photograph has always cost. A tall screenshot is therefore no more
+/// expensive to read than a photograph, which matters on the phones this
+/// happens on — every buffer below is a multiple of this number.
+const _maxPixels = 2048 * 1536;
+
 /// What a page of text needs to keep its accents, as the Python worker measures
 /// it in `resolution_note` — the two have to agree, because a photograph read on
 /// one side of the wire and then on the other must get the same answer.
@@ -291,21 +326,33 @@ class TesseractPageTextRecognizer implements PageTextRecognizer {
         .createImageBitmap(web.Blob([imageBytes.toJS].toJS))
         .toDart;
 
+    final pixels = math.max(1, bitmap.width * bitmap.height);
+    // Two ceilings, and the looser one wins: the longest edge, which is right
+    // for a page-shaped photograph, and the total area, which is what stops a
+    // scrolled screenshot being squeezed to a stripe. See [_maxPixels].
     final scale = math.min(
       1.0,
-      _longestEdge / math.max(bitmap.width, bitmap.height),
+      math.max(
+        _longestEdge / math.max(1, math.max(bitmap.width, bitmap.height)),
+        math.sqrt(_maxPixels / pixels),
+      ),
     );
     final width = math.max(1, (bitmap.width * scale).round());
     final height = math.max(1, (bitmap.height * scale).round());
 
     final notices = <ImportNotice>[];
-    final pixels = math.max(1, bitmap.width * bitmap.height);
     trace?.add({
       'stage': 'image',
       'width': bitmap.width,
       'height': bitmap.height,
       'bytes': imageBytes.length,
       'bytesPerPixel': imageBytes.length / pixels,
+      // What was actually read, which is not the same thing and was the whole
+      // fault here: a row saying 1080x12000 read perfectly well as a row about
+      // an image that was in fact handed to the engine 184 pixels wide.
+      'scale': scale,
+      'canvasWidth': width,
+      'canvasHeight': height,
     });
     if (math.max(bitmap.width, bitmap.height) < _minLongEdge ||
         imageBytes.length / pixels < _minBytesPerPixel) {

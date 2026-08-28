@@ -71,8 +71,12 @@ Future<Uint8List> _fetch(String url) async {
 // up only at run time, as `window.readPage(...)` evaluating to `undefined`.
 Future<JSString> _read(String url) async {
   final started = DateTime.now();
+  final recognizer = createPageTextRecognizer();
+  // Built before the try so a refusal can still report what the stages
+  // measured. Held in one place rather than two: the catch below needs the same
+  // list the success path reports.
+  final once = _Once(recognizer);
   try {
-    final recognizer = createPageTextRecognizer();
     if (!recognizer.isSupported) {
       return jsonEncode({'error': 'no recognizer in this build'}).toJS;
     }
@@ -84,7 +88,6 @@ Future<JSString> _read(String url) async {
     // because that is three passes rather than one. So the engine is called once
     // and the answer is held: the service still does exactly what it does.
     final bytes = await _fetch(url);
-    final once = _Once(recognizer);
     final service = BrowserPhotoImportService(recognizer: once);
     final payload = await service.extract(bytes, fileName: url);
     final read = once.answer!;
@@ -151,6 +154,11 @@ Future<JSString> _read(String url) async {
     // a measurement.
     return jsonEncode({
       'refused': error.message,
+      'stage': error.stage,
+      // The trace on the refusal path too. Without it a page that would not
+      // read reported nothing at all about itself - which is the one outcome
+      // where every stage's measurement is worth having.
+      'trace': once.trace,
       'ms': DateTime.now().difference(started).inMilliseconds,
     }).toJS;
   } catch (error) {

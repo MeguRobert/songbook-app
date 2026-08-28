@@ -140,6 +140,12 @@ class PhotoImportRecord {
       // Rounded, because six decimal places of a ratio is noise and the gate it
       // is compared against (0.08) has two.
       details['bytesPerPixel'] = _round(image['bytesPerPixel']);
+      // What the page was read at, not what was handed over. The canvas size is
+      // recoverable from this and the two above, and one number costs less of
+      // the clamp than two. A row is unreadable without it: 1080x12000 says
+      // nothing about whether the engine saw a page or a stripe.
+      final rendered = image['scale'];
+      if (rendered != null) details['scale'] = _round(rendered);
     }
 
     final read = _stage('read');

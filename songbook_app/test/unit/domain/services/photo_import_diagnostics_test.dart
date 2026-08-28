@@ -25,6 +25,9 @@ void main() {
           'height': 1532,
           'bytes': 286123,
           'bytesPerPixel': 0.09123456789,
+          'scale': 1.0,
+          'canvasWidth': 2048,
+          'canvasHeight': 1532,
         },
         {'stage': 'clean', 'paleFraction': 0.0139482, 'suppressed': true},
         {
@@ -57,6 +60,32 @@ void main() {
       // is compared against (_minBytesPerPixel, 0.08) has two.
       expect(details['bytesPerPixel'], 0.0912);
       expect(details['paleFraction'], 0.0139);
+    });
+
+    test('what the page was actually read at is on the record', () {
+      // The source dimensions alone were unreadable evidence: 1080x12000 says
+      // nothing about whether the engine was handed a page or a 184-pixel
+      // stripe, and that difference was the whole fault.
+      final details = PhotoImportRecord(
+        outcome: PhotoImportOutcome.ok,
+        elapsed: const Duration(milliseconds: 2140),
+        trace: [
+          {
+            'stage': 'image',
+            'width': 1080,
+            'height': 12000,
+            'bytes': 1977062,
+            'bytesPerPixel': 0.1525,
+            'scale': 0.49266,
+            'canvasWidth': 532,
+            'canvasHeight': 5912,
+          },
+        ],
+      ).toDetails();
+
+      expect(details['width'], 1080);
+      expect(details['height'], 12000);
+      expect(details['scale'], 0.4927, reason: 'rounded like every other ratio');
     });
 
     test('the format and the size survive a decode that measured nothing', () {
