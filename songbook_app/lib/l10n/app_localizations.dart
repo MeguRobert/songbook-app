@@ -2182,10 +2182,10 @@ abstract class AppLocalizations {
   /// **'Nothing legible was found in that photo.'**
   String get importNoticePhotoNothingLegible;
 
-  /// Photo reader: the browser refused to decode the file, so nothing was ever read. Different from importNoticePhotoNothingLegible, which means the page WAS read and held no words - retaking the photo helps there and cannot help here. The two causes are HEIC (Xiaomi and Samsung 'high efficiency' storage, which no Chrome decodes) and a scrolled screenshot too tall for a phone's decoder.
+  /// Photo reader: the browser refused to decode the file and libheif could not rescue it either, so nothing was ever read. Different from importNoticePhotoNothingLegible, which means the page WAS read and held no words - retaking the photo helps there and cannot help here. HEIC is deliberately no longer named: the app now decodes it (heif_decoder_web.dart), so the causes left are a scrolled screenshot too tall for a phone's decoder, a video or motion photo picked instead of a still, a damaged file, and the residue of HEICs libheif also refused.
   ///
   /// In en, this message translates to:
-  /// **'That file is not an image this browser can open. Some phones save photos as HEIC, and a very long screenshot can be too big to open. Save it again as JPEG or PNG, or take it in shorter pieces.'**
+  /// **'That file is not an image this browser can open. A very long screenshot can be too big to open, and a video or a damaged file will not open at all. Save it again as JPEG or PNG, or take the screenshot in shorter pieces.'**
   String get importNoticePhotoCouldNotDecode;
 
   /// Photo reader: German/Hungarian note names were read and are renamed on the way into storage. `text` is the names, sorted and joined.

@@ -1328,7 +1328,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get importNoticePhotoCouldNotDecode =>
-      'Acest fișier nu este o imagine pe care browserul o poate deschide. Unele telefoane salvează fotografiile în format HEIC, iar o captură de ecran foarte lungă poate fi prea mare ca să fie deschisă. Salvează-l din nou ca JPEG sau PNG, ori fă-l în bucăți mai scurte.';
+      'Acest fișier nu este o imagine pe care browserul o poate deschide. O captură de ecran foarte lungă poate fi prea mare ca să fie deschisă, iar un videoclip sau un fișier deteriorat nu se deschide deloc. Salvează-l din nou ca JPEG sau PNG ori fă captura în bucăți mai scurte.';
 
   @override
   String importNoticePhotoGermanNoteNames(String text) {
