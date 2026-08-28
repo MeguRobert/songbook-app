@@ -3,6 +3,12 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+// The browser cannot be asked about itself from the Dart VM, and this file has
+// to keep compiling there — every unit test in the project loads it. The stub
+// half answers null, which reads as "not asked" rather than as a guess.
+import 'browser_name_stub.dart'
+    if (dart.library.js_interop) 'browser_name_web.dart';
+
 /// Getting a failure on somebody else's phone back to the person who can fix it.
 ///
 /// Until this existed the app had no error handling at all — no
@@ -76,13 +82,25 @@ class CrashContext {
   void noteRoute(String location) => route = location;
 }
 
-/// A coarse description of the machine: `web/android 412x915 dpr2.6`.
+/// A coarse description of the machine: `web/android 412x915 dpr2.6 chrome/131`.
 ///
 /// Deliberately not the raw user-agent string. The bucket is the entire
-/// diagnostic value — "only on iPhones", "only when narrow" — and a full UA adds
-/// a fingerprinting surface for nothing. The logical size is included because
-/// the commonest class of report a hymn app will ever get is a layout fault at
-/// a width the developer never opened.
+/// diagnostic value — "only on iPhones", "only when narrow", "only on Firefox"
+/// — and a full UA adds a fingerprinting surface for nothing: it carries the
+/// device model and the exact build, in a table an anonymous client writes and
+/// a moderator reads. The logical size is included because the commonest class
+/// of report a hymn app will ever get is a layout fault at a width the
+/// developer never opened.
+///
+/// The browser and its **major** version are the newest part, and they are here
+/// because `defaultTargetPlatform` names the operating system, which is not
+/// what decides whether anything works. The first real photo-import failure from
+/// the live app came back `web/android` — true of the browser that can open the
+/// upload and of the one that cannot. See [describeBrowser].
+///
+/// Bounded at [maxPlatformLength], which is what the column holds: past that
+/// Postgres truncates silently, and a field cut off mid-token is worse than a
+/// field that decided for itself what to drop.
 String describePlatform() {
   final buffer = StringBuffer(kIsWeb ? 'web/' : 'native/');
   buffer.write(defaultTargetPlatform.name);
@@ -98,8 +116,17 @@ String describePlatform() {
     // A headless test binding has no view. The platform name alone is still
     // worth having, and this is not a place to be fussy.
   }
-  return buffer.toString();
+  final browser = describeBrowser();
+  if (browser != null && browser.isNotEmpty) buffer.write(' $browser');
+  final described = buffer.toString();
+  return described.length <= maxPlatformLength
+      ? described
+      : described.substring(0, maxPlatformLength);
 }
+
+/// The cap on [describePlatform], matching the `platform` column's own check in
+/// `supabase/migrations/20260827120000_error_reports.sql`.
+const int maxPlatformLength = 200;
 
 /// What kind of thing a row in `error_reports` records.
 ///
