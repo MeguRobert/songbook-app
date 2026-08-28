@@ -182,6 +182,17 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   /// below needs no special case for "already saved".
   _PendingImport? _savedPending;
 
+  /// The exact text [_pending] was parsed from.
+  ///
+  /// The box and the draft can disagree, because typing does not re-parse — and
+  /// when they disagree it is the box that the person is looking at. Saving
+  /// compares the two and re-reads if they have drifted apart, which is what
+  /// makes Save mean "save what is on screen".
+  ///
+  /// Seeded in [initState] when editing, so an edit screen that has been opened
+  /// and not touched is not treated as dirty and re-parsed for nothing.
+  String _parsedText = '';
+
   /// Once the title has been touched, re-importing must not overwrite it: an
   /// importer's guess is a starting point, and silently reverting a correction
   /// is worse than not guessing at all.
@@ -223,6 +234,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
     // line breaks. ChordPro is what the parser below already reads, so the round
     // trip is exact: change a word, press Parse, and the preview updates.
     _sheetController.text = const ChordSheetExporter().toChordPro(existing);
+    _parsedText = _sheetController.text;
   }
 
   @override
@@ -287,6 +299,7 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   /// row and the chords under it can never disagree about that row - the same
   /// discipline `_preview` and `_draft` already keep.
   void _reparse() {
+    _parsedText = _sheetController.text;
     final result = _parser.parse(_sheetController.text, kinds: _kinds);
     _accept(_PendingImport(
       verses: result.verses,
@@ -617,8 +630,26 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
   }
 
   Future<void> _save() async {
+    // Save what is on screen, not what was last parsed.
+    //
+    // The box does not re-parse as it is typed in, so by here the two can
+    // disagree — and the person pressing Save is looking at the box. Without
+    // this, an edited lyric was silently discarded and the old verses stored
+    // in its place. Re-reading here rather than on every keystroke keeps the
+    // parse off the typing path, where it would run once per character.
+    if (_sheetController.text != _parsedText) {
+      _reparse();
+    }
+
     final draft = _draft;
-    if (draft == null) return;
+    // Re-checked after the re-parse above, because it can change the answer:
+    // a box emptied and saved has no verses, and must be refused rather than
+    // stored as a song with nothing in it. The blocker is already on screen —
+    // `_reparse` rebuilt — so this returns quietly rather than explaining
+    // twice.
+    if (draft == null || _blockersIn(AppLocalizations.of(context)).isNotEmpty) {
+      return;
+    }
     setState(() => _saving = true);
 
     if (_isEditing) {
@@ -706,9 +737,18 @@ class _ImportSongScreenState extends ConsumerState<ImportSongScreen> {
               // very first paste.
               //
               // Falls back to the saved content when editing, not to nothing:
-              // typing here is an *offer* to replace, and until Parse is pressed
-              // the song still has its stored words. Resetting to null would have
-              // blanked the preview and disabled Save on the first keystroke.
+              // resetting to null would blank the preview and disable Save on
+              // the first keystroke. So the preview keeps showing the stored
+              // song until Parse is pressed.
+              //
+              // What this must NOT mean is that the typing is thrown away.
+              // It used to: the words in the box were an "offer to replace"
+              // that only Parse accepted, so editing a lyric and pressing Save
+              // stored the OLD verses under the new title, reported success,
+              // and said nothing. Reported from the live app as "I can edit
+              // them, but no matter that I save, it doesn't get saved", and
+              // reproduced in e2e/songs_crud.e2e.cjs. [_save] now re-reads the
+              // box when it has drifted from [_parsedText].
               onChanged: (_) => setState(() => _pending = _savedPending),
             ),
             const SizedBox(height: 8),
