@@ -1,6 +1,4 @@
-// `foundation` rather than `dart:typed_data`: it re-exports Uint8List, and it
-// is where `debugPrint` lives. Two imports for the same types is a lint.
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 
 import 'import_notice.dart';
 import 'page_text_recognizer.dart';
@@ -138,10 +136,19 @@ class BrowserPhotoImportService implements PhotoImportService {
     // Said out loud BEFORE the sink is consulted, and deliberately not behind
     // `kDebugMode`.
     //
-    // `debugPrint` survives a release build — Flutter's own
-    // `foundation/print.dart` says "logs to console even in release mode" — so
-    // this is the one line here that reaches a browser console on the deployed
-    // site.
+    // `print` survives a release build. Flutter's `debugPrint` is
+    // `debugPrintThrottled`, which is this call plus a rate limiter — same
+    // channel, same release behaviour, and its own `foundation/print.dart` says
+    // so: "logs to console even in release mode". These are the only lines here
+    // that reach a browser console on the deployed site.
+    //
+    // `print` and not `debugPrint` for a reason that is not style: `debugPrint`
+    // lives in `package:flutter/foundation.dart`, which reaches `dart:ui`,
+    // which plain `dart compile js` does not have — and this file is compiled
+    // that way by `tool/browser_reader_harness.dart` so the measurement corpus
+    // scores the engine that actually ships. Importing it here made the corpus
+    // unbuildable. The throttle is no loss: it is why the trace below had to be
+    // printed one line at a time, and nothing here is emitted in a loop.
     //
     // It exists because of the first failure reported from the live app: a
     // scrolled screenshot that would not read, which left no trace anywhere at
@@ -158,19 +165,18 @@ class BrowserPhotoImportService implements PhotoImportService {
       // trace, so without this such a failure reports its own size as unknown —
       // and size is the first thing worth knowing about a screenshot that is
       // twelve thousand pixels tall.
-      debugPrint('[photo] $outcome in ${clock.elapsedMilliseconds}ms'
+      _say('[photo] $outcome in ${clock.elapsedMilliseconds}ms'
           '${bytes == null ? '' : ', $bytes bytes in'}'
           '${stage == null ? '' : ' at stage "$stage"'}');
-      if (reason != null) debugPrint('[photo] reason: $reason');
+      if (reason != null) _say('[photo] reason: $reason');
       if (notices.isNotEmpty) {
-        debugPrint(
-            '[photo] notices: ${notices.map((n) => n.code.name).join(', ')}');
+        _say('[photo] notices: ${notices.map((n) => n.code.name).join(', ')}');
       }
-      // One line per stage rather than one line for the list. `debugPrint`
-      // throttles long output, and the entry that explains the failure is
-      // usually the last one — which is exactly the end a truncation eats.
+      // One line per stage rather than one line for the list: the entry that
+      // explains the failure is usually the last one, and one long line is the
+      // end a console truncation eats.
       for (final entry in trace) {
-        debugPrint('[photo] trace: $entry');
+        _say('[photo] trace: $entry');
       }
     }
 
@@ -189,4 +195,12 @@ class BrowserPhotoImportService implements PhotoImportService {
       // Nowhere for this to go, and nothing worth doing about it.
     }
   }
+
+  /// One line to the browser console, in release as well as in debug.
+  ///
+  /// Wrapped so the `avoid_print` suppression is written once rather than four
+  /// times, and so the reason for choosing `print` over `debugPrint` has one
+  /// place to live. See the comment in [_record].
+  // ignore: avoid_print
+  void _say(String line) => print(line);
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:songbook_app/domain/services/crash_reporter.dart';
+import 'package:songbook_app/domain/services/diagnostic_photo_import_recorder.dart';
 import 'package:songbook_app/domain/services/import_notice.dart';
 import 'package:songbook_app/domain/services/photo_import_diagnostics.dart';
 

@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'crash_reporter.dart';
 import 'import_notice.dart';
 
 /// One row per photo import, and why that is the highest-value row in the app.
@@ -184,34 +181,11 @@ abstract class PhotoImportRecorder {
   void record(PhotoImportRecord record);
 }
 
-/// Writes the record as a `photo_import` row through the crash reporter's
-/// transport.
-///
-/// Reusing that transport is the point, and it is not laziness: it already
-/// throttles, already swallows its own failures, already carries the route, the
-/// locale, the platform and — the reason item 1 came first — the build number.
-/// A second pipeline would have had to reimplement four things correctly to end
-/// up in the same table.
-///
-/// Typed against [ThrottledCrashReporter] rather than the [CrashReporter]
-/// interface because the guarantee needed here is the composite's, not a sink's:
-/// a sink is allowed to throw, and [ThrottledCrashReporter.note] is the one door
-/// that promises never to.
-class DiagnosticPhotoImportRecorder extends PhotoImportRecorder {
-  const DiagnosticPhotoImportRecorder(this._reporter);
-
-  final ThrottledCrashReporter _reporter;
-
-  @override
-  void record(PhotoImportRecord record) {
-    // Unawaited, and the import must not wait on it. A network insert on a
-    // sleeping free-tier project takes seconds, and the person is looking at
-    // their song by then. `note` never throws and never rejects, so an
-    // unawaited call cannot resurface as an unhandled error later.
-    unawaited(_reporter.note(
-      DiagnosticEvent.photoImport,
-      record.summary,
-      details: record.toDetails(),
-    ));
-  }
-}
+// The one that ships is `DiagnosticPhotoImportRecorder`, and it lives in its
+// own file rather than here. Nothing in this file may import
+// `package:flutter/foundation.dart`, directly or through anything else: the
+// measurement corpus compiles this reading path with plain `dart compile js`
+// - see `tool/browser_reader_harness.dart` - and `dart2js` has no `dart:ui`, so
+// one such import anywhere in the graph makes the whole harness refuse to
+// build. That is exactly what a `crash_reporter.dart` import here did, and the
+// corpus was unmeasurable for two commits before anyone tried to run it.

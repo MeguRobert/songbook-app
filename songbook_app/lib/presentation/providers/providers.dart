@@ -20,7 +20,7 @@ import '../../domain/services/browser_photo_import_service.dart';
 // compiling there, and reports itself unsupported rather than pretending.
 import '../../domain/services/page_text_recognizer_stub.dart'
     if (dart.library.js_interop) '../../domain/services/page_text_recognizer_web.dart';
-import '../../domain/services/photo_import_diagnostics.dart';
+import '../../domain/services/diagnostic_photo_import_recorder.dart';
 import '../../domain/services/photo_import_service.dart';
 import '../../domain/services/transposition_service.dart';
 import '../../domain/services/search_service.dart';
